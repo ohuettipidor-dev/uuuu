@@ -1,68 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>💚 {{ group.name }} 💛</title>
+    <title>💙 {{ group.name }} 💖</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{
-            background: linear-gradient(135deg, #2e7d32 0%, #f9a825 50%, #2e7d32 100%);
-            min-height:100vh;
-            position:relative;
-        }
-        body::before{
-            content:"🇷🇺";
-            position:fixed;
-            bottom:20px;
-            right:20px;
-            font-size:80px;
-            opacity:0.15;
-            z-index:0;
-            pointer-events:none;
-        }
-        .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
-        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid #f9a825}
-        .back{background:#2e7d32;padding:8px 18px;border-radius:25px;cursor:pointer;color:white}
+        body{background:linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);min-height:100vh}
+        .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
+        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(102,126,234,0.3)}
+        .back{background:#667eea;padding:8px 18px;border-radius:25px;cursor:pointer;color:white}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
         .message{animation:fadeInUp 0.3s ease}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;background:white;color:#1b5e20;display:inline-block}
+        .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;background:white;color:#333;display:inline-block}
         .own{text-align:right}
-        .own .bubble{background:linear-gradient(135deg, #2e7d32, #f9a825);color:white}
-        .sender{font-size:11px;color:#2e7d32;margin-bottom:4px;font-weight:bold}
+        .own .bubble{background:linear-gradient(135deg, #667eea, #764ba2);color:white}
+        .sender{font-size:11px;color:#667eea;margin-bottom:4px;font-weight:bold}
         .time{font-size:10px;color:#aaa;margin-top:4px}
-        .file-link{color:#2e7d32}
+        .file-link{color:#667eea}
         img,audio,video{max-width:200px;border-radius:15px}
+        .sticker{max-width:120px;cursor:pointer}
         .input-area{padding:15px;background:rgba(255,255,255,0.95);display:flex;gap:8px;flex-wrap:wrap}
-        .input-area input{flex:1;padding:12px;border-radius:30px;border:1px solid #f9a825}
-        .input-area button{padding:12px 20px;border-radius:30px;border:none;background:linear-gradient(135deg, #2e7d32, #f9a825);color:white;cursor:pointer}
-        .attach-btn,.emoji-btn,.voice-btn{background:#f0f0f0;padding:12px;border-radius:30px;cursor:pointer}
+        .input-area input{flex:1;padding:12px;border-radius:30px;border:1px solid #ddd}
+        .input-area button{padding:12px 20px;border-radius:30px;border:none;background:linear-gradient(135deg, #667eea, #764ba2);color:white;cursor:pointer}
+        .attach-btn,.emoji-btn,.voice-btn,.sticker-btn{background:#f0f0f0;padding:12px;border-radius:30px;cursor:pointer}
         .members{padding:10px;background:rgba(255,255,255,0.9);font-size:12px;margin-bottom:10px;border-radius:15px}
         .add-form{display:flex;gap:5px;margin-top:5px}
-        .add-form input{flex:1;padding:5px;border-radius:15px;border:1px solid #f9a825}
-        .add-form button{padding:5px 10px;border-radius:15px;background:#2e7d32;color:white;border:none}
+        .add-form input{flex:1;padding:5px;border-radius:15px;border:1px solid #ddd}
+        .add-form button{padding:5px 10px;border-radius:15px;background:#667eea;color:white;border:none}
         .emoji-picker{position:absolute;bottom:80px;right:20px;background:white;border-radius:20px;padding:10px;display:none;grid-template-columns:repeat(8,1fr);gap:8px;max-width:300px;z-index:100}
         .emoji-picker span{font-size:28px;cursor:pointer}
+        .sticker-picker{position:absolute;bottom:80px;right:80px;background:white;border-radius:20px;padding:15px;display:none;grid-template-columns:repeat(4,1fr);gap:10px;max-width:300px;z-index:100}
+        .sticker-picker img{width:60px;height:60px;cursor:pointer;border-radius:15px}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         .voice-msg{display:flex;align-items:center;gap:8px;cursor:pointer}
         .voice-wave{display:flex;align-items:center;gap:2px}
-        .voice-wave div{width:3px;height:8px;background:#2e7d32;border-radius:2px;animation:wave 0.5s ease infinite alternate}
+        .voice-wave div{width:3px;height:8px;background:#667eea;border-radius:2px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:8px}to{height:16px}}
-        .flag-stripe{position:fixed;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg, #fff, #2e7d32, #f9a825, #fff);z-index:999}
     </style>
 </head>
 <body>
-<div class="flag-stripe"></div>
 <div class="container">
     <div class="header">
         <div class="back" onclick="location.href='/chat'">← Назад</div>
-        <div style="font-weight:bold;color:#1b5e20">💚 {{ group.name }} 💛</div>
-        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#2e7d32;text-decoration:none;font-weight:500">🇷🇺 Профиль</a>
+        <div style="font-weight:bold">💙 {{ group.name }} 💖</div>
+        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#667eea;text-decoration:none;font-weight:500">💚 Профиль</a>
     </div>
     <div class="members">
-        🐻 Участники: {% for m in members %}{{ m.username }} {% endfor %}
+        🐾 Участники: {% for m in members %}{{ m.username }} {% endfor %}
         {% if group.created_by == current_user.id %}
         <form method="POST" action="/add_member/{{ group.id }}" class="add-form">
             <input type="text" name="username" placeholder="Имя пользователя">
@@ -76,7 +63,9 @@
             {% if m.sender_id != current_user.id %}<div class="sender">{{ m.sender.username }}</div>{% endif %}
             <div class="bubble">
                 {% if m.content %}{{ m.content }}{% endif %}
-                {% if m.file_path %}
+                {% if m.is_sticker %}
+                    <img src="{{ m.file_path }}" class="sticker" onclick="window.open(this.src)">
+                {% elif m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
@@ -94,21 +83,28 @@
                         <span style="font-size:11px">{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
-                <div class="time">❤️ {{ m.timestamp.strftime('%H:%M') }} 💛</div>
+                <div class="time">💙 {{ m.timestamp.strftime('%H:%M') }} 💖</div>
             </div>
         </div>
         {% endfor %}
     </div>
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="💚💛 Напишите сообщение...">
+        <input type="text" id="msgInput" placeholder="💙💚💖 Напишите сообщение...">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
         <button class="voice-btn" id="voiceBtn">🎤</button>
+        <button class="sticker-btn" id="stickerBtn">🎨</button>
         <button onclick="sendMsg()">💪</button>
     </div>
     <div class="emoji-picker" id="emojiPicker">
-        <span>😀</span><span>😍</span><span>🥰</span><span>🇷🇺</span><span>💪</span><span>🔥</span><span>💚</span><span>💛</span>
+        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span><span>💗</span>
         <span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span><span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span>
+    </div>
+    <div class="sticker-picker" id="stickerPicker">
+        <img src="https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/smile.svg" onclick="sendSticker('https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/smile.svg')">
+        <img src="https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/heart.svg" onclick="sendSticker('https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/heart.svg')">
+        <img src="https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/star.svg" onclick="sendSticker('https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/star.svg')">
+        <img src="https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/fire.svg" onclick="sendSticker('https://cdn.jsdelivr.net/npm/@emoji-awesome/emoji-awesome@1.0.0/dist/svg/fire.svg')">
     </div>
     <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
 </div>
@@ -121,6 +117,17 @@
     
     function playVoice(el) { const audio = new Audio(el.closest('.bubble').querySelector('audio')?.src); if(audio) audio.play(); }
     
+    function sendSticker(stickerUrl) {
+        fetch('/send_sticker', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({sticker_url: stickerUrl, type: 'group', id: group_id})
+        }).then(() => {
+            document.getElementById('stickerPicker').style.display = 'none';
+            checkNewMessages();
+        });
+    }
+    
     function addNewMessage(msg) {
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
@@ -128,14 +135,16 @@
         div.setAttribute('data-id', msg.id);
         let contentHtml = '';
         if(msg.content) contentHtml += msg.content;
-        if(msg.file_path) {
+        if(msg.is_sticker) {
+            contentHtml += `<img src="${msg.file_path}" class="sticker" onclick="window.open(this.src)">`;
+        } else if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
             else if(msg.file_type == 'audio') contentHtml += `<audio controls src="${msg.file_path}"></audio>`;
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
             else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
         }
         if(msg.voice_duration && msg.voice_duration > 0) contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
-        div.innerHTML = `${msg.sender_name && !msg.is_own ? `<div class="sender">${msg.sender_name}</div>` : ''}<div class="bubble">${contentHtml}<div class="time">❤️ ${msg.timestamp} 💛</div></div>`;
+        div.innerHTML = `${msg.sender_name && !msg.is_own ? `<div class="sender">${msg.sender_name}</div>` : ''}<div class="bubble">${contentHtml}<div class="time">💙 ${msg.timestamp} 💖</div></div>`;
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
@@ -217,13 +226,21 @@
     function stopRecording() { if(mediaRecorder && isRecording) mediaRecorder.stop(); }
     function toggleRecording() { if(isRecording) stopRecording(); else startRecording(); }
     document.getElementById('voiceBtn').onclick = toggleRecording;
-    document.getElementById('emojiBtn').onclick = () => { const p = document.getElementById('emojiPicker'); p.style.display = p.style.display === 'none' ? 'grid' : 'none'; };
+    document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').style.display = 'grid'; document.getElementById('stickerPicker').style.display = 'none'; };
+    document.getElementById('stickerBtn').onclick = () => { document.getElementById('stickerPicker').style.display = 'grid'; document.getElementById('emojiPicker').style.display = 'none'; };
     document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').style.display = 'none'; msgInput.focus(); }; });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('group_msg_' + group_id) || '';
     msgInput.addEventListener('input', () => localStorage.setItem('group_msg_' + group_id, msgInput.value));
     window.scrollTo(0, document.body.scrollHeight);
-    document.addEventListener('click', (e) => { if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { document.getElementById('emojiPicker').style.display = 'none'; } });
+    document.addEventListener('click', (e) => {
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker').style.display = 'none';
+        }
+        if(!document.getElementById('stickerPicker').contains(e.target) && e.target !== document.getElementById('stickerBtn')) {
+            document.getElementById('stickerPicker').style.display = 'none';
+        }
+    });
     pollingInterval = setInterval(checkNewMessages, 2000);
 </script>
 </body>

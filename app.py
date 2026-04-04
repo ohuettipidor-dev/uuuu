@@ -14,13 +14,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 VOICE_FOLDER = 'static/voices'
+STICKER_FOLDER = 'static/stickers'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
+os.makedirs(STICKER_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
+app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
@@ -56,6 +59,7 @@ class Message(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     voice_duration = db.Column(db.Integer, default=0)
+    is_sticker = db.Column(db.Boolean, default=False)
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -77,6 +81,7 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
+    is_sticker = db.Column(db.Boolean, default=False)
 
 @login_manager.user_loader
 def load_user(uid):
@@ -174,6 +179,24 @@ def upload_voice():
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
+@app.route('/send_sticker', methods=['POST'])
+@login_required
+def send_sticker():
+    data = request.get_json()
+    sticker_url = data.get('sticker_url')
+    chat_type = data.get('type')
+    chat_id = data.get('id')
+    if chat_type == 'private':
+        msg = Message(content='', file_path=sticker_url, file_name='sticker.png', file_type='image', is_sticker=True, sender_id=current_user.id, receiver_id=chat_id)
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({'success': True})
+    else:
+        msg = GroupMessage(content='', file_path=sticker_url, file_name='sticker.png', file_type='image', is_sticker=True, sender_id=current_user.id, group_id=chat_id)
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({'success': True})
+
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
@@ -239,7 +262,7 @@ def send_group():
         voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
-    return redirect(url_for('group_chat', gid=request.form['group_id']))
+    return '', 204
 
 @app.route('/chat')
 @login_required
@@ -292,7 +315,7 @@ def send():
         voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
-    return redirect(url_for('messages', uid=request.form['receiver_id']))
+    return '', 204
 
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
@@ -312,7 +335,8 @@ def get_new_messages(last_id, receiver_id):
             'file_type': m.file_type,
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
-            'voice_duration': m.voice_duration
+            'voice_duration': m.voice_duration,
+            'is_sticker': m.is_sticker
         })
     return jsonify(result)
 
@@ -337,7 +361,8 @@ def get_new_group_messages(last_id, group_id):
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
             'sender_name': m.sender.username,
-            'voice_duration': m.voice_duration
+            'voice_duration': m.voice_duration,
+            'is_sticker': m.is_sticker
         })
     return jsonify(result)
 
