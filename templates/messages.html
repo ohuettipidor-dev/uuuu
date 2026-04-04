@@ -3,6 +3,7 @@
 <head>
     <title>Чат с {{ other.username }}</title>
     <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="3">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:#0e1621;color:#fff}
@@ -20,8 +21,7 @@
         .received .bubble{background:#1e2a36;color:#fff}
         .time{font-size:10px;color:#7f8c8d;margin-top:4px;text-align:center}
         .file{display:inline-block;margin-top:5px;color:#2ea6ff}
-        img{max-width:200px;max-height:200px;border-radius:10px}
-        audio,video{max-width:200px}
+        img,audio,video{max-width:200px;border-radius:10px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
         .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
@@ -51,7 +51,7 @@
                 {% if m.content %}{{ m.content }}{% endif %}
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
+                        <img src="{{ m.file_path }}">
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' %}
@@ -74,8 +74,6 @@
 </div>
 <script>
     const receiver_id = {{ other.id }};
-    let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
-    
     function sendMsg() {
         let content = document.getElementById('msgInput').value.trim();
         if(!content) return;
@@ -88,7 +86,6 @@
             location.reload();
         });
     }
-    
     function sendFile(file) {
         let fd = new FormData();
         fd.append('file', file);
@@ -104,18 +101,7 @@
                 } else alert('Ошибка загрузки');
             });
     }
-    
-    function checkNewMessages() {
-        fetch('/get_new_messages?last_id=' + lastMsgId + '&receiver_id=' + receiver_id)
-            .then(r => r.json())
-            .then(msgs => {
-                if(msgs.length > 0) location.reload();
-            });
-    }
-    
     document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
-    setInterval(checkNewMessages, 5000);
-    window.scrollTo(0, document.body.scrollHeight);
 </script>
 </body>
 </html>
