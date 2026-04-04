@@ -77,7 +77,6 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
-    # ВАЖНО: связь с отправителем
     sender = db.relationship('User', foreign_keys=[sender_id])
 
 @login_manager.user_loader
@@ -261,7 +260,8 @@ def chat():
     for g in groups:
         last = GroupMessage.query.filter_by(group_id=g.id).order_by(GroupMessage.timestamp.desc()).first()
         convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'last': last, 'unread': 0})
-    convs.sort(key=lambda x: x['last'].timestamp if x['last'] else datetime.min, reverse=True)
+    # Сортируем, но обрабатываем None
+    convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs)
 
 @app.route('/messages/<int:uid>')
@@ -338,7 +338,7 @@ def get_new_group_messages(last_id, group_id):
             'file_type': m.file_type,
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
-            'sender_name': m.sender.username,
+            'sender_name': m.sender.username if m.sender else 'Unknown',
             'voice_duration': m.voice_duration
         })
     return jsonify(result)

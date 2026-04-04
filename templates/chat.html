@@ -74,10 +74,20 @@
                         <span class="online">👥 группа</span>
                     {% endif %}
                 </div>
-                <div class="chat-last">{% if c.last %}{{ c.last.content[:50] }}{% else %}💬 Нет сообщений{% endif %}</div>
+                <div class="chat-last">
+                    {% if c.last and c.last.content %}
+                        {{ c.last.content[:50] }}
+                    {% else %}
+                        💬 Нет сообщений
+                    {% endif %}
+                </div>
             </div>
             <div class="chat-meta">
-                <div class="chat-time">{% if c.last %}{{ c.last.timestamp.strftime('%H:%M') }}{% endif %}</div>
+                <div class="chat-time">
+                    {% if c.last and c.last.timestamp %}
+                        {{ c.last.timestamp.strftime('%H:%M') }}
+                    {% endif %}
+                </div>
                 {% if c.unread > 0 %}<div class="badge">{{ c.unread }}</div>{% endif %}
             </div>
         </div>
