@@ -11,13 +11,6 @@ app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.after_request
-def no_cache(response):
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '-1'
-    return response
-
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
@@ -59,8 +52,6 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    sender = db.relationship('User', foreign_keys=[sender_id])
-    receiver = db.relationship('User', foreign_keys=[receiver_id])
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -81,7 +72,6 @@ class GroupMessage(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
-    sender = db.relationship('User', foreign_keys=[sender_id])
 
 @login_manager.user_loader
 def load_user(uid):
@@ -140,7 +130,7 @@ def profile():
         if f and allowed_file(f.filename):
             ext = f.filename.rsplit('.', 1)[1].lower()
             name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-            f.save(os.path.join(app.config['AVATAR_FOLDER'], name))
+            f.save(os.path.join(AVATAR_FOLDER, name))
             current_user.avatar = name
             db.session.commit()
             flash('Аватар обновлён', 'success')
@@ -158,7 +148,7 @@ def upload():
     if allowed_file(f.filename):
         ext = f.filename.rsplit('.', 1)[1].lower()
         name = f"{uuid.uuid4().hex}.{ext}"
-        f.save(os.path.join(app.config['FILE_FOLDER'], name))
+        f.save(os.path.join(FILE_FOLDER, name))
         if ext in ['png','jpg','jpeg','gif','webp','bmp']: ft = 'image'
         elif ext in ['mp3','wav','ogg','flac','m4a']: ft = 'audio'
         elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
@@ -173,15 +163,11 @@ def create_group():
     if not name:
         flash('Название группы обязательно', 'danger')
         return redirect(url_for('chat'))
-    
     group = Group(name=name, created_by=current_user.id)
     db.session.add(group)
     db.session.commit()
-    
-    member = GroupMember(user_id=current_user.id, group_id=group.id)
-    db.session.add(member)
+    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id))
     db.session.commit()
-    
     flash(f'Группа "{name}" создана!', 'success')
     return redirect(url_for('chat'))
 
@@ -189,62 +175,44 @@ def create_group():
 @login_required
 def add_member(gid):
     group = Group.query.get(gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    
-    if group.created_by != current_user.id:
-        flash('Только создатель группы может добавлять участников', 'danger')
+    if not group or group.created_by != current_user.id:
+        flash('Нет прав', 'danger')
         return redirect(url_for('group_chat', gid=gid))
-    
-    username = request.form.get('username')
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=request.form['username']).first()
     if not user:
         flash('Пользователь не найден', 'danger')
-    elif user.id == current_user.id:
-        flash('Нельзя добавить самого себя', 'danger')
     elif GroupMember.query.filter_by(user_id=user.id, group_id=gid).first():
-        flash('Пользователь уже в группе', 'danger')
+        flash('Уже в группе', 'danger')
     else:
         db.session.add(GroupMember(user_id=user.id, group_id=gid))
         db.session.commit()
-        flash(f'{user.username} добавлен в группу!', 'success')
-    
+        flash(f'{user.username} добавлен', 'success')
     return redirect(url_for('group_chat', gid=gid))
 
 @app.route('/group/<int:gid>')
 @login_required
 def group_chat(gid):
     group = Group.query.get(gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
+    if not group or not GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first():
+        flash('Группа не найдена или вы не участник', 'danger')
         return redirect(url_for('chat'))
-    
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member:
-        flash('Вы не участник этой группы', 'danger')
-        return redirect(url_for('chat'))
-    
     messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
     members = GroupMember.query.filter_by(group_id=gid).all()
-    
     for m in members:
         m.user = User.query.get(m.user_id)
-    
-    return render_template('group_chat.html', group=group, messages=messages, members=members, current_user=current_user)
+    return render_template('group_chat.html', group=group, messages=messages, members=members)
 
 @app.route('/send_group', methods=['POST'])
 @login_required
 def send_group():
-    msg = GroupMessage(
+    db.session.add(GroupMessage(
         content=request.form.get('content'),
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
         sender_id=current_user.id,
         group_id=request.form['group_id']
-    )
-    db.session.add(msg)
+    ))
     db.session.commit()
     return redirect(url_for('group_chat', gid=request.form['group_id']))
 
