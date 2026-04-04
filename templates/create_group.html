@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Messenger">
+    <meta name="theme-color" content="#2ea6ff">
+    <title>Создать группу - Мессенджер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #17212b;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h2 { color: white; text-align: center; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { color: #7f8c8d; display: block; margin-bottom: 8px; font-size: 14px; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #242f3d;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2ea6ff;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #1e8ae6; }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #2ea6ff;
+            color: #2ea6ff;
+            text-align: center;
+            display: inline-block;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+        .flash {
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .flash-success { background: rgba(46,204,113,0.2); border: 1px solid #2ecc71; color: #2ecc71; }
+        .flash-danger { background: rgba(231,76,60,0.2); border: 1px solid #e74c3c; color: #e74c3c; }
+        .back-link { text-align: center; margin-top: 20px; }
+        .back-link a { color: #2ea6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Создать новую группу</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/create_group">
+            <div class="form-group">
+                <label>Название группы</label>
+                <input type="text" name="name" required placeholder="Введите название">
+            </div>
+            <div class="form-group">
+                <label>Описание (необязательно)</label>
+                <textarea name="description" placeholder="Расскажите о группе..."></textarea>
+            </div>
+            <button type="submit">Создать группу</button>
+        </form>
+
+        <div class="back-link">
+            <a href="/profile">← Вернуться в профиль</a>
+        </div>
+    </div>
+</body>
+</html>

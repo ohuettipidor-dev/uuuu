@@ -1,0 +1,21 @@
+{
+  "name": "Мессенджер",
+  "short_name": "Messenger",
+  "description": "Telegram-подобный мессенджер",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#17212b",
+  "theme_color": "#2ea6ff",
+  "icons": [
+    {
+      "src": "/static/uploads/avatars/default.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/uploads/avatars/default.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

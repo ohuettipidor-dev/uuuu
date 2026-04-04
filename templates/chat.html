@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Диалоги</title>
+    <meta http-equiv="refresh" content="5">
+</head>
+<body>
+    <h2>Привет, {{ current_user.username }}!</h2>
+    <a href="/profile">👤 Мой профиль</a>
+    <a href="/logout" style="margin-left:20px;">🚪 Выйти</a>
+    
+    <h3>Создать новую группу:</h3>
+    <form method="POST" action="/create_group">
+        <input type="text" name="name" placeholder="Название группы" required>
+        <button type="submit">Создать группу</button>
+    </form>
+    
+    <h3>Диалоги:</h3>
+    {% for conv in conversations %}
+        <div style="border:1px solid #ccc; margin:10px 0; padding:10px;">
+            <a href="{% if conv.type == 'private' %}/get_messages/{{ conv.id }}{% else %}/group/{{ conv.id }}{% endif %}">
+                <strong>{{ conv.name }}</strong>
+            </a>
+            <div>
+                Последнее сообщение: 
+                {% if conv.last_message %}
+                    {{ conv.last_message.content[:50] }}
+                {% else %}
+                    Нет сообщений
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</body>
+</html>

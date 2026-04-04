@@ -1,0 +1,33 @@
+<script>
+    function uploadFile(file) {
+        var formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/upload_file', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.file_path) {
+                document.getElementById('file_path').value = data.file_path;
+                document.getElementById('file_name').value = data.file_name;
+                document.getElementById('file_type').value = data.file_type;
+                document.getElementById('content').value = '';
+                document.getElementById('messageForm').submit();
+            } else {
+                alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            alert('Ошибка: ' + error);
+        });
+    }
+    
+    // Автоматическое обновление страницы после отправки формы
+    document.getElementById('messageForm').addEventListener('submit', function() {
+        setTimeout(function() {
+            location.reload();
+        }, 500);
+    });
+</script>

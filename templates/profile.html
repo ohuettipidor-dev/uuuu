@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Профиль</title>
+</head>
+<body>
+    <h2>Профиль пользователя {{ user.username }}</h2>
+    <a href="/chat">← Назад к чату</a>
+    <a href="/logout" style="margin-left:20px;">Выйти</a>
+    
+    <div style="margin:20px 0;">
+        <h3>Текущий аватар:</h3>
+        <img src="/static/avatars/{{ user.avatar }}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;" 
+             onerror="this.src='https://via.placeholder.com/100?text=No+Avatar'">
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div style="margin:20px 0;">
+            <label>Загрузить новый аватар:</label>
+            <input type="file" name="avatar" accept="image/*" required>
+        </div>
+        <button type="submit">Обновить аватар</button>
+    </form>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: {% if category == 'success' %}green{% else %}red{% endif %};">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</body>
+</html>
