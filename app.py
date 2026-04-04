@@ -5,13 +5,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import uuid
+import mimetypes
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Запрет кэширования
 @app.after_request
 def no_cache(response):
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
@@ -19,7 +19,6 @@ def no_cache(response):
     response.headers['Expires'] = '-1'
     return response
 
-# Папки для загрузки
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
@@ -30,10 +29,10 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
-    'png', 'jpg', 'jpeg', 'gif', 'webp',
-    'mp3', 'wav', 'ogg', 'flac',
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
+    'mp3', 'wav', 'ogg', 'flac', 'm4a',
     'mp4', 'avi', 'mov', 'mkv', 'webm',
-    'pdf', 'doc', 'docx', 'txt', 'zip', 'rar'
+    'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', '7z'
 }
 
 def allowed_file(f):
@@ -43,7 +42,6 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# ==================== МОДЕЛИ ====================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -93,7 +91,6 @@ def load_user(uid):
 with app.app_context():
     db.create_all()
 
-# ==================== МАРШРУТЫ ====================
 @app.route('/')
 def index():
     return redirect(url_for('chat')) if current_user.is_authenticated else render_template('index.html')
@@ -163,8 +160,8 @@ def upload():
         ext = f.filename.rsplit('.', 1)[1].lower()
         name = f"{uuid.uuid4().hex}.{ext}"
         f.save(os.path.join(app.config['FILE_FOLDER'], name))
-        if ext in ['png','jpg','jpeg','gif','webp']: ft = 'image'
-        elif ext in ['mp3','wav','ogg','flac']: ft = 'audio'
+        if ext in ['png','jpg','jpeg','gif','webp','bmp']: ft = 'image'
+        elif ext in ['mp3','wav','ogg','flac','m4a']: ft = 'audio'
         elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
         else: ft = 'document'
         return jsonify({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': ft})
@@ -275,6 +272,20 @@ def send():
     ))
     db.session.commit()
     return redirect(url_for('messages', uid=request.form['receiver_id']))
+
+@app.route('/get_new_messages')
+@login_required
+def get_new_messages():
+    last_id = request.args.get('last_id', 0, type=int)
+    receiver_id = request.args.get('receiver_id', 0, type=int)
+    if not receiver_id:
+        return jsonify([])
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
+        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
+        Message.id > last_id
+    ).order_by(Message.timestamp).all()
+    return jsonify([{'id': m.id} for m in msgs])
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
