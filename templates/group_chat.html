@@ -88,8 +88,7 @@
             body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
             document.getElementById('msgInput').value = '';
-            // ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА
-            window.location.href = window.location.href;
+            window.location.reload();
         });
     }
     
@@ -105,8 +104,7 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        // ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА ПОСЛЕ ФАЙЛА
-                        window.location.href = window.location.href;
+                        window.location.reload();
                     });
                 } else {
                     alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
