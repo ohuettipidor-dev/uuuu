@@ -316,6 +316,31 @@ def get_new_messages(last_id, receiver_id):
         })
     return jsonify(result)
 
+@app.route('/get_new_group_messages/<int:last_id>/<int:group_id>')
+@login_required
+def get_new_group_messages(last_id, group_id):
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
+    if not member:
+        return jsonify([])
+    msgs = GroupMessage.query.filter(
+        GroupMessage.group_id == group_id,
+        GroupMessage.id > last_id
+    ).order_by(GroupMessage.timestamp).all()
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'is_own': m.sender_id == current_user.id,
+            'sender_name': m.sender.username,
+            'voice_duration': m.voice_duration
+        })
+    return jsonify(result)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
