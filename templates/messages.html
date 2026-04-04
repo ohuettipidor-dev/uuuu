@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap}
@@ -35,13 +35,8 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         .voice-msg{display:flex;align-items:center;gap:8px;cursor:pointer}
-        .voice-msg span{font-size:20px}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:3px;height:8px;background:#ff6b6b;border-radius:2px;animation:wave 0.5s ease infinite alternate}
-        .voice-wave div:nth-child(1){animation-delay:0s}
-        .voice-wave div:nth-child(2){animation-delay:0.1s}
-        .voice-wave div:nth-child(3){animation-delay:0.2s}
-        .voice-wave div:nth-child(4){animation-delay:0.3s}
         @keyframes wave{from{height:8px}to{height:16px}}
     </style>
 </head>
@@ -80,9 +75,7 @@
                 {% if m.voice_duration and m.voice_duration > 0 %}
                     <div class="voice-msg" onclick="playVoice(this)">
                         <span>🎤</span>
-                        <div class="voice-wave">
-                            <div></div><div></div><div></div><div></div>
-                        </div>
+                        <div class="voice-wave"><div></div><div></div><div></div><div></div></div>
                         <span style="font-size:11px">{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
@@ -96,6 +89,7 @@
     </div>
     <div class="input-area">
         <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
+        <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
         <button class="voice-btn" id="voiceBtn">🎤</button>
@@ -108,7 +102,6 @@
         <span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span><span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span>
         <span>🧸</span><span>🎈</span><span>🎀</span><span>🌸</span><span>🌺</span><span>🍰</span><span>🎂</span><span>🍭</span>
     </div>
-    <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
 </div>
 <script>
     const receiver_id = {{ other.id }};
@@ -121,7 +114,7 @@
     let pollingInterval = null;
     
     function playVoice(el) {
-        const audio = new Audio(el.closest('.bubble').querySelector('audio')?.src);
+        const audio = el.closest('.bubble').querySelector('audio');
         if(audio) audio.play();
     }
     
@@ -138,7 +131,7 @@
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
             else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
         }
-        if(msg.voice_duration) {
+        if(msg.voice_duration && msg.voice_duration > 0) {
             contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
         div.innerHTML = `<div class="bubble">${contentHtml}<div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
@@ -165,7 +158,7 @@
         }).then(() => {
             msgInput.value = '';
             localStorage.setItem('msg_' + receiver_id, '');
-            checkNewMessages();
+            setTimeout(() => checkNewMessages(), 500);
         });
     }
     
@@ -180,7 +173,9 @@
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => checkNewMessages());
+                    }).then(() => {
+                        setTimeout(() => checkNewMessages(), 500);
+                    });
                 } else alert('Ошибка: ' + d.error);
             });
     }
@@ -206,7 +201,9 @@
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                                 body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
-                            }).then(() => checkNewMessages());
+                            }).then(() => {
+                                setTimeout(() => checkNewMessages(), 500);
+                            });
                         }
                     });
                 stream.getTracks().forEach(t => t.stop());
@@ -252,7 +249,7 @@
             document.getElementById('emojiPicker').style.display = 'none';
         }
     });
-    pollingInterval = setInterval(checkNewMessages, 2000);
+    pollingInterval = setInterval(checkNewMessages, 3000);
 </script>
 </body>
 </html>

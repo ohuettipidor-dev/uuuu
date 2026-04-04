@@ -16,7 +16,7 @@
         .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;background:white;color:#333;display:inline-block}
         .own{text-align:right}
         .own .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white}
-        .sender{font-size:11px;color:#ff6b6b;margin-bottom:4px}
+        .sender{font-size:11px;color:#ff6b6b;margin-bottom:4px;font-weight:bold}
         .time{font-size:10px;color:#aaa;margin-top:4px}
         .file-link{color:#ff6b6b}
         img,audio,video{max-width:200px;border-radius:15px}
@@ -85,6 +85,7 @@
     </div>
     <div class="input-area">
         <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
+        <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
         <button class="voice-btn" id="voiceBtn">🎤</button>
@@ -93,7 +94,6 @@
     <div class="emoji-picker" id="emojiPicker">
         <span>😀</span><span>😍</span><span>🥰</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🧸</span><span>🎈</span>
     </div>
-    <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
 </div>
 <script>
     const group_id = {{ group.id }};
@@ -102,7 +102,10 @@
     let lastMsgId = {{ messages[-1].id if messages else 0 }};
     let pollingInterval = null;
     
-    function playVoice(el) { const audio = new Audio(el.closest('.bubble').querySelector('audio')?.src); if(audio) audio.play(); }
+    function playVoice(el) { 
+        const audio = el.closest('.bubble').querySelector('audio');
+        if(audio) audio.play();
+    }
     
     function addNewMessage(msg) {
         const messagesDiv = document.getElementById('messages');
@@ -117,7 +120,9 @@
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
             else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
         }
-        if(msg.voice_duration) contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+        if(msg.voice_duration && msg.voice_duration > 0) {
+            contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
+        }
         div.innerHTML = `${msg.sender_name && !msg.is_own ? `<div class="sender">${msg.sender_name}</div>` : ''}<div class="bubble">${contentHtml}<div class="time">${msg.timestamp}</div></div>`;
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -127,7 +132,9 @@
     function checkNewMessages() {
         fetch(`/get_new_group_messages/${lastMsgId}/${group_id}`)
             .then(r => r.json())
-            .then(msgs => { msgs.forEach(msg => addNewMessage(msg)); });
+            .then(msgs => { 
+                msgs.forEach(msg => addNewMessage(msg)); 
+            });
     }
     
     function sendMsg() {
@@ -140,7 +147,7 @@
         }).then(() => {
             msgInput.value = '';
             localStorage.setItem('group_msg_' + group_id, '');
-            checkNewMessages();
+            setTimeout(() => checkNewMessages(), 500);
         });
     }
     
@@ -155,7 +162,9 @@
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => checkNewMessages());
+                    }).then(() => {
+                        setTimeout(() => checkNewMessages(), 500);
+                    });
                 } else alert('Ошибка: ' + d.error);
             });
     }
@@ -181,7 +190,9 @@
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                                 body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
-                            }).then(() => checkNewMessages());
+                            }).then(() => {
+                                setTimeout(() => checkNewMessages(), 500);
+                            });
                         }
                     });
                 stream.getTracks().forEach(t => t.stop());
@@ -200,14 +211,27 @@
     function stopRecording() { if(mediaRecorder && isRecording) mediaRecorder.stop(); }
     function toggleRecording() { if(isRecording) stopRecording(); else startRecording(); }
     document.getElementById('voiceBtn').onclick = toggleRecording;
-    document.getElementById('emojiBtn').onclick = () => { const p = document.getElementById('emojiPicker'); p.style.display = p.style.display === 'none' ? 'grid' : 'none'; };
-    document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').style.display = 'none'; msgInput.focus(); }; });
+    document.getElementById('emojiBtn').onclick = () => { 
+        const p = document.getElementById('emojiPicker'); 
+        p.style.display = p.style.display === 'none' ? 'grid' : 'none'; 
+    };
+    document.querySelectorAll('.emoji-picker span').forEach(e => { 
+        e.onclick = () => { 
+            msgInput.value += e.textContent; 
+            document.getElementById('emojiPicker').style.display = 'none'; 
+            msgInput.focus(); 
+        }; 
+    });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('group_msg_' + group_id) || '';
     msgInput.addEventListener('input', () => localStorage.setItem('group_msg_' + group_id, msgInput.value));
     window.scrollTo(0, document.body.scrollHeight);
-    document.addEventListener('click', (e) => { if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { document.getElementById('emojiPicker').style.display = 'none'; } });
-    pollingInterval = setInterval(checkNewMessages, 2000);
+    document.addEventListener('click', (e) => { 
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { 
+            document.getElementById('emojiPicker').style.display = 'none'; 
+        } 
+    });
+    pollingInterval = setInterval(checkNewMessages, 3000);
 </script>
 </body>
 </html>

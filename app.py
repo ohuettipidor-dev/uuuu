@@ -77,6 +77,8 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
+    # Добавляем связь с пользователем
+    sender = db.relationship('User', foreign_keys=[sender_id])
 
 @login_manager.user_loader
 def load_user(uid):
@@ -312,6 +314,31 @@ def get_new_messages(last_id, receiver_id):
             'file_type': m.file_type,
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
+            'voice_duration': m.voice_duration
+        })
+    return jsonify(result)
+
+@app.route('/get_new_group_messages/<int:last_id>/<int:group_id>')
+@login_required
+def get_new_group_messages(last_id, group_id):
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
+    if not member:
+        return jsonify([])
+    msgs = GroupMessage.query.filter(
+        GroupMessage.group_id == group_id,
+        GroupMessage.id > last_id
+    ).order_by(GroupMessage.timestamp).all()
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'is_own': m.sender_id == current_user.id,
+            'sender_name': m.sender.username,
             'voice_duration': m.voice_duration
         })
     return jsonify(result)
