@@ -1,33 +1,93 @@
-<script>
-    function uploadFile(file) {
-        var formData = new FormData();
-        formData.append('file', file);
-        
-        fetch('/upload_file', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.file_path) {
-                document.getElementById('file_path').value = data.file_path;
-                document.getElementById('file_name').value = data.file_name;
-                document.getElementById('file_type').value = data.file_type;
-                document.getElementById('content').value = '';
-                document.getElementById('messageForm').submit();
-            } else {
-                alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
-            }
-        })
-        .catch(error => {
-            alert('Ошибка: ' + error);
-        });
-    }
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Чат с {{ other_user.username }}</title>
+    <style>
+        .message-container { border:1px solid #ccc; height:400px; overflow:auto; margin:20px 0; padding:10px; }
+        .message { margin:10px 0; }
+        .sent { text-align: right; }
+        .received { text-align: left; }
+        .bubble { display:inline-block; padding:8px 12px; border-radius:15px; max-width:70%; }
+        .sent .bubble { background:#007bff; color:white; }
+        .received .bubble { background:#e9ecef; color:black; }
+        .time { font-size:11px; color:gray; margin-top:4px; }
+        .refresh-btn { margin:10px 0; padding:8px 16px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; }
+        img { max-width: 200px; max-height: 200px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; align-items:center;">
+        <img src="/static/avatars/{{ other_user.avatar }}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-right:15px;" 
+             onerror="this.src='https://via.placeholder.com/50?text=No+Avatar'">
+        <h2>Чат с {{ other_user.username }}</h2>
+    </div>
+    <a href="/chat">← Назад к диалогам</a>
+    <a href="/profile" style="margin-left:20px;">👤 Мой профиль</a>
+    <a href="/logout" style="margin-left:20px;">🚪 Выйти</a>
     
-    // Автоматическое обновление страницы после отправки формы
-    document.getElementById('messageForm').addEventListener('submit', function() {
-        setTimeout(function() {
-            location.reload();
-        }, 500);
-    });
-</script>
+    <div>
+        <button class="refresh-btn" onclick="location.reload()">🔄 Обновить чат</button>
+    </div>
+    
+    <div class="message-container">
+        {% for msg in messages %}
+            <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                <div class="bubble">
+                    {% if msg.content %}
+                        {{ msg.content }}
+                    {% elif msg.file_path %}
+                        {% if msg.file_type == 'image' %}
+                            <img src="{{ msg.file_path }}" alt="image">
+                        {% else %}
+                            <a href="{{ msg.file_path }}" download="{{ msg.file_name }}">📎 {{ msg.file_name }}</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="time">
+                    {{ msg.timestamp.strftime('%H:%M') }}
+                    {% if msg.sender_id == current_user.id and msg.is_read %}✓✓{% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <form method="POST" action="/send_message" id="messageForm">
+        <input type="hidden" name="receiver_id" value="{{ other_user.id }}">
+        <input type="hidden" name="file_path" id="file_path">
+        <input type="hidden" name="file_name" id="file_name">
+        <input type="hidden" name="file_type" id="file_type">
+        <input type="text" name="content" id="content" placeholder="Ваше сообщение..." style="width: 60%; padding:10px;" autofocus>
+        <button type="button" onclick="document.getElementById('fileInput').click()" style="padding:10px;">📎 Прикрепить</button>
+        <button type="submit" style="padding:10px;">Отправить</button>
+    </form>
+    
+    <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this.files[0])">
+    
+    <script>
+        function uploadFile(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/upload_file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.file_path) {
+                    document.getElementById('file_path').value = data.file_path;
+                    document.getElementById('file_name').value = data.file_name;
+                    document.getElementById('file_type').value = data.file_type;
+                    document.getElementById('content').value = '';
+                    document.getElementById('messageForm').submit();
+                } else {
+                    alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                alert('Ошибка: ' + error);
+            });
+        }
+    </script>
+</body>
+</html>
