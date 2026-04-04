@@ -11,6 +11,15 @@ app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# ========== ЗАПРЕТ КЭШИРОВАНИЯ (РЕШАЕТ ОШИБКУ 500 ПРИ ВОЗВРАТЕ) ==========
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+# =========================================================================
+
 UPLOAD_FOLDER_AVATARS = 'static/avatars'
 os.makedirs(UPLOAD_FOLDER_AVATARS, exist_ok=True)
 
@@ -307,24 +316,22 @@ def chat():
 @app.route('/get_messages/<int:user_id>')
 @login_required
 def get_messages(user_id):
-    # Простейший безопасный вариант
-    other = User.query.filter_by(id=user_id).first()
-    if not other:
-        flash('Пользователь не найден')
+    other_user = User.query.get(user_id)
+    if not other_user:
+        flash('Пользователь не найден', 'danger')
         return redirect(url_for('chat'))
     
     messages = Message.query.filter(
-        (Message.sender_id == current_user.id) & (Message.receiver_id == user_id) |
-        (Message.sender_id == user_id) & (Message.receiver_id == current_user.id)
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
     ).order_by(Message.timestamp).all()
     
-    # Помечаем прочитанные
-    for msg in messages:
-        if msg.receiver_id == current_user.id and not msg.is_read:
-            msg.is_read = True
+    unread = Message.query.filter(Message.sender_id == user_id, Message.receiver_id == current_user.id, Message.is_read == False).all()
+    for msg in unread:
+        msg.is_read = True
     db.session.commit()
     
-    return render_template('messages.html', messages=messages, other_user=other, current_user=current_user)
+    return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
 
 @app.route('/send_message', methods=['POST'])
 @login_required
@@ -345,7 +352,6 @@ def send_message():
     )
     db.session.add(msg)
     db.session.commit()
-    
     return redirect(url_for('get_messages', user_id=receiver_id))
 
 if __name__ == '__main__':
