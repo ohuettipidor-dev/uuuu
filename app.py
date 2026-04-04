@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import uuid
+import mimetypes
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -21,10 +22,16 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
-    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
-    'mp3', 'wav', 'ogg', 'flac', 'm4a',
-    'mp4', 'avi', 'mov', 'mkv', 'webm',
-    'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', '7z'
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico',
+    'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac',
+    'mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv',
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'md',
+    'zip', 'rar', '7z', 'tar', 'gz', 'bz2',
+    'exe', 'msi', 'apk', 'dmg', 'iso',
+    'psd', 'ai', 'cdr', 'svg', 'eps',
+    'ttf', 'otf', 'woff', 'woff2',
+    'json', 'xml', 'csv', 'log',
+    'py', 'js', 'html', 'css', 'php', 'java', 'c', 'cpp', 'h'
 }
 
 def allowed_file(f):
@@ -146,14 +153,25 @@ def upload():
     if f.filename == '':
         return jsonify({'error': 'Файл не выбран'}), 400
     if allowed_file(f.filename):
-        ext = f.filename.rsplit('.', 1)[1].lower()
+        original_name = f.filename
+        ext = original_name.rsplit('.', 1)[1].lower()
         name = f"{uuid.uuid4().hex}.{ext}"
         f.save(os.path.join(FILE_FOLDER, name))
-        if ext in ['png','jpg','jpeg','gif','webp','bmp']: ft = 'image'
-        elif ext in ['mp3','wav','ogg','flac','m4a']: ft = 'audio'
-        elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
-        else: ft = 'document'
-        return jsonify({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': ft})
+        
+        if ext in ['png','jpg','jpeg','gif','webp','bmp','ico']:
+            ft = 'image'
+        elif ext in ['mp3','wav','ogg','flac','m4a','aac']:
+            ft = 'audio'
+        elif ext in ['mp4','avi','mov','mkv','webm','flv','wmv']:
+            ft = 'video'
+        else:
+            ft = 'document'
+        
+        return jsonify({
+            'path': f'/static/uploads/{name}', 
+            'name': original_name, 
+            'type': ft
+        })
     return jsonify({'error': 'Формат не поддерживается'}), 400
 
 @app.route('/create_group', methods=['POST'])
