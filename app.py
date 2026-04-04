@@ -307,43 +307,57 @@ def chat():
 @app.route('/get_messages/<int:user_id>')
 @login_required
 def get_messages(user_id):
-    other_user = User.query.get(user_id)
-    if not other_user:
-        flash('Пользователь не найден', 'danger')
+    try:
+        other_user = db.session.get(User, user_id)
+        if not other_user:
+            flash('Пользователь не найден', 'danger')
+            return redirect(url_for('chat'))
+        
+        messages = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+            ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
+        ).order_by(Message.timestamp).all()
+        
+        unread_messages = Message.query.filter(
+            Message.sender_id == user_id,
+            Message.receiver_id == current_user.id,
+            Message.is_read == False
+        ).all()
+        
+        for msg in unread_messages:
+            msg.is_read = True
+        db.session.commit()
+        
+        return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
+    except Exception as e:
+        print(f"Error in get_messages: {e}")
+        flash('Ошибка загрузки сообщений', 'danger')
         return redirect(url_for('chat'))
-    
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
-        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.timestamp).all()
-    
-    unread = Message.query.filter(Message.sender_id == user_id, Message.receiver_id == current_user.id, Message.is_read == False).all()
-    for msg in unread:
-        msg.is_read = True
-    db.session.commit()
-    
-    return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
 
 @app.route('/send_message', methods=['POST'])
 @login_required
 def send_message():
-    receiver_id = request.form['receiver_id']
-    content = request.form.get('content', '')
-    file_path = request.form.get('file_path', '')
-    file_name = request.form.get('file_name', '')
-    file_type = request.form.get('file_type', '')
-    
-    msg = Message(
-        content=content if content.strip() else None,
-        file_path=file_path if file_path else None,
-        file_name=file_name if file_name else None,
-        file_type=file_type if file_type else None,
-        sender_id=current_user.id,
-        receiver_id=receiver_id
-    )
-    db.session.add(msg)
-    db.session.commit()
-    return redirect(url_for('get_messages', user_id=receiver_id))
+    try:
+        receiver_id = request.form['receiver_id']
+        content = request.form.get('content', '')
+        file_path = request.form.get('file_path', '')
+        file_name = request.form.get('file_name', '')
+        file_type = request.form.get('file_type', '')
+        
+        msg = Message(
+            content=content if content.strip() else None,
+            file_path=file_path if file_path else None,
+            file_name=file_name if file_name else None,
+            file_type=file_type if file_type else None,
+            sender_id=current_user.id,
+            receiver_id=receiver_id
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return redirect(url_for('get_messages', user_id=receiver_id))
+    except Exception as e:
+        flash('Ошибка при отправке', 'danger')
+        return redirect(url_for('chat'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
