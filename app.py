@@ -307,6 +307,11 @@ def chat():
 @app.route('/get_messages/<int:user_id>')
 @login_required
 def get_messages(user_id):
+    other_user = User.query.get(user_id)
+    if not other_user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('chat'))
+    
     messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
         ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
@@ -317,7 +322,7 @@ def get_messages(user_id):
         msg.is_read = True
     db.session.commit()
     
-    return render_template('messages.html', messages=messages, other_user=User.query.get(user_id), current_user=current_user)
+    return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
 
 @app.route('/send_message', methods=['POST'])
 @login_required

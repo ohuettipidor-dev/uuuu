@@ -3,6 +3,14 @@
 <head>
     <title>Диалоги</title>
     <meta http-equiv="refresh" content="5">
+    <style>
+        .unread { background:red; color:white; border-radius:50%; padding:2px 6px; font-size:12px; margin-left:10px; }
+        .online { color:green; }
+        .offline { color:gray; }
+        .dialog-item { border:1px solid #ccc; margin:10px 0; padding:10px; display:flex; align-items:center; }
+        .dialog-avatar { width:50px; height:50px; border-radius:50%; margin-right:15px; }
+        .dialog-info { flex:1; }
+    </style>
 </head>
 <body>
     <h2>Привет, {{ current_user.username }}!</h2>
@@ -17,17 +25,36 @@
 
     <h3>Диалоги:</h3>
     {% for conv in conversations %}
-        <div style="border:1px solid #ccc; margin:10px 0; padding:10px;">
-            <a href="{% if conv.type == 'private' %}/get_messages/{{ conv.id }}{% else %}/group/{{ conv.id }}{% endif %}">
-                <strong>{{ conv.name }}</strong>
-            </a>
-            <div>
-                Последнее сообщение: 
-                {% if conv.last_message %}
-                    {{ conv.last_message.content[:50] }}
-                {% else %}
-                    Нет сообщений
-                {% endif %}
+        <div class="dialog-item">
+            {% if conv.type == 'private' %}
+                <img src="/static/avatars/{{ conv.avatar }}" class="dialog-avatar" onerror="this.src='https://via.placeholder.com/50?text=No+Avatar'">
+            {% else %}
+                <div class="dialog-avatar" style="background:#007bff; color:white; display:flex; align-items:center; justify-content:center;">👥</div>
+            {% endif %}
+            <div class="dialog-info">
+                <a href="{% if conv.type == 'private' %}/get_messages/{{ conv.id }}{% else %}/group/{{ conv.id }}{% endif %}">
+                    <strong>{{ conv.name }}</strong>
+                    {% if conv.type == 'private' %}
+                        {% if conv.status == 'online' %}
+                            <span class="online">🟢 онлайн</span>
+                        {% else %}
+                            <span class="offline">⚫ офлайн</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="online">👥 группа</span>
+                    {% endif %}
+                    {% if conv.unread_count > 0 %}
+                        <span class="unread">{{ conv.unread_count }}</span>
+                    {% endif %}
+                </a>
+                <div style="color:gray; font-size:12px;">
+                    Последнее сообщение: 
+                    {% if conv.last_message %}
+                        {{ conv.last_message.content[:50] }}
+                    {% else %}
+                        Нет сообщений
+                    {% endif %}
+                </div>
             </div>
         </div>
     {% endfor %}
