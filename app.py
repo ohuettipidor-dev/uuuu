@@ -5,7 +5,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import uuid
-import mimetypes
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -170,54 +169,82 @@ def upload():
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
-    g = Group(name=request.form['name'], created_by=current_user.id)
-    db.session.add(g)
+    name = request.form.get('name')
+    if not name:
+        flash('Название группы обязательно', 'danger')
+        return redirect(url_for('chat'))
+    
+    group = Group(name=name, created_by=current_user.id)
+    db.session.add(group)
     db.session.commit()
-    db.session.add(GroupMember(user_id=current_user.id, group_id=g.id))
+    
+    member = GroupMember(user_id=current_user.id, group_id=group.id)
+    db.session.add(member)
     db.session.commit()
-    flash(f'Группа "{g.name}" создана', 'success')
+    
+    flash(f'Группа "{name}" создана!', 'success')
     return redirect(url_for('chat'))
 
 @app.route('/add_member/<int:gid>', methods=['POST'])
 @login_required
 def add_member(gid):
-    g = Group.query.get(gid)
-    if g.created_by != current_user.id:
-        flash('Нет прав', 'danger')
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    if group.created_by != current_user.id:
+        flash('Только создатель группы может добавлять участников', 'danger')
         return redirect(url_for('group_chat', gid=gid))
-    u = User.query.filter_by(username=request.form['username']).first()
-    if not u:
+    
+    username = request.form.get('username')
+    user = User.query.filter_by(username=username).first()
+    if not user:
         flash('Пользователь не найден', 'danger')
-    elif GroupMember.query.filter_by(user_id=u.id, group_id=gid).first():
-        flash('Уже в группе', 'danger')
+    elif user.id == current_user.id:
+        flash('Нельзя добавить самого себя', 'danger')
+    elif GroupMember.query.filter_by(user_id=user.id, group_id=gid).first():
+        flash('Пользователь уже в группе', 'danger')
     else:
-        db.session.add(GroupMember(user_id=u.id, group_id=gid))
+        db.session.add(GroupMember(user_id=user.id, group_id=gid))
         db.session.commit()
-        flash(f'{u.username} добавлен', 'success')
+        flash(f'{user.username} добавлен в группу!', 'success')
+    
     return redirect(url_for('group_chat', gid=gid))
 
 @app.route('/group/<int:gid>')
 @login_required
 def group_chat(gid):
-    g = Group.query.get_or_404(gid)
-    if not GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first():
-        flash('Вы не участник', 'danger')
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
-    msgs = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    
+    messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
     members = GroupMember.query.filter_by(group_id=gid).all()
-    return render_template('group_chat.html', group=g, messages=msgs, members=members)
+    
+    for m in members:
+        m.user = User.query.get(m.user_id)
+    
+    return render_template('group_chat.html', group=group, messages=messages, members=members, current_user=current_user)
 
 @app.route('/send_group', methods=['POST'])
 @login_required
 def send_group():
-    db.session.add(GroupMessage(
+    msg = GroupMessage(
         content=request.form.get('content'),
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
         sender_id=current_user.id,
         group_id=request.form['group_id']
-    ))
+    )
+    db.session.add(msg)
     db.session.commit()
     return redirect(url_for('group_chat', gid=request.form['group_id']))
 
