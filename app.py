@@ -307,26 +307,17 @@ def chat():
 @app.route('/get_messages/<int:user_id>')
 @login_required
 def get_messages(user_id):
-    try:
-        other_user = User.query.get(user_id)
-        if not other_user:
-            flash('Пользователь не найден', 'danger')
-            return redirect(url_for('chat'))
-        
-        messages = Message.query.filter(
-            ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
-            ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
-        ).order_by(Message.timestamp).all()
-        
-        unread = Message.query.filter(Message.sender_id == user_id, Message.receiver_id == current_user.id, Message.is_read == False).all()
-        for msg in unread:
-            msg.is_read = True
-        db.session.commit()
-        
-        return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
-    except Exception as e:
-        flash(f'Ошибка: {str(e)}', 'danger')
-        return redirect(url_for('chat'))
+    messages = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
+    ).order_by(Message.timestamp).all()
+    
+    unread = Message.query.filter(Message.sender_id == user_id, Message.receiver_id == current_user.id, Message.is_read == False).all()
+    for msg in unread:
+        msg.is_read = True
+    db.session.commit()
+    
+    return render_template('messages.html', messages=messages, other_user=User.query.get(user_id), current_user=current_user)
 
 @app.route('/send_message', methods=['POST'])
 @login_required
