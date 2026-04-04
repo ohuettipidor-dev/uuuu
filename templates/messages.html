@@ -3,7 +3,7 @@
 <head>
     <title>Чат с {{ other.username }}</title>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="10">
+    <meta http-equiv="refresh" content="5">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:#0e1621;color:#fff}
@@ -23,7 +23,8 @@
         .file{display:inline-block;margin-top:5px;color:#2ea6ff}
         img,audio,video{max-width:200px;border-radius:10px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
-        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
+        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff;font-size:14px}
+        .input-area input:focus{outline:none}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
         .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
     </style>
@@ -51,7 +52,7 @@
                 {% if m.content %}{{ m.content }}{% endif %}
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}">
+                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' %}
@@ -74,17 +75,21 @@
 </div>
 <script>
     const receiver_id = {{ other.id }};
+    const msgInput = document.getElementById('msgInput');
+    
     function sendMsg() {
-        let content = document.getElementById('msgInput').value.trim();
+        let content = msgInput.value.trim();
         if(!content) return;
         fetch('/send', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'receiver_id=' + receiver_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
-            document.getElementById('msgInput').value = '';
+            // Не очищаем поле ввода
+            msgInput.focus();
         });
     }
+    
     function sendFile(file) {
         let fd = new FormData();
         fd.append('file', file);
@@ -97,12 +102,26 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        document.getElementById('msgInput').value = '';
+                        msgInput.focus();
                     });
-                } else alert('Ошибка загрузки');
+                } else alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
             });
     }
-    document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
+    
+    msgInput.addEventListener('keypress', e => { 
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            sendMsg();
+        }
+    });
+    
+    // Сохраняем текст в localStorage чтобы не терять при обновлении
+    msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
+    msgInput.addEventListener('input', function() {
+        localStorage.setItem('msg_' + receiver_id, this.value);
+    });
+    
+    window.scrollTo(0, document.body.scrollHeight);
 </script>
 </body>
 </html>
