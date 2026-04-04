@@ -300,6 +300,39 @@ def send():
     db.session.commit()
     return redirect(url_for('messages', uid=request.form['receiver_id']))
 
+@app.route('/get_new_messages')
+@login_required
+def get_new_messages():
+    last_id = request.args.get('last_id', 0, type=int)
+    receiver_id = request.args.get('receiver_id', 0, type=int)
+    if not receiver_id:
+        return jsonify([])
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
+        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
+        Message.id > last_id
+    ).order_by(Message.timestamp).all()
+    return jsonify([{'id': m.id} for m in msgs])
+
+@app.route('/get_new_group_messages')
+@login_required
+def get_new_group_messages():
+    last_id = request.args.get('last_id', 0, type=int)
+    group_id = request.args.get('group_id', 0, type=int)
+    if not group_id:
+        return jsonify([])
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
+    if not member:
+        return jsonify([])
+    
+    msgs = GroupMessage.query.filter(
+        GroupMessage.group_id == group_id,
+        GroupMessage.id > last_id
+    ).order_by(GroupMessage.timestamp).all()
+    
+    return jsonify([{'id': m.id} for m in msgs])
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
