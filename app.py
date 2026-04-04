@@ -56,7 +56,6 @@ class Message(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     voice_duration = db.Column(db.Integer, default=0)
-    reactions = db.Column(db.Text, default='{}')
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,7 +77,6 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
-    reactions = db.Column(db.Text, default='{}')
 
 @login_manager.user_loader
 def load_user(uid):
@@ -176,46 +174,6 @@ def upload_voice():
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
-@app.route('/add_reaction', methods=['POST'])
-@login_required
-def add_reaction():
-    data = request.get_json()
-    msg_type = data.get('type')
-    msg_id = data.get('msg_id')
-    emoji = data.get('emoji')
-    import json
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-        if msg:
-            reactions = json.loads(msg.reactions) if msg.reactions else {}
-            if emoji in reactions:
-                if current_user.id in reactions[emoji]:
-                    reactions[emoji].remove(current_user.id)
-                    if not reactions[emoji]:
-                        del reactions[emoji]
-                else:
-                    reactions[emoji].append(current_user.id)
-            else:
-                reactions[emoji] = [current_user.id]
-            msg.reactions = json.dumps(reactions)
-            db.session.commit()
-    else:
-        msg = GroupMessage.query.get(msg_id)
-        if msg:
-            reactions = json.loads(msg.reactions) if msg.reactions else {}
-            if emoji in reactions:
-                if current_user.id in reactions[emoji]:
-                    reactions[emoji].remove(current_user.id)
-                    if not reactions[emoji]:
-                        del reactions[emoji]
-                else:
-                    reactions[emoji].append(current_user.id)
-            else:
-                reactions[emoji] = [current_user.id]
-            msg.reactions = json.dumps(reactions)
-            db.session.commit()
-    return jsonify({'success': True})
-
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
@@ -281,7 +239,7 @@ def send_group():
         voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
-    return '', 204
+    return redirect(url_for('group_chat', gid=request.form['group_id']))
 
 @app.route('/chat')
 @login_required
@@ -334,7 +292,7 @@ def send():
         voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
-    return '', 204
+    return redirect(url_for('messages', uid=request.form['receiver_id']))
 
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
@@ -346,7 +304,6 @@ def get_new_messages(last_id, receiver_id):
     ).order_by(Message.timestamp).all()
     result = []
     for m in msgs:
-        import json
         result.append({
             'id': m.id,
             'content': m.content,
@@ -355,35 +312,7 @@ def get_new_messages(last_id, receiver_id):
             'file_type': m.file_type,
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
-            'voice_duration': m.voice_duration,
-            'reactions': json.loads(m.reactions) if m.reactions else {}
-        })
-    return jsonify(result)
-
-@app.route('/get_new_group_messages/<int:last_id>/<int:group_id>')
-@login_required
-def get_new_group_messages(last_id, group_id):
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
-    if not member:
-        return jsonify([])
-    msgs = GroupMessage.query.filter(
-        GroupMessage.group_id == group_id,
-        GroupMessage.id > last_id
-    ).order_by(GroupMessage.timestamp).all()
-    result = []
-    for m in msgs:
-        import json
-        result.append({
-            'id': m.id,
-            'content': m.content,
-            'file_path': m.file_path,
-            'file_name': m.file_name,
-            'file_type': m.file_type,
-            'timestamp': m.timestamp.strftime('%H:%M'),
-            'is_own': m.sender_id == current_user.id,
-            'sender_name': m.sender.username,
-            'voice_duration': m.voice_duration,
-            'reactions': json.loads(m.reactions) if m.reactions else {}
+            'voice_duration': m.voice_duration
         })
     return jsonify(result)
 

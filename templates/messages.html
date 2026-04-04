@@ -1,35 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>❤️ Чат с {{ other.username }} 🤍</title>
+    <title>🐻 Чат с {{ other.username }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #ffffff 0%, #ff6b6b 100%);min-height:100vh}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap}
         .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white;font-weight:500}
         .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
-        .message{display:flex;flex-direction:column;animation:fadeInUp 0.3s ease}
+        .message{display:flex;animation:fadeInUp 0.3s ease}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        .message.sent{align-items:flex-end}
-        .message.received{align-items:flex-start}
+        .message.sent{justify-content:flex-end}
+        .message.received{justify-content:flex-start}
         .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;word-wrap:break-word;position:relative}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
         .time{font-size:10px;color:#aaa;margin-top:4px;display:flex;align-items:center;gap:4px}
         .sent .time{justify-content:flex-end}
-        .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-weight:500}
+        .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-top:5px}
         img,audio,video{max-width:200px;border-radius:15px;margin-top:5px}
-        .reactions{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
-        .reaction-btn{background:#f0f0f0;border:none;border-radius:20px;padding:4px 8px;cursor:pointer;font-size:12px;transition:all 0.2s}
-        .reaction-btn:hover{background:#ff6b6b;color:white}
-        .reaction-count{background:#e0e0e0;border-radius:20px;padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all 0.2s}
-        .reaction-count:hover{background:#ff6b6b;color:white}
-        .reaction-emoji{font-size:14px}
         .input-area{padding:15px;background:rgba(255,255,255,0.95);border-top:2px solid rgba(255,107,107,0.3);display:flex;gap:8px;flex-wrap:wrap}
         .input-area input{flex:1;padding:12px 18px;border-radius:30px;border:1px solid #ffb3b3;background:#fff;color:#333;font-size:14px}
         .input-area input:focus{outline:none;border-color:#ff6b6b}
@@ -41,12 +35,14 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         .voice-msg{display:flex;align-items:center;gap:8px;cursor:pointer}
+        .voice-msg span{font-size:20px}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:3px;height:8px;background:#ff6b6b;border-radius:2px;animation:wave 0.5s ease infinite alternate}
+        .voice-wave div:nth-child(1){animation-delay:0s}
+        .voice-wave div:nth-child(2){animation-delay:0.1s}
+        .voice-wave div:nth-child(3){animation-delay:0.2s}
+        .voice-wave div:nth-child(4){animation-delay:0.3s}
         @keyframes wave{from{height:8px}to{height:16px}}
-        .reaction-picker{position:absolute;background:white;border-radius:30px;padding:8px 12px;display:flex;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);z-index:100}
-        .reaction-picker span{font-size:20px;cursor:pointer;padding:4px;border-radius:50%}
-        .reaction-picker span:hover{background:#f0f0f0}
     </style>
 </head>
 <body>
@@ -60,10 +56,10 @@
                 {{ other.username[0].upper() }}
             {% endif %}
         </div>
-        <div style="flex:1;font-weight:bold">{{ other.username }} 
-            <span style="font-size:12px">{% if other.status == 'online' %}❤️ онлайн{% else %}🤍 офлайн{% endif %}</span>
+        <div style="flex:1">{{ other.username }} 
+            <span style="font-size:12px">{% if other.status == 'online' %}🐻 онлайн{% else %}🐻‍❄️ офлайн{% endif %}</span>
         </div>
-        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none;font-weight:500">Профиль</a>
+        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none">🧸 Профиль</a>
     </div>
     <div class="messages" id="messages">
         {% for m in msgs %}
@@ -84,39 +80,33 @@
                 {% if m.voice_duration and m.voice_duration > 0 %}
                     <div class="voice-msg" onclick="playVoice(this)">
                         <span>🎤</span>
-                        <div class="voice-wave"><div></div><div></div><div></div><div></div></div>
+                        <div class="voice-wave">
+                            <div></div><div></div><div></div><div></div>
+                        </div>
                         <span style="font-size:11px">{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
                 <div class="time">
-                    <span>❤️ {{ m.timestamp.strftime('%H:%M') }} 🤍</span>
+                    <span>{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.sender_id == current_user.id and m.is_read %}✓✓{% endif %}
-                </div>
-                <div class="reactions" id="reactions-{{ m.id }}">
-                    {% set reactions = m.reactions if m.reactions else {} %}
-                    {% for emoji, users in reactions.items() %}
-                        <span class="reaction-count" onclick="toggleReaction({{ m.id }}, 'private', '{{ emoji }}')">
-                            <span class="reaction-emoji">{{ emoji }}</span> {{ users|length }}
-                        </span>
-                    {% endfor %}
-                    <span class="reaction-btn" onclick="showReactionPicker({{ m.id }}, 'private', event)">❤️</span>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="❤️🤍 Напишите сообщение...">
+        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
         <button class="voice-btn" id="voiceBtn">🎤</button>
-        <button onclick="sendMsg()">❤️</button>
+        <button onclick="sendMsg()">🐻</button>
     </div>
     <div class="emoji-picker" id="emojiPicker">
         <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span><span>💗</span>
         <span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span><span>😡</span><span>🤔</span>
         <span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span><span>🌟</span><span>⭐</span><span>💫</span>
         <span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span><span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span>
+        <span>🧸</span><span>🎈</span><span>🎀</span><span>🌸</span><span>🌺</span><span>🍰</span><span>🎂</span><span>🍭</span>
     </div>
     <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
 </div>
@@ -135,42 +125,6 @@
         if(audio) audio.play();
     }
     
-    function showReactionPicker(msgId, type, event) {
-        event.stopPropagation();
-        let picker = document.getElementById('reactionPicker');
-        if(picker) picker.remove();
-        picker = document.createElement('div');
-        picker.id = 'reactionPicker';
-        picker.className = 'reaction-picker';
-        picker.style.position = 'absolute';
-        picker.style.left = event.pageX - 100 + 'px';
-        picker.style.top = event.pageY - 50 + 'px';
-        const emojis = ['❤️', '👍', '😂', '😮', '😢', '😡'];
-        emojis.forEach(emoji => {
-            const span = document.createElement('span');
-            span.textContent = emoji;
-            span.onclick = () => {
-                toggleReaction(msgId, type, emoji);
-                picker.remove();
-            };
-            picker.appendChild(span);
-        });
-        document.body.appendChild(picker);
-        setTimeout(() => {
-            if(picker) picker.remove();
-        }, 3000);
-    }
-    
-    function toggleReaction(msgId, type, emoji) {
-        fetch('/add_reaction', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({msg_id: msgId, type: type, emoji: emoji})
-        }).then(() => {
-            checkNewMessages();
-        });
-    }
-    
     function addNewMessage(msg) {
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
@@ -184,17 +138,10 @@
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
             else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
         }
-        if(msg.voice_duration && msg.voice_duration > 0) {
-            contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+        if(msg.voice_duration) {
+            contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
-        let reactionsHtml = '';
-        if(msg.reactions) {
-            for(const [emoji, users] of Object.entries(msg.reactions)) {
-                reactionsHtml += `<span class="reaction-count" onclick="toggleReaction(${msg.id}, 'private', '${emoji}')"><span class="reaction-emoji">${emoji}</span> ${users.length}</span>`;
-            }
-        }
-        reactionsHtml += `<span class="reaction-btn" onclick="showReactionPicker(${msg.id}, 'private', event)">❤️</span>`;
-        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time"><span>❤️ ${msg.timestamp} 🤍</span>${msg.is_own ? ' ✓✓' : ''}</div><div class="reactions">${reactionsHtml}</div></div>`;
+        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
