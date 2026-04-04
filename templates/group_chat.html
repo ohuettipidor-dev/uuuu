@@ -11,13 +11,12 @@
         .back{background:#2b2f36;padding:8px 16px;border-radius:20px;cursor:pointer}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column}
         .msg{margin-bottom:15px}
-        .bubble{max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;background:#1e2a36}
+        .bubble{max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;background:#1e2a36;word-break:break-word}
         .own .bubble{background:#2b5278;margin-left:auto}
         .sender{font-size:11px;color:#2ea6ff;margin-bottom:4px}
         .time{font-size:10px;color:#7f8c8d;margin-top:4px}
-        .file{display:inline-block;margin-top:5px;color:#2ea6ff;text-decoration:none}
-        .file:hover{text-decoration:underline}
-        img{max-width:200px;max-height:200px;border-radius:10px;cursor:pointer}
+        .file-link{color:#2ea6ff;text-decoration:none;display:inline-block;margin-top:4px}
+        .file-link:hover{text-decoration:underline}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
         .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
@@ -51,15 +50,11 @@
             <div class="bubble">
                 {% if m.content %}{{ m.content }}{% endif %}
                 {% if m.file_path %}
-                    {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
-                    {% elif m.file_type == 'audio' %}
-                        <audio controls src="{{ m.file_path }}"></audio>
-                    {% elif m.file_type == 'video' %}
-                        <video controls src="{{ m.file_path }}"></video>
-                    {% else %}
-                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" class="file">📎 {{ m.file_name }}</a>
-                    {% endif %}
+                    <div class="file-link">
+                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#2ea6ff;text-decoration:none">
+                            📎 {{ m.file_name }}
+                        </a>
+                    </div>
                 {% endif %}
                 <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
             </div>
@@ -85,7 +80,7 @@
             body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
             document.getElementById('msgInput').value = '';
-            setTimeout(() => location.reload(), 500);
+            location.reload();
         });
     }
     
@@ -101,7 +96,7 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        setTimeout(() => location.reload(), 500);
+                        location.reload();
                     });
                 } else {
                     alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
