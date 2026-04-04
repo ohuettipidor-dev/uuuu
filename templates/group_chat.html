@@ -3,7 +3,6 @@
 <head>
     <title>{{ group.name }}</title>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="5">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:#0e1621;color:#fff}
@@ -22,6 +21,7 @@
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
         .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
+        .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
         .members{padding:10px;background:#17212b;border-bottom:1px solid #2b2f36;font-size:12px}
         .add-form{display:flex;gap:5px;margin-top:5px}
         .add-form input{flex:1;padding:5px;border-radius:15px;border:none;background:#242f3d;color:#fff}
@@ -75,6 +75,8 @@
 </div>
 <script>
     const group_id = {{ group.id }};
+    let lastMsgId = {{ messages[-1].id if messages else 0 }};
+    
     function sendMsg() {
         let content = document.getElementById('msgInput').value.trim();
         if(!content) return;
@@ -82,8 +84,12 @@
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
-        }).then(() => location.reload());
+        }).then(() => {
+            document.getElementById('msgInput').value = '';
+            location.reload();
+        });
     }
+    
     function sendFile(file) {
         let fd = new FormData();
         fd.append('file', file);
@@ -99,7 +105,17 @@
                 } else alert('Ошибка загрузки');
             });
     }
+    
+    function checkNewMessages() {
+        fetch('/get_new_group_messages?last_id=' + lastMsgId + '&group_id=' + group_id)
+            .then(r => r.json())
+            .then(msgs => {
+                if(msgs.length > 0) location.reload();
+            });
+    }
+    
     document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
+    setInterval(checkNewMessages, 5000);
     window.scrollTo(0, document.body.scrollHeight);
 </script>
 </body>

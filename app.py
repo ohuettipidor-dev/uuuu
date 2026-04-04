@@ -314,6 +314,25 @@ def get_new_messages():
     ).order_by(Message.timestamp).all()
     return jsonify([{'id': m.id} for m in msgs])
 
+@app.route('/get_new_group_messages')
+@login_required
+def get_new_group_messages():
+    last_id = request.args.get('last_id', 0, type=int)
+    group_id = request.args.get('group_id', 0, type=int)
+    if not group_id:
+        return jsonify([])
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
+    if not member:
+        return jsonify([])
+    
+    msgs = GroupMessage.query.filter(
+        GroupMessage.group_id == group_id,
+        GroupMessage.id > last_id
+    ).order_by(GroupMessage.timestamp).all()
+    
+    return jsonify([{'id': m.id} for m in msgs])
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
