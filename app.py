@@ -294,6 +294,28 @@ def send():
     db.session.commit()
     return redirect(url_for('messages', uid=request.form['receiver_id']))
 
+@app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
+@login_required
+def get_new_messages(last_id, receiver_id):
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
+        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
+        Message.id > last_id
+    ).order_by(Message.timestamp).all()
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'is_own': m.sender_id == current_user.id,
+            'voice_duration': m.voice_duration
+        })
+    return jsonify(result)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
