@@ -3,13 +3,13 @@
 <head>
     <title>Мессенджер</title>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="5">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:#0e1621;color:#fff}
         .container{max-width:800px;margin:0 auto;padding:20px}
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #2b2f36}
         .avatar{width:40px;height:40px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-weight:bold}
+        .refresh-btn{background:#28a745;padding:8px 16px;border-radius:20px;cursor:pointer;border:none;color:#fff;margin-left:10px}
         .create-btn{background:#2b5278;border:none;color:#fff;padding:12px;border-radius:25px;width:100%;margin-bottom:20px;cursor:pointer}
         .chat-item{background:#17212b;border-radius:12px;margin-bottom:10px;padding:12px;display:flex;align-items:center;cursor:pointer}
         .chat-item:hover{background:#1e2a36}
@@ -33,6 +33,7 @@
     <div class="header">
         <div class="avatar">{{ current_user.username[0].upper() }}</div>
         <span>{{ current_user.username }}</span>
+        <button class="refresh-btn" onclick="location.reload()">🔄</button>
         <a href="/profile" class="profile-btn">Профиль</a>
         <a href="/logout" class="logout-btn">Выйти</a>
     </div>
