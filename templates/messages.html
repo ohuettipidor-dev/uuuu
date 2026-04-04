@@ -158,7 +158,7 @@
         }).then(() => {
             msgInput.value = '';
             localStorage.setItem('msg_' + receiver_id, '');
-            setTimeout(() => checkNewMessages(), 500);
+            setTimeout(() => checkNewMessages(), 1000);
         });
     }
     
@@ -174,7 +174,7 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        setTimeout(() => checkNewMessages(), 500);
+                        setTimeout(() => checkNewMessages(), 1000);
                     });
                 } else alert('Ошибка: ' + d.error);
             });
@@ -202,7 +202,7 @@
                                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                                 body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
                             }).then(() => {
-                                setTimeout(() => checkNewMessages(), 500);
+                                setTimeout(() => checkNewMessages(), 1000);
                             });
                         }
                     });
@@ -249,7 +249,7 @@
             document.getElementById('emojiPicker').style.display = 'none';
         }
     });
-    pollingInterval = setInterval(checkNewMessages, 3000);
+    pollingInterval = setInterval(checkNewMessages, 5000);
 </script>
 </body>
 </html>

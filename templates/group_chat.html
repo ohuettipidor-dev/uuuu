@@ -24,7 +24,7 @@
         .input-area input{flex:1;padding:12px;border-radius:30px;border:1px solid #ffb3b3}
         .input-area button{padding:12px 20px;border-radius:30px;border:none;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;cursor:pointer}
         .attach-btn,.emoji-btn,.voice-btn{background:#f0f0f0;padding:12px;border-radius:30px;cursor:pointer}
-        .members{padding:10px;background:rgba(255,255,255,0.8);font-size:12px;margin-bottom:10px}
+        .members{padding:10px;background:rgba(255,255,255,0.8);font-size:12px;margin-bottom:10px;border-radius:15px}
         .add-form{display:flex;gap:5px;margin-top:5px}
         .add-form input{flex:1;padding:5px;border-radius:15px;border:1px solid #ffb3b3}
         .add-form button{padding:5px 10px;border-radius:15px;background:#ff6b6b;color:white;border:none}
@@ -147,7 +147,8 @@
         }).then(() => {
             msgInput.value = '';
             localStorage.setItem('group_msg_' + group_id, '');
-            setTimeout(() => checkNewMessages(), 500);
+            // Обновляем сообщения через 1 секунду
+            setTimeout(() => checkNewMessages(), 1000);
         });
     }
     
@@ -163,7 +164,8 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        setTimeout(() => checkNewMessages(), 500);
+                        // Обновляем сообщения через 1 секунду
+                        setTimeout(() => checkNewMessages(), 1000);
                     });
                 } else alert('Ошибка: ' + d.error);
             });
@@ -191,7 +193,7 @@
                                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                                 body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
                             }).then(() => {
-                                setTimeout(() => checkNewMessages(), 500);
+                                setTimeout(() => checkNewMessages(), 1000);
                             });
                         }
                     });
@@ -231,7 +233,7 @@
             document.getElementById('emojiPicker').style.display = 'none'; 
         } 
     });
-    pollingInterval = setInterval(checkNewMessages, 3000);
+    pollingInterval = setInterval(checkNewMessages, 5000);
 </script>
 </body>
 </html>
