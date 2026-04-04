@@ -23,8 +23,7 @@
         .file{display:inline-block;margin-top:5px;color:#2ea6ff}
         img,audio,video{max-width:200px;border-radius:10px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
-        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff;font-size:14px}
-        .input-area input:focus{outline:none}
+        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
         .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
     </style>
@@ -85,8 +84,7 @@
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'receiver_id=' + receiver_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
-            // Не очищаем поле ввода
-            msgInput.focus();
+            // Не очищаем поле
         });
     }
     
@@ -101,10 +99,8 @@
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => {
-                        msgInput.focus();
                     });
-                } else alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
+                } else alert('Ошибка загрузки');
             });
     }
     
@@ -115,7 +111,7 @@
         }
     });
     
-    // Сохраняем текст в localStorage чтобы не терять при обновлении
+    // Сохраняем текст в localStorage
     msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
     msgInput.addEventListener('input', function() {
         localStorage.setItem('msg_' + receiver_id, this.value);

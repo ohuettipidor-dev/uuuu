@@ -18,7 +18,7 @@ os.makedirs(FILE_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',

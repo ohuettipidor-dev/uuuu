@@ -19,8 +19,7 @@
         .file-link{color:#2ea6ff;text-decoration:none}
         img,audio,video{max-width:200px;border-radius:10px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
-        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff;font-size:14px}
-        .input-area input:focus{outline:none}
+        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
         .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
         .members{padding:10px;background:#17212b;border-bottom:1px solid #2b2f36;font-size:12px}
@@ -79,7 +78,6 @@
 </div>
 <script>
     const group_id = {{ group.id }};
-    let typingTimer;
     const msgInput = document.getElementById('msgInput');
     
     function sendMsg() {
@@ -90,8 +88,7 @@
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
-            // Не очищаем поле ввода, чтобы сообщение не стиралось
-            msgInput.focus();
+            // Не очищаем поле
         });
     }
     
@@ -106,11 +103,8 @@
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => {
-                        // Не очищаем поле ввода
-                        msgInput.focus();
                     });
-                } else alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
+                } else alert('Ошибка загрузки');
             });
     }
     
@@ -121,7 +115,7 @@
         }
     });
     
-    // Сохраняем текст в localStorage чтобы не терять при обновлении
+    // Сохраняем текст в localStorage
     msgInput.value = localStorage.getItem('group_msg_' + group_id) || '';
     msgInput.addEventListener('input', function() {
         localStorage.setItem('group_msg_' + group_id, this.value);
