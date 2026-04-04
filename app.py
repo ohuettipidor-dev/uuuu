@@ -193,14 +193,24 @@ def add_member(gid):
 @login_required
 def group_chat(gid):
     group = Group.query.get(gid)
-    if not group or not GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first():
-        flash('Группа не найдена или вы не участник', 'danger')
+    if not group:
+        flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    
     messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
     members = GroupMember.query.filter_by(group_id=gid).all()
+    
+    members_with_users = []
     for m in members:
-        m.user = User.query.get(m.user_id)
-    return render_template('group_chat.html', group=group, messages=messages, members=members)
+        user = User.query.get(m.user_id)
+        members_with_users.append({'user': user, 'user_id': user.id, 'username': user.username})
+    
+    return render_template('group_chat.html', group=group, messages=messages, members=members_with_users, current_user=current_user)
 
 @app.route('/send_group', methods=['POST'])
 @login_required

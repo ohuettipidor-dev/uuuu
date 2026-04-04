@@ -36,7 +36,10 @@
         <a href="/profile" style="background:#2b2f36;padding:8px 16px;border-radius:20px;color:#fff;text-decoration:none">Профиль</a>
     </div>
     <div class="members">
-        Участники: {% for m in members %}{{ m.user.username }} {% endfor %}
+        Участники: 
+        {% for m in members %}
+            {{ m.username }}
+        {% endfor %}
         {% if group.created_by == current_user.id %}
         <form method="POST" action="/add_member/{{ group.id }}" class="add-form">
             <input type="text" name="username" placeholder="Имя пользователя">
