@@ -1,93 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Чат с {{ other_user.username }}</title>
+    <title>Чат с {{ other.username }}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="3">
     <style>
-        .message-container { border:1px solid #ccc; height:400px; overflow:auto; margin:20px 0; padding:10px; }
-        .message { margin:10px 0; }
-        .sent { text-align: right; }
-        .received { text-align: left; }
-        .bubble { display:inline-block; padding:8px 12px; border-radius:15px; max-width:70%; }
-        .sent .bubble { background:#007bff; color:white; }
-        .received .bubble { background:#e9ecef; color:black; }
-        .time { font-size:11px; color:gray; margin-top:4px; }
-        .refresh-btn { margin:10px 0; padding:8px 16px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; }
-        img { max-width: 200px; max-height: 200px; border-radius: 10px; }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:#0e1621;color:#fff}
+        .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
+        .header{padding:15px;background:#17212b;display:flex;align-items:center;gap:15px;border-bottom:1px solid #2b2f36}
+        .back{background:#2b2f36;padding:8px 16px;border-radius:20px;cursor:pointer}
+        .avatar{width:40px;height:40px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center}
+        .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+        .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column}
+        .msg{margin-bottom:15px;display:flex}
+        .msg.sent{justify-content:flex-end}
+        .msg.received{justify-content:flex-start}
+        .bubble{max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px}
+        .sent .bubble{background:#2b5278;color:#fff}
+        .received .bubble{background:#1e2a36;color:#fff}
+        .time{font-size:10px;color:#7f8c8d;margin-top:4px;text-align:center}
+        .file{display:inline-block;margin-top:5px;color:#2ea6ff}
+        img{max-width:200px;max-height:200px;border-radius:10px}
+        audio,video{max-width:200px}
+        .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
+        .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
+        .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
+        .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
     </style>
 </head>
 <body>
-    <div style="display:flex; align-items:center;">
-        <img src="/static/avatars/{{ other_user.avatar }}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-right:15px;" 
-             onerror="this.src='https://via.placeholder.com/50?text=No+Avatar'">
-        <h2>Чат с {{ other_user.username }}</h2>
+<div class="container">
+    <div class="header">
+        <div class="back" onclick="history.back()">← Назад</div>
+        <div class="avatar">
+            {% if other.avatar != 'default.png' %}
+                <img src="/static/avatars/{{ other.avatar }}">
+            {% else %}
+                {{ other.username[0].upper() }}
+            {% endif %}
+        </div>
+        <div>{{ other.username }} <span class="{% if other.status == 'online' %}online{% else %}offline{% endif %}" style="font-size:12px">
+            {% if other.status == 'online' %}● онлайн{% else %}● офлайн{% endif %}
+        </span></div>
+        <a href="/profile" style="margin-left:auto;background:#2b2f36;padding:8px 16px;border-radius:20px">Профиль</a>
     </div>
-    <a href="/chat">← Назад к диалогам</a>
-    <a href="/profile" style="margin-left:20px;">👤 Мой профиль</a>
-    <a href="/logout" style="margin-left:20px;">🚪 Выйти</a>
-    
-    <div>
-        <button class="refresh-btn" onclick="location.reload()">🔄 Обновить чат</button>
-    </div>
-    
-    <div class="message-container">
-        {% for msg in messages %}
-            <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}">
-                <div class="bubble">
-                    {% if msg.content %}
-                        {{ msg.content }}
-                    {% elif msg.file_path %}
-                        {% if msg.file_type == 'image' %}
-                            <img src="{{ msg.file_path }}" alt="image">
-                        {% else %}
-                            <a href="{{ msg.file_path }}" download="{{ msg.file_name }}">📎 {{ msg.file_name }}</a>
-                        {% endif %}
+    <div class="messages" id="messages">
+        {% for m in msgs %}
+        <div class="msg {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+            <div class="bubble">
+                {% if m.content %}{{ m.content }}{% endif %}
+                {% if m.file_path %}
+                    {% if m.file_type == 'image' %}
+                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
+                    {% elif m.file_type == 'audio' %}
+                        <audio controls src="{{ m.file_path }}"></audio>
+                    {% elif m.file_type == 'video' %}
+                        <video controls src="{{ m.file_path }}"></video>
+                    {% else %}
+                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" class="file">📎 {{ m.file_name }}</a>
                     {% endif %}
-                </div>
-                <div class="time">
-                    {{ msg.timestamp.strftime('%H:%M') }}
-                    {% if msg.sender_id == current_user.id and msg.is_read %}✓✓{% endif %}
-                </div>
+                {% endif %}
+                <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
             </div>
+        </div>
         {% endfor %}
     </div>
-    
-    <form method="POST" action="/send_message" id="messageForm">
-        <input type="hidden" name="receiver_id" value="{{ other_user.id }}">
-        <input type="hidden" name="file_path" id="file_path">
-        <input type="hidden" name="file_name" id="file_name">
-        <input type="hidden" name="file_type" id="file_type">
-        <input type="text" name="content" id="content" placeholder="Ваше сообщение..." style="width: 60%; padding:10px;" autofocus>
-        <button type="button" onclick="document.getElementById('fileInput').click()" style="padding:10px;">📎 Прикрепить</button>
-        <button type="submit" style="padding:10px;">Отправить</button>
-    </form>
-    
-    <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this.files[0])">
-    
-    <script>
-        function uploadFile(file) {
-            var formData = new FormData();
-            formData.append('file', file);
-            
-            fetch('/upload_file', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.file_path) {
-                    document.getElementById('file_path').value = data.file_path;
-                    document.getElementById('file_name').value = data.file_name;
-                    document.getElementById('file_type').value = data.file_type;
-                    document.getElementById('content').value = '';
-                    document.getElementById('messageForm').submit();
-                } else {
-                    alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
-                }
-            })
-            .catch(error => {
-                alert('Ошибка: ' + error);
+    <div class="input-area">
+        <input type="text" id="msgInput" placeholder="Сообщение...">
+        <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
+        <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+        <button onclick="sendMsg()">➤</button>
+    </div>
+</div>
+<script>
+    const receiver_id = {{ other.id }};
+    function sendMsg() {
+        let content = document.getElementById('msgInput').value.trim();
+        if(!content) return;
+        fetch('/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'receiver_id=' + receiver_id + '&content=' + encodeURIComponent(content)
+        }).then(() => location.reload());
+    }
+    function sendFile(file) {
+        let fd = new FormData();
+        fd.append('file', file);
+        fetch('/upload', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if(d.path) {
+                    fetch('/send', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
+                    }).then(() => location.reload());
+                } else alert('Ошибка загрузки');
             });
-        }
-    </script>
+    }
+    document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
+    window.scrollTo(0, document.body.scrollHeight);
+</script>
 </body>
 </html>

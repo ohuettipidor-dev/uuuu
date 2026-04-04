@@ -1,15 +1,14 @@
+<!-- login.html -->
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Вход</title>
-</head>
-<body>
-    <h1>🔐 Вход в аккаунт</h1>
-    <form method="POST">
-        <input type="text" name="username" placeholder="Имя пользователя" required><br><br>
-        <input type="password" name="password" placeholder="Пароль" required><br><br>
-        <button type="submit">Войти</button>
+<head><title>Вход</title><meta charset="UTF-8"></head>
+<body style="background:#0e1621;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh">
+    <form method="POST" style="background:#17212b;padding:30px;border-radius:20px">
+        <h2>Вход</h2>
+        <input type="text" name="username" placeholder="Имя" required style="display:block;margin:10px 0;padding:10px;width:100%;border-radius:10px;border:none"><br>
+        <input type="password" name="password" placeholder="Пароль" required style="display:block;margin:10px 0;padding:10px;width:100%;border-radius:10px;border:none"><br>
+        <button type="submit" style="background:#2ea6ff;color:#fff;padding:10px;border:none;border-radius:10px;width:100%">Войти</button>
+        <a href="/register" style="display:block;margin-top:10px;color:#2ea6ff">Нет аккаунта?</a>
     </form>
-    <p><a href="/register">Нет аккаунта? Зарегистрироваться</a></p>
 </body>
 </html>

@@ -11,34 +11,39 @@ app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ========== ЗАПРЕТ КЭШИРОВАНИЯ (РЕШАЕТ ОШИБКУ 500 ПРИ ВОЗВРАТЕ) ==========
+# Запрет кэширования
 @app.after_request
-def add_no_cache_headers(response):
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+def no_cache(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
     return response
-# =========================================================================
 
-UPLOAD_FOLDER_AVATARS = 'static/avatars'
-os.makedirs(UPLOAD_FOLDER_AVATARS, exist_ok=True)
+# Папки для загрузки
+AVATAR_FOLDER = 'static/avatars'
+FILE_FOLDER = 'static/uploads'
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
+os.makedirs(FILE_FOLDER, exist_ok=True)
 
-UPLOAD_FOLDER_FILES = 'static/uploads'
-os.makedirs(UPLOAD_FOLDER_FILES, exist_ok=True)
+app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
+app.config['FILE_FOLDER'] = FILE_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-app.config['UPLOAD_FOLDER_AVATARS'] = UPLOAD_FOLDER_AVATARS
-app.config['UPLOAD_FOLDER_FILES'] = UPLOAD_FOLDER_FILES
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif', 'webp',
+    'mp3', 'wav', 'ogg', 'flac',
+    'mp4', 'avi', 'mov', 'mkv', 'webm',
+    'pdf', 'doc', 'docx', 'txt', 'zip', 'rar'
+}
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt', 'zip'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(f):
+    return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# ==================== МОДЕЛИ ====================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -57,21 +62,18 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    
-    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
-    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    receiver = db.relationship('User', foreign_keys=[receiver_id])
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 class GroupMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
-    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class GroupMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -85,29 +87,26 @@ class GroupMessage(db.Model):
     sender = db.relationship('User', foreign_keys=[sender_id])
 
 @login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+def load_user(uid):
+    return User.query.get(int(uid))
 
 with app.app_context():
     db.create_all()
 
+# ==================== МАРШРУТЫ ====================
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('chat'))
-    return render_template('index.html')
+    return redirect(url_for('chat')) if current_user.is_authenticated else render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        if User.query.filter_by(username=username).first():
-            flash('Имя пользователя уже занято', 'danger')
+        u = request.form['username']
+        p = request.form['password']
+        if User.query.filter_by(username=u).first():
+            flash('Имя занято', 'danger')
         else:
-            user = User(username=username, password=generate_password_hash(password))
-            db.session.add(user)
+            db.session.add(User(username=u, password=generate_password_hash(p)))
             db.session.commit()
             flash('Регистрация успешна!', 'success')
             return redirect(url_for('login'))
@@ -116,17 +115,16 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        
-        if user and check_password_hash(user.password, password):
+        u = request.form['username']
+        p = request.form['password']
+        user = User.query.filter_by(username=u).first()
+        if user and check_password_hash(user.password, p):
             login_user(user)
             user.status = 'online'
             user.last_seen = datetime.utcnow()
             db.session.commit()
             return redirect(url_for('chat'))
-        flash('Неверное имя пользователя или пароль', 'danger')
+        flash('Неверные данные', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -141,218 +139,142 @@ def logout():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    if request.method == 'POST':
-        if 'avatar' in request.files:
-            file = request.files['avatar']
-            if file and allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER_AVATARS'], filename)
-                file.save(filepath)
-                current_user.avatar = filename
-                db.session.commit()
-                flash('Аватар обновлён!', 'success')
+    if request.method == 'POST' and 'avatar' in request.files:
+        f = request.files['avatar']
+        if f and allowed_file(f.filename):
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+            f.save(os.path.join(app.config['AVATAR_FOLDER'], name))
+            current_user.avatar = name
+            db.session.commit()
+            flash('Аватар обновлён', 'success')
         return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user)
 
-@app.route('/upload_file', methods=['POST'])
+@app.route('/upload', methods=['POST'])
 @login_required
-def upload_file():
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'Нет файла'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'Файл не выбран'}), 400
-        
-        if file and allowed_file(file.filename):
-            original_filename = file.filename
-            ext = original_filename.rsplit('.', 1)[1].lower()
-            filename = f"{uuid.uuid4().hex}.{ext}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER_FILES'], filename)
-            file.save(filepath)
-            
-            if ext in ['png', 'jpg', 'jpeg', 'gif']:
-                file_type = 'image'
-            else:
-                file_type = 'document'
-            
-            return jsonify({
-                'file_path': f'/static/uploads/{filename}',
-                'file_name': original_filename,
-                'file_type': file_type
-            })
-        
-        return jsonify({'error': 'Неподдерживаемый формат'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+def upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Нет файла'}), 400
+    f = request.files['file']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    if allowed_file(f.filename):
+        ext = f.filename.rsplit('.', 1)[1].lower()
+        name = f"{uuid.uuid4().hex}.{ext}"
+        f.save(os.path.join(app.config['FILE_FOLDER'], name))
+        if ext in ['png','jpg','jpeg','gif','webp']: ft = 'image'
+        elif ext in ['mp3','wav','ogg','flac']: ft = 'audio'
+        elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
+        else: ft = 'document'
+        return jsonify({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': ft})
+    return jsonify({'error': 'Формат не поддерживается'}), 400
 
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
-    name = request.form['name']
-    group = Group(name=name, created_by=current_user.id)
-    db.session.add(group)
+    g = Group(name=request.form['name'], created_by=current_user.id)
+    db.session.add(g)
     db.session.commit()
-    
-    member = GroupMember(user_id=current_user.id, group_id=group.id)
-    db.session.add(member)
+    db.session.add(GroupMember(user_id=current_user.id, group_id=g.id))
     db.session.commit()
-    
-    flash(f'Группа "{name}" создана!', 'success')
+    flash(f'Группа "{g.name}" создана', 'success')
     return redirect(url_for('chat'))
 
-@app.route('/add_member/<int:group_id>', methods=['POST'])
+@app.route('/add_member/<int:gid>', methods=['POST'])
 @login_required
-def add_member(group_id):
-    group = Group.query.get_or_404(group_id)
-    
-    if group.created_by != current_user.id:
-        flash('Только создатель группы может добавлять участников', 'danger')
-        return redirect(url_for('group_chat', group_id=group_id))
-    
-    username = request.form['username']
-    user = User.query.filter_by(username=username).first()
-    
-    if not user:
+def add_member(gid):
+    g = Group.query.get(gid)
+    if g.created_by != current_user.id:
+        flash('Нет прав', 'danger')
+        return redirect(url_for('group_chat', gid=gid))
+    u = User.query.filter_by(username=request.form['username']).first()
+    if not u:
         flash('Пользователь не найден', 'danger')
-    elif user.id == current_user.id:
-        flash('Нельзя добавить самого себя', 'danger')
+    elif GroupMember.query.filter_by(user_id=u.id, group_id=gid).first():
+        flash('Уже в группе', 'danger')
     else:
-        existing = GroupMember.query.filter_by(user_id=user.id, group_id=group_id).first()
-        if existing:
-            flash(f'Пользователь {username} уже в группе', 'danger')
-        else:
-            member = GroupMember(user_id=user.id, group_id=group_id)
-            db.session.add(member)
-            db.session.commit()
-            flash(f'Пользователь {username} добавлен в группу!', 'success')
-    
-    return redirect(url_for('group_chat', group_id=group_id))
+        db.session.add(GroupMember(user_id=u.id, group_id=gid))
+        db.session.commit()
+        flash(f'{u.username} добавлен', 'success')
+    return redirect(url_for('group_chat', gid=gid))
 
-@app.route('/group/<int:group_id>')
+@app.route('/group/<int:gid>')
 @login_required
-def group_chat(group_id):
-    group = Group.query.get_or_404(group_id)
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
-    if not member:
-        flash('Вы не участник этой группы', 'danger')
+def group_chat(gid):
+    g = Group.query.get_or_404(gid)
+    if not GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first():
+        flash('Вы не участник', 'danger')
         return redirect(url_for('chat'))
-    
-    messages = GroupMessage.query.filter_by(group_id=group_id).order_by(GroupMessage.timestamp).all()
-    members = GroupMember.query.filter_by(group_id=group_id).all()
-    return render_template('group_chat.html', group=group, messages=messages, members=members, current_user=current_user)
+    msgs = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    return render_template('group_chat.html', group=g, messages=msgs, members=members)
 
-@app.route('/send_group_message', methods=['POST'])
+@app.route('/send_group', methods=['POST'])
 @login_required
-def send_group_message():
-    group_id = request.form['group_id']
-    content = request.form.get('content', '')
-    file_path = request.form.get('file_path', '')
-    file_name = request.form.get('file_name', '')
-    file_type = request.form.get('file_type', '')
-    
-    msg = GroupMessage(
-        content=content if content.strip() else None,
-        file_path=file_path if file_path else None,
-        file_name=file_name if file_name else None,
-        file_type=file_type if file_type else None,
+def send_group():
+    db.session.add(GroupMessage(
+        content=request.form.get('content'),
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        group_id=group_id
-    )
-    db.session.add(msg)
+        group_id=request.form['group_id']
+    ))
     db.session.commit()
-    return redirect(url_for('group_chat', group_id=group_id))
+    return redirect(url_for('group_chat', gid=request.form['group_id']))
 
 @app.route('/chat')
 @login_required
 def chat():
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
-    
     users = User.query.filter(User.id != current_user.id).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
-    
-    conversations = []
-    for user in users:
-        last_msg = Message.query.filter(
-            ((Message.sender_id == current_user.id) & (Message.receiver_id == user.id)) |
-            ((Message.sender_id == user.id) & (Message.receiver_id == current_user.id))
+    convs = []
+    for u in users:
+        last = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == u.id)) |
+            ((Message.sender_id == u.id) & (Message.receiver_id == current_user.id))
         ).order_by(Message.timestamp.desc()).first()
-        
-        unread = Message.query.filter(
-            Message.sender_id == user.id,
-            Message.receiver_id == current_user.id,
-            Message.is_read == False
-        ).count()
-        
-        conversations.append({
-            'type': 'private',
-            'id': user.id,
-            'name': user.username,
-            'avatar': user.avatar,
-            'status': user.status,
-            'last_message': last_msg,
-            'unread_count': unread
-        })
-    
-    for group in groups:
-        last_msg = GroupMessage.query.filter_by(group_id=group.id).order_by(GroupMessage.timestamp.desc()).first()
-        conversations.append({
-            'type': 'group',
-            'id': group.id,
-            'name': group.name,
-            'avatar': None,
-            'status': 'group',
-            'last_message': last_msg,
-            'unread_count': 0
-        })
-    
-    conversations.sort(key=lambda x: x['last_message'].timestamp if x['last_message'] else datetime.min, reverse=True)
-    
-    return render_template('chat.html', conversations=conversations, current_user=current_user)
+        unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False).count()
+        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
+    for g in groups:
+        last = GroupMessage.query.filter_by(group_id=g.id).order_by(GroupMessage.timestamp.desc()).first()
+        convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'last': last, 'unread': 0})
+    convs.sort(key=lambda x: x['last'].timestamp if x['last'] else datetime.min, reverse=True)
+    return render_template('chat.html', convs=convs)
 
-@app.route('/get_messages/<int:user_id>')
+@app.route('/messages/<int:uid>')
 @login_required
-def get_messages(user_id):
-    other_user = User.query.get(user_id)
-    if not other_user:
-        flash('Пользователь не найден', 'danger')
+def messages(uid):
+    other = User.query.get(uid)
+    if not other:
+        flash('Пользователь не найден')
         return redirect(url_for('chat'))
-    
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
-        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == uid)) |
+        ((Message.sender_id == uid) & (Message.receiver_id == current_user.id))
     ).order_by(Message.timestamp).all()
-    
-    unread = Message.query.filter(Message.sender_id == user_id, Message.receiver_id == current_user.id, Message.is_read == False).all()
-    for msg in unread:
-        msg.is_read = True
+    for m in msgs:
+        if m.receiver_id == current_user.id and not m.is_read:
+            m.is_read = True
     db.session.commit()
-    
-    return render_template('messages.html', messages=messages, other_user=other_user, current_user=current_user)
+    return render_template('messages.html', msgs=msgs, other=other)
 
-@app.route('/send_message', methods=['POST'])
+@app.route('/send', methods=['POST'])
 @login_required
-def send_message():
-    receiver_id = request.form['receiver_id']
-    content = request.form.get('content', '')
-    file_path = request.form.get('file_path', '')
-    file_name = request.form.get('file_name', '')
-    file_type = request.form.get('file_type', '')
-    
-    msg = Message(
-        content=content if content.strip() else None,
-        file_path=file_path if file_path else None,
-        file_name=file_name if file_name else None,
-        file_type=file_type if file_type else None,
+def send():
+    db.session.add(Message(
+        content=request.form.get('content'),
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        receiver_id=receiver_id
-    )
-    db.session.add(msg)
+        receiver_id=request.form['receiver_id']
+    ))
     db.session.commit()
-    return redirect(url_for('get_messages', user_id=receiver_id))
+    return redirect(url_for('messages', uid=request.form['receiver_id']))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
