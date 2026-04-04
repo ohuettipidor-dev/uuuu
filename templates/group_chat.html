@@ -18,17 +18,16 @@
         .time{font-size:10px;color:#7f8c8d;margin-top:4px}
         .file-link{color:#2ea6ff;text-decoration:none;display:inline-block;margin-top:4px}
         .file-link:hover{text-decoration:underline}
-        audio{max-width:200px;margin-top:5px}
+        img{max-width:200px;max-height:200px;border-radius:10px;cursor:pointer}
+        audio,video{max-width:200px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
         .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
         .input-area button{padding:12px 20px;border-radius:25px;border:none;background:#2b5278;color:#fff;cursor:pointer}
         .attach-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer}
-        .voice-btn{background:#2b2f36;padding:12px;border-radius:25px;cursor:pointer;margin-left:5px}
         .members{padding:10px;background:#17212b;border-bottom:1px solid #2b2f36;font-size:12px}
         .add-form{display:flex;gap:5px;margin-top:5px}
         .add-form input{flex:1;padding:5px;border-radius:15px;border:none;background:#242f3d;color:#fff}
         .add-form button{padding:5px 10px;border-radius:15px;border:none;background:#2b5278;color:#fff}
-        .recording{background:#e74c3c !important}
     </style>
 </head>
 <body>
@@ -56,11 +55,11 @@
                 {% if m.content %}{{ m.content }}{% endif %}
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" onclick="window.open(this.src)" style="max-width:200px;max-height:200px;border-radius:10px;cursor:pointer">
+                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' %}
-                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:10px"></video>
+                        <video controls src="{{ m.file_path }}"></video>
                     {% else %}
                         <a href="{{ m.file_path }}" download="{{ m.file_name }}" class="file-link">📎 {{ m.file_name }}</a>
                     {% endif %}
@@ -74,15 +73,11 @@
         <input type="text" id="msgInput" placeholder="Сообщение...">
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-        <button class="voice-btn" id="voiceBtn" onclick="toggleRecording()">🎤</button>
         <button onclick="sendMsg()">➤</button>
     </div>
 </div>
 <script>
     const group_id = {{ group.id }};
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let isRecording = false;
     
     function sendMsg() {
         let content = document.getElementById('msgInput').value.trim();
@@ -117,48 +112,6 @@
             }).catch(err => {
                 alert('Ошибка: ' + err);
             });
-    }
-    
-    async function toggleRecording() {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    }
-    
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const file = new File([audioBlob], 'voice.webm', { type: 'audio/webm' });
-                sendFile(file);
-                stream.getTracks().forEach(track => track.stop());
-            };
-            mediaRecorder.start();
-            isRecording = true;
-            document.getElementById('voiceBtn').classList.add('recording');
-            document.getElementById('voiceBtn').textContent = '⏹️';
-            
-            setTimeout(() => {
-                if (isRecording) stopRecording();
-            }, 30000);
-        } catch (err) {
-            alert('Ошибка доступа к микрофону: ' + err);
-        }
-    }
-    
-    function stopRecording() {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            document.getElementById('voiceBtn').classList.remove('recording');
-            document.getElementById('voiceBtn').textContent = '🎤';
-        }
     }
     
     document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
