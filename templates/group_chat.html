@@ -15,8 +15,9 @@
         .own .bubble{background:#2b5278;margin-left:auto}
         .sender{font-size:11px;color:#2ea6ff;margin-bottom:4px}
         .time{font-size:10px;color:#7f8c8d;margin-top:4px}
-        .file{display:inline-block;margin-top:5px;color:#2ea6ff}
-        img{max-width:200px;max-height:200px;border-radius:10px}
+        .file{display:inline-block;margin-top:5px;color:#2ea6ff;text-decoration:none}
+        .file:hover{text-decoration:underline}
+        img{max-width:200px;max-height:200px;border-radius:10px;cursor:pointer}
         audio,video{max-width:200px}
         .input-area{padding:15px;background:#17212b;border-top:1px solid #2b2f36;display:flex;gap:10px}
         .input-area input{flex:1;padding:12px;border-radius:25px;border:none;background:#242f3d;color:#fff}
@@ -31,7 +32,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <div class="back" onclick="window.location.href='/chat'">← Назад</div>
+        <div class="back" onclick="location.href='/chat'">← Назад</div>
         <div>{{ group.name }}</div>
         <a href="/profile" style="margin-left:auto;background:#2b2f36;padding:8px 16px;border-radius:20px">Профиль</a>
     </div>
@@ -75,7 +76,6 @@
 </div>
 <script>
     const group_id = {{ group.id }};
-    let lastMsgId = {{ messages[-1].id if messages else 0 }};
     
     function sendMsg() {
         let content = document.getElementById('msgInput').value.trim();
@@ -85,8 +85,7 @@
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
         }).then(() => {
-            document.getElementById('msgInput').value = '';
-            window.location.href = '/group/' + group_id;
+            location.reload();
         });
     }
     
@@ -102,24 +101,17 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        window.location.href = '/group/' + group_id;
+                        location.reload();
                     });
-                } else alert('Ошибка загрузки');
-            });
-    }
-    
-    function checkNewMessages() {
-        fetch('/get_new_group_messages?last_id=' + lastMsgId + '&group_id=' + group_id)
-            .then(r => r.json())
-            .then(msgs => {
-                if(msgs.length > 0) {
-                    window.location.href = '/group/' + group_id;
+                } else {
+                    alert('Ошибка загрузки: ' + (d.error || 'Неизвестная ошибка'));
                 }
+            }).catch(err => {
+                alert('Ошибка: ' + err);
             });
     }
     
     document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
-    setInterval(checkNewMessages, 5000);
     window.scrollTo(0, document.body.scrollHeight);
 </script>
 </body>
