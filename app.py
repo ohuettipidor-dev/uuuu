@@ -5,7 +5,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import uuid
-import mimetypes
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -14,24 +13,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
+VOICE_FOLDER = 'static/voices'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
+os.makedirs(VOICE_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
+app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
-    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico',
-    'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac',
-    'mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv',
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'md',
-    'zip', 'rar', '7z', 'tar', 'gz', 'bz2',
-    'exe', 'msi', 'apk', 'dmg', 'iso',
-    'psd', 'ai', 'cdr', 'svg', 'eps',
-    'ttf', 'otf', 'woff', 'woff2',
-    'json', 'xml', 'csv', 'log',
-    'py', 'js', 'html', 'css', 'php', 'java', 'c', 'cpp', 'h'
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
+    'mp3', 'wav', 'ogg', 'flac', 'm4a',
+    'mp4', 'avi', 'mov', 'mkv', 'webm',
+    'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', '7z'
 }
 
 def allowed_file(f):
@@ -59,6 +55,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+    voice_duration = db.Column(db.Integer, default=0)
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -79,6 +76,7 @@ class GroupMessage(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    voice_duration = db.Column(db.Integer, default=0)
 
 @login_manager.user_loader
 def load_user(uid):
@@ -153,26 +151,28 @@ def upload():
     if f.filename == '':
         return jsonify({'error': 'Файл не выбран'}), 400
     if allowed_file(f.filename):
-        original_name = f.filename
-        ext = original_name.rsplit('.', 1)[1].lower()
+        ext = f.filename.rsplit('.', 1)[1].lower()
         name = f"{uuid.uuid4().hex}.{ext}"
         f.save(os.path.join(FILE_FOLDER, name))
-        
-        if ext in ['png','jpg','jpeg','gif','webp','bmp','ico']:
-            ft = 'image'
-        elif ext in ['mp3','wav','ogg','flac','m4a','aac']:
-            ft = 'audio'
-        elif ext in ['mp4','avi','mov','mkv','webm','flv','wmv']:
-            ft = 'video'
-        else:
-            ft = 'document'
-        
-        return jsonify({
-            'path': f'/static/uploads/{name}', 
-            'name': original_name, 
-            'type': ft
-        })
+        if ext in ['png','jpg','jpeg','gif','webp','bmp']: ft = 'image'
+        elif ext in ['mp3','wav','ogg','flac','m4a']: ft = 'audio'
+        elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
+        else: ft = 'document'
+        return jsonify({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': ft})
     return jsonify({'error': 'Формат не поддерживается'}), 400
+
+@app.route('/upload_voice', methods=['POST'])
+@login_required
+def upload_voice():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'Нет аудио'}), 400
+    f = request.files['audio']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    name = f"voice_{current_user.id}_{uuid.uuid4().hex}.webm"
+    f.save(os.path.join(VOICE_FOLDER, name))
+    duration = request.form.get('duration', 0)
+    return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
 @app.route('/create_group', methods=['POST'])
 @login_required
@@ -235,7 +235,8 @@ def send_group():
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        group_id=request.form['group_id']
+        group_id=request.form['group_id'],
+        voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
     return redirect(url_for('group_chat', gid=request.form['group_id']))
@@ -287,7 +288,8 @@ def send():
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        receiver_id=request.form['receiver_id']
+        receiver_id=request.form['receiver_id'],
+        voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
     return redirect(url_for('messages', uid=request.form['receiver_id']))
