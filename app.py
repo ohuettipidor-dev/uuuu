@@ -77,7 +77,7 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
-    # ВАЖНО: добавляем связь с пользователем-отправителем
+    # ВАЖНО: связь с отправителем
     sender = db.relationship('User', foreign_keys=[sender_id])
 
 @login_manager.user_loader

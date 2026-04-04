@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 Мессенджер</title>
+    <title>🐻 BearGram | Уютный мессенджер</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -30,6 +30,9 @@
         .profile-btn{color:#ff6b6b}
         .logout-btn{color:#888}
         .profile-btn:hover,.logout-btn:hover{background:white;transform:translateY(-2px)}
+        .logo-text{font-weight:bold;font-size:18px;letter-spacing:1px}
+        .logo-text span:first-child{color:#ff6b6b}
+        .logo-text span:last-child{color:#ff8e8e}
     </style>
 </head>
 <body>
@@ -42,9 +45,11 @@
                 {{ current_user.username[0].upper() }}
             {% endif %}
         </div>
-        <span style="font-weight:bold;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.1)">{{ current_user.username }}</span>
+        <div class="logo-text">
+            <span>🐻 Bear</span><span>Gram</span>
+        </div>
         <a href="/profile" class="profile-btn">🧸 Профиль</a>
-        <a href="/logout" class="logout-btn">🐻‍❄️ Выйти</a>
+        <a href="/logout" class="logout-btn">🚪 Выйти</a>
     </div>
     <button class="create-btn" onclick="createGroup()">✨ + Создать группу ✨</button>
     <div id="chats">
@@ -63,7 +68,7 @@
                 <div class="chat-name">{{ c.name }}
                     {% if c.type == 'private' %}
                         <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
-                            {% if c.status == 'online' %}🐻 онлайн{% else %}🐻‍❄️ офлайн{% endif %}
+                            {% if c.status == 'online' %}🐻 онлайн{% else %}💤 офлайн{% endif %}
                         </span>
                     {% else %}
                         <span class="online">👥 группа</span>

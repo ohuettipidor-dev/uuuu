@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 {{ group.name }}</title>
+    <title>🐻 {{ group.name }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -42,7 +42,7 @@
 <div class="container">
     <div class="header">
         <div class="back" onclick="location.href='/chat'">← Назад</div>
-        <div>{{ group.name }}</div>
+        <div>🐻 {{ group.name }}</div>
         <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none">🧸 Профиль</a>
     </div>
     <div class="members">
@@ -147,7 +147,6 @@
         }).then(() => {
             msgInput.value = '';
             localStorage.setItem('group_msg_' + group_id, '');
-            // Обновляем сообщения через 1 секунду
             setTimeout(() => checkNewMessages(), 1000);
         });
     }
@@ -164,7 +163,6 @@
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
                     }).then(() => {
-                        // Обновляем сообщения через 1 секунду
                         setTimeout(() => checkNewMessages(), 1000);
                     });
                 } else alert('Ошибка: ' + d.error);
