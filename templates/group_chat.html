@@ -9,6 +9,7 @@
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         .header{padding:15px;background:#17212b;display:flex;align-items:center;gap:15px;border-bottom:1px solid #2b2f36;flex-wrap:wrap}
         .back{background:#2b2f36;padding:8px 16px;border-radius:20px;cursor:pointer}
+        .refresh-btn{background:#28a745;padding:8px 16px;border-radius:20px;cursor:pointer;border:none;color:#fff}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column}
         .msg{margin-bottom:15px}
         .bubble{max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;background:#1e2a36;word-break:break-word}
@@ -32,6 +33,7 @@
     <div class="header">
         <div class="back" onclick="location.href='/chat'">← Назад</div>
         <div>{{ group.name }}</div>
+        <button class="refresh-btn" onclick="location.reload()">🔄</button>
         <a href="/profile" style="background:#2b2f36;padding:8px 16px;border-radius:20px;color:#fff;text-decoration:none">Профиль</a>
     </div>
     <div class="members">
