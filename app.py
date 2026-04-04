@@ -14,16 +14,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 VOICE_FOLDER = 'static/voices'
-STICKER_FOLDER = 'static/stickers'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
-os.makedirs(STICKER_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
-app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
@@ -59,7 +56,7 @@ class Message(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     voice_duration = db.Column(db.Integer, default=0)
-    is_sticker = db.Column(db.Boolean, default=False)
+    reactions = db.Column(db.Text, default='{}')
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -81,7 +78,7 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
-    is_sticker = db.Column(db.Boolean, default=False)
+    reactions = db.Column(db.Text, default='{}')
 
 @login_manager.user_loader
 def load_user(uid):
@@ -179,23 +176,45 @@ def upload_voice():
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
-@app.route('/send_sticker', methods=['POST'])
+@app.route('/add_reaction', methods=['POST'])
 @login_required
-def send_sticker():
+def add_reaction():
     data = request.get_json()
-    sticker_url = data.get('sticker_url')
-    chat_type = data.get('type')
-    chat_id = data.get('id')
-    if chat_type == 'private':
-        msg = Message(content='', file_path=sticker_url, file_name='sticker.png', file_type='image', is_sticker=True, sender_id=current_user.id, receiver_id=chat_id)
-        db.session.add(msg)
-        db.session.commit()
-        return jsonify({'success': True})
+    msg_type = data.get('type')
+    msg_id = data.get('msg_id')
+    emoji = data.get('emoji')
+    import json
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+        if msg:
+            reactions = json.loads(msg.reactions) if msg.reactions else {}
+            if emoji in reactions:
+                if current_user.id in reactions[emoji]:
+                    reactions[emoji].remove(current_user.id)
+                    if not reactions[emoji]:
+                        del reactions[emoji]
+                else:
+                    reactions[emoji].append(current_user.id)
+            else:
+                reactions[emoji] = [current_user.id]
+            msg.reactions = json.dumps(reactions)
+            db.session.commit()
     else:
-        msg = GroupMessage(content='', file_path=sticker_url, file_name='sticker.png', file_type='image', is_sticker=True, sender_id=current_user.id, group_id=chat_id)
-        db.session.add(msg)
-        db.session.commit()
-        return jsonify({'success': True})
+        msg = GroupMessage.query.get(msg_id)
+        if msg:
+            reactions = json.loads(msg.reactions) if msg.reactions else {}
+            if emoji in reactions:
+                if current_user.id in reactions[emoji]:
+                    reactions[emoji].remove(current_user.id)
+                    if not reactions[emoji]:
+                        del reactions[emoji]
+                else:
+                    reactions[emoji].append(current_user.id)
+            else:
+                reactions[emoji] = [current_user.id]
+            msg.reactions = json.dumps(reactions)
+            db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/create_group', methods=['POST'])
 @login_required
@@ -327,6 +346,7 @@ def get_new_messages(last_id, receiver_id):
     ).order_by(Message.timestamp).all()
     result = []
     for m in msgs:
+        import json
         result.append({
             'id': m.id,
             'content': m.content,
@@ -336,7 +356,7 @@ def get_new_messages(last_id, receiver_id):
             'timestamp': m.timestamp.strftime('%H:%M'),
             'is_own': m.sender_id == current_user.id,
             'voice_duration': m.voice_duration,
-            'is_sticker': m.is_sticker
+            'reactions': json.loads(m.reactions) if m.reactions else {}
         })
     return jsonify(result)
 
@@ -352,6 +372,7 @@ def get_new_group_messages(last_id, group_id):
     ).order_by(GroupMessage.timestamp).all()
     result = []
     for m in msgs:
+        import json
         result.append({
             'id': m.id,
             'content': m.content,
@@ -362,7 +383,7 @@ def get_new_group_messages(last_id, group_id):
             'is_own': m.sender_id == current_user.id,
             'sender_name': m.sender.username,
             'voice_duration': m.voice_duration,
-            'is_sticker': m.is_sticker
+            'reactions': json.loads(m.reactions) if m.reactions else {}
         })
     return jsonify(result)
 

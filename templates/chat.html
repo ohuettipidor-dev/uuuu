@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>💙💚💖 Мессенджер</title>
+    <title>❤️🤍 Мессенджер</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif}
         body{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #ff6b6b 100%);
             min-height:100vh;
         }
         .container{max-width:800px;margin:0 auto;padding:20px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid rgba(255,255,255,0.3);flex-wrap:wrap;gap:10px}
-        .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #667eea, #764ba2);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap;gap:10px}
+        .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-        .create-btn{background:linear-gradient(135deg, #667eea, #764ba2);border:none;color:white;padding:12px;border-radius:30px;width:100%;margin-bottom:20px;cursor:pointer;font-weight:bold;transition:transform 0.2s;box-shadow:0 4px 15px rgba(102,126,234,0.3)}
+        .create-btn{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);border:none;color:white;padding:12px;border-radius:30px;width:100%;margin-bottom:20px;cursor:pointer;font-weight:bold;transition:transform 0.2s}
         .create-btn:hover{transform:translateY(-2px)}
-        .chat-item{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-radius:20px;margin-bottom:12px;padding:15px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.5)}
+        .chat-item{background:rgba(255,255,255,0.95);border-radius:20px;margin-bottom:12px;padding:15px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,107,107,0.3)}
         .chat-item:hover{transform:translateX(5px);background:white}
-        .chat-avatar{width:55px;height:55px;border-radius:50%;margin-right:15px;background:linear-gradient(135deg, #667eea, #764ba2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:white}
+        .chat-avatar{width:55px;height:55px;border-radius:50%;margin-right:15px;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:white}
         .chat-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .chat-info{flex:1}
         .chat-name{font-weight:600;margin-bottom:5px;color:#333;font-size:16px}
         .chat-last{font-size:12px;color:#666}
         .chat-meta{text-align:right}
         .chat-time{font-size:11px;color:#999;margin-bottom:5px}
-        .badge{background:#f093fb;color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:bold}
+        .badge{background:#ff6b6b;color:white;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:bold}
         .online{color:#4caf50;font-size:11px;margin-left:8px}
         .offline{color:#999;font-size:11px;margin-left:8px}
         a{color:#333;text-decoration:none}
         .profile-btn,.logout-btn{background:rgba(255,255,255,0.95);padding:8px 18px;border-radius:25px;font-size:14px;transition:all 0.2s;font-weight:500}
-        .profile-btn{color:#667eea}
-        .logout-btn{color:#764ba2}
+        .profile-btn{color:#ff6b6b}
+        .logout-btn{color:#ff6b6b}
         .profile-btn:hover,.logout-btn:hover{background:white;transform:translateY(-2px)}
     </style>
 </head>
@@ -45,9 +45,9 @@
                 {{ current_user.username[0].upper() }}
             {% endif %}
         </div>
-        <span style="font-weight:bold;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.2)">💙 {{ current_user.username }} 💖</span>
-        <a href="/profile" class="profile-btn">💚 Профиль</a>
-        <a href="/logout" class="logout-btn">💜 Выйти</a>
+        <span style="font-weight:bold;color:#333">❤️ {{ current_user.username }} 🤍</span>
+        <a href="/profile" class="profile-btn">Профиль</a>
+        <a href="/logout" class="logout-btn">Выйти</a>
     </div>
     <button class="create-btn" onclick="createGroup()">✨ + Создать группу ✨</button>
     <div id="chats">
@@ -66,7 +66,7 @@
                 <div class="chat-name">{{ c.name }}
                     {% if c.type == 'private' %}
                         <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
-                            {% if c.status == 'online' %}💚 онлайн{% else %}💔 офлайн{% endif %}
+                            {% if c.status == 'online' %}● онлайн{% else %}● офлайн{% endif %}
                         </span>
                     {% else %}
                         <span class="online">👥 группа</span>
@@ -88,7 +88,7 @@
         else location.href = '/group/' + id;
     }
     function createGroup() {
-        let name = prompt('💙💚💖 Название группы:');
+        let name = prompt('❤️ Название группы:');
         if(name) {
             let f = document.createElement('form');
             f.method = 'POST';
