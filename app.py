@@ -66,6 +66,12 @@ class User(UserMixin, db.Model):
     notifications_enabled = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Blacklist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    blocked_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=True)
@@ -211,6 +217,26 @@ def profile():
             db.session.commit()
             flash('Настройки уведомлений сохранены', 'success')
         
+        if 'delete_account' in request.form:
+            # Удаляем все сообщения пользователя
+            Message.query.filter((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)).delete()
+            GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
+            GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
+            Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
+            
+            # Удаляем группы, созданные пользователем
+            groups = Group.query.filter_by(created_by=current_user.id).all()
+            for group in groups:
+                GroupMember.query.filter_by(group_id=group.id).delete()
+                GroupMessage.query.filter_by(group_id=group.id).delete()
+                db.session.delete(group)
+            
+            db.session.delete(current_user)
+            db.session.commit()
+            logout_user()
+            flash('Аккаунт удалён', 'success')
+            return redirect(url_for('index'))
+        
         return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user)
 
@@ -221,7 +247,30 @@ def profile_by_id(uid):
     if not user:
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('chat'))
-    return render_template('profile_public.html', profile_user=user)
+    
+    # Проверяем, есть ли в черном списке
+    is_blocked = Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first() is not None
+    
+    return render_template('profile_public.html', profile_user=user, is_blocked=is_blocked)
+
+@app.route('/block_user/<int:uid>', methods=['POST'])
+@login_required
+def block_user(uid):
+    if uid == current_user.id:
+        flash('Нельзя заблокировать самого себя', 'danger')
+        return redirect(url_for('profile_by_id', uid=uid))
+    
+    existing = Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first()
+    if not existing:
+        db.session.add(Blacklist(user_id=current_user.id, blocked_user_id=uid))
+        db.session.commit()
+        flash('Пользователь добавлен в черный список', 'success')
+    else:
+        db.session.delete(existing)
+        db.session.commit()
+        flash('Пользователь удалён из черного списка', 'success')
+    
+    return redirect(url_for('profile_by_id', uid=uid))
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -381,7 +430,11 @@ def send_group():
 def chat():
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
-    users = User.query.filter(User.id != current_user.id).all()
+    
+    # Получаем список заблокированных пользователей
+    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
+    
+    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
     convs = []
     for u in users:
@@ -400,6 +453,14 @@ def chat():
 @app.route('/messages/<int:uid>')
 @login_required
 def messages(uid):
+    # Проверяем, не заблокирован ли пользователь
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first():
+        flash('Вы заблокировали этого пользователя', 'danger')
+        return redirect(url_for('chat'))
+    if Blacklist.query.filter_by(user_id=uid, blocked_user_id=current_user.id).first():
+        flash('Этот пользователь заблокировал вас', 'danger')
+        return redirect(url_for('chat'))
+    
     other = User.query.get(uid)
     if not other:
         flash('Пользователь не найден')
@@ -417,6 +478,16 @@ def messages(uid):
 @app.route('/send', methods=['POST'])
 @login_required
 def send():
+    receiver_id = int(request.form['receiver_id'])
+    
+    # Проверяем, не заблокирован ли получатель
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
+        flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
+        return redirect(url_for('chat'))
+    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
+        flash('Этот пользователь заблокировал вас', 'danger')
+        return redirect(url_for('chat'))
+    
     content = request.form.get('content', '')
     content, mentions = parse_mentions(content)
     db.session.add(Message(
@@ -425,15 +496,21 @@ def send():
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        receiver_id=request.form['receiver_id'],
+        receiver_id=receiver_id,
         voice_duration=request.form.get('voice_duration', 0)
     ))
     db.session.commit()
-    return redirect(url_for('messages', uid=request.form['receiver_id']))
+    return redirect(url_for('messages', uid=receiver_id))
 
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
 def get_new_messages(last_id, receiver_id):
+    # Проверяем блокировку
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
+        return jsonify([])
+    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
+        return jsonify([])
+    
     msgs = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
         ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),

@@ -77,6 +77,15 @@
             border: 1px solid #ff6b6b;
             color: #ff6b6b;
         }
+        .btn-danger{
+            background: #e74c3c;
+        }
+        .btn-danger:hover{
+            background: #c0392b;
+        }
+        .btn-blocked{
+            background: #7f8c8d;
+        }
         .btn:hover{
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255,107,107,0.3);
@@ -86,6 +95,7 @@
             gap: 15px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .back-link{
             margin-top: 20px;
@@ -93,6 +103,22 @@
         .back-link a{
             color: #ff6b6b;
             text-decoration: none;
+        }
+        .flash{
+            padding: 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .flash-danger{
+            background: rgba(231,76,60,0.1);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+        }
+        .flash-success{
+            background: rgba(46,204,113,0.1);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
         }
     </style>
 </head>
@@ -114,8 +140,21 @@
         <p>📅 {{ profile_user.created_at.strftime('%d.%m.%Y') if profile_user.created_at else 'Недавно' }}</p>
     </div>
     
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     <div class="actions">
         <a href="/messages/{{ profile_user.id }}" class="btn">💬 Написать сообщение</a>
+        <form method="POST" action="/block_user/{{ profile_user.id }}" style="display: inline;">
+            <button type="submit" class="btn {% if is_blocked %}btn-blocked{% else %}btn-danger{% endif %}">
+                {% if is_blocked %}🔓 Разблокировать{% else %}🚫 Заблокировать{% endif %}
+            </button>
+        </form>
     </div>
     
     <div class="back-link">
