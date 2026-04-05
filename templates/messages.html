@@ -43,7 +43,7 @@
         .message-content{line-height:1.4}
         .message-actions{position:absolute;top:-10px;right:0;background:white;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none;gap:5px;padding:4px 8px;z-index:10}
         .message:hover .message-actions{display:flex}
-        .action-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:15px;transition:all 0.2s}
+        .action-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:4px 8px;border-radius:15px;transition:all 0.2s}
         .action-btn:hover{background:#f0f0f0}
         .reply-preview{background:rgba(0,0,0,0.05);border-left:3px solid #ff6b6b;padding:6px 10px;margin-bottom:6px;border-radius:8px;font-size:12px}
         .reply-preview span{color:#ff6b6b;font-weight:500}
@@ -84,7 +84,8 @@
                     <span id="reply-preview-{{ m.id }}">Загрузка...</span>
                 </div>
                 {% endif %}
-                <div class="message-content" data-raw="{{ m.content }}"></div>
+                <!-- ВАЖНО: добавили |safe для рендеринга HTML ссылок -->
+                <div class="message-content">{{ m.content|safe }}</div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -111,7 +112,7 @@
                 </div>
             </div>
             <div class="message-actions">
-                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;') }}`)">💬 Ответить</button>
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬 Ответить</button>
                 <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐ Избранное</button>
                 <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️ Переслать</button>
                 {% if m.sender_id == current_user.id %}
@@ -161,18 +162,6 @@
     let pendingForwardMsgId = null;
     let pendingForwardMsgType = null;
     
-    function renderMentions(text) {
-        if (!text) return '';
-        return text.replace(/\[MENTION:(\d+):([^\]]+)\]/g, '<a href="/profile/$1" class="mention" data-user-id="$1">@$2</a>');
-    }
-    
-    function escapeHtml(text) {
-        if(!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
     function playVoice(el) {
         const audio = el.closest('.bubble').querySelector('audio');
         if(audio) audio.play();
@@ -185,10 +174,7 @@
         div.setAttribute('data-id', msg.id);
         div.setAttribute('data-sender', msg.is_own ? {{ current_user.id }} : receiver_id);
         
-        let contentHtml = '';
-        if(msg.content) {
-            contentHtml = renderMentions(escapeHtml(msg.content));
-        }
+        let contentHtml = msg.content ? msg.content : '';
         
         let forwardHtml = '';
         if(msg.forwarded_from_name) {
@@ -243,15 +229,6 @@
         
         messagesDiv.appendChild(div);
         
-        div.querySelectorAll('.mention').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const userId = link.getAttribute('data-user-id');
-                if(userId) window.location.href = `/profile/${userId}`;
-            });
-        });
-        
         if(msg.reply_to_id) {
             fetch(`/get_reply_preview/${msg.reply_to_id}/private`)
                 .then(r => r.json())
@@ -263,6 +240,13 @@
         
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
+    }
+    
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function checkNewMessages() {
@@ -369,22 +353,18 @@
     }
     
     function forwardMessage(msgId, msgType) {
-        let targetChat = prompt('Введите ID пользователя для пересылки:');
-        if(!targetChat) return;
-        let targetId = parseInt(targetChat);
-        
+        let targetId = prompt('Введите ID пользователя для пересылки:');
+        if(!targetId) return;
         fetch('/forward_message', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 msg_id: msgId,
                 target_type: 'private',
-                target_id: targetId,
+                target_id: parseInt(targetId),
                 msg_type: msgType
             })
-        }).then(() => {
-            alert('Сообщение переслано!');
-        });
+        }).then(() => alert('Переслано!'));
     }
     
     async function startRecording() {
@@ -456,26 +436,6 @@
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
     msgInput.addEventListener('input', () => localStorage.setItem('msg_' + receiver_id, msgInput.value));
-    
-    document.querySelectorAll('.message .message-content').forEach(el => {
-        const raw = el.getAttribute('data-raw');
-        if(raw) {
-            el.innerHTML = renderMentions(escapeHtml(raw));
-        }
-    });
-    
-    document.querySelectorAll('.reply-preview').forEach(preview => {
-        const msgElement = preview.closest('.message');
-        const msgId = msgElement.getAttribute('data-id');
-        if(msgId) {
-            fetch(`/get_reply_preview/${msgId}/private`)
-                .then(r => r.json())
-                .then(data => {
-                    const span = preview.querySelector('span:last-child');
-                    if(span) span.textContent = data.content;
-                });
-        }
-    });
     
     pollingInterval = setInterval(checkNewMessages, 3000);
 </script>
