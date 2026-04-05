@@ -1,164 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 {{ profile_user.username }} | BearGram</title>
+    <title>🐻 Профиль {{ profile_user.username }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .card{
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 48px;
-            padding: 40px;
-            max-width: 420px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.5);
-        }
-        .avatar-large{
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
-            overflow: hidden;
-        }
-        .avatar-large img{
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        h2{
-            color: #333;
-            margin-bottom: 8px;
-        }
-        .username-link{
-            color: #aaa;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .info{
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        .btn{
-            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-secondary{
-            background: transparent;
-            border: 1px solid #ff6b6b;
-            color: #ff6b6b;
-        }
-        .btn-danger{
-            background: #e74c3c;
-        }
-        .btn-danger:hover{
-            background: #c0392b;
-        }
-        .btn-blocked{
-            background: #7f8c8d;
-        }
-        .btn:hover{
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,107,107,0.3);
-        }
-        .actions{
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .back-link{
-            margin-top: 20px;
-        }
-        .back-link a{
-            color: #ff6b6b;
-            text-decoration: none;
-        }
-        .flash{
-            padding: 12px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .flash-danger{
-            background: rgba(231,76,60,0.1);
-            border: 1px solid #e74c3c;
-            color: #e74c3c;
-        }
-        .flash-success{
-            background: rgba(46,204,113,0.1);
-            border: 1px solid #2ecc71;
-            color: #2ecc71;
-        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        .container{max-width:600px;margin:0 auto;padding:20px}
+        .card{background:rgba(255,255,255,0.95);border-radius:30px;padding:25px;margin-bottom:20px;text-align:center}
+        .avatar{width:100px;height:100px;border-radius:50%;margin:0 auto 15px;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+        .avatar img{width:100%;height:100%;object-fit:cover}
+        .username{font-size:24px;font-weight:600;color:#333;margin-bottom:5px}
+        .username-link{color:#ff6b6b;font-size:14px;margin-bottom:15px}
+        .status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:15px}
+        .status.online{background:#4cd96420;color:#4cd964}
+        .status.offline{background:#88888820;color:#888}
+        .btn-group{display:flex;flex-direction:column;gap:10px;margin-top:15px}
+        .btn{display:block;padding:12px;border-radius:30px;text-decoration:none;font-weight:600;text-align:center;transition:transform 0.2s;border:none;cursor:pointer;font-size:14px}
+        .btn:hover{transform:translateY(-2px)}
+        .btn-primary{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .btn-danger{background:#ff4444;color:white}
+        .btn-secondary{background:#f0f0f0;color:#ff6b6b}
+        .btn-secret{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none;display:inline-block;margin-bottom:20px}
+        .info-text{color:#666;font-size:14px;line-height:1.5;margin-top:10px}
     </style>
 </head>
 <body>
-<div class="card">
-    <div class="avatar-large">
-        {% if profile_user.avatar != 'default.png' %}
-            <img src="/static/avatars/{{ profile_user.avatar }}">
-        {% else %}
-            🐻
-        {% endif %}
-    </div>
-    <h2>{{ profile_user.username }}</h2>
-    {% if profile_user.username_link %}
+<div class="container">
+    <a href="/chat" class="back">← Назад к чатам</a>
+    
+    <div class="card">
+        <div class="avatar">
+            {% if profile_user.avatar != 'default.png' %}
+                <img src="/static/avatars/{{ profile_user.avatar }}">
+            {% else %}
+                🐼
+            {% endif %}
+        </div>
+        <div class="username">{{ profile_user.username }}</div>
+        {% if profile_user.username_link %}
         <div class="username-link">{{ profile_user.username_link }}</div>
-    {% endif %}
-    <div class="info">
-        <p>🐾 Присоединился к BearGram</p>
-        <p>📅 {{ profile_user.created_at.strftime('%d.%m.%Y') if profile_user.created_at else 'Недавно' }}</p>
-    </div>
-    
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
         {% endif %}
-    {% endwith %}
-    
-    <div class="actions">
-        <a href="/messages/{{ profile_user.id }}" class="btn">💬 Написать сообщение</a>
-        <form method="POST" action="/block_user/{{ profile_user.id }}" style="display: inline;">
-            <button type="submit" class="btn {% if is_blocked %}btn-blocked{% else %}btn-danger{% endif %}">
-                {% if is_blocked %}🔓 Разблокировать{% else %}🚫 Заблокировать{% endif %}
-            </button>
-        </form>
+        <div class="status {% if profile_user.status == 'online' %}online{% else %}offline{% endif %}">
+            {% if profile_user.status == 'online' %}● Онлайн{% else %}○ Офлайн{% endif %}
+        </div>
+        
+        <div class="btn-group">
+            <a href="/messages/{{ profile_user.id }}" class="btn btn-primary">💬 Написать сообщение</a>
+            
+            <form method="POST" action="/create_secret_chat/{{ profile_user.id }}">
+                <button type="submit" class="btn btn-secret" style="width:100%">
+                    🔒 Секретный чат (AES-256)
+                </button>
+            </form>
+            
+            <form method="POST" action="/block_user/{{ profile_user.id }}">
+                <button type="submit" class="btn btn-danger" style="width:100%">
+                    {% if is_blocked %}🔓 Разблокировать{% else %}🚫 Заблокировать{% endif %}
+                </button>
+            </form>
+        </div>
     </div>
     
-    <div class="back-link">
-        <a href="/chat">← Вернуться в чат</a>
+    <div class="card">
+        <h3 style="color:#ff6b6b;margin-bottom:10px">🔒 Что такое секретный чат?</h3>
+        <div class="info-text">
+            • Все сообщения шифруются AES-256<br>
+            • Ключ шифрования известен только участникам<br>
+            • End-to-End шифрование как в Telegram<br>
+            • Даже разработчики не могут прочитать переписку
+        </div>
     </div>
 </div>
 </body>
