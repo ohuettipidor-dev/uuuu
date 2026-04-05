@@ -42,12 +42,10 @@ def allowed_file(f):
 
 # ========== КРИПТОГРАФИЯ ДЛЯ СЕКРЕТНЫХ ЧАТОВ ==========
 def generate_secret_key(user_id, other_id):
-    """Генерирует уникальный ключ шифрования для пары пользователей"""
     combined = f"beargram_secret_{min(user_id, other_id)}_{max(user_id, other_id)}_bear"
     return hashlib.sha256(combined.encode()).digest()
 
 def encrypt_message(message, user_id, other_id):
-    """Шифрует сообщение AES-256-CBC"""
     key = generate_secret_key(user_id, other_id)
     iv = os.urandom(16)
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
@@ -58,7 +56,6 @@ def encrypt_message(message, user_id, other_id):
     return base64.b64encode(iv + encrypted).decode('utf-8')
 
 def decrypt_message(encrypted_message, user_id, other_id):
-    """Расшифровывает сообщение AES-256-CBC"""
     try:
         key = generate_secret_key(user_id, other_id)
         data = base64.b64decode(encrypted_message)
@@ -73,22 +70,27 @@ def decrypt_message(encrypted_message, user_id, other_id):
     except Exception:
         return "[Зашифрованное сообщение]"
 
-def render_mentions(text, current_user_id=None, chat_users=None):
-    """Превращает @username в ссылку на профиль"""
+# ========== render_mentions ==========
+def render_mentions(text, current_user_id=None):
     if not text:
         return text, []
     
     mentioned_users = []
-    pattern = r'@([a-zA-Z0-9_]+)'
-    matches = re.findall(pattern, text)
+    users = User.query.all()
     
-    for mention in matches:
-        user = User.query.filter_by(username_link=f'@{mention}').first()
-        if not user:
-            user = User.query.filter_by(username=mention).first()
-        if user and (not current_user_id or user.id != current_user_id):
+    for user in users:
+        if user.id == current_user_id:
+            continue
+        
+        if user.username_link:
+            mention_name = user.username_link[1:]
+        else:
+            mention_name = user.username
+        
+        pattern = r'@' + re.escape(mention_name) + r'\b'
+        if re.search(pattern, text):
+            text = re.sub(pattern, f'<a href="/profile/{user.id}" class="mention">@{mention_name}</a>', text)
             mentioned_users.append(user.id)
-            text = text.replace(f'@{mention}', f'<a href="/profile/{user.id}" class="mention">@{mention}</a>')
     
     return text, mentioned_users
 
@@ -158,6 +160,8 @@ class Message(db.Model):
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
     mentions = db.Column(db.Text, default='')
+    is_pinned = db.Column(db.Boolean, default=False)
+    pinned_at = db.Column(db.DateTime, nullable=True)
     
     reply_to = db.relationship('Message', remote_side=[id], foreign_keys=[reply_to_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
@@ -195,9 +199,32 @@ class GroupMessage(db.Model):
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
     mentions = db.Column(db.Text, default='')
+    is_pinned = db.Column(db.Boolean, default=False)
+    pinned_at = db.Column(db.DateTime, nullable=True)
     
     sender = db.relationship('User', foreign_keys=[sender_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
+
+# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
+class VoiceChannel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    creator = db.relationship('User', foreign_keys=[created_by])
+    group = db.relationship('Group', foreign_keys=[group_id])
+
+class VoiceChannelMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    channel_id = db.Column(db.Integer, db.ForeignKey('voice_channel.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    channel = db.relationship('VoiceChannel', foreign_keys=[channel_id])
+    user = db.relationship('User', foreign_keys=[user_id])
 
 @login_manager.user_loader
 def load_user(uid):
@@ -313,6 +340,8 @@ def profile():
             Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
             SecretMessage.query.filter((SecretMessage.sender_id == current_user.id)).delete()
             SecretChat.query.filter((SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id)).delete()
+            VoiceChannelMember.query.filter_by(user_id=current_user.id).delete()
+            VoiceChannel.query.filter_by(created_by=current_user.id).delete()
             
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
@@ -392,10 +421,10 @@ def upload_voice():
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
+# ========== СЕКРЕТНЫЕ ЧАТЫ ==========
 @app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
 @login_required
 def create_secret_chat(user_id):
-    """Создает секретный чат с пользователем"""
     if user_id == current_user.id:
         if request.is_json:
             return jsonify({'error': 'Нельзя создать секретный чат с самим собой'}), 400
@@ -409,7 +438,6 @@ def create_secret_chat(user_id):
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('chat'))
     
-    # Проверяем, существует ли уже секретный чат
     existing = SecretChat.query.filter(
         ((SecretChat.user1_id == current_user.id) & (SecretChat.user2_id == user_id)) |
         ((SecretChat.user1_id == user_id) & (SecretChat.user2_id == current_user.id))
@@ -569,6 +597,178 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
+# ========== СТАТУС "ПЕЧАТАЕТ..." ==========
+@app.route('/typing', methods=['POST'])
+@login_required
+def typing():
+    data = request.get_json()
+    receiver_id = data.get('receiver_id')
+    is_typing = data.get('is_typing', False)
+    
+    if not hasattr(app, 'typing_status'):
+        app.typing_status = {}
+    
+    key = f"typing_{current_user.id}_{receiver_id}"
+    if is_typing:
+        app.typing_status[key] = datetime.utcnow()
+    else:
+        app.typing_status.pop(key, None)
+    
+    return jsonify({'success': True})
+
+@app.route('/get_typing/<int:receiver_id>')
+@login_required
+def get_typing(receiver_id):
+    if not hasattr(app, 'typing_status'):
+        return jsonify({'is_typing': False})
+    
+    key = f"typing_{receiver_id}_{current_user.id}"
+    typing_time = app.typing_status.get(key)
+    
+    if typing_time and (datetime.utcnow() - typing_time).seconds < 3:
+        return jsonify({'is_typing': True})
+    return jsonify({'is_typing': False})
+
+# ========== ЗАКРЕПЛЕННЫЕ СООБЩЕНИЯ ==========
+@app.route('/pin_message', methods=['POST'])
+@login_required
+def pin_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    msg_type = data['type']
+    
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+        if msg and (msg.sender_id == current_user.id or msg.receiver_id == current_user.id):
+            old_pinned = Message.query.filter(
+                ((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)),
+                ((Message.sender_id == msg.receiver_id) | (Message.receiver_id == msg.sender_id)),
+                Message.is_pinned == True
+            ).first()
+            if old_pinned:
+                old_pinned.is_pinned = False
+                old_pinned.pinned_at = None
+            
+            msg.is_pinned = not msg.is_pinned
+            msg.pinned_at = datetime.utcnow() if msg.is_pinned else None
+            db.session.commit()
+            return jsonify({'success': True, 'is_pinned': msg.is_pinned})
+    elif msg_type == 'group':
+        msg = GroupMessage.query.get(msg_id)
+        if msg:
+            old_pinned = GroupMessage.query.filter_by(group_id=msg.group_id, is_pinned=True).first()
+            if old_pinned:
+                old_pinned.is_pinned = False
+                old_pinned.pinned_at = None
+            
+            msg.is_pinned = not msg.is_pinned
+            msg.pinned_at = datetime.utcnow() if msg.is_pinned else None
+            db.session.commit()
+            return jsonify({'success': True, 'is_pinned': msg.is_pinned})
+    
+    return jsonify({'error': 'Сообщение не найдено'}), 404
+
+@app.route('/get_pinned_message/<int:chat_id>/<string:chat_type>')
+@login_required
+def get_pinned_message(chat_id, chat_type):
+    if chat_type == 'private':
+        pinned = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == chat_id)) |
+            ((Message.sender_id == chat_id) & (Message.receiver_id == current_user.id)),
+            Message.is_pinned == True
+        ).first()
+        if pinned:
+            return jsonify({
+                'id': pinned.id,
+                'content': pinned.content[:100] if pinned.content else '[Файл]',
+                'sender_name': pinned.sender.username
+            })
+    elif chat_type == 'group':
+        pinned = GroupMessage.query.filter_by(group_id=chat_id, is_pinned=True).first()
+        if pinned:
+            return jsonify({
+                'id': pinned.id,
+                'content': pinned.content[:100] if pinned.content else '[Файл]',
+                'sender_name': pinned.sender.username
+            })
+    return jsonify({'error': 'Нет закрепленных сообщений'}), 404
+
+# ========== ЗАЩИТА СКРИНШОТОВ ==========
+@app.route('/check_screenshot', methods=['POST'])
+@login_required
+def check_screenshot():
+    data = request.get_json()
+    chat_id = data.get('chat_id')
+    print(f"[СЕКРЕТНО] Пользователь {current_user.username} пытался сделать скриншот в чате {chat_id}")
+    return jsonify({'warning': 'Скриншоты в секретных чатах запрещены!'}), 200
+
+# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
+@app.route('/create_voice_channel', methods=['POST'])
+@login_required
+def create_voice_channel():
+    name = request.form.get('name')
+    if not name:
+        flash('Введите название канала', 'danger')
+        return redirect(url_for('voice_channels'))
+    
+    channel = VoiceChannel(name=name, created_by=current_user.id)
+    db.session.add(channel)
+    db.session.commit()
+    
+    flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
+    return redirect(url_for('voice_channels'))
+
+@app.route('/voice_channels')
+@login_required
+def voice_channels():
+    channels = VoiceChannel.query.filter_by(is_active=True).all()
+    
+    channel_data = []
+    for ch in channels:
+        member_count = VoiceChannelMember.query.filter_by(channel_id=ch.id).count()
+        channel_data.append({
+            'id': ch.id,
+            'name': ch.name,
+            'member_count': member_count,
+            'creator': ch.creator.username,
+            'is_joined': VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
+        })
+    
+    return render_template('voice_channels.html', channels=channel_data)
+
+@app.route('/join_voice_channel/<int:channel_id>', methods=['POST'])
+@login_required
+def join_voice_channel(channel_id):
+    existing = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
+    if not existing:
+        member = VoiceChannelMember(channel_id=channel_id, user_id=current_user.id)
+        db.session.add(member)
+        db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/leave_voice_channel/<int:channel_id>', methods=['POST'])
+@login_required
+def leave_voice_channel(channel_id):
+    member = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
+    if member:
+        db.session.delete(member)
+        db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/get_voice_channel_members/<int:channel_id>')
+@login_required
+def get_voice_channel_members(channel_id):
+    members = VoiceChannelMember.query.filter_by(channel_id=channel_id).all()
+    result = []
+    for m in members:
+        result.append({
+            'id': m.user.id,
+            'username': m.user.username,
+            'avatar': m.user.avatar
+        })
+    return jsonify(result)
+
+# ========== ОБЫЧНЫЕ ЧАТЫ ==========
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
@@ -718,6 +918,9 @@ def send_group():
     
     content, mentioned_ids = render_mentions(content, current_user.id)
     
+    if not content and request.form.get('file_path'):
+        content = '📎 Файл'
+    
     msg = GroupMessage(
         content=content,
         file_path=request.form.get('file_path'),
@@ -814,6 +1017,9 @@ def send():
     reply_to_id = request.form.get('reply_to_id', type=int)
     
     content, mentioned_ids = render_mentions(content, current_user.id)
+    
+    if not content and request.form.get('file_path'):
+        content = '📎 Файл'
     
     msg = Message(
         content=content,
@@ -1096,6 +1302,7 @@ def get_new_messages(last_id, receiver_id):
             'edited': m.edited,
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
+            'is_pinned': m.is_pinned,
             'forwarded_from_id': m.forwarded_from_id,
             'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
             'mentions': m.mentions
@@ -1130,6 +1337,7 @@ def get_new_group_messages(last_id, group_id):
             'edited': m.edited,
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
+            'is_pinned': m.is_pinned,
             'forwarded_from_id': m.forwarded_from_id,
             'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
             'mentions': m.mentions

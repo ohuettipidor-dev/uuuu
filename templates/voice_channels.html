@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎤 Голосовые каналы | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        .container{max-width:600px;margin:0 auto;padding:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none}
+        h2{color:#333}
+        .create-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);border:none;color:white;padding:12px;border-radius:30px;width:100%;margin-bottom:20px;cursor:pointer;font-weight:bold}
+        .channels-list{display:flex;flex-direction:column;gap:12px}
+        .channel-card{background:rgba(255,255,255,0.9);border-radius:20px;padding:15px;display:flex;align-items:center;gap:15px;border:1px solid rgba(255,107,107,0.3)}
+        .channel-icon{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px}
+        .channel-info{flex:1}
+        .channel-name{font-weight:600;font-size:16px;color:#333}
+        .channel-meta{font-size:12px;color:#888;margin-top:4px}
+        .join-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
+        .leave-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
+        .member-list{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+        .member-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;overflow:hidden}
+        .member-avatar img{width:100%;height:100%;object-fit:cover}
+        
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .modal.active{opacity:1;visibility:visible}
+        .modal-content{background:white;border-radius:28px;padding:20px;width:280px;text-align:center}
+        .modal-content h3{color:#ff6b6b;margin-bottom:16px}
+        .modal-content input{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:16px;outline:none}
+        .modal-buttons{display:flex;gap:10px}
+        .modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
+        .modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .modal-buttons button:last-child{background:#f0f0f0;color:#888}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/chat" class="back">← Назад</a>
+        <h2>🎤 Голосовые каналы</h2>
+    </div>
+    
+    <button class="create-btn" onclick="openCreateModal()">✨ + Создать голосовой канал ✨</button>
+    
+    <div class="channels-list" id="channelsList">
+        {% for ch in channels %}
+        <div class="channel-card" data-channel-id="{{ ch.id }}">
+            <div class="channel-icon">🎤</div>
+            <div class="channel-info">
+                <div class="channel-name">{{ ch.name }}</div>
+                <div class="channel-meta">👥 {{ ch.member_count }} участников • создал {{ ch.creator }}</div>
+                <div class="member-list" id="members-{{ ch.id }}"></div>
+            </div>
+            {% if ch.is_joined %}
+            <button class="leave-btn" onclick="leaveChannel({{ ch.id }})">🚪 Покинуть</button>
+            {% else %}
+            <button class="join-btn" onclick="joinChannel({{ ch.id }})">🎤 Войти</button>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:60px;color:#888">
+            <span style="font-size:48px">🎤</span>
+            <p>Нет голосовых каналов</p>
+            <p style="font-size:13px;margin-top:8px">Создайте первый канал!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="modal" id="createModal">
+    <div class="modal-content">
+        <h3>🎤 Новый голосовой канал</h3>
+        <input type="text" id="channelName" placeholder="Название канала">
+        <div class="modal-buttons">
+            <button onclick="createChannel()">Создать</button>
+            <button onclick="closeCreateModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let memberIntervals = {};
+    
+    function openCreateModal() { document.getElementById('createModal').classList.add('active'); }
+    function closeCreateModal() { document.getElementById('createModal').classList.remove('active'); document.getElementById('channelName').value = ''; }
+    
+    function createChannel() {
+        let name = document.getElementById('channelName').value.trim();
+        if(!name) { alert('Введите название канала'); return; }
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/create_voice_channel';
+        let inp = document.createElement('input');
+        inp.name = 'name';
+        inp.value = name;
+        form.appendChild(inp);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    function joinChannel(channelId) {
+        fetch('/join_voice_channel/' + channelId, {method: 'POST'})
+            .then(() => location.reload());
+    }
+    
+    function leaveChannel(channelId) {
+        fetch('/leave_voice_channel/' + channelId, {method: 'POST'})
+            .then(() => location.reload());
+    }
+    
+    function loadMembers(channelId) {
+        fetch(`/get_voice_channel_members/${channelId}`)
+            .then(r => r.json())
+            .then(members => {
+                const container = document.getElementById(`members-${channelId}`);
+                if(container) {
+                    container.innerHTML = members.map(m => `
+                        <div class="member-avatar" title="${escapeHtml(m.username)}">
+                            ${m.avatar != 'default.png' ? `<img src="/static/avatars/${m.avatar}">` : m.username[0].toUpperCase()}
+                        </div>
+                    `).join('');
+                }
+            });
+    }
+    
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return div.innerHTML;
+    }
+    
+    document.querySelectorAll('.channel-card').forEach(card => {
+        const channelId = card.dataset.channelId;
+        if(channelId) {
+            loadMembers(channelId);
+            memberIntervals[channelId] = setInterval(() => loadMembers(channelId), 5000);
+        }
+    });
+    
+    document.getElementById('createModal').addEventListener('click', function(e) {
+        if(e.target === this) closeCreateModal();
+    });
+</script>
+</body>
+</html>
