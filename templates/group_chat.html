@@ -6,60 +6,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%)}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
-        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3)}
-        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white}
+        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none}
+        .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer}
+        .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
-        .message{animation:fadeInUp 0.3s ease}
+        .message{display:flex;animation:fadeInUp 0.3s ease;position:relative;flex-direction:column}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;background:white;color:#333;display:inline-block}
-        .own{text-align:right}
-        .own .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white}
-        .sender{font-size:11px;color:#ff6b6b;margin-bottom:4px;font-weight:bold}
-        .time{font-size:10px;color:#aaa;margin-top:4px}
-        .file-link{color:#ff6b6b}
-        img,audio,video{max-width:200px;border-radius:15px}
-        .input-area{padding:15px;background:rgba(255,255,255,0.95);display:flex;gap:8px;flex-wrap:wrap}
-        .input-area input{flex:1;padding:12px;border-radius:30px;border:1px solid #ffb3b3}
-        .input-area button{padding:12px 20px;border-radius:30px;border:none;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;cursor:pointer}
-        .attach-btn,.emoji-btn,.voice-btn{background:#f0f0f0;padding:12px;border-radius:30px;cursor:pointer}
-        .members{padding:10px;background:rgba(255,255,255,0.8);font-size:12px;margin-bottom:10px;border-radius:15px}
-        .add-form{display:flex;gap:5px;margin-top:5px}
-        .add-form input{flex:1;padding:5px;border-radius:15px;border:1px solid #ffb3b3}
-        .add-form button{padding:5px 10px;border-radius:15px;background:#ff6b6b;color:white;border:none}
-        .emoji-picker{position:absolute;bottom:80px;right:20px;background:white;border-radius:20px;padding:10px;display:none;grid-template-columns:repeat(8,1fr);gap:8px;max-width:300px;z-index:100}
-        .emoji-picker span{font-size:28px;cursor:pointer}
+        .message.sent{align-items:flex-end}
+        .message.received{align-items:flex-start}
+        .message-header{font-size:12px;color:#888;margin-bottom:4px;margin-left:12px;margin-right:12px}
+        .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;word-wrap:break-word;position:relative}
+        .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
+        .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+        .time{font-size:10px;color:#aaa;margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+        .sent .time{justify-content:flex-end}
+        .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-top:5px}
+        img,audio,video{max-width:200px;border-radius:15px;margin-top:5px}
+        .input-area{padding:15px;background:rgba(255,255,255,0.95);border-top:2px solid rgba(255,107,107,0.3);display:flex;gap:8px;flex-wrap:wrap}
+        .input-area input{flex:1;padding:12px 18px;border-radius:30px;border:1px solid #ffb3b3;background:#fff;color:#333;font-size:14px}
+        .input-area input:focus{outline:none;border-color:#ff6b6b}
+        .input-area button{padding:12px 20px;border-radius:30px;border:none;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;cursor:pointer;font-weight:bold}
+        .attach-btn,.emoji-btn,.voice-btn{background:#f0f0f0;padding:12px;border-radius:30px;cursor:pointer;font-size:18px}
+        .emoji-picker{position:absolute;bottom:80px;right:20px;background:white;border-radius:20px;padding:10px;display:none;grid-template-columns:repeat(8,1fr);gap:8px;max-width:300px;box-shadow:0 5px 20px rgba(0,0,0,0.2);z-index:100}
+        .emoji-picker span{font-size:28px;cursor:pointer;padding:5px;text-align:center;border-radius:12px}
+        .emoji-picker span:hover{background:#f0f0f0}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         .voice-msg{display:flex;align-items:center;gap:8px;cursor:pointer}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:3px;height:8px;background:#ff6b6b;border-radius:2px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:8px}to{height:16px}}
+        .mention{color:#2ea6ff;text-decoration:none;font-weight:500;background:rgba(46,166,255,0.1);padding:2px 6px;border-radius:12px;transition:all 0.2s;cursor:pointer;display:inline-block}
+        .mention:hover{background:rgba(46,166,255,0.2);text-decoration:underline}
+        .message-content{line-height:1.4}
+        .message-actions{position:absolute;top:-10px;right:0;background:white;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none;gap:5px;padding:4px 8px;z-index:10}
+        .message:hover .message-actions{display:flex}
+        .action-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:15px;transition:all 0.2s}
+        .action-btn:hover{background:#f0f0f0}
+        .reply-preview{background:rgba(0,0,0,0.05);border-left:3px solid #ff6b6b;padding:6px 10px;margin-bottom:6px;border-radius:8px;font-size:12px}
+        .reply-preview span{color:#ff6b6b;font-weight:500}
+        .edited-badge{font-size:9px;color:#888;margin-left:5px}
+        .forward-badge{font-size:10px;color:#888;margin-bottom:4px}
+        .reply-bar{background:#f9f9f9;border-radius:20px;padding:8px 15px;margin-bottom:8px;display:none;align-items:center;gap:10px;font-size:13px}
+        .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer}
+        .favorite-star{color:gold;font-size:16px}
+        .edit-input{width:100%;padding:8px;border-radius:15px;border:1px solid #ffb3b3;margin-top:5px}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <div class="back" onclick="location.href='/chat'">← Назад</div>
-        <div>🐻 {{ group.name }}</div>
+        <a href="/chat" class="back">← Назад</a>
+        <div class="avatar" onclick="location.href='/group/{{ group.id }}/info'">
+            {% if group.avatar != 'group_default.png' %}
+                <img src="/static/avatars/{{ group.avatar }}">
+            {% else %}
+                👥
+            {% endif %}
+        </div>
+        <div style="flex:1">{{ group.name }} <span style="font-size:12px">👥 группа</span></div>
         <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none">🧸 Профиль</a>
     </div>
-    <div class="members">
-        🐾 Участники: {% for m in members %}{{ m.username }} {% endfor %}
-        {% if group.created_by == current_user.id %}
-        <form method="POST" action="/add_member/{{ group.id }}" class="add-form">
-            <input type="text" name="username" placeholder="Имя пользователя">
-            <button type="submit">➕ Добавить</button>
-        </form>
-        {% endif %}
-    </div>
+    
     <div class="messages" id="messages">
         {% for m in messages %}
-        <div class="message {% if m.sender_id == current_user.id %}own{% endif %}" data-id="{{ m.id }}">
-            {% if m.sender_id != current_user.id %}<div class="sender">{{ m.sender.username }}</div>{% endif %}
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}" data-sender="{{ m.sender_id }}">
+            {% if m.sender_id != current_user.id %}
+            <div class="message-header">{{ m.sender.username }}</div>
+            {% endif %}
             <div class="bubble">
-                {% if m.content %}{{ m.content }}{% endif %}
+                {% if m.forwarded_from_id %}
+                <div class="forward-badge">📎 Переслано от {{ m.forwarded_from.username if m.forwarded_from else 'пользователя' }}</div>
+                {% endif %}
+                {% if m.reply_to_id %}
+                <div class="reply-preview">
+                    <span>📩 Ответ на сообщение:</span><br>
+                    <span id="reply-preview-{{ m.id }}">Загрузка...</span>
+                </div>
+                {% endif %}
+                <div class="message-content" data-raw="{{ m.content }}"></div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -78,13 +106,33 @@
                         <span style="font-size:11px">{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
-                <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
+                <div class="time">
+                    <span>{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.edited %}<span class="edited-badge">(изменено)</span>{% endif %}
+                    {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
+                </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;') }}`)">💬 Ответить</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'group')">⭐ Избранное</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'group')">➡️ Переслать</button>
+                {% if m.sender_id == current_user.id %}
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'group')">✏️ Изменить</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group')">🗑️ Удалить</button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
+    
+    <div class="reply-bar" id="replyBar">
+        <span>💬 Ответ на сообщение:</span>
+        <span id="replyText" style="flex:1;color:#888"></span>
+        <button class="cancel-reply" onclick="cancelReply()">✖</button>
+    </div>
+    
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
+        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение... (используйте @username)">
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
@@ -92,17 +140,32 @@
         <button onclick="sendMsg()">🐻</button>
     </div>
     <div class="emoji-picker" id="emojiPicker">
-        <span>😀</span><span>😍</span><span>🥰</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🧸</span><span>🎈</span>
+        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span><span>💗</span>
+        <span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span><span>😡</span><span>🤔</span>
+        <span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span><span>🌟</span><span>⭐</span><span>💫</span>
+        <span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span><span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span>
     </div>
 </div>
+
 <script>
     const group_id = {{ group.id }};
     const msgInput = document.getElementById('msgInput');
-    let mediaRecorder = null, audioChunks = [], isRecording = false, startTime = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let startTime = null;
     let lastMsgId = {{ messages[-1].id if messages else 0 }};
     let pollingInterval = null;
+    let currentReplyToId = null;
     
-    function playVoice(el) { 
+    // Функция для рендеринга упоминаний - ОСНОВНОЕ ИСПРАВЛЕНИЕ!
+    function renderMentions(text) {
+        if (!text) return '';
+        // Заменяем [MENTION:id:username] на ссылку
+        return text.replace(/\[MENTION:(\d+):([^\]]+)\]/g, '<a href="/profile/$1" class="mention" data-user-id="$1">@$2</a>');
+    }
+    
+    function playVoice(el) {
         const audio = el.closest('.bubble').querySelector('audio');
         if(audio) audio.play();
     }
@@ -110,44 +173,133 @@
     function addNewMessage(msg) {
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
-        div.className = `message ${msg.is_own ? 'own' : ''}`;
+        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
         div.setAttribute('data-id', msg.id);
+        div.setAttribute('data-sender', msg.is_own ? {{ current_user.id }} : 0);
+        
+        let headerHtml = '';
+        if(!msg.is_own && msg.sender_name) {
+            headerHtml = `<div class="message-header">${escapeHtml(msg.sender_name)}</div>`;
+        }
+        
+        // Рендерим содержимое с упоминаниями
         let contentHtml = '';
-        if(msg.content) contentHtml += msg.content;
+        if(msg.content) {
+            contentHtml = renderMentions(escapeHtml(msg.content));
+        }
+        
+        let forwardHtml = '';
+        if(msg.forwarded_from_name) {
+            forwardHtml = `<div class="forward-badge">📎 Переслано от ${escapeHtml(msg.forwarded_from_name)}</div>`;
+        }
+        
+        let replyHtml = '';
+        if(msg.reply_to_id) {
+            replyHtml = `<div class="reply-preview"><span>📩 Ответ на сообщение:</span><br><span>Загрузка...</span></div>`;
+        }
+        
         if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
             else if(msg.file_type == 'audio') contentHtml += `<audio controls src="${msg.file_path}"></audio>`;
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
-            else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
+            else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
         }
         if(msg.voice_duration && msg.voice_duration > 0) {
             contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
-        div.innerHTML = `${msg.sender_name && !msg.is_own ? `<div class="sender">${msg.sender_name}</div>` : ''}<div class="bubble">${contentHtml}<div class="time">${msg.timestamp}</div></div>`;
+        
+        let editedBadge = msg.edited ? '<span class="edited-badge">(изменено)</span>' : '';
+        let favoriteStar = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
+        
+        // Экранируем содержимое для кнопки
+        const safeContent = (msg.content || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        
+        div.innerHTML = `
+            ${headerHtml}
+            <div class="bubble">
+                ${forwardHtml}
+                ${replyHtml}
+                <div class="message-content">${contentHtml}</div>
+                <div class="time">
+                    <span>${msg.timestamp}</span>
+                    ${editedBadge}
+                    ${favoriteStar}
+                </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬 Ответить</button>
+                <button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐ Избранное</button>
+                <button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️ Переслать</button>
+                ${msg.is_own ? `
+                    <button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️ Изменить</button>
+                    <button class="action-btn" onclick="deleteMessage(${msg.id}, 'group')">🗑️ Удалить</button>
+                ` : ''}
+            </div>
+        `;
+        
         messagesDiv.appendChild(div);
+        
+        // Добавляем обработчики кликов на все упоминания
+        div.querySelectorAll('.mention').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const userId = link.getAttribute('data-user-id');
+                if(userId) window.location.href = `/profile/${userId}`;
+            });
+        });
+        
+        // Загружаем превью ответа если есть
+        if(msg.reply_to_id) {
+            fetch(`/get_reply_preview/${msg.reply_to_id}/group`)
+                .then(r => r.json())
+                .then(data => {
+                    const previewDiv = div.querySelector('.reply-preview span:last-child');
+                    if(previewDiv) previewDiv.textContent = data.content;
+                })
+                .catch(() => {});
+        }
+        
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
+    }
+    
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function checkNewMessages() {
         fetch(`/get_new_group_messages/${lastMsgId}/${group_id}`)
             .then(r => r.json())
-            .then(msgs => { 
-                msgs.forEach(msg => addNewMessage(msg)); 
-            });
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    msgs.forEach(msg => addNewMessage(msg));
+                }
+            })
+            .catch(e => console.log('polling error', e));
     }
     
     function sendMsg() {
         let content = msgInput.value.trim();
-        if(!content) return;
+        if(!content && !currentReplyToId) return;
+        
+        let formData = new FormData();
+        formData.append('group_id', group_id);
+        if(content) formData.append('content', content);
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
         fetch('/send_group', {
             method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'group_id=' + group_id + '&content=' + encodeURIComponent(content)
+            body: formData
         }).then(() => {
             msgInput.value = '';
+            currentReplyToId = null;
+            document.getElementById('replyBar').style.display = 'none';
             localStorage.setItem('group_msg_' + group_id, '');
-            setTimeout(() => checkNewMessages(), 1000);
+            setTimeout(() => checkNewMessages(), 500);
         });
     }
     
@@ -158,15 +310,95 @@
             .then(r => r.json())
             .then(d => {
                 if(d.path) {
-                    fetch('/send_group', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => {
-                        setTimeout(() => checkNewMessages(), 1000);
+                    let formData = new FormData();
+                    formData.append('group_id', group_id);
+                    formData.append('file_path', d.path);
+                    formData.append('file_name', d.name);
+                    formData.append('file_type', d.type);
+                    if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+                    
+                    fetch('/send_group', {method: 'POST', body: formData}).then(() => {
+                        currentReplyToId = null;
+                        document.getElementById('replyBar').style.display = 'none';
+                        setTimeout(() => checkNewMessages(), 500);
                     });
                 } else alert('Ошибка: ' + d.error);
             });
+    }
+    
+    function editMessage(msgId, type) {
+        let newContent = prompt('Введите новый текст сообщения:');
+        if(newContent !== null && newContent.trim()) {
+            fetch('/edit_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: msgId, new_content: newContent, type: type})
+            }).then(() => {
+                setTimeout(() => checkNewMessages(), 500);
+            });
+        }
+    }
+    
+    function deleteMessage(msgId, type) {
+        if(confirm('Удалить сообщение?')) {
+            fetch('/delete_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: msgId, type: type, delete_for_all: false})
+            }).then(() => {
+                const msgElement = document.querySelector(`.message[data-id="${msgId}"]`);
+                if(msgElement) msgElement.remove();
+            });
+        }
+    }
+    
+    function toggleFavorite(msgId, type) {
+        fetch('/toggle_favorite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: msgId, type: type})
+        }).then(() => {
+            setTimeout(() => checkNewMessages(), 500);
+        });
+    }
+    
+    function replyToMessage(msgId, content) {
+        currentReplyToId = msgId;
+        const replyBar = document.getElementById('replyBar');
+        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+        replyBar.style.display = 'flex';
+        msgInput.focus();
+    }
+    
+    function cancelReply() {
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+    }
+    
+    function forwardMessage(msgId, msgType) {
+        let targetChat = prompt('Введите ID пользователя или группы для пересылки:\n(личный чат: ID пользователя, групповой чат: group:ID)');
+        if(!targetChat) return;
+        
+        let targetType = 'private';
+        let targetId = parseInt(targetChat);
+        
+        if(targetChat.startsWith('group:')) {
+            targetType = 'group';
+            targetId = parseInt(targetChat.split(':')[1]);
+        }
+        
+        fetch('/forward_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                msg_id: msgId,
+                target_type: targetType,
+                target_id: targetId,
+                msg_type: msgType
+            })
+        }).then(() => {
+            alert('Сообщение переслано!');
+        });
     }
     
     async function startRecording() {
@@ -186,12 +418,18 @@
                     .then(r => r.json())
                     .then(d => {
                         if(d.path) {
-                            fetch('/send_group', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                body: 'group_id=' + group_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
-                            }).then(() => {
-                                setTimeout(() => checkNewMessages(), 1000);
+                            let formData = new FormData();
+                            formData.append('group_id', group_id);
+                            formData.append('file_path', d.path);
+                            formData.append('file_name', 'Голосовое сообщение');
+                            formData.append('file_type', 'audio');
+                            formData.append('voice_duration', duration);
+                            if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+                            
+                            fetch('/send_group', {method: 'POST', body: formData}).then(() => {
+                                currentReplyToId = null;
+                                document.getElementById('replyBar').style.display = 'none';
+                                setTimeout(() => checkNewMessages(), 500);
                             });
                         }
                     });
@@ -208,30 +446,55 @@
         } catch(e) { alert('🎤 Микрофон не доступен'); }
     }
     
-    function stopRecording() { if(mediaRecorder && isRecording) mediaRecorder.stop(); }
-    function toggleRecording() { if(isRecording) stopRecording(); else startRecording(); }
+    function stopRecording() {
+        if(mediaRecorder && isRecording) mediaRecorder.stop();
+    }
+    
+    function toggleRecording() {
+        if(isRecording) stopRecording();
+        else startRecording();
+    }
+    
     document.getElementById('voiceBtn').onclick = toggleRecording;
-    document.getElementById('emojiBtn').onclick = () => { 
-        const p = document.getElementById('emojiPicker'); 
-        p.style.display = p.style.display === 'none' ? 'grid' : 'none'; 
+    document.getElementById('emojiBtn').onclick = () => {
+        const p = document.getElementById('emojiPicker');
+        p.style.display = p.style.display === 'none' ? 'grid' : 'none';
     };
-    document.querySelectorAll('.emoji-picker span').forEach(e => { 
-        e.onclick = () => { 
-            msgInput.value += e.textContent; 
-            document.getElementById('emojiPicker').style.display = 'none'; 
-            msgInput.focus(); 
-        }; 
+    document.querySelectorAll('.emoji-picker span').forEach(e => {
+        e.onclick = () => {
+            msgInput.value += e.textContent;
+            document.getElementById('emojiPicker').style.display = 'none';
+            msgInput.focus();
+        };
     });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('group_msg_' + group_id) || '';
     msgInput.addEventListener('input', () => localStorage.setItem('group_msg_' + group_id, msgInput.value));
-    window.scrollTo(0, document.body.scrollHeight);
-    document.addEventListener('click', (e) => { 
-        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { 
-            document.getElementById('emojiPicker').style.display = 'none'; 
-        } 
+    
+    // Рендерим упоминания в существующих сообщениях при загрузке страницы
+    document.querySelectorAll('.message .message-content').forEach(el => {
+        const raw = el.getAttribute('data-raw');
+        if(raw) {
+            el.innerHTML = renderMentions(escapeHtml(raw));
+        }
     });
-    pollingInterval = setInterval(checkNewMessages, 5000);
+    
+    // Загружаем превью для всех ответов
+    document.querySelectorAll('.reply-preview').forEach(preview => {
+        const msgElement = preview.closest('.message');
+        const msgId = msgElement.getAttribute('data-id');
+        if(msgId) {
+            fetch(`/get_reply_preview/${msgId}/group`)
+                .then(r => r.json())
+                .then(data => {
+                    const span = preview.querySelector('span:last-child');
+                    if(span) span.textContent = data.content;
+                })
+                .catch(() => {});
+        }
+    });
+    
+    pollingInterval = setInterval(checkNewMessages, 3000);
 </script>
 </body>
 </html>

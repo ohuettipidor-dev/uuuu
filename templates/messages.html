@@ -9,18 +9,18 @@
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap;cursor:pointer}
-        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white;font-weight:500}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none}
         .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
-        .message{display:flex;animation:fadeInUp 0.3s ease}
+        .message{display:flex;animation:fadeInUp 0.3s ease;position:relative}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         .message.sent{justify-content:flex-end}
         .message.received{justify-content:flex-start}
         .bubble{max-width:70%;padding:10px 16px;border-radius:20px;font-size:14px;word-wrap:break-word;position:relative}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-        .time{font-size:10px;color:#aaa;margin-top:4px;display:flex;align-items:center;gap:4px}
+        .time{font-size:10px;color:#aaa;margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-top:5px}
         img,audio,video{max-width:200px;border-radius:15px;margin-top:5px}
@@ -38,37 +38,26 @@
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:3px;height:8px;background:#ff6b6b;border-radius:2px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:8px}to{height:16px}}
-        .mention{
-            color:#2ea6ff;
-            text-decoration:none;
-            font-weight:500;
-            background:rgba(46,166,255,0.1);
-            padding:2px 6px;
-            border-radius:12px;
-            transition:all 0.2s;
-            cursor:pointer;
-            display:inline-block;
-        }
-        .mention:hover{
-            background:rgba(46,166,255,0.2);
-            text-decoration:underline;
-        }
-        .message-content{
-            line-height:1.4;
-        }
-        .message-content a{
-            color:#2ea6ff;
-            text-decoration:none;
-        }
-        .message-content a:hover{
-            text-decoration:underline;
-        }
+        .mention{color:#2ea6ff;text-decoration:none;font-weight:500;background:rgba(46,166,255,0.1);padding:2px 6px;border-radius:12px;transition:all 0.2s;cursor:pointer;display:inline-block}
+        .mention:hover{background:rgba(46,166,255,0.2);text-decoration:underline}
+        .message-content{line-height:1.4}
+        .message-actions{position:absolute;top:-10px;right:0;background:white;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none;gap:5px;padding:4px 8px;z-index:10}
+        .message:hover .message-actions{display:flex}
+        .action-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:15px;transition:all 0.2s}
+        .action-btn:hover{background:#f0f0f0}
+        .reply-preview{background:rgba(0,0,0,0.05);border-left:3px solid #ff6b6b;padding:6px 10px;margin-bottom:6px;border-radius:8px;font-size:12px}
+        .reply-preview span{color:#ff6b6b;font-weight:500}
+        .edited-badge{font-size:9px;color:#888;margin-left:5px}
+        .forward-badge{font-size:10px;color:#888;margin-bottom:4px}
+        .reply-bar{background:#f9f9f9;border-radius:20px;padding:8px 15px;margin-bottom:8px;display:none;align-items:center;gap:10px;font-size:13px}
+        .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer}
+        .favorite-star{color:gold;font-size:16px}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header" onclick="location.href='/profile/{{ other.id }}'">
-        <div class="back" onclick="event.stopPropagation(); location.href='/chat'">← Назад</div>
+        <a href="/chat" class="back" onclick="event.stopPropagation()">← Назад</a>
         <div class="avatar">
             {% if other.avatar != 'default.png' %}
                 <img src="/static/avatars/{{ other.avatar }}">
@@ -81,10 +70,20 @@
         </div>
         <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none" onclick="event.stopPropagation()">🧸 Профиль</a>
     </div>
+    
     <div class="messages" id="messages">
         {% for m in msgs %}
-        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}" data-sender="{{ m.sender_id }}">
             <div class="bubble">
+                {% if m.forwarded_from_id %}
+                <div class="forward-badge">📎 Переслано от {{ m.forwarded_from.username if m.forwarded_from else 'пользователя' }}</div>
+                {% endif %}
+                {% if m.reply_to_id %}
+                <div class="reply-preview">
+                    <span>📩 Ответ на сообщение:</span><br>
+                    <span id="reply-preview-{{ m.id }}">Загрузка...</span>
+                </div>
+                {% endif %}
                 <div class="message-content" data-raw="{{ m.content }}"></div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
@@ -106,14 +105,35 @@
                 {% endif %}
                 <div class="time">
                     <span>{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.edited %}<span class="edited-badge">(изменено)</span>{% endif %}
+                    {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                     {% if m.sender_id == current_user.id and m.is_read %}✓✓{% endif %}
                 </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;') }}`)">💬 Ответить</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐ Избранное</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️ Переслать</button>
+                {% if m.sender_id == current_user.id %}
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️ Изменить</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️ Удалить</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️ Удалить для всех</button>
+                {% else %}
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️ Скрыть</button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
+    
+    <div class="reply-bar" id="replyBar">
+        <span>💬 Ответ на сообщение:</span>
+        <span id="replyText" style="flex:1;color:#888"></span>
+        <button class="cancel-reply" onclick="cancelReply()">✖</button>
+    </div>
+    
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
+        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение... (используйте @username)">
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
@@ -125,9 +145,9 @@
         <span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span><span>😡</span><span>🤔</span>
         <span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span><span>🌟</span><span>⭐</span><span>💫</span>
         <span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span><span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span>
-        <span>🧸</span><span>🎈</span><span>🎀</span><span>🌸</span><span>🌺</span><span>🍰</span><span>🎂</span><span>🍭</span>
     </div>
 </div>
+
 <script>
     const receiver_id = {{ other.id }};
     const msgInput = document.getElementById('msgInput');
@@ -137,15 +157,25 @@
     let startTime = null;
     let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
     let pollingInterval = null;
-    
-    function playVoice(el) {
-        const audio = el.closest('.bubble').querySelector('audio');
-        if(audio) audio.play();
-    }
+    let currentReplyToId = null;
+    let pendingForwardMsgId = null;
+    let pendingForwardMsgType = null;
     
     function renderMentions(text) {
         if (!text) return '';
         return text.replace(/\[MENTION:(\d+):([^\]]+)\]/g, '<a href="/profile/$1" class="mention" data-user-id="$1">@$2</a>');
+    }
+    
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function playVoice(el) {
+        const audio = el.closest('.bubble').querySelector('audio');
+        if(audio) audio.play();
     }
     
     function addNewMessage(msg) {
@@ -153,33 +183,83 @@
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
         div.setAttribute('data-id', msg.id);
+        div.setAttribute('data-sender', msg.is_own ? {{ current_user.id }} : receiver_id);
         
         let contentHtml = '';
         if(msg.content) {
-            contentHtml = renderMentions(msg.content);
+            contentHtml = renderMentions(escapeHtml(msg.content));
         }
+        
+        let forwardHtml = '';
+        if(msg.forwarded_from_name) {
+            forwardHtml = `<div class="forward-badge">📎 Переслано от ${escapeHtml(msg.forwarded_from_name)}</div>`;
+        }
+        
+        let replyHtml = '';
+        if(msg.reply_to_id) {
+            replyHtml = `<div class="reply-preview"><span>📩 Ответ на сообщение:</span><br><span>Загрузка...</span></div>`;
+        }
+        
         if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
             else if(msg.file_type == 'audio') contentHtml += `<audio controls src="${msg.file_path}"></audio>`;
             else if(msg.file_type == 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
-            else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${msg.file_name}</a>`;
+            else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
         }
         if(msg.voice_duration && msg.voice_duration > 0) {
             contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
         
-        div.innerHTML = `<div class="bubble"><div class="message-content">${contentHtml}</div><div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
+        let editedBadge = msg.edited ? '<span class="edited-badge">(изменено)</span>' : '';
+        let favoriteStar = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
+        
+        const safeContent = (msg.content || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        
+        div.innerHTML = `
+            <div class="bubble">
+                ${forwardHtml}
+                ${replyHtml}
+                <div class="message-content">${contentHtml}</div>
+                <div class="time">
+                    <span>${msg.timestamp}</span>
+                    ${editedBadge}
+                    ${favoriteStar}
+                    ${msg.is_own ? ' ✓✓' : ''}
+                </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬 Ответить</button>
+                <button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐ Избранное</button>
+                <button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️ Переслать</button>
+                ${msg.is_own ? `
+                    <button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️ Изменить</button>
+                    <button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️ Удалить</button>
+                    <button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️ Удалить для всех</button>
+                ` : `
+                    <button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️ Скрыть</button>
+                `}
+            </div>
+        `;
+        
         messagesDiv.appendChild(div);
         
-        // Добавляем обработчики кликов на все упоминания
         div.querySelectorAll('.mention').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const userId = link.getAttribute('data-user-id') || link.href.split('/').pop();
+                const userId = link.getAttribute('data-user-id');
                 if(userId) window.location.href = `/profile/${userId}`;
             });
         });
+        
+        if(msg.reply_to_id) {
+            fetch(`/get_reply_preview/${msg.reply_to_id}/private`)
+                .then(r => r.json())
+                .then(data => {
+                    const previewDiv = div.querySelector('.reply-preview span:last-child');
+                    if(previewDiv) previewDiv.textContent = data.content;
+                });
+        }
         
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
@@ -189,21 +269,30 @@
         fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
             .then(r => r.json())
             .then(msgs => {
-                msgs.forEach(msg => addNewMessage(msg));
+                if(msgs && msgs.length) {
+                    msgs.forEach(msg => addNewMessage(msg));
+                }
             });
     }
     
     function sendMsg() {
         let content = msgInput.value.trim();
-        if(!content) return;
+        if(!content && !currentReplyToId) return;
+        
+        let formData = new FormData();
+        formData.append('receiver_id', receiver_id);
+        if(content) formData.append('content', content);
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
         fetch('/send', {
             method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'receiver_id=' + receiver_id + '&content=' + encodeURIComponent(content)
+            body: formData
         }).then(() => {
             msgInput.value = '';
+            currentReplyToId = null;
+            document.getElementById('replyBar').style.display = 'none';
             localStorage.setItem('msg_' + receiver_id, '');
-            setTimeout(() => checkNewMessages(), 1000);
+            setTimeout(() => checkNewMessages(), 500);
         });
     }
     
@@ -214,15 +303,88 @@
             .then(r => r.json())
             .then(d => {
                 if(d.path) {
-                    fetch('/send', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=' + encodeURIComponent(d.name) + '&file_type=' + d.type
-                    }).then(() => {
-                        setTimeout(() => checkNewMessages(), 1000);
+                    let formData = new FormData();
+                    formData.append('receiver_id', receiver_id);
+                    formData.append('file_path', d.path);
+                    formData.append('file_name', d.name);
+                    formData.append('file_type', d.type);
+                    if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+                    
+                    fetch('/send', {method: 'POST', body: formData}).then(() => {
+                        currentReplyToId = null;
+                        document.getElementById('replyBar').style.display = 'none';
+                        setTimeout(() => checkNewMessages(), 500);
                     });
                 } else alert('Ошибка: ' + d.error);
             });
+    }
+    
+    function editMessage(msgId, type) {
+        let newContent = prompt('Введите новый текст сообщения:');
+        if(newContent !== null && newContent.trim()) {
+            fetch('/edit_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: msgId, new_content: newContent, type: type})
+            }).then(() => {
+                setTimeout(() => checkNewMessages(), 500);
+            });
+        }
+    }
+    
+    function deleteMessage(msgId, type, deleteForAll) {
+        if(confirm(deleteForAll ? 'Удалить сообщение для всех?' : 'Удалить сообщение для себя?')) {
+            fetch('/delete_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: msgId, type: type, delete_for_all: deleteForAll})
+            }).then(() => {
+                const msgElement = document.querySelector(`.message[data-id="${msgId}"]`);
+                if(msgElement) msgElement.remove();
+            });
+        }
+    }
+    
+    function toggleFavorite(msgId, type) {
+        fetch('/toggle_favorite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: msgId, type: type})
+        }).then(() => {
+            setTimeout(() => checkNewMessages(), 500);
+        });
+    }
+    
+    function replyToMessage(msgId, content) {
+        currentReplyToId = msgId;
+        const replyBar = document.getElementById('replyBar');
+        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+        replyBar.style.display = 'flex';
+        msgInput.focus();
+    }
+    
+    function cancelReply() {
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+    }
+    
+    function forwardMessage(msgId, msgType) {
+        let targetChat = prompt('Введите ID пользователя для пересылки:');
+        if(!targetChat) return;
+        let targetId = parseInt(targetChat);
+        
+        fetch('/forward_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                msg_id: msgId,
+                target_type: 'private',
+                target_id: targetId,
+                msg_type: msgType
+            })
+        }).then(() => {
+            alert('Сообщение переслано!');
+        });
     }
     
     async function startRecording() {
@@ -242,12 +404,18 @@
                     .then(r => r.json())
                     .then(d => {
                         if(d.path) {
-                            fetch('/send', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                body: 'receiver_id=' + receiver_id + '&file_path=' + encodeURIComponent(d.path) + '&file_name=Голосовое сообщение&file_type=audio&voice_duration=' + duration
-                            }).then(() => {
-                                setTimeout(() => checkNewMessages(), 1000);
+                            let formData = new FormData();
+                            formData.append('receiver_id', receiver_id);
+                            formData.append('file_path', d.path);
+                            formData.append('file_name', 'Голосовое сообщение');
+                            formData.append('file_type', 'audio');
+                            formData.append('voice_duration', duration);
+                            if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+                            
+                            fetch('/send', {method: 'POST', body: formData}).then(() => {
+                                currentReplyToId = null;
+                                document.getElementById('replyBar').style.display = 'none';
+                                setTimeout(() => checkNewMessages(), 500);
                             });
                         }
                     });
@@ -288,22 +456,28 @@
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
     msgInput.addEventListener('input', () => localStorage.setItem('msg_' + receiver_id, msgInput.value));
-    window.scrollTo(0, document.body.scrollHeight);
-    document.addEventListener('click', (e) => {
-        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
-            document.getElementById('emojiPicker').style.display = 'none';
-        }
-    });
     
-    // Рендерим существующие сообщения
     document.querySelectorAll('.message .message-content').forEach(el => {
         const raw = el.getAttribute('data-raw');
         if(raw) {
-            el.innerHTML = renderMentions(raw);
+            el.innerHTML = renderMentions(escapeHtml(raw));
         }
     });
     
-    pollingInterval = setInterval(checkNewMessages, 5000);
+    document.querySelectorAll('.reply-preview').forEach(preview => {
+        const msgElement = preview.closest('.message');
+        const msgId = msgElement.getAttribute('data-id');
+        if(msgId) {
+            fetch(`/get_reply_preview/${msgId}/private`)
+                .then(r => r.json())
+                .then(data => {
+                    const span = preview.querySelector('span:last-child');
+                    if(span) span.textContent = data.content;
+                });
+        }
+    });
+    
+    pollingInterval = setInterval(checkNewMessages, 3000);
 </script>
 </body>
 </html>
