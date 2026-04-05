@@ -53,7 +53,6 @@
         .reply-bar{background:#f9f9f9;border-radius:20px;padding:8px 15px;margin-bottom:8px;display:none;align-items:center;gap:10px;font-size:13px}
         .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer}
         .favorite-star{color:gold;font-size:16px}
-        .edit-input{width:100%;padding:8px;border-radius:15px;border:1px solid #ffb3b3;margin-top:5px}
     </style>
 </head>
 <body>
@@ -158,11 +157,18 @@
     let pollingInterval = null;
     let currentReplyToId = null;
     
-    // Функция для рендеринга упоминаний - ОСНОВНОЕ ИСПРАВЛЕНИЕ!
+    // ГЛАВНАЯ ФУНКЦИЯ - заменяет [MENTION:id:username] на ссылку
     function renderMentions(text) {
         if (!text) return '';
-        // Заменяем [MENTION:id:username] на ссылку
+        // Регулярное выражение находит [MENTION:123:username] и заменяет на ссылку
         return text.replace(/\[MENTION:(\d+):([^\]]+)\]/g, '<a href="/profile/$1" class="mention" data-user-id="$1">@$2</a>');
+    }
+    
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function playVoice(el) {
@@ -175,7 +181,6 @@
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
         div.setAttribute('data-id', msg.id);
-        div.setAttribute('data-sender', msg.is_own ? {{ current_user.id }} : 0);
         
         let headerHtml = '';
         if(!msg.is_own && msg.sender_name) {
@@ -211,7 +216,6 @@
         let editedBadge = msg.edited ? '<span class="edited-badge">(изменено)</span>' : '';
         let favoriteStar = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
         
-        // Экранируем содержимое для кнопки
         const safeContent = (msg.content || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
         
         div.innerHTML = `
@@ -249,26 +253,17 @@
             });
         });
         
-        // Загружаем превью ответа если есть
         if(msg.reply_to_id) {
             fetch(`/get_reply_preview/${msg.reply_to_id}/group`)
                 .then(r => r.json())
                 .then(data => {
                     const previewDiv = div.querySelector('.reply-preview span:last-child');
                     if(previewDiv) previewDiv.textContent = data.content;
-                })
-                .catch(() => {});
+                });
         }
         
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
-    }
-    
-    function escapeHtml(text) {
-        if(!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     function checkNewMessages() {
@@ -278,8 +273,7 @@
                 if(msgs && msgs.length) {
                     msgs.forEach(msg => addNewMessage(msg));
                 }
-            })
-            .catch(e => console.log('polling error', e));
+            });
     }
     
     function sendMsg() {
@@ -479,7 +473,6 @@
         }
     });
     
-    // Загружаем превью для всех ответов
     document.querySelectorAll('.reply-preview').forEach(preview => {
         const msgElement = preview.closest('.message');
         const msgId = msgElement.getAttribute('data-id');
@@ -489,8 +482,7 @@
                 .then(data => {
                     const span = preview.querySelector('span:last-child');
                     if(span) span.textContent = data.content;
-                })
-                .catch(() => {});
+                });
         }
     });
     

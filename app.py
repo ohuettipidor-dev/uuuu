@@ -35,14 +35,11 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse_mentions(text):
-    """Находит всех упомянутых пользователей и заменяет @username на маркер [MENTION:id:username]"""
     if not text:
         return text, []
-    
     pattern = r'@([a-zA-Z0-9_]+)'
     mentions_found = re.findall(pattern, text)
     mentioned_users = []
-    
     for mention in mentions_found:
         user = User.query.filter_by(username_link=f'@{mention}').first()
         if not user:
@@ -50,15 +47,7 @@ def parse_mentions(text):
         if user:
             mentioned_users.append({'id': user.id, 'username': mention})
             text = text.replace(f'@{mention}', f'[MENTION:{user.id}:{mention}]')
-    
     return text, mentioned_users
-
-def render_mentions_to_html(text):
-    """Преобразует маркеры [MENTION:id:username] в HTML-ссылки"""
-    if not text:
-        return ''
-    pattern = r'\[MENTION:(\d+):([^\]]+)\]'
-    return re.sub(pattern, r'<a href="/profile/\1" class="mention" data-user-id="\1">@\2</a>', text)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -400,19 +389,56 @@ def group_info(gid):
 @login_required
 def add_member(gid):
     group = db.session.get(Group, gid)
-    if not group or group.created_by != current_user.id:
-        flash('Нет прав', 'danger')
-        return redirect(url_for('group_chat', gid=gid))
-    user = User.query.filter_by(username=request.form['username']).first()
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может добавлять участников', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    username = request.form.get('username')
+    if not username:
+        flash('Введите имя пользователя', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    user = User.query.filter_by(username=username).first()
     if not user:
         flash('Пользователь не найден', 'danger')
     elif GroupMember.query.filter_by(user_id=user.id, group_id=gid).first():
-        flash('Уже в группе', 'danger')
+        flash('Пользователь уже в группе', 'danger')
     else:
         db.session.add(GroupMember(user_id=user.id, group_id=gid))
         db.session.commit()
-        flash(f'{user.username} добавлен', 'success')
-    return redirect(url_for('group_chat', gid=gid))
+        flash(f'{user.username} добавлен в группу!', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/remove_member/<int:gid>/<int:uid>', methods=['POST'])
+@login_required
+def remove_member(gid, uid):
+    group = db.session.get(Group, gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может удалять участников', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if uid == current_user.id:
+        flash('Нельзя удалить самого себя', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    target = GroupMember.query.filter_by(user_id=uid, group_id=gid).first()
+    if target:
+        db.session.delete(target)
+        db.session.commit()
+        flash('Пользователь удалён из группы', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
 
 @app.route('/group/<int:gid>')
 @login_required
@@ -699,34 +725,14 @@ def get_reply_preview(msg_id, msg_type):
 @app.route('/get_chats_list')
 @login_required
 def get_chats_list():
-    """Возвращает JSON список всех чатов для пересылки сообщений"""
     blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
-    
-    users = User.query.filter(
-        User.id != current_user.id, 
-        ~User.id.in_(blocked_ids)
-    ).all()
-    
+    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
-    
     chats = []
-    
     for u in users:
-        chats.append({
-            'type': 'private', 
-            'id': u.id, 
-            'name': u.username,
-            'avatar': u.avatar
-        })
-    
+        chats.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar})
     for g in groups:
-        chats.append({
-            'type': 'group', 
-            'id': g.id, 
-            'name': g.name,
-            'avatar': g.avatar
-        })
-    
+        chats.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar})
     return jsonify(chats)
 
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
