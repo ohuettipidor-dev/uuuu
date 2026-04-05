@@ -38,6 +38,22 @@
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:3px;height:8px;background:#ff6b6b;border-radius:2px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:8px}to{height:16px}}
+        .mention{
+            color:#2ea6ff;
+            text-decoration:none;
+            font-weight:500;
+            background:rgba(46,166,255,0.1);
+            padding:2px 6px;
+            border-radius:12px;
+            transition:all 0.2s;
+        }
+        .mention:hover{
+            background:rgba(46,166,255,0.2);
+            text-decoration:underline;
+        }
+        .message-content{
+            line-height:1.4;
+        }
     </style>
 </head>
 <body>
@@ -52,7 +68,7 @@
             {% endif %}
         </div>
         <div style="flex:1">{{ other.username }} 
-            <span style="font-size:12px">{% if other.status == 'online' %}🐻 онлайн{% else %}🐻‍❄️ офлайн{% endif %}</span>
+            <span style="font-size:12px">{% if other.status == 'online' %}🐻 онлайн{% else %}💤 офлайн{% endif %}</span>
         </div>
         <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none">🧸 Профиль</a>
     </div>
@@ -60,7 +76,7 @@
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
-                {% if m.content %}{{ m.content }}{% endif %}
+                <div class="message-content">{{ m.content|safe }}</div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -88,7 +104,7 @@
         {% endfor %}
     </div>
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение...">
+        <input type="text" id="msgInput" placeholder="🐾 Напишите сообщение... Используйте @username">
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
         <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="emoji-btn" id="emojiBtn">😊</button>
@@ -134,7 +150,7 @@
         if(msg.voice_duration && msg.voice_duration > 0) {
             contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
-        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
+        div.innerHTML = `<div class="bubble"><div class="message-content">${contentHtml}</div><div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;

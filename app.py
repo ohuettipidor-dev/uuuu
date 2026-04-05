@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import uuid
+import re
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -33,6 +34,19 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def parse_mentions(text):
+    if not text:
+        return text
+    # Ищем все @username в тексте
+    pattern = r'@(\w+)'
+    def replace_mention(match):
+        mention = match.group(1)
+        user = User.query.filter_by(username_link=f'@{mention}').first()
+        if user:
+            return f'<a href="/profile/{user.id}" class="mention">@{mention}</a>'
+        return f'@{mention}'
+    return re.sub(pattern, replace_mention, text)
+
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -40,6 +54,7 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    username_link = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     avatar = db.Column(db.String(200), default='default.png')
     status = db.Column(db.String(20), default='offline')
@@ -94,11 +109,25 @@ def index():
 def register():
     if request.method == 'POST':
         u = request.form['username']
+        ul = request.form['username_link'].strip().lower().replace(' ', '_')
         p = request.form['password']
-        if User.query.filter_by(username=u).first():
-            flash('Имя занято', 'danger')
+        confirm = request.form['confirm_password']
+        
+        if not ul.startswith('@'):
+            ul = '@' + ul
+        
+        if p != confirm:
+            flash('Пароли не совпадают', 'danger')
+        elif User.query.filter_by(username=u).first():
+            flash('Имя пользователя занято', 'danger')
+        elif User.query.filter_by(username_link=ul).first():
+            flash('Такой @username уже существует', 'danger')
+        elif len(ul) < 2 or len(ul) > 32:
+            flash('@username должен быть от 2 до 32 символов', 'danger')
+        elif not re.match(r'^@[a-zA-Z0-9_]+$', ul):
+            flash('@username может содержать только буквы, цифры и _', 'danger')
         else:
-            db.session.add(User(username=u, password=generate_password_hash(p)))
+            db.session.add(User(username=u, username_link=ul, password=generate_password_hash(p)))
             db.session.commit()
             flash('Регистрация успешна!', 'success')
             return redirect(url_for('login'))
@@ -142,6 +171,15 @@ def profile():
             flash('Аватар обновлён', 'success')
         return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user)
+
+@app.route('/profile/<int:uid>')
+@login_required
+def profile_by_id(uid):
+    user = User.query.get(uid)
+    if not user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('chat'))
+    return render_template('profile_public.html', profile_user=user)
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -230,8 +268,10 @@ def group_chat(gid):
 @app.route('/send_group', methods=['POST'])
 @login_required
 def send_group():
+    content = request.form.get('content', '')
+    content = parse_mentions(content)
     db.session.add(GroupMessage(
-        content=request.form.get('content'),
+        content=content,
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),
@@ -256,11 +296,10 @@ def chat():
             ((Message.sender_id == u.id) & (Message.receiver_id == current_user.id))
         ).order_by(Message.timestamp.desc()).first()
         unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False).count()
-        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
+        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
     for g in groups:
         last = GroupMessage.query.filter_by(group_id=g.id).order_by(GroupMessage.timestamp.desc()).first()
         convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'last': last, 'unread': 0})
-    # Сортируем, но обрабатываем None
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs)
 
@@ -284,8 +323,10 @@ def messages(uid):
 @app.route('/send', methods=['POST'])
 @login_required
 def send():
+    content = request.form.get('content', '')
+    content = parse_mentions(content)
     db.session.add(Message(
-        content=request.form.get('content'),
+        content=content,
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
         file_type=request.form.get('file_type'),

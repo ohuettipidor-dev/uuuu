@@ -49,6 +49,12 @@
             border-color: #ff6b6b;
             box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
         }
+        small{
+            display: block;
+            margin-top: 5px;
+            color: #aaa;
+            font-size: 12px;
+        }
         button{
             width: 100%;
             padding: 14px;
@@ -112,6 +118,10 @@
     <form method="POST">
         <div class="form-group">
             <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
+        </div>
+        <div class="form-group">
+            <input type="text" name="username_link" placeholder="@username (уникальный)" required>
+            <small>Пример: @john_doe — только буквы, цифры и _</small>
         </div>
         <div class="form-group">
             <input type="password" name="password" placeholder="🔒 Пароль" required>
