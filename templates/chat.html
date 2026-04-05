@@ -18,7 +18,7 @@
         .icon-btn{background:rgba(255,255,255,0.9);padding:8px;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
         
-        /* ПОИСКОВАЯ СТРОКА - ПОЯВЛЯЕТСЯ ПРИ НАЖАТИИ НА ИКОНКУ */
+        /* ПОИСКОВАЯ СТРОКА - ПОЯВЛЯЕТСЯ ПРИ НАЖАТИИ */
         .search-container{display:none;margin-bottom:16px;animation:slideDown 0.3s ease}
         .search-container.active{display:block}
         @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
@@ -90,6 +90,7 @@
         </div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
+            <a href="/voice_channels" class="icon-btn">🎤</a>
             <a href="/secret_chats" class="icon-btn">🔒</a>
             <a href="/profile" class="icon-btn">🧸</a>
             <a href="/logout" class="icon-btn">🚪</a>
