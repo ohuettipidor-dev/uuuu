@@ -35,7 +35,7 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse_mentions(text):
-    """Находит всех упомянутых пользователей и заменяет @username на HTML-ссылку"""
+    """Находит всех упомянутых пользователей и заменяет @username на маркер [MENTION:id:username]"""
     if not text:
         return text, []
     
@@ -47,9 +47,16 @@ def parse_mentions(text):
         user = User.query.filter_by(username_link=f'@{mention}').first()
         if user:
             mentioned_users.append({'id': user.id, 'username': mention})
-            text = text.replace(f'@{mention}', f'<a href="/profile/{user.id}" class="mention" data-user-id="{user.id}">@{mention}</a>')
+            text = text.replace(f'@{mention}', f'[MENTION:{user.id}:{mention}]')
     
     return text, mentioned_users
+
+def render_mentions(text):
+    """Преобразует маркеры [MENTION:id:username] в HTML-ссылки"""
+    if not text:
+        return ''
+    pattern = r'\[MENTION:(\d+):([^\]]+)\]'
+    return re.sub(pattern, r'<a href="/profile/\1" class="mention" data-user-id="\1">@\2</a>', text)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)

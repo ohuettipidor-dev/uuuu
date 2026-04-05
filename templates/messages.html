@@ -85,7 +85,7 @@
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
-                <div class="message-content">{{ m.content|safe }}</div>
+                <div class="message-content" data-raw="{{ m.content }}"></div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -143,19 +143,9 @@
         if(audio) audio.play();
     }
     
-    function renderMessageContent(content) {
-        if (!content) return '';
-        // Заменяем маркеры [BEARGRAM_MENTION:id:username] на кликабельные ссылки (если есть)
-        let html = content;
-        const mentionRegex = /\[BEARGRAM_MENTION:(\d+):([^\]]+)\]/g;
-        let match;
-        while ((match = mentionRegex.exec(content)) !== null) {
-            const userId = match[1];
-            const username = match[2];
-            const mentionHtml = `<a href="/profile/${userId}" class="mention" data-user-id="${userId}">@${username}</a>`;
-            html = html.replace(match[0], mentionHtml);
-        }
-        return html;
+    function renderMentions(text) {
+        if (!text) return '';
+        return text.replace(/\[MENTION:(\d+):([^\]]+)\]/g, '<a href="/profile/$1" class="mention" data-user-id="$1">@$2</a>');
     }
     
     function addNewMessage(msg) {
@@ -166,7 +156,7 @@
         
         let contentHtml = '';
         if(msg.content) {
-            contentHtml = renderMessageContent(msg.content);
+            contentHtml = renderMentions(msg.content);
         }
         if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
@@ -305,11 +295,11 @@
         }
     });
     
-    // Инициализация существующих сообщений: рендерим ссылки
+    // Рендерим существующие сообщения
     document.querySelectorAll('.message .message-content').forEach(el => {
-        const html = el.innerHTML;
-        if(html && html.includes('[BEARGRAM_MENTION:')) {
-            el.innerHTML = renderMessageContent(html);
+        const raw = el.getAttribute('data-raw');
+        if(raw) {
+            el.innerHTML = renderMentions(raw);
         }
     });
     
