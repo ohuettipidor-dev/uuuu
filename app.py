@@ -35,7 +35,7 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse_mentions(text):
-    """Находит всех упомянутых пользователей и возвращает текст с маркерами и список упомянутых"""
+    """Находит всех упомянутых пользователей и заменяет @username на HTML-ссылку"""
     if not text:
         return text, []
     
@@ -46,9 +46,8 @@ def parse_mentions(text):
     for mention in mentions_found:
         user = User.query.filter_by(username_link=f'@{mention}').first()
         if user:
-            mentioned_users.append({'id': user.id, 'username': mention, 'username_link': f'@{mention}'})
-            # Заменяем на специальный маркер, который потом обработает JavaScript
-            text = text.replace(f'@{mention}', f'[BEARGRAM_MENTION:{user.id}:{mention}]')
+            mentioned_users.append({'id': user.id, 'username': mention})
+            text = text.replace(f'@{mention}', f'<a href="/profile/{user.id}" class="mention" data-user-id="{user.id}">@{mention}</a>')
     
     return text, mentioned_users
 
