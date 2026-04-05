@@ -34,20 +34,19 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def parse_mentions(text):
+# ========== ГЛАВНОЕ ИСПРАВЛЕНИЕ - БОЛЬШЕ НЕТ [MENTION] ==========
+def render_mentions(text):
+    """Превращает @username в ссылку на профиль - БЕЗ ВСЯКИХ MENTION"""
     if not text:
-        return text, []
-    pattern = r'@([a-zA-Z0-9_]+)'
-    mentions_found = re.findall(pattern, text)
-    mentioned_users = []
-    for mention in mentions_found:
-        user = User.query.filter_by(username_link=f'@{mention}').first()
-        if not user:
-            user = User.query.filter_by(username=mention).first()
-        if user:
-            mentioned_users.append({'id': user.id, 'username': mention})
-            text = text.replace(f'@{mention}', f'[MENTION:{user.id}:{mention}]')
-    return text, mentioned_users
+        return text
+    # Просто ищем всех пользователей и заменяем @username на ссылку
+    users = User.query.all()
+    for user in users:
+        text = text.replace(f'@{user.username}', f'<a href="/profile/{user.id}" class="mention">@{user.username}</a>')
+        if user.username_link:
+            text = text.replace(f'@{user.username_link[1:]}', f'<a href="/profile/{user.id}" class="mention">@{user.username_link[1:]}</a>')
+    return text
+# ================================================================
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -463,7 +462,8 @@ def group_chat(gid):
 @login_required
 def send_group():
     content = request.form.get('content', '')
-    content, mentions = parse_mentions(content)
+    # ПРИМЕНЯЕМ render_mentions - БОЛЬШЕ НИКАКИХ [MENTION]
+    content = render_mentions(content)
     reply_to_id = request.form.get('reply_to_id', type=int)
     db.session.add(GroupMessage(
         content=content,
@@ -541,7 +541,7 @@ def send():
         return redirect(url_for('chat'))
     
     content = request.form.get('content', '')
-    content, mentions = parse_mentions(content)
+    content = render_mentions(content)
     reply_to_id = request.form.get('reply_to_id', type=int)
     db.session.add(Message(
         content=content,
@@ -567,14 +567,14 @@ def edit_message():
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            msg.content = new_content
+            msg.content = render_mentions(new_content)
             msg.edited = True
             db.session.commit()
             return jsonify({'success': True})
     elif msg_type == 'group':
         msg = GroupMessage.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            msg.content = new_content
+            msg.content = render_mentions(new_content)
             msg.edited = True
             db.session.commit()
             return jsonify({'success': True})

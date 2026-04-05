@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 Информация о группе | BearGram</title>
+    <title>🐻 {{ group.name }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -10,9 +10,9 @@
         .container{max-width:600px;margin:0 auto;padding:20px}
         .card{background:rgba(255,255,255,0.95);border-radius:30px;padding:25px;margin-bottom:20px}
         .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
-        .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer}
+        .avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-size:35px}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-        .back{background:#ff6b6b;padding:10px 20px;border-radius:25px;cursor:pointer;color:white;text-decoration:none;display:inline-block}
+        .back{background:#ff6b6b;padding:10px 20px;border-radius:25px;color:white;text-decoration:none;display:inline-block}
         .member-list{list-style:none}
         .member-item{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid #eee}
         .member-info{display:flex;align-items:center;gap:12px}
@@ -22,17 +22,16 @@
         .add-form{display:flex;gap:10px;margin-top:20px}
         .add-form input{flex:1;padding:12px;border-radius:30px;border:1px solid #ffb3b3}
         .add-form button{background:#ff6b6b;color:white;border:none;padding:12px 20px;border-radius:30px;cursor:pointer}
-        .upload-form{margin-top:20px}
-        .upload-form input{margin:10px 0}
+        .chat-btn{background:#ff6b6b;color:white;text-decoration:none;padding:12px 20px;border-radius:30px;display:inline-block}
     </style>
 </head>
 <body>
 <div class="container">
-    <a href="/chat" class="back">← Назад к чатам</a>
+    <a href="/chat" class="back">← Назад</a>
     
     <div class="card">
         <div class="header">
-            <div class="avatar" onclick="document.getElementById('avatarInput').click()">
+            <div class="avatar">
                 {% if group.avatar != 'group_default.png' %}
                     <img src="/static/avatars/{{ group.avatar }}">
                 {% else %}
@@ -41,20 +40,13 @@
             </div>
             <div>
                 <h2>{{ group.name }}</h2>
-                <p style="color:#888">Группа</p>
+                <p style="color:#888">{{ members|length }} участников</p>
             </div>
         </div>
-        
-        {% if is_admin %}
-        <form class="upload-form" method="POST" action="/group/{{ group.id }}/upload_avatar" enctype="multipart/form-data">
-            <input type="file" name="avatar" id="avatarInput" style="display:none" onchange="this.form.submit()">
-            <button type="button" onclick="document.getElementById('avatarInput').click()" style="background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer">📷 Сменить аватар</button>
-        </form>
-        {% endif %}
     </div>
     
     <div class="card">
-        <h3>👥 Участники ({{ members|length }})</h3>
+        <h3>👥 Участники</h3>
         <ul class="member-list">
             {% for m in members %}
             <li class="member-item">
@@ -72,8 +64,8 @@
                     </div>
                 </div>
                 {% if is_admin and not m.is_admin %}
-                <form method="POST" action="/remove_member/{{ group.id }}/{{ m.user.id }}" onsubmit="return confirm('Удалить участника?')">
-                    <button type="submit" class="remove-btn">🗑️ Удалить</button>
+                <form method="POST" action="/remove_member/{{ group.id }}/{{ m.user.id }}" onsubmit="return confirm('Удалить?')">
+                    <button type="submit" class="remove-btn">Удалить</button>
                 </form>
                 {% endif %}
             </li>
@@ -82,14 +74,14 @@
         
         {% if is_admin %}
         <form class="add-form" method="POST" action="/add_member/{{ group.id }}">
-            <input type="text" name="username" placeholder="👤 Имя пользователя" required>
+            <input type="text" name="username" placeholder="Имя пользователя" required>
             <button type="submit">➕ Добавить</button>
         </form>
         {% endif %}
     </div>
     
     <div class="card">
-        <a href="/group/{{ group.id }}" style="background:#ff6b6b;color:white;text-decoration:none;padding:12px 20px;border-radius:30px;display:inline-block">💬 Перейти в чат</a>
+        <a href="/group/{{ group.id }}" class="chat-btn">💬 В чат</a>
     </div>
 </div>
 </body>
