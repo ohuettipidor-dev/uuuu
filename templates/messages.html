@@ -8,9 +8,9 @@
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
-        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap}
+        .header{padding:15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,107,107,0.3);flex-wrap:wrap;cursor:pointer}
         .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;cursor:pointer;color:white;font-weight:500}
-        .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center}
+        .avatar{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
         .message{display:flex;animation:fadeInUp 0.3s ease}
@@ -47,6 +47,7 @@
             border-radius:12px;
             transition:all 0.2s;
             cursor:pointer;
+            display:inline-block;
         }
         .mention:hover{
             background:rgba(46,166,255,0.2);
@@ -66,8 +67,8 @@
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <div class="back" onclick="location.href='/chat'">← Назад</div>
+    <div class="header" onclick="location.href='/profile/{{ other.id }}'">
+        <div class="back" onclick="event.stopPropagation(); location.href='/chat'">← Назад</div>
         <div class="avatar">
             {% if other.avatar != 'default.png' %}
                 <img src="/static/avatars/{{ other.avatar }}">
@@ -78,7 +79,7 @@
         <div style="flex:1">{{ other.username }} 
             <span style="font-size:12px">{% if other.status == 'online' %}🐻 онлайн{% else %}💤 офлайн{% endif %}</span>
         </div>
-        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none">🧸 Профиль</a>
+        <a href="/profile" style="background:#f0f0f0;padding:8px 18px;border-radius:25px;color:#ff6b6b;text-decoration:none" onclick="event.stopPropagation()">🧸 Профиль</a>
     </div>
     <div class="messages" id="messages">
         {% for m in msgs %}
@@ -142,6 +143,21 @@
         if(audio) audio.play();
     }
     
+    function renderMessageContent(content) {
+        if (!content) return '';
+        // Заменяем маркеры [BEARGRAM_MENTION:id:username] на кликабельные ссылки (если есть)
+        let html = content;
+        const mentionRegex = /\[BEARGRAM_MENTION:(\d+):([^\]]+)\]/g;
+        let match;
+        while ((match = mentionRegex.exec(content)) !== null) {
+            const userId = match[1];
+            const username = match[2];
+            const mentionHtml = `<a href="/profile/${userId}" class="mention" data-user-id="${userId}">@${username}</a>`;
+            html = html.replace(match[0], mentionHtml);
+        }
+        return html;
+    }
+    
     function addNewMessage(msg) {
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
@@ -150,7 +166,7 @@
         
         let contentHtml = '';
         if(msg.content) {
-            contentHtml = msg.content;
+            contentHtml = renderMessageContent(msg.content);
         }
         if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
@@ -169,6 +185,7 @@
         div.querySelectorAll('.mention').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const userId = link.getAttribute('data-user-id') || link.href.split('/').pop();
                 if(userId) window.location.href = `/profile/${userId}`;
             });
@@ -287,6 +304,15 @@
             document.getElementById('emojiPicker').style.display = 'none';
         }
     });
+    
+    // Инициализация существующих сообщений: рендерим ссылки
+    document.querySelectorAll('.message .message-content').forEach(el => {
+        const html = el.innerHTML;
+        if(html && html.includes('[BEARGRAM_MENTION:')) {
+            el.innerHTML = renderMessageContent(html);
+        }
+    });
+    
     pollingInterval = setInterval(checkNewMessages, 5000);
 </script>
 </body>

@@ -112,7 +112,7 @@ class GroupMessage(db.Model):
 
 @login_manager.user_loader
 def load_user(uid):
-    return User.query.get(int(uid))
+    return db.session.get(User, uid)
 
 with app.app_context():
     db.create_all()
@@ -218,13 +218,11 @@ def profile():
             flash('Настройки уведомлений сохранены', 'success')
         
         if 'delete_account' in request.form:
-            # Удаляем все сообщения пользователя
             Message.query.filter((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)).delete()
             GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
             GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
             Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
             
-            # Удаляем группы, созданные пользователем
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
                 GroupMember.query.filter_by(group_id=group.id).delete()
@@ -243,12 +241,11 @@ def profile():
 @app.route('/profile/<int:uid>')
 @login_required
 def profile_by_id(uid):
-    user = User.query.get(uid)
+    user = db.session.get(User, uid)
     if not user:
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('chat'))
     
-    # Проверяем, есть ли в черном списке
     is_blocked = Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first() is not None
     
     return render_template('profile_public.html', profile_user=user, is_blocked=is_blocked)
@@ -322,7 +319,7 @@ def create_group():
 @app.route('/group/<int:gid>/upload_avatar', methods=['POST'])
 @login_required
 def upload_group_avatar(gid):
-    group = Group.query.get(gid)
+    group = db.session.get(Group, gid)
     if not group:
         flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
@@ -351,7 +348,7 @@ def upload_group_avatar(gid):
 @app.route('/group/<int:gid>/info')
 @login_required
 def group_info(gid):
-    group = Group.query.get(gid)
+    group = db.session.get(Group, gid)
     if not group:
         flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
@@ -364,7 +361,7 @@ def group_info(gid):
     members = GroupMember.query.filter_by(group_id=gid).all()
     members_list = []
     for m in members:
-        user = User.query.get(m.user_id)
+        user = db.session.get(User, m.user_id)
         members_list.append({'user': user, 'is_admin': m.is_admin})
     
     is_admin = member.is_admin
@@ -374,7 +371,7 @@ def group_info(gid):
 @app.route('/add_member/<int:gid>', methods=['POST'])
 @login_required
 def add_member(gid):
-    group = Group.query.get(gid)
+    group = db.session.get(Group, gid)
     if not group or group.created_by != current_user.id:
         flash('Нет прав', 'danger')
         return redirect(url_for('group_chat', gid=gid))
@@ -392,7 +389,7 @@ def add_member(gid):
 @app.route('/group/<int:gid>')
 @login_required
 def group_chat(gid):
-    group = Group.query.get(gid)
+    group = db.session.get(Group, gid)
     if not group:
         flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
@@ -404,7 +401,7 @@ def group_chat(gid):
     members = GroupMember.query.filter_by(group_id=gid).all()
     members_list = []
     for m in members:
-        user = User.query.get(m.user_id)
+        user = db.session.get(User, m.user_id)
         members_list.append(user)
     return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
 
@@ -431,7 +428,6 @@ def chat():
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
     
-    # Получаем список заблокированных пользователей
     blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
     
     users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
@@ -453,7 +449,6 @@ def chat():
 @app.route('/messages/<int:uid>')
 @login_required
 def messages(uid):
-    # Проверяем, не заблокирован ли пользователь
     if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first():
         flash('Вы заблокировали этого пользователя', 'danger')
         return redirect(url_for('chat'))
@@ -461,7 +456,7 @@ def messages(uid):
         flash('Этот пользователь заблокировал вас', 'danger')
         return redirect(url_for('chat'))
     
-    other = User.query.get(uid)
+    other = db.session.get(User, uid)
     if not other:
         flash('Пользователь не найден')
         return redirect(url_for('chat'))
@@ -480,7 +475,6 @@ def messages(uid):
 def send():
     receiver_id = int(request.form['receiver_id'])
     
-    # Проверяем, не заблокирован ли получатель
     if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
         flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
         return redirect(url_for('chat'))
@@ -505,7 +499,6 @@ def send():
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
 def get_new_messages(last_id, receiver_id):
-    # Проверяем блокировку
     if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
         return jsonify([])
     if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
