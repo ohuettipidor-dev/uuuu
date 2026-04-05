@@ -6,7 +6,6 @@ from datetime import datetime
 import os
 import uuid
 import re
-import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -36,23 +35,35 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse_mentions(text):
+    """Находит всех упомянутых пользователей и заменяет @username на маркер [MENTION:id:username]"""
     if not text:
         return text, []
+    
     pattern = r'@([a-zA-Z0-9_]+)'
     mentions_found = re.findall(pattern, text)
     mentioned_users = []
+    
     for mention in mentions_found:
         user = User.query.filter_by(username_link=f'@{mention}').first()
+        if not user:
+            user = User.query.filter_by(username=mention).first()
         if user:
             mentioned_users.append({'id': user.id, 'username': mention})
             text = text.replace(f'@{mention}', f'[MENTION:{user.id}:{mention}]')
+    
     return text, mentioned_users
+
+def render_mentions_to_html(text):
+    """Преобразует маркеры [MENTION:id:username] в HTML-ссылки"""
+    if not text:
+        return ''
+    pattern = r'\[MENTION:(\d+):([^\]]+)\]'
+    return re.sub(pattern, r'<a href="/profile/\1" class="mention" data-user-id="\1">@\2</a>', text)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Модели
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -63,7 +74,6 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     notifications_enabled = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    favorite_messages = db.Column(db.Text, default='[]')  # JSON список ID избранных сообщений
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -91,6 +101,8 @@ class Message(db.Model):
     
     reply_to = db.relationship('Message', remote_side=[id], foreign_keys=[reply_to_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    receiver = db.relationship('User', foreign_keys=[receiver_id])
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -116,13 +128,15 @@ class GroupMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     voice_duration = db.Column(db.Integer, default=0)
-    sender = db.relationship('User', foreign_keys=[sender_id])
     edited = db.Column(db.Boolean, default=False)
     deleted_for = db.Column(db.Text, default='')
     reply_to_id = db.Column(db.Integer, nullable=True)
     is_favorite = db.Column(db.Boolean, default=False)
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
+    
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
 
 @login_manager.user_loader
 def load_user(uid):
@@ -236,11 +250,13 @@ def profile():
             GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
             GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
             Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
+            
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
                 GroupMember.query.filter_by(group_id=group.id).delete()
                 GroupMessage.query.filter_by(group_id=group.id).delete()
                 db.session.delete(group)
+            
             db.session.delete(current_user)
             db.session.commit()
             logout_user()
@@ -257,7 +273,9 @@ def profile_by_id(uid):
     if not user:
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('chat'))
+    
     is_blocked = Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first() is not None
+    
     return render_template('profile_public.html', profile_user=user, is_blocked=is_blocked)
 
 @app.route('/block_user/<int:uid>', methods=['POST'])
@@ -266,6 +284,7 @@ def block_user(uid):
     if uid == current_user.id:
         flash('Нельзя заблокировать самого себя', 'danger')
         return redirect(url_for('profile_by_id', uid=uid))
+    
     existing = Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first()
     if not existing:
         db.session.add(Blacklist(user_id=current_user.id, blocked_user_id=uid))
@@ -275,6 +294,7 @@ def block_user(uid):
         db.session.delete(existing)
         db.session.commit()
         flash('Пользователь удалён из черного списка', 'success')
+    
     return redirect(url_for('profile_by_id', uid=uid))
 
 @app.route('/upload', methods=['POST'])
@@ -331,10 +351,12 @@ def upload_group_avatar(gid):
     if not group:
         flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
+    
     member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
     if not member or not member.is_admin:
         flash('Только администратор может менять аватар группы', 'danger')
         return redirect(url_for('group_info', gid=gid))
+    
     if 'avatar' in request.files:
         f = request.files['avatar']
         if f and allowed_file(f.filename):
@@ -348,6 +370,7 @@ def upload_group_avatar(gid):
             group.avatar = name
             db.session.commit()
             flash('Аватар группы обновлён!', 'success')
+    
     return redirect(url_for('group_info', gid=gid))
 
 @app.route('/group/<int:gid>/info')
@@ -357,16 +380,20 @@ def group_info(gid):
     if not group:
         flash('Группа не найдена', 'danger')
         return redirect(url_for('chat'))
+    
     member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
     if not member:
         flash('Вы не участник этой группы', 'danger')
         return redirect(url_for('chat'))
+    
     members = GroupMember.query.filter_by(group_id=gid).all()
     members_list = []
     for m in members:
         user = db.session.get(User, m.user_id)
         members_list.append({'user': user, 'is_admin': m.is_admin})
+    
     is_admin = member.is_admin
+    
     return render_template('group_info.html', group=group, members=members_list, is_admin=is_admin)
 
 @app.route('/add_member/<int:gid>', methods=['POST'])
@@ -430,7 +457,9 @@ def send_group():
 def chat():
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
+    
     blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
+    
     users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
     convs = []
@@ -443,7 +472,7 @@ def chat():
         unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False, ~Message.deleted_for.contains(str(current_user.id))).count()
         convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
     for g in groups:
-        last = GroupMessage.query.filter_by(group_id=g.id, ~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
+        last = GroupMessage.query.filter_by(group_id=g.id).filter(~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
         convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar, 'last': last, 'unread': 0})
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs)
@@ -457,6 +486,7 @@ def messages(uid):
     if Blacklist.query.filter_by(user_id=uid, blocked_user_id=current_user.id).first():
         flash('Этот пользователь заблокировал вас', 'danger')
         return redirect(url_for('chat'))
+    
     other = db.session.get(User, uid)
     if not other:
         flash('Пользователь не найден')
@@ -476,12 +506,14 @@ def messages(uid):
 @login_required
 def send():
     receiver_id = int(request.form['receiver_id'])
+    
     if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
         flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
         return redirect(url_for('chat'))
     if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
         flash('Этот пользователь заблокировал вас', 'danger')
         return redirect(url_for('chat'))
+    
     content = request.form.get('content', '')
     content, mentions = parse_mentions(content)
     reply_to_id = request.form.get('reply_to_id', type=int)
@@ -505,6 +537,7 @@ def edit_message():
     msg_id = data['msg_id']
     new_content = data['new_content']
     msg_type = data['type']
+    
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
@@ -528,6 +561,7 @@ def delete_message():
     msg_id = data['msg_id']
     msg_type = data['type']
     delete_for_all = data.get('delete_for_all', False)
+    
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg:
@@ -559,9 +593,9 @@ def delete_message():
 def forward_message():
     data = request.get_json()
     msg_id = data['msg_id']
-    target_type = data['target_type']  # 'private' or 'group'
+    target_type = data['target_type']
     target_id = data['target_id']
-    msg_type = data['msg_type']  # 'private' or 'group'
+    msg_type = data['msg_type']
     
     if msg_type == 'private':
         original = Message.query.get(msg_id)
@@ -632,6 +666,7 @@ def toggle_favorite():
     data = request.get_json()
     msg_id = data['msg_id']
     msg_type = data['type']
+    
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg and (msg.sender_id == current_user.id or msg.receiver_id == current_user.id):
@@ -658,8 +693,41 @@ def get_reply_preview(msg_id, msg_type):
     return jsonify({
         'id': msg.id,
         'content': msg.content[:100] if msg.content else '[Файл]',
-        'sender_name': msg.sender.username if hasattr(msg, 'sender') else User.query.get(msg.sender_id).username
+        'sender_name': msg.sender.username if msg.sender else User.query.get(msg.sender_id).username
     })
+
+@app.route('/get_chats_list')
+@login_required
+def get_chats_list():
+    """Возвращает JSON список всех чатов для пересылки сообщений"""
+    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
+    
+    users = User.query.filter(
+        User.id != current_user.id, 
+        ~User.id.in_(blocked_ids)
+    ).all()
+    
+    groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    
+    chats = []
+    
+    for u in users:
+        chats.append({
+            'type': 'private', 
+            'id': u.id, 
+            'name': u.username,
+            'avatar': u.avatar
+        })
+    
+    for g in groups:
+        chats.append({
+            'type': 'group', 
+            'id': g.id, 
+            'name': g.name,
+            'avatar': g.avatar
+        })
+    
+    return jsonify(chats)
 
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
@@ -668,12 +736,14 @@ def get_new_messages(last_id, receiver_id):
         return jsonify([])
     if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
         return jsonify([])
+    
     msgs = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
         ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
         Message.id > last_id,
         ~Message.deleted_for.contains(str(current_user.id))
     ).order_by(Message.timestamp).all()
+    
     result = []
     for m in msgs:
         result.append({
@@ -688,7 +758,8 @@ def get_new_messages(last_id, receiver_id):
             'edited': m.edited,
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
-            'forwarded_from_id': m.forwarded_from_id
+            'forwarded_from_id': m.forwarded_from_id,
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None
         })
     return jsonify(result)
 
@@ -698,11 +769,13 @@ def get_new_group_messages(last_id, group_id):
     member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
     if not member:
         return jsonify([])
+    
     msgs = GroupMessage.query.filter(
         GroupMessage.group_id == group_id,
         GroupMessage.id > last_id,
         ~GroupMessage.deleted_for.contains(str(current_user.id))
     ).order_by(GroupMessage.timestamp).all()
+    
     result = []
     for m in msgs:
         result.append({
@@ -718,7 +791,8 @@ def get_new_group_messages(last_id, group_id):
             'edited': m.edited,
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
-            'forwarded_from_id': m.forwarded_from_id
+            'forwarded_from_id': m.forwarded_from_id,
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None
         })
     return jsonify(result)
 
