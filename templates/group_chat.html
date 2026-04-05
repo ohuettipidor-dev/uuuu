@@ -17,8 +17,11 @@
         .group-info{flex:1;cursor:pointer}
         .group-name{font-weight:600;font-size:15px;color:#333}
         .member-count{font-size:10px;color:#888}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:36px;height:36px}
-        .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
+        /* ПЛЮШЕВЫЙ МИШКА ТОЛЬКО ЗДЕСЬ - КНОПКА ПРОФИЛЯ */
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b}
+        .profile-btn:hover{background:white;transform:translateY(-1px)}
+        .settings-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px}
+        .settings-btn:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
         
         .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
         .message{display:flex;animation:fadeInUp 0.2s ease;position:relative;flex-direction:column}
@@ -50,12 +53,14 @@
         .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
         .favorite-star{color:gold;font-size:12px}
         
-        /* НОВАЯ СТРОКА ВВОДА - всё внутри */
         .input-area{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:15px;padding:8px 4px;outline:none}
         .input-wrapper input::placeholder{color:#aaa;font-size:14px}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:20px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:36px;height:36px}
+        .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
+        /* КНОПКА ОТПРАВКИ - ОБЫЧНЫЙ МИШКА 🐻 */
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
@@ -83,8 +88,8 @@
         
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:32px;height:32px;font-size:16px;padding:4px}
-            .send-btn{width:38px;height:38px;font-size:16px}
+            .input-icon{width:32px;height:32px;font-size:18px;padding:4px}
+            .send-btn{width:38px;height:38px;font-size:18px}
             .input-wrapper{padding:2px 6px}
             .header{padding:8px 10px}
             .avatar{width:32px;height:32px}
@@ -96,7 +101,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <div class="back" onclick="location.href='/chat'">←</div>
+        <a href="/chat" class="back">←</a>
         <div class="avatar" onclick="document.getElementById('avatarInput').click()">
             {% if group.avatar != 'group_default.png' %}
                 <img src="/static/avatars/{{ group.avatar }}">
@@ -109,8 +114,9 @@
             <div class="group-name">{{ group.name }}</div>
             <div class="member-count">{{ members|length }} участников</div>
         </div>
-        <button class="input-icon" onclick="location.href='/group/{{ group.id }}/info'" style="font-size:16px">⚙️</button>
-        <button class="input-icon" onclick="location.href='/profile'" style="font-size:16px">👤</button>
+        <button class="settings-btn" onclick="location.href='/group/{{ group.id }}/info'">⚙️</button>
+        <!-- ПЛЮШЕВЫЙ МИШКА - КНОПКА ПРОФИЛЯ -->
+        <a href="/profile" class="profile-btn">🧸</a>
         <form id="avatarForm" method="POST" action="/group/{{ group.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
             <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
         </form>
@@ -176,7 +182,6 @@
         <button class="cancel-reply" onclick="cancelReply()">✖</button>
     </div>
     
-    <!-- НОВАЯ СТРОКА ВВОДА - прикрепление и эмодзи ВНУТРИ поля -->
     <div class="input-area">
         <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение">
@@ -185,7 +190,8 @@
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:18px">📎</button>
         </div>
         <button class="input-icon voice-btn" id="voiceBtn" style="font-size:18px">🎤</button>
-        <button class="input-icon send-btn" onclick="sendMsg()">➤</button>
+        <!-- КНОПКА ОТПРАВКИ - ОБЫЧНЫЙ МИШКА 🐻 -->
+        <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
     </div>
     
