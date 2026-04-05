@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import uuid
 import re
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -34,19 +35,24 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ========== ГЛАВНОЕ ИСПРАВЛЕНИЕ - БОЛЬШЕ НЕТ [MENTION] ==========
-def render_mentions(text):
-    """Превращает @username в ссылку на профиль - БЕЗ ВСЯКИХ MENTION"""
+def render_mentions(text, group_id=None):
+    """Превращает @username в ссылку и возвращает список упомянутых ID"""
     if not text:
-        return text
-    # Просто ищем всех пользователей и заменяем @username на ссылку
-    users = User.query.all()
-    for user in users:
-        text = text.replace(f'@{user.username}', f'<a href="/profile/{user.id}" class="mention">@{user.username}</a>')
-        if user.username_link:
-            text = text.replace(f'@{user.username_link[1:]}', f'<a href="/profile/{user.id}" class="mention">@{user.username_link[1:]}</a>')
-    return text
-# ================================================================
+        return text, []
+    
+    mentioned_users = []
+    pattern = r'@([a-zA-Z0-9_]+)'
+    matches = re.findall(pattern, text)
+    
+    for mention in matches:
+        user = User.query.filter_by(username_link=f'@{mention}').first()
+        if not user:
+            user = User.query.filter_by(username=mention).first()
+        if user and user.id != current_user.id:
+            mentioned_users.append(user.id)
+            text = text.replace(f'@{mention}', f'<a href="/profile/{user.id}" class="mention">@{mention}</a>')
+    
+    return text, mentioned_users
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -86,6 +92,7 @@ class Message(db.Model):
     is_favorite = db.Column(db.Boolean, default=False)
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
+    mentions = db.Column(db.Text, default='')  # JSON список ID упомянутых
     
     reply_to = db.relationship('Message', remote_side=[id], foreign_keys=[reply_to_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
@@ -122,6 +129,7 @@ class GroupMessage(db.Model):
     is_favorite = db.Column(db.Boolean, default=False)
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
+    mentions = db.Column(db.Text, default='')  # JSON список ID упомянутых
     
     sender = db.relationship('User', foreign_keys=[sender_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
@@ -462,10 +470,12 @@ def group_chat(gid):
 @login_required
 def send_group():
     content = request.form.get('content', '')
-    # ПРИМЕНЯЕМ render_mentions - БОЛЬШЕ НИКАКИХ [MENTION]
-    content = render_mentions(content)
     reply_to_id = request.form.get('reply_to_id', type=int)
-    db.session.add(GroupMessage(
+    
+    # Обрабатываем упоминания
+    content, mentioned_ids = render_mentions(content, group_id=request.form['group_id'])
+    
+    msg = GroupMessage(
         content=content,
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
@@ -473,9 +483,12 @@ def send_group():
         sender_id=current_user.id,
         group_id=request.form['group_id'],
         voice_duration=request.form.get('voice_duration', 0),
-        reply_to_id=reply_to_id
-    ))
+        reply_to_id=reply_to_id,
+        mentions=json.dumps(mentioned_ids)
+    )
+    db.session.add(msg)
     db.session.commit()
+    
     return redirect(url_for('group_chat', gid=request.form['group_id']))
 
 @app.route('/chat')
@@ -541,9 +554,12 @@ def send():
         return redirect(url_for('chat'))
     
     content = request.form.get('content', '')
-    content = render_mentions(content)
     reply_to_id = request.form.get('reply_to_id', type=int)
-    db.session.add(Message(
+    
+    # Обрабатываем упоминания
+    content, mentioned_ids = render_mentions(content)
+    
+    msg = Message(
         content=content,
         file_path=request.form.get('file_path'),
         file_name=request.form.get('file_name'),
@@ -551,9 +567,12 @@ def send():
         sender_id=current_user.id,
         receiver_id=receiver_id,
         voice_duration=request.form.get('voice_duration', 0),
-        reply_to_id=reply_to_id
-    ))
+        reply_to_id=reply_to_id,
+        mentions=json.dumps(mentioned_ids)
+    )
+    db.session.add(msg)
     db.session.commit()
+    
     return redirect(url_for('messages', uid=receiver_id))
 
 @app.route('/edit_message', methods=['POST'])
@@ -567,14 +586,18 @@ def edit_message():
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            msg.content = render_mentions(new_content)
+            content, mentioned_ids = render_mentions(new_content)
+            msg.content = content
+            msg.mentions = json.dumps(mentioned_ids)
             msg.edited = True
             db.session.commit()
             return jsonify({'success': True})
     elif msg_type == 'group':
         msg = GroupMessage.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            msg.content = render_mentions(new_content)
+            content, mentioned_ids = render_mentions(new_content)
+            msg.content = content
+            msg.mentions = json.dumps(mentioned_ids)
             msg.edited = True
             db.session.commit()
             return jsonify({'success': True})
@@ -735,6 +758,55 @@ def get_chats_list():
         chats.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar})
     return jsonify(chats)
 
+@app.route('/search_users')
+@login_required
+def search_users():
+    """Поиск пользователей по @username или имени"""
+    query = request.args.get('q', '').lower().strip()
+    if not query:
+        return jsonify([])
+    
+    # Убираем @ если есть
+    if query.startswith('@'):
+        query = query[1:]
+    
+    users = User.query.filter(
+        User.id != current_user.id,
+        (User.username.ilike(f'%{query}%')) | 
+        (User.username_link.ilike(f'%@{query}%'))
+    ).limit(10).all()
+    
+    result = []
+    for user in users:
+        result.append({
+            'id': user.id,
+            'username': user.username,
+            'username_link': user.username_link if user.username_link else f'@{user.username}',
+            'avatar': user.avatar
+        })
+    return jsonify(result)
+
+@app.route('/get_mention_notifications')
+@login_required
+def get_mention_notifications():
+    """Получить непрочитанные упоминания"""
+    # Ищем в личных сообщениях
+    private_mentions = Message.query.filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+        Message.mentions != '',
+        Message.mentions.contains(str(current_user.id))
+    ).count()
+    
+    # Ищем в групповых сообщениях
+    group_mentions = GroupMessage.query.filter(
+        GroupMessage.group_id.in_([gm.group_id for gm in GroupMember.query.filter_by(user_id=current_user.id).all()]),
+        GroupMessage.mentions != '',
+        GroupMessage.mentions.contains(str(current_user.id))
+    ).count()
+    
+    return jsonify({'count': private_mentions + group_mentions})
+
 @app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
 @login_required
 def get_new_messages(last_id, receiver_id):
@@ -765,7 +837,8 @@ def get_new_messages(last_id, receiver_id):
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
             'forwarded_from_id': m.forwarded_from_id,
-            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
+            'mentions': m.mentions
         })
     return jsonify(result)
 
@@ -798,7 +871,8 @@ def get_new_group_messages(last_id, group_id):
             'reply_to_id': m.reply_to_id,
             'is_favorite': m.is_favorite,
             'forwarded_from_id': m.forwarded_from_id,
-            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
+            'mentions': m.mentions
         })
     return jsonify(result)
 
