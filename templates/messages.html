@@ -18,6 +18,7 @@
         .user-status{font-size:10px}
         .user-status.online{color:#4cd964}
         .user-status.offline{color:#3a86ff}
+        .user-status.typing{color:#ff6b6b;font-style:italic}
         .profile-btn{background:rgba(255,255,255,0.9);padding:5px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b}
         .profile-btn:hover{background:white;transform:translateY(-1px)}
         
@@ -49,14 +50,16 @@
         .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
         .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
         .favorite-star{color:gold;font-size:12px}
+        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px}
         
+        /* НОВАЯ СТРОКА ВВОДА - ВСЁ ВНУТРИ, КРОМЕ ОТПРАВКИ */
         .input-area{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:15px;padding:8px 4px;outline:none}
         .input-wrapper input::placeholder{color:#aaa;font-size:14px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:20px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:36px;height:36px}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:22px}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
@@ -85,7 +88,7 @@
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
             .input-icon{width:32px;height:32px;font-size:18px;padding:4px}
-            .send-btn{width:38px;height:38px;font-size:18px}
+            .send-btn{width:42px;height:42px;font-size:20px}
             .input-wrapper{padding:2px 6px}
             .header{padding:8px 10px}
             .avatar{width:32px;height:32px}
@@ -96,7 +99,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <a href="/chat" class="back">← Назад</a>
+        <a href="/chat" class="back">←</a>
         <div class="avatar" onclick="location.href='/profile/{{ other.id }}'">
             {% if other.avatar != 'default.png' %}
                 <img src="/static/avatars/{{ other.avatar }}">
@@ -106,7 +109,7 @@
         </div>
         <div class="user-info" onclick="location.href='/profile/{{ other.id }}'">
             <div class="user-name">{{ other.username }}</div>
-            <div class="user-status {% if other.status == 'online' %}online{% else %}offline{% endif %}">
+            <div class="user-status" id="typingStatus">
                 {% if other.status == 'online' %}
                     🟢 Онлайн
                 {% else %}
@@ -118,9 +121,19 @@
     </div>
     
     <div class="messages" id="messages">
+        <!-- Закрепленное сообщение -->
+        <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
+            <span>📌 Закреплено: </span>
+            <span id="pinnedMessageContent"></span>
+            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+        </div>
+        
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
+                {% if m.is_pinned %}
+                <div class="pinned-badge">📌 Закреплено</div>
+                {% endif %}
                 {% if m.forwarded_from_id %}
                 <div class="forward-badge">📎 Переслано</div>
                 {% endif %}
@@ -171,13 +184,20 @@
                     <span>{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
-                    {% if m.sender_id == current_user.id and m.is_read %}✓✓{% endif %}
+                    {% if m.sender_id == current_user.id %}
+                        {% if m.is_read %}
+                            <span style="color:#4cd964">✓✓</span>
+                        {% else %}
+                            <span>✓✓</span>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
             <div class="message-actions">
                 <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
                 <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐</button>
                 <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
+                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
                 {% if m.sender_id == current_user.id %}
                     <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
                     <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️</button>
@@ -196,14 +216,15 @@
         <button class="cancel-reply" onclick="cancelReply()">✖</button>
     </div>
     
+    <!-- НОВАЯ СТРОКА ВВОДА - ВСЁ ВНУТРИ, КРОМЕ ОТПРАВКИ -->
     <div class="input-area">
         <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение... @username">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
             <button class="input-icon" id="emojiBtn" style="font-size:20px">😊</button>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:18px">📎</button>
+            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:18px">🎤</button>
         </div>
-        <button class="input-icon voice-btn" id="voiceBtn" style="font-size:18px">🎤</button>
         <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
     </div>
@@ -229,10 +250,80 @@
     let currentReplyToId = null;
     let mentionSearchTimeout = null;
     let currentMentionStart = -1;
+    let typingTimeout = null;
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
+    
+    // СТАТУС "ПЕЧАТАЕТ..."
+    msgInput.addEventListener('input', function() {
+        fetch('/typing', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({receiver_id: receiver_id, is_typing: true, chat_type: 'private'})
+        });
+        if(typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            fetch('/typing', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({receiver_id: receiver_id, is_typing: false, chat_type: 'private'})
+            });
+        }, 1000);
+    });
+    
+    function checkTyping() {
+        fetch(`/get_typing/${receiver_id}`)
+            .then(r => r.json())
+            .then(data => {
+                const statusDiv = document.getElementById('typingStatus');
+                if(data.is_typing) {
+                    statusDiv.innerHTML = '✏️ Печатает...';
+                    statusDiv.className = 'user-status typing';
+                } else {
+                    const isOnline = '{{ other.status }}' === 'online';
+                    statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
+                    statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
+                }
+            });
+    }
+    setInterval(checkTyping, 2000);
+    
+    // ЗАКРЕПЛЕННЫЕ СООБЩЕНИЯ
+    function loadPinnedMessage() {
+        fetch(`/get_pinned_message/${receiver_id}/private`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.id) {
+                    document.getElementById('pinnedMessageBar').style.display = 'flex';
+                    document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
+                    window.pinnedMsgId = data.id;
+                } else {
+                    document.getElementById('pinnedMessageBar').style.display = 'none';
+                }
+            });
+    }
+    
+    function scrollToPinned() {
+        if(window.pinnedMsgId) {
+            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
+            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    function pinMessage(msgId, type) {
+        fetch('/pin_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: msgId, type: type})
+        }).then(() => {
+            setTimeout(() => {
+                checkNewMessages();
+                loadPinnedMessage();
+            }, 500);
+        });
+    }
     
     function searchUsers(query) {
         if(!query) { hideSuggestions(); return; }
@@ -274,8 +365,8 @@
         let content = msg.content || '';
         let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
         let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
+        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge">📌 Закреплено</div>' : '';
         
-        // Обработка файлов
         let fileHtml = '';
         if(msg.file_path) {
             if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
@@ -284,23 +375,21 @@
             else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
         }
         
-        // Если нет текста но есть файл
-        if(!content && msg.file_path) {
-            content = '📎 Файл';
-        }
+        if(!content && msg.file_path) content = '📎 Файл';
         
         if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        let check = msg.is_own ? ' ✓✓' : '';
+        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
         if(msg.mentions && msg.mentions.includes('{{ current_user.id }}') && !msg.is_own) showNotification(`🔔 Вас упомянули`);
         const safeContent = (msg.content || '').replace(/`/g, '\\`');
         
-        div.innerHTML = `<div class="bubble">${forward}${reply}<div class="message-content">${content}</div>${fileHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}<div class="message-content">${content}</div>${fileHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
+        if(msg.is_pinned) loadPinnedMessage();
     }
     
     function checkNewMessages() { fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => msgs.forEach(m => addNewMessage(m))); }
@@ -321,7 +410,7 @@
     }
     
     function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); } }
-    function deleteMessage(id, type, all) { if(confirm('Удалить?')) { fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all}) }).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); }); } }
+    function deleteMessage(id, type, all) { if(confirm('Удалить?')) { fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all}) }).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
     function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); }
     function replyToMessage(id, content) { currentReplyToId = id; const bar = document.getElementById('replyBar'); document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); bar.style.display = 'flex'; msgInput.focus(); }
     function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
@@ -374,6 +463,7 @@
     
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
+    loadPinnedMessage();
     pollingInterval = setInterval(checkNewMessages, 3000);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
