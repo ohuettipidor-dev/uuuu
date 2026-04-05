@@ -100,6 +100,11 @@
             font-weight: 500;
         }
         .link a:hover{text-decoration:underline}
+        .optional{
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -120,8 +125,8 @@
             <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
         </div>
         <div class="form-group">
-            <input type="text" name="username_link" placeholder="@username (уникальный)" required>
-            <small>Пример: @john_doe — только буквы, цифры и _</small>
+            <input type="text" name="username_link" placeholder="@username (необязательно)">
+            <small>Можно добавить позже в настройках профиля</small>
         </div>
         <div class="form-group">
             <input type="password" name="password" placeholder="🔒 Пароль" required>

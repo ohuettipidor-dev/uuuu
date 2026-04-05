@@ -37,7 +37,6 @@ def allowed_file(f):
 def parse_mentions(text):
     if not text:
         return text
-    # Ищем все @username в тексте
     pattern = r'@(\w+)'
     def replace_mention(match):
         mention = match.group(1)
@@ -54,11 +53,12 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    username_link = db.Column(db.String(80), unique=True, nullable=False)
+    username_link = db.Column(db.String(80), unique=True, nullable=True)
     password = db.Column(db.String(200), nullable=False)
     avatar = db.Column(db.String(200), default='default.png')
     status = db.Column(db.String(20), default='offline')
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    notifications_enabled = db.Column(db.Boolean, default=True)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,12 +75,16 @@ class Message(db.Model):
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, default='')
+    avatar = db.Column(db.String(200), default='group_default.png')
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class GroupMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class GroupMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -109,25 +113,25 @@ def index():
 def register():
     if request.method == 'POST':
         u = request.form['username']
-        ul = request.form['username_link'].strip().lower().replace(' ', '_')
+        ul = request.form.get('username_link', '').strip().lower().replace(' ', '_')
         p = request.form['password']
         confirm = request.form['confirm_password']
         
-        if not ul.startswith('@'):
+        if ul and not ul.startswith('@'):
             ul = '@' + ul
         
         if p != confirm:
             flash('Пароли не совпадают', 'danger')
         elif User.query.filter_by(username=u).first():
             flash('Имя пользователя занято', 'danger')
-        elif User.query.filter_by(username_link=ul).first():
+        elif ul and User.query.filter_by(username_link=ul).first():
             flash('Такой @username уже существует', 'danger')
-        elif len(ul) < 2 or len(ul) > 32:
+        elif ul and (len(ul) < 2 or len(ul) > 32):
             flash('@username должен быть от 2 до 32 символов', 'danger')
-        elif not re.match(r'^@[a-zA-Z0-9_]+$', ul):
+        elif ul and not re.match(r'^@[a-zA-Z0-9_]+$', ul):
             flash('@username может содержать только буквы, цифры и _', 'danger')
         else:
-            db.session.add(User(username=u, username_link=ul, password=generate_password_hash(p)))
+            db.session.add(User(username=u, username_link=ul if ul else None, password=generate_password_hash(p)))
             db.session.commit()
             flash('Регистрация успешна!', 'success')
             return redirect(url_for('login'))
@@ -160,15 +164,46 @@ def logout():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    if request.method == 'POST' and 'avatar' in request.files:
-        f = request.files['avatar']
-        if f and allowed_file(f.filename):
-            ext = f.filename.rsplit('.', 1)[1].lower()
-            name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-            f.save(os.path.join(AVATAR_FOLDER, name))
-            current_user.avatar = name
+    if request.method == 'POST':
+        if 'avatar' in request.files:
+            f = request.files['avatar']
+            if f and allowed_file(f.filename):
+                ext = f.filename.rsplit('.', 1)[1].lower()
+                name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+                f.save(os.path.join(AVATAR_FOLDER, name))
+                if current_user.avatar != 'default.png':
+                    old = os.path.join(AVATAR_FOLDER, current_user.avatar)
+                    if os.path.exists(old):
+                        os.remove(old)
+                current_user.avatar = name
+                db.session.commit()
+                flash('Аватар обновлён', 'success')
+        
+        if 'username_link' in request.form:
+            ul = request.form['username_link'].strip().lower().replace(' ', '_')
+            if ul:
+                if not ul.startswith('@'):
+                    ul = '@' + ul
+                if User.query.filter_by(username_link=ul).first() and User.query.filter_by(username_link=ul).first().id != current_user.id:
+                    flash('Такой @username уже занят', 'danger')
+                elif len(ul) < 2 or len(ul) > 32:
+                    flash('@username должен быть от 2 до 32 символов', 'danger')
+                elif not re.match(r'^@[a-zA-Z0-9_]+$', ul):
+                    flash('@username может содержать только буквы, цифры и _', 'danger')
+                else:
+                    current_user.username_link = ul
+                    db.session.commit()
+                    flash('@username обновлён!', 'success')
+            else:
+                current_user.username_link = None
+                db.session.commit()
+                flash('@username удалён', 'success')
+        
+        if 'notifications_enabled' in request.form:
+            current_user.notifications_enabled = request.form['notifications_enabled'] == 'on'
             db.session.commit()
-            flash('Аватар обновлён', 'success')
+            flash('Настройки уведомлений сохранены', 'success')
+        
         return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user)
 
@@ -223,10 +258,62 @@ def create_group():
     group = Group(name=name, created_by=current_user.id)
     db.session.add(group)
     db.session.commit()
-    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id))
+    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id, is_admin=True))
     db.session.commit()
     flash(f'Группа "{name}" создана!', 'success')
     return redirect(url_for('chat'))
+
+@app.route('/group/<int:gid>/upload_avatar', methods=['POST'])
+@login_required
+def upload_group_avatar(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может менять аватар группы', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if 'avatar' in request.files:
+        f = request.files['avatar']
+        if f and allowed_file(f.filename):
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            name = f"group_{gid}_{uuid.uuid4().hex}.{ext}"
+            f.save(os.path.join(AVATAR_FOLDER, name))
+            if group.avatar != 'group_default.png':
+                old = os.path.join(AVATAR_FOLDER, group.avatar)
+                if os.path.exists(old):
+                    os.remove(old)
+            group.avatar = name
+            db.session.commit()
+            flash('Аватар группы обновлён!', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>/info')
+@login_required
+def group_info(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    members_list = []
+    for m in members:
+        user = User.query.get(m.user_id)
+        members_list.append({'user': user, 'is_admin': m.is_admin})
+    
+    is_admin = member.is_admin
+    
+    return render_template('group_info.html', group=group, members=members_list, is_admin=is_admin)
 
 @app.route('/add_member/<int:gid>', methods=['POST'])
 @login_required
@@ -299,7 +386,7 @@ def chat():
         convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
     for g in groups:
         last = GroupMessage.query.filter_by(group_id=g.id).order_by(GroupMessage.timestamp.desc()).first()
-        convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'last': last, 'unread': 0})
+        convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar, 'last': last, 'unread': 0})
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs)
 

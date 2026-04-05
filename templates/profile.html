@@ -20,9 +20,8 @@
             backdrop-filter: blur(10px);
             border-radius: 48px;
             padding: 40px;
-            max-width: 420px;
+            max-width: 500px;
             width: 100%;
-            text-align: center;
             box-shadow: 0 25px 50px rgba(0,0,0,0.15);
             border: 1px solid rgba(255,255,255,0.5);
         }
@@ -46,45 +45,65 @@
             object-fit: cover;
         }
         h2{
+            text-align: center;
             color: #333;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .info{
+            text-align: center;
             color: #666;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
             font-size: 14px;
         }
-        .upload-form{
-            margin-bottom: 24px;
+        .section{
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
         }
-        input[type="file"]{
-            margin: 15px 0;
-            padding: 10px;
-            border: 1px solid #ffb3b3;
-            border-radius: 20px;
+        .section-title{
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .form-group{
+            margin-bottom: 15px;
+        }
+        input{
             width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ffb3b3;
+            border-radius: 25px;
+            font-size: 14px;
+            background: white;
         }
-        .btn{
+        input:focus{
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        button{
             background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
+            padding: 10px 20px;
+            border-radius: 25px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
         }
         .btn-secondary{
             background: transparent;
             border: 1px solid #ff6b6b;
             color: #ff6b6b;
         }
-        .btn:hover{
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,107,107,0.3);
+        .checkbox-label{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .checkbox-label input{
+            width: auto;
         }
         .flash{
             padding: 12px;
@@ -97,12 +116,22 @@
             border: 1px solid #2ecc71;
             color: #2ecc71;
         }
+        .flash-danger{
+            background: rgba(255,107,107,0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
         .back-link{
+            text-align: center;
             margin-top: 20px;
         }
         .back-link a{
             color: #ff6b6b;
             text-decoration: none;
+        }
+        small{
+            color: #aaa;
+            font-size: 11px;
         }
     </style>
 </head>
@@ -116,10 +145,7 @@
         {% endif %}
     </div>
     <h2>{{ user.username }}</h2>
-    <div class="info">
-        <p>🐾 Присоединился к BearGram</p>
-        <p>📅 {{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Недавно' }}</p>
-    </div>
+    <div class="info">{{ user.username_link or 'Нет @username' }}</div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -129,15 +155,40 @@
         {% endif %}
     {% endwith %}
 
-    <div class="upload-form">
+    <div class="section">
+        <div class="section-title">📸 Аватар</div>
         <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="avatar" accept="image/*">
-            <button type="submit" class="btn">📸 Обновить аватар</button>
+            <div class="form-group">
+                <input type="file" name="avatar" accept="image/*">
+            </div>
+            <button type="submit">Загрузить аватар</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🔗 @username</div>
+        <form method="POST">
+            <div class="form-group">
+                <input type="text" name="username_link" value="{{ user.username_link or '' }}" placeholder="@username">
+                <small>Уникальный идентификатор. Оставьте пустым, чтобы удалить</small>
+            </div>
+            <button type="submit">Сохранить @username</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🔔 Уведомления</div>
+        <form method="POST">
+            <label class="checkbox-label">
+                <input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>
+                Получать уведомления о новых сообщениях
+            </label>
+            <button type="submit" style="margin-top: 15px;">Сохранить настройки</button>
         </form>
     </div>
 
     <div class="back-link">
-        <a href="/chat" class="btn btn-secondary">← Вернуться в чат</a>
+        <a href="/chat">← Вернуться в чат</a>
     </div>
 </div>
 </body>

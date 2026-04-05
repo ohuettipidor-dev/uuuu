@@ -56,7 +56,7 @@
         }
         .info{
             color: #666;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
             font-size: 14px;
         }
         .btn{
@@ -81,6 +81,12 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255,107,107,0.3);
         }
+        .actions{
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
         .back-link{
             margin-top: 20px;
         }
@@ -100,13 +106,20 @@
         {% endif %}
     </div>
     <h2>{{ profile_user.username }}</h2>
-    <div class="username-link">{{ profile_user.username_link }}</div>
+    {% if profile_user.username_link %}
+        <div class="username-link">{{ profile_user.username_link }}</div>
+    {% endif %}
     <div class="info">
         <p>🐾 Присоединился к BearGram</p>
         <p>📅 {{ profile_user.created_at.strftime('%d.%m.%Y') if profile_user.created_at else 'Недавно' }}</p>
     </div>
+    
+    <div class="actions">
+        <a href="/messages/{{ profile_user.id }}" class="btn">💬 Написать сообщение</a>
+    </div>
+    
     <div class="back-link">
-        <a href="/chat" class="btn btn-secondary">← Вернуться в чат</a>
+        <a href="/chat">← Вернуться в чат</a>
     </div>
 </div>
 </body>
