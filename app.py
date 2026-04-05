@@ -7,6 +7,11 @@ import os
 import uuid
 import re
 import json
+import hashlib
+import base64
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -35,8 +40,41 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def render_mentions(text, group_id=None):
-    """Превращает @username в ссылку и возвращает список упомянутых ID"""
+# ========== КРИПТОГРАФИЯ ДЛЯ СЕКРЕТНЫХ ЧАТОВ ==========
+def generate_secret_key(user_id, other_id):
+    """Генерирует уникальный ключ шифрования для пары пользователей"""
+    combined = f"beargram_secret_{min(user_id, other_id)}_{max(user_id, other_id)}_bear"
+    return hashlib.sha256(combined.encode()).digest()
+
+def encrypt_message(message, user_id, other_id):
+    """Шифрует сообщение AES-256-CBC"""
+    key = generate_secret_key(user_id, other_id)
+    iv = os.urandom(16)
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(message.encode()) + padder.finalize()
+    encrypted = encryptor.update(padded_data) + encryptor.finalize()
+    return base64.b64encode(iv + encrypted).decode('utf-8')
+
+def decrypt_message(encrypted_message, user_id, other_id):
+    """Расшифровывает сообщение AES-256-CBC"""
+    try:
+        key = generate_secret_key(user_id, other_id)
+        data = base64.b64decode(encrypted_message)
+        iv = data[:16]
+        encrypted = data[16:]
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        decryptor = cipher.decryptor()
+        decrypted_padded = decryptor.update(encrypted) + decryptor.finalize()
+        unpadder = padding.PKCS7(128).unpadder()
+        decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
+        return decrypted.decode('utf-8')
+    except Exception:
+        return "[Зашифрованное сообщение]"
+
+def render_mentions(text, current_user_id=None, chat_users=None):
+    """Превращает @username в ссылку на профиль"""
     if not text:
         return text, []
     
@@ -48,7 +86,7 @@ def render_mentions(text, group_id=None):
         user = User.query.filter_by(username_link=f'@{mention}').first()
         if not user:
             user = User.query.filter_by(username=mention).first()
-        if user and user.id != current_user.id:
+        if user and (not current_user_id or user.id != current_user_id):
             mentioned_users.append(user.id)
             text = text.replace(f'@{mention}', f'<a href="/profile/{user.id}" class="mention">@{mention}</a>')
     
@@ -75,6 +113,33 @@ class Blacklist(db.Model):
     blocked_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class SecretChat(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    user1 = db.relationship('User', foreign_keys=[user1_id])
+    user2 = db.relationship('User', foreign_keys=[user2_id])
+
+class SecretMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    encrypted_content = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_name = db.Column(db.String(200), nullable=True)
+    file_type = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    secret_chat_id = db.Column(db.Integer, db.ForeignKey('secret_chat.id'), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    is_burn_after_read = db.Column(db.Boolean, default=False)
+    burn_after_read_timer = db.Column(db.Integer, default=0)
+    voice_duration = db.Column(db.Integer, default=0)
+    
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    secret_chat = db.relationship('SecretChat', foreign_keys=[secret_chat_id])
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=True)
@@ -92,7 +157,7 @@ class Message(db.Model):
     is_favorite = db.Column(db.Boolean, default=False)
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
-    mentions = db.Column(db.Text, default='')  # JSON список ID упомянутых
+    mentions = db.Column(db.Text, default='')
     
     reply_to = db.relationship('Message', remote_side=[id], foreign_keys=[reply_to_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
@@ -129,7 +194,7 @@ class GroupMessage(db.Model):
     is_favorite = db.Column(db.Boolean, default=False)
     forwarded_from_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     forwarded_message_id = db.Column(db.Integer, nullable=True)
-    mentions = db.Column(db.Text, default='')  # JSON список ID упомянутых
+    mentions = db.Column(db.Text, default='')
     
     sender = db.relationship('User', foreign_keys=[sender_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
@@ -246,6 +311,8 @@ def profile():
             GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
             GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
             Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
+            SecretMessage.query.filter((SecretMessage.sender_id == current_user.id)).delete()
+            SecretChat.query.filter((SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id)).delete()
             
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
@@ -324,6 +391,183 @@ def upload_voice():
     f.save(os.path.join(VOICE_FOLDER, name))
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
+
+@app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
+@login_required
+def create_secret_chat(user_id):
+    """Создает секретный чат с пользователем"""
+    if user_id == current_user.id:
+        if request.is_json:
+            return jsonify({'error': 'Нельзя создать секретный чат с самим собой'}), 400
+        flash('Нельзя создать секретный чат с самим собой', 'danger')
+        return redirect(url_for('profile_by_id', uid=user_id))
+    
+    other_user = db.session.get(User, user_id)
+    if not other_user:
+        if request.is_json:
+            return jsonify({'error': 'Пользователь не найден'}), 404
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('chat'))
+    
+    # Проверяем, существует ли уже секретный чат
+    existing = SecretChat.query.filter(
+        ((SecretChat.user1_id == current_user.id) & (SecretChat.user2_id == user_id)) |
+        ((SecretChat.user1_id == user_id) & (SecretChat.user2_id == current_user.id))
+    ).first()
+    
+    if existing:
+        if request.is_json:
+            return jsonify({'chat_id': existing.id, 'redirect': f'/secret_chat/{existing.id}'})
+        flash('Секретный чат уже существует', 'info')
+        return redirect(url_for('secret_chat', chat_id=existing.id))
+    
+    secret_chat = SecretChat(user1_id=current_user.id, user2_id=user_id)
+    db.session.add(secret_chat)
+    db.session.commit()
+    
+    if request.is_json:
+        return jsonify({'chat_id': secret_chat.id, 'redirect': f'/secret_chat/{secret_chat.id}'})
+    
+    flash(f'Секретный чат с {other_user.username} создан! Сообщения зашифрованы AES-256', 'success')
+    return redirect(url_for('secret_chat', chat_id=secret_chat.id))
+
+@app.route('/secret_chat/<int:chat_id>')
+@login_required
+def secret_chat(chat_id):
+    secret_chat = db.session.get(SecretChat, chat_id)
+    if not secret_chat:
+        flash('Чат не найден', 'danger')
+        return redirect(url_for('chat'))
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        flash('Нет доступа к этому чату', 'danger')
+        return redirect(url_for('chat'))
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    other_user = db.session.get(User, other_user_id)
+    
+    messages = SecretMessage.query.filter_by(secret_chat_id=chat_id).order_by(SecretMessage.timestamp).all()
+    
+    decrypted_messages = []
+    for msg in messages:
+        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
+        decrypted_messages.append({
+            'id': msg.id,
+            'content': decrypted_content,
+            'file_path': msg.file_path,
+            'file_name': msg.file_name,
+            'file_type': msg.file_type,
+            'timestamp': msg.timestamp,
+            'sender_id': msg.sender_id,
+            'is_own': msg.sender_id == current_user.id,
+            'is_read': msg.is_read,
+            'is_burn_after_read': msg.is_burn_after_read,
+            'voice_duration': msg.voice_duration
+        })
+        
+        if msg.sender_id != current_user.id and not msg.is_read:
+            msg.is_read = True
+    
+    db.session.commit()
+    
+    return render_template('secret_chat.html', 
+                         secret_chat=secret_chat, 
+                         other_user=other_user, 
+                         messages=decrypted_messages)
+
+@app.route('/send_secret', methods=['POST'])
+@login_required
+def send_secret():
+    chat_id = int(request.form['chat_id'])
+    secret_chat = db.session.get(SecretChat, chat_id)
+    
+    if not secret_chat:
+        return jsonify({'error': 'Чат не найден'}), 404
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        return jsonify({'error': 'Нет доступа'}), 403
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    content = request.form.get('content', '')
+    burn_after_read = request.form.get('burn_after_read') == 'true'
+    
+    encrypted_content = encrypt_message(content, current_user.id, other_user_id)
+    
+    msg = SecretMessage(
+        encrypted_content=encrypted_content,
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
+        sender_id=current_user.id,
+        secret_chat_id=chat_id,
+        voice_duration=request.form.get('voice_duration', 0),
+        is_burn_after_read=burn_after_read,
+        burn_after_read_timer=5 if burn_after_read else 0
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    return redirect(url_for('secret_chat', chat_id=chat_id))
+
+@app.route('/get_secret_messages/<int:chat_id>/<int:last_id>')
+@login_required
+def get_secret_messages(chat_id, last_id):
+    secret_chat = db.session.get(SecretChat, chat_id)
+    if not secret_chat:
+        return jsonify([])
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        return jsonify([])
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    
+    messages = SecretMessage.query.filter(
+        SecretMessage.secret_chat_id == chat_id,
+        SecretMessage.id > last_id
+    ).order_by(SecretMessage.timestamp).all()
+    
+    result = []
+    for msg in messages:
+        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
+        result.append({
+            'id': msg.id,
+            'content': decrypted_content,
+            'file_path': msg.file_path,
+            'file_name': msg.file_name,
+            'file_type': msg.file_type,
+            'timestamp': msg.timestamp.strftime('%H:%M'),
+            'is_own': msg.sender_id == current_user.id,
+            'voice_duration': msg.voice_duration,
+            'is_burn_after_read': msg.is_burn_after_read
+        })
+        
+        if msg.sender_id != current_user.id and not msg.is_read:
+            msg.is_read = True
+    
+    db.session.commit()
+    return jsonify(result)
+
+@app.route('/secret_chats')
+@login_required
+def secret_chats():
+    secret_chats_list = SecretChat.query.filter(
+        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
+        SecretChat.is_active == True
+    ).all()
+    
+    chats_data = []
+    for sc in secret_chats_list:
+        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
+        other_user = db.session.get(User, other_id)
+        last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+        
+        chats_data.append({
+            'id': sc.id,
+            'other_user': other_user,
+            'last_msg': last_msg
+        })
+    
+    return render_template('secret_chats.html', secret_chats=chats_data)
 
 @app.route('/create_group', methods=['POST'])
 @login_required
@@ -472,8 +716,7 @@ def send_group():
     content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     
-    # Обрабатываем упоминания
-    content, mentioned_ids = render_mentions(content, group_id=request.form['group_id'])
+    content, mentioned_ids = render_mentions(content, current_user.id)
     
     msg = GroupMessage(
         content=content,
@@ -501,7 +744,13 @@ def chat():
     
     users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    secret_chats_list = SecretChat.query.filter(
+        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
+        SecretChat.is_active == True
+    ).all()
+    
     convs = []
+    
     for u in users:
         last = Message.query.filter(
             ((Message.sender_id == current_user.id) & (Message.receiver_id == u.id)) |
@@ -510,9 +759,17 @@ def chat():
         ).order_by(Message.timestamp.desc()).first()
         unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False, ~Message.deleted_for.contains(str(current_user.id))).count()
         convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
+    
     for g in groups:
         last = GroupMessage.query.filter_by(group_id=g.id).filter(~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
         convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar, 'last': last, 'unread': 0})
+    
+    for sc in secret_chats_list:
+        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
+        other_user = db.session.get(User, other_id)
+        last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+        convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
+    
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs)
 
@@ -556,8 +813,7 @@ def send():
     content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     
-    # Обрабатываем упоминания
-    content, mentioned_ids = render_mentions(content)
+    content, mentioned_ids = render_mentions(content, current_user.id)
     
     msg = Message(
         content=content,
@@ -586,7 +842,7 @@ def edit_message():
     if msg_type == 'private':
         msg = Message.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            content, mentioned_ids = render_mentions(new_content)
+            content, mentioned_ids = render_mentions(new_content, current_user.id)
             msg.content = content
             msg.mentions = json.dumps(mentioned_ids)
             msg.edited = True
@@ -595,7 +851,7 @@ def edit_message():
     elif msg_type == 'group':
         msg = GroupMessage.query.get(msg_id)
         if msg and msg.sender_id == current_user.id:
-            content, mentioned_ids = render_mentions(new_content)
+            content, mentioned_ids = render_mentions(new_content, current_user.id)
             msg.content = content
             msg.mentions = json.dumps(mentioned_ids)
             msg.edited = True
@@ -751,22 +1007,29 @@ def get_chats_list():
     blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
     users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
     groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    secret_chats_list = SecretChat.query.filter(
+        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
+        SecretChat.is_active == True
+    ).all()
+    
     chats = []
     for u in users:
         chats.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar})
     for g in groups:
         chats.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar})
+    for sc in secret_chats_list:
+        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
+        other_user = db.session.get(User, other_id)
+        chats.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar})
     return jsonify(chats)
 
 @app.route('/search_users')
 @login_required
 def search_users():
-    """Поиск пользователей по @username или имени"""
     query = request.args.get('q', '').lower().strip()
     if not query:
         return jsonify([])
     
-    # Убираем @ если есть
     if query.startswith('@'):
         query = query[1:]
     
@@ -789,8 +1052,6 @@ def search_users():
 @app.route('/get_mention_notifications')
 @login_required
 def get_mention_notifications():
-    """Получить непрочитанные упоминания"""
-    # Ищем в личных сообщениях
     private_mentions = Message.query.filter(
         Message.receiver_id == current_user.id,
         Message.is_read == False,
@@ -798,7 +1059,6 @@ def get_mention_notifications():
         Message.mentions.contains(str(current_user.id))
     ).count()
     
-    # Ищем в групповых сообщениях
     group_mentions = GroupMessage.query.filter(
         GroupMessage.group_id.in_([gm.group_id for gm in GroupMember.query.filter_by(user_id=current_user.id).all()]),
         GroupMessage.mentions != '',
