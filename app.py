@@ -35,16 +35,22 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse_mentions(text):
+    """Находит всех упомянутых пользователей и возвращает текст с маркерами и список упомянутых"""
     if not text:
-        return text
-    pattern = r'@(\w+)'
-    def replace_mention(match):
-        mention = match.group(1)
+        return text, []
+    
+    pattern = r'@([a-zA-Z0-9_]+)'
+    mentions_found = re.findall(pattern, text)
+    mentioned_users = []
+    
+    for mention in mentions_found:
         user = User.query.filter_by(username_link=f'@{mention}').first()
         if user:
-            return f'<a href="/profile/{user.id}" class="mention">@{mention}</a>'
-        return f'@{mention}'
-    return re.sub(pattern, replace_mention, text)
+            mentioned_users.append({'id': user.id, 'username': mention, 'username_link': f'@{mention}'})
+            # Заменяем на специальный маркер, который потом обработает JavaScript
+            text = text.replace(f'@{mention}', f'[BEARGRAM_MENTION:{user.id}:{mention}]')
+    
+    return text, mentioned_users
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -59,6 +65,7 @@ class User(UserMixin, db.Model):
     status = db.Column(db.String(20), default='offline')
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     notifications_enabled = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -184,7 +191,8 @@ def profile():
             if ul:
                 if not ul.startswith('@'):
                     ul = '@' + ul
-                if User.query.filter_by(username_link=ul).first() and User.query.filter_by(username_link=ul).first().id != current_user.id:
+                existing = User.query.filter_by(username_link=ul).first()
+                if existing and existing.id != current_user.id:
                     flash('Такой @username уже занят', 'danger')
                 elif len(ul) < 2 or len(ul) > 32:
                     flash('@username должен быть от 2 до 32 символов', 'danger')
@@ -356,7 +364,7 @@ def group_chat(gid):
 @login_required
 def send_group():
     content = request.form.get('content', '')
-    content = parse_mentions(content)
+    content, mentions = parse_mentions(content)
     db.session.add(GroupMessage(
         content=content,
         file_path=request.form.get('file_path'),
@@ -411,7 +419,7 @@ def messages(uid):
 @login_required
 def send():
     content = request.form.get('content', '')
-    content = parse_mentions(content)
+    content, mentions = parse_mentions(content)
     db.session.add(Message(
         content=content,
         file_path=request.form.get('file_path'),

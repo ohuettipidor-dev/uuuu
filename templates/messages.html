@@ -46,6 +46,7 @@
             padding:2px 6px;
             border-radius:12px;
             transition:all 0.2s;
+            cursor:pointer;
         }
         .mention:hover{
             background:rgba(46,166,255,0.2);
@@ -76,7 +77,7 @@
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
-                <div class="message-content">{{ m.content|safe }}</div>
+                <div class="message-content" data-raw="{{ m.content }}"></div>
                 {% if m.file_path %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -129,6 +130,32 @@
     let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
     let pollingInterval = null;
     
+    function renderMessageContent(content) {
+        if (!content) return '';
+        // Заменяем маркеры [BEARGRAM_MENTION:id:username] на кликабельные ссылки
+        let html = content;
+        const mentionRegex = /\[BEARGRAM_MENTION:(\d+):([^\]]+)\]/g;
+        let match;
+        while ((match = mentionRegex.exec(content)) !== null) {
+            const userId = match[1];
+            const username = match[2];
+            const mentionHtml = `<a href="/profile/${userId}" class="mention" data-user-id="${userId}">@${username}</a>`;
+            html = html.replace(match[0], mentionHtml);
+        }
+        // Экранируем остальной HTML
+        html = html.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+        // Восстанавливаем уже созданные ссылки
+        html = html.replace(/&lt;a href=.*?&gt;.*?&lt;\/a&gt;/g, function(m) {
+            return m.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        });
+        return html;
+    }
+    
     function playVoice(el) {
         const audio = el.closest('.bubble').querySelector('audio');
         if(audio) audio.play();
@@ -139,8 +166,11 @@
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
         div.setAttribute('data-id', msg.id);
+        
         let contentHtml = '';
-        if(msg.content) contentHtml += msg.content;
+        if(msg.content) {
+            contentHtml = renderMessageContent(msg.content);
+        }
         if(msg.file_path) {
             if(msg.file_type == 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
             else if(msg.file_type == 'audio') contentHtml += `<audio controls src="${msg.file_path}"></audio>`;
@@ -150,8 +180,19 @@
         if(msg.voice_duration && msg.voice_duration > 0) {
             contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span style="font-size:11px">${msg.voice_duration}″</span></div>`;
         }
+        
         div.innerHTML = `<div class="bubble"><div class="message-content">${contentHtml}</div><div class="time"><span>${msg.timestamp}</span>${msg.is_own ? ' ✓✓' : ''}</div></div>`;
         messagesDiv.appendChild(div);
+        
+        // Добавляем обработчики кликов на все упоминания
+        div.querySelectorAll('.mention').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const userId = link.getAttribute('data-user-id') || link.href.split('/').pop();
+                if(userId) window.location.href = `/profile/${userId}`;
+            });
+        });
+        
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
     }
@@ -243,6 +284,14 @@
         if(isRecording) stopRecording();
         else startRecording();
     }
+    
+    // Инициализация существующих сообщений
+    document.querySelectorAll('.message .message-content').forEach(el => {
+        const raw = el.getAttribute('data-raw');
+        if(raw) {
+            el.innerHTML = renderMessageContent(raw);
+        }
+    });
     
     document.getElementById('voiceBtn').onclick = toggleRecording;
     document.getElementById('emojiBtn').onclick = () => {
