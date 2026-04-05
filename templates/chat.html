@@ -29,49 +29,61 @@
         .badge{background:#ff6b6b;color:white;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:bold;display:inline-block}
         .online{color:#ff6b6b;font-size:10px;margin-left:6px}
         .offline{color:#aaa;font-size:10px;margin-left:6px}
-        .profile-btn,.logout-btn{background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none}
+        .profile-btn,.logout-btn{background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none}
         .profile-btn{color:#ff6b6b}
         .logout-btn{color:#888}
         .profile-btn:hover,.logout-btn:hover{background:white;transform:translateY(-1px)}
-        .header-actions{display:flex;gap:6px;align-items:center}
-        .secret-btn{background:#2a2a3e;color:#ff6b6b;padding:6px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none}
-        .secret-btn:hover{background:#3a3a4e;transform:translateY(-1px)}
+        .header-actions{display:flex;gap:8px;align-items:center}
+        
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
-        .modal-content{background:white;border-radius:28px;padding:20px;width:260px;text-align:center}
+        .modal-content{background:white;border-radius:28px;padding:20px;width:280px;text-align:center}
         .modal-content h3{color:#ff6b6b;margin-bottom:16px}
-        .modal-content input{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:16px;outline:none}
-        .modal-buttons{display:flex;gap:10px}
-        .modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
-        .modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
-        .modal-buttons button:last-child{background:#f0f0f0;color:#888}
+        .modal-buttons{display:flex;flex-direction:column;gap:10px}
+        .modal-buttons button{padding:12px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
+        .modal-buttons .regular-chat{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .modal-buttons .secret-chat{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b}
+        .modal-buttons .cancel{background:#f0f0f0;color:#888}
+        
+        .group-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .group-modal.active{opacity:1;visibility:visible}
+        .group-modal-content{background:white;border-radius:28px;padding:20px;width:260px;text-align:center}
+        .group-modal-content h3{color:#ff6b6b;margin-bottom:16px}
+        .group-modal-content input{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:16px;outline:none}
+        .group-modal-buttons{display:flex;gap:10px}
+        .group-modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
+        .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
+        
         @media (max-width:480px){.container{padding:12px}.chat-avatar{width:45px;height:45px;font-size:18px}.chat-item{padding:10px}.chat-name{font-size:14px}}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
+        <!-- Аватар слева - ПАНДА 🐼 -->
         <div class="avatar" onclick="location.href='/profile'">
             {% if current_user.avatar != 'default.png' %}
                 <img src="/static/avatars/{{ current_user.avatar }}">
             {% else %}
-                🐻
+                🐼
             {% endif %}
         </div>
+        <!-- Логотип - ОБЫЧНЫЙ МЕДВЕДЬ 🐻 -->
         <div class="logo-text">
-            <span>🧸 Bear</span><span>Gram</span>
+            <span>🐻 Bear</span><span>Gram</span>
         </div>
         <div class="header-actions">
-            <a href="/secret_chats" class="secret-btn">🔒 Секретные</a>
+            <!-- Кнопка профиля - ПЛЮШЕВЫЙ МИШКА 🧸 -->
             <a href="/profile" class="profile-btn">🧸 Профиль</a>
             <a href="/logout" class="logout-btn">🚪 Выйти</a>
         </div>
     </div>
-    <button class="create-btn" onclick="openCreateModal()">✨ + Создать группу ✨</button>
+    <button class="create-btn" onclick="openGroupModal()">✨ + Создать группу ✨</button>
     <div class="chats-list" id="chats">
         {% for c in convs %}
         <div class="chat-item">
-            <div class="chat-avatar" onclick="event.stopPropagation(); {% if c.type == 'private' %}location.href='/profile/{{ c.id }}'{% elif c.type == 'secret' %}location.href='/secret_chat/{{ c.id }}'{% else %}location.href='/group/{{ c.id }}/info'{% endif %}">
+            <div class="chat-avatar" onclick="event.stopPropagation(); {% if c.type == 'private' %}showChatTypeModal({{ c.id }}, '{{ c.name }}'){% elif c.type == 'secret' %}location.href='/secret_chat/{{ c.id }}'{% else %}location.href='/group/{{ c.id }}/info'{% endif %}">
                 {% if c.type == 'private' %}
                     {% if c.avatar != 'default.png' %}
                         <img src="/static/avatars/{{ c.avatar }}">
@@ -121,24 +133,90 @@
         {% endfor %}
     </div>
 </div>
-<div class="modal" id="createModal">
+
+<div class="modal" id="chatTypeModal">
     <div class="modal-content">
-        <h3>✨ Новая группа</h3>
-        <input type="text" id="groupName" placeholder="Название группы">
+        <h3>📱 Выберите тип чата</h3>
         <div class="modal-buttons">
-            <button onclick="createGroup()">Создать</button>
-            <button onclick="closeCreateModal()">Отмена</button>
+            <button class="regular-chat" id="regularChatBtn">💬 Обычный чат</button>
+            <button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button>
+            <button class="cancel" onclick="closeChatTypeModal()">Отмена</button>
         </div>
     </div>
 </div>
+
+<div class="group-modal" id="groupModal">
+    <div class="group-modal-content">
+        <h3>✨ Новая группа</h3>
+        <input type="text" id="groupName" placeholder="Название группы">
+        <div class="group-modal-buttons">
+            <button onclick="createGroup()">Создать</button>
+            <button onclick="closeGroupModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let selectedUserId = null;
+    let selectedUserName = null;
+    
     function openChat(type, id) {
-        if(type === 'private') location.href = '/messages/' + id;
-        else if(type === 'secret') location.href = '/secret_chat/' + id;
-        else location.href = '/group/' + id;
+        if(type === 'private') {
+            window.location.href = '/messages/' + id;
+        } else if(type === 'secret') {
+            window.location.href = '/secret_chat/' + id;
+        } else {
+            window.location.href = '/group/' + id;
+        }
     }
-    function openCreateModal() { document.getElementById('createModal').classList.add('active'); }
-    function closeCreateModal() { document.getElementById('createModal').classList.remove('active'); document.getElementById('groupName').value = ''; }
+    
+    function showChatTypeModal(userId, userName) {
+        selectedUserId = userId;
+        selectedUserName = userName;
+        document.getElementById('chatTypeModal').classList.add('active');
+    }
+    
+    function closeChatTypeModal() {
+        document.getElementById('chatTypeModal').classList.remove('active');
+        selectedUserId = null;
+        selectedUserName = null;
+    }
+    
+    document.getElementById('regularChatBtn').onclick = function() {
+        if(selectedUserId) {
+            window.location.href = '/messages/' + selectedUserId;
+        }
+    };
+    
+    document.getElementById('secretChatBtn').onclick = function() {
+        if(selectedUserId) {
+            fetch('/create_secret_chat/' + selectedUserId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if(data.chat_id) {
+                      window.location.href = '/secret_chat/' + data.chat_id;
+                  } else if(data.redirect) {
+                      window.location.href = data.redirect;
+                  } else {
+                      alert('Ошибка при создании секретного чата');
+                  }
+              }).catch(() => {
+                  let form = document.createElement('form');
+                  form.method = 'POST';
+                  form.action = '/create_secret_chat/' + selectedUserId;
+                  document.body.appendChild(form);
+                  form.submit();
+              });
+        }
+    };
+    
+    function openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
+    function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById('groupName').value = ''; }
+    
     function createGroup() {
         let name = document.getElementById('groupName').value.trim();
         if(name) {
@@ -151,9 +229,17 @@
             form.appendChild(inp);
             document.body.appendChild(form);
             form.submit();
-        } else alert('Введите название группы');
+        } else {
+            alert('Введите название группы');
+        }
     }
-    document.getElementById('createModal').addEventListener('click', function(e) { if(e.target === this) closeCreateModal(); });
+    
+    document.getElementById('chatTypeModal').addEventListener('click', function(e) {
+        if(e.target === this) closeChatTypeModal();
+    });
+    document.getElementById('groupModal').addEventListener('click', function(e) {
+        if(e.target === this) closeGroupModal();
+    });
 </script>
 </body>
 </html>
