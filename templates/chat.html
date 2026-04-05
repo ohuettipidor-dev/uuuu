@@ -14,13 +14,14 @@
         .logo-text{font-weight:bold;font-size:18px}
         .logo-text span:first-child{color:#ff6b6b}
         .logo-text span:last-child{color:#ff8e8e}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b}
-        .profile-btn:hover{background:white;transform:translateY(-1px)}
-        .logout-btn{background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#888}
-        .logout-btn:hover{background:white;transform:translateY(-1px)}
         .header-actions{display:flex;gap:8px;align-items:center}
+        .icon-btn{background:rgba(255,255,255,0.9);padding:8px;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none}
+        .icon-btn:hover{background:white;transform:translateY(-1px)}
         
-        .search-container{margin-bottom:16px}
+        /* ПОИСКОВАЯ СТРОКА - ПОЯВЛЯЕТСЯ ПРИ НАЖАТИИ НА ИКОНКУ */
+        .search-container{display:none;margin-bottom:16px;animation:slideDown 0.3s ease}
+        .search-container.active{display:block}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
         .search-input{width:100%;padding:12px 16px;border-radius:30px;border:1px solid rgba(255,107,107,0.3);background:rgba(255,255,255,0.9);font-size:14px;outline:none;transition:all 0.2s}
         .search-input:focus{border-color:#ff6b6b;background:white}
         .search-results{background:white;border-radius:20px;margin-top:8px;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
@@ -32,6 +33,8 @@
         .search-result-info{flex:1}
         .search-result-name{font-weight:600;color:#333}
         .search-result-link{font-size:11px;color:#888}
+        .search-close{text-align:center;padding:10px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0}
+        .search-close:hover{background:#f9f9f9}
         
         .create-btn{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);border:none;color:white;padding:10px;border-radius:30px;width:100%;margin-bottom:16px;cursor:pointer;font-weight:bold;transition:transform 0.2s;box-shadow:0 2px 8px rgba(255,107,107,0.3);font-size:14px}
         .create-btn:hover{transform:translateY(-1px)}
@@ -46,8 +49,8 @@
         .chat-meta{text-align:right;flex-shrink:0;margin-left:10px}
         .chat-time{font-size:10px;color:#aaa;margin-bottom:4px}
         .badge{background:#ff6b6b;color:white;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:bold;display:inline-block}
-        .online{color:#ff6b6b;font-size:10px;margin-left:6px}
-        .offline{color:#aaa;font-size:10px;margin-left:6px}
+        .online{color:#4cd964;font-size:10px;margin-left:6px}
+        .offline{color:#3a86ff;font-size:10px;margin-left:6px}
         
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
@@ -86,15 +89,18 @@
             <span>🐻 Bear</span><span>Gram</span>
         </div>
         <div class="header-actions">
-            <a href="/secret_chats" class="profile-btn" style="background:#2a2a3e;color:#ff6b6b">🔒</a>
-            <a href="/profile" class="profile-btn">🧸</a>
-            <a href="/logout" class="logout-btn">🚪</a>
+            <button class="icon-btn" id="searchToggleBtn">🔍</button>
+            <a href="/secret_chats" class="icon-btn">🔒</a>
+            <a href="/profile" class="icon-btn">🧸</a>
+            <a href="/logout" class="icon-btn">🚪</a>
         </div>
     </div>
     
-    <div class="search-container">
+    <!-- СКРЫТАЯ ПОИСКОВАЯ СТРОКА -->
+    <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
+        <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
     
     <button class="create-btn" onclick="openGroupModal()">✨ + Создать группу ✨</button>
@@ -124,7 +130,7 @@
                     {% if c.type == 'secret' %}🔒 {% endif %}{{ c.name }}
                     {% if c.type == 'private' %}
                         <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
-                            {% if c.status == 'online' %}🐻 онлайн{% else %}💤 офлайн{% endif %}
+                            {% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}
                         </span>
                     {% elif c.type == 'secret' %}
                         <span class="online" style="color:#4cd964">🔒 шифруется</span>
@@ -216,9 +222,25 @@
         }
     };
     
-    // ПОИСК ПОЛЬЗОВАТЕЛЕЙ
+    // ПОИСК ПО ИКОНКЕ
+    const searchToggleBtn = document.getElementById('searchToggleBtn');
+    const searchContainer = document.getElementById('searchContainer');
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
+    const searchCloseBtn = document.getElementById('searchCloseBtn');
+    
+    searchToggleBtn.onclick = function() {
+        searchContainer.classList.toggle('active');
+        if(searchContainer.classList.contains('active')) {
+            searchInput.focus();
+        }
+    };
+    
+    searchCloseBtn.onclick = function() {
+        searchContainer.classList.remove('active');
+        searchResults.classList.remove('active');
+        searchInput.value = '';
+    };
     
     function searchUsers() {
         const query = searchInput.value.trim();
@@ -267,15 +289,6 @@
     searchInput.addEventListener('input', function() {
         if(searchTimeout) clearTimeout(searchTimeout);
         searchTimeout = setTimeout(searchUsers, 300);
-    });
-    
-    document.addEventListener('click', function(e) {
-        if(!searchResults.contains(e.target) && e.target !== searchInput) {
-            searchResults.classList.remove('active');
-        }
-        if(!document.getElementById('chatTypeModal').contains(e.target) && e.target !== document.querySelector('.chat-avatar')) {
-            closeChatTypeModal();
-        }
     });
     
     function openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
