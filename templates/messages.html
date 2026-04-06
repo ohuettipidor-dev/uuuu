@@ -50,7 +50,8 @@
         .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
         .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
         .favorite-star{color:gold;font-size:12px}
-        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px}
+        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
+        .pinned-badge:hover{background:#ff6b6b40}
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
@@ -129,13 +130,14 @@
             <span>📌 Закреплено: </span>
             <span id="pinnedMessageContent"></span>
             <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+            <button onclick="unpinMessage()" style="background:#888; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:5px; cursor:pointer;">✖ Открепить</button>
         </div>
         
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
                 {% if m.is_pinned %}
-                <div class="pinned-badge">📌 Закреплено</div>
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
                 {% endif %}
                 {% if m.forwarded_from_id %}
                 <div class="forward-badge">📎 Переслано</div>
@@ -191,7 +193,7 @@
                         {% if m.is_read %}
                             <span style="color:#4cd964">✓✓</span>
                         {% else %}
-                            <span>✓✓</span>
+                            <span style="color:#aaa">✓✓</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -254,12 +256,23 @@
     let currentMentionStart = -1;
     let typingTimeout = null;
     let isSending = false;
+    let processedMsgIds = new Set();
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
     
-    // ВИДЕОЗВОНОК
+    // ОТКРЕПЛЕНИЕ СООБЩЕНИЯ
+    function unpinMessage() {
+        if(window.pinnedMsgId) {
+            pinMessage(window.pinnedMsgId, 'private');
+        }
+    }
+    
+    function unpinThisMessage(msgId) {
+        pinMessage(msgId, 'private');
+    }
+    
     function startVideoCall() {
         fetch('/start_call/' + receiver_id, {method: 'POST'})
             .then(r => r.json())
@@ -268,7 +281,6 @@
             });
     }
     
-    // СТАТУС "ПЕЧАТАЕТ..."
     msgInput.addEventListener('input', function() {
         fetch('/typing', {
             method: 'POST',
@@ -302,7 +314,6 @@
     }
     setInterval(checkTyping, 2000);
     
-    // ЗАКРЕПЛЕННЫЕ СООБЩЕНИЯ
     function loadPinnedMessage() {
         fetch(`/get_pinned_message/${receiver_id}/private`)
             .then(r => r.json())
@@ -313,6 +324,7 @@
                     window.pinnedMsgId = data.id;
                 } else {
                     document.getElementById('pinnedMessageBar').style.display = 'none';
+                    window.pinnedMsgId = null;
                 }
             });
     }
@@ -370,9 +382,9 @@
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
     function addNewMessage(msg) {
-        if(msg.id && msg.id.toString().startsWith('temp_')) {
-            if(document.querySelector(`.message[data-id="${msg.id}"]`)) return;
-        }
+        // ПРОВЕРКА НА ДУБЛИКАТ
+        if(processedMsgIds.has(msg.id)) return;
+        processedMsgIds.add(msg.id);
         
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
@@ -381,7 +393,7 @@
         let content = msg.content || '';
         let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
         let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
-        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge">📌 Закреплено</div>' : '';
+        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
         
         let fileHtml = '';
         if(msg.file_path) {
@@ -396,7 +408,7 @@
         if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
+        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '<span style="color:#aaa">✓✓</span>') : '';
         if(msg.mentions && msg.mentions.includes('{{ current_user.id }}') && !msg.is_own) showNotification(`🔔 Вас упомянули`);
         const safeContent = (msg.content || '').replace(/`/g, '\\`');
         
@@ -411,7 +423,6 @@
         if(msg.is_pinned) loadPinnedMessage();
     }
     
-    // ОПТИМИЗИРОВАННАЯ ОТПРАВКА - БЕЗ ДУБЛЕЙ
     function sendMsg() {
         let content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
