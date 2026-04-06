@@ -226,6 +226,21 @@ class VoiceChannelMember(db.Model):
     channel = db.relationship('VoiceChannel', foreign_keys=[channel_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
+# ========== ВИДЕОЗВОНКИ ==========
+class VideoCall(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    room_id = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(20), default='waiting')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    from_user = db.relationship('User', foreign_keys=[from_user_id])
+    to_user = db.relationship('User', foreign_keys=[to_user_id])
+
+# ========== ХРАНИЛИЩЕ ДЛЯ СИГНАЛИЗАЦИИ ВИДЕОЗВОНКОВ ==========
+signaling_store = {}
+
 @login_manager.user_loader
 def load_user(uid):
     return db.session.get(User, uid)
@@ -342,6 +357,7 @@ def profile():
             SecretChat.query.filter((SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id)).delete()
             VoiceChannelMember.query.filter_by(user_id=current_user.id).delete()
             VoiceChannel.query.filter_by(created_by=current_user.id).delete()
+            VideoCall.query.filter((VideoCall.from_user_id == current_user.id) | (VideoCall.to_user_id == current_user.id)).delete()
             
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
@@ -420,6 +436,106 @@ def upload_voice():
     f.save(os.path.join(VOICE_FOLDER, name))
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
+
+# ========== СИГНАЛИЗАЦИЯ ДЛЯ ВИДЕОЗВОНКОВ (POLLING) ==========
+@app.route('/send_offer', methods=['POST'])
+@login_required
+def send_offer():
+    data = request.get_json()
+    room_id = data['room_id']
+    offer = data['offer']
+    signaling_store[f"{room_id}_offer"] = offer
+    return jsonify({'success': True})
+
+@app.route('/send_answer', methods=['POST'])
+@login_required
+def send_answer():
+    data = request.get_json()
+    room_id = data['room_id']
+    answer = data['answer']
+    signaling_store[f"{room_id}_answer"] = answer
+    return jsonify({'success': True})
+
+@app.route('/send_ice_candidate', methods=['POST'])
+@login_required
+def send_ice_candidate():
+    data = request.get_json()
+    room_id = data['room_id']
+    candidate = data['candidate']
+    if f"{room_id}_candidates" not in signaling_store:
+        signaling_store[f"{room_id}_candidates"] = []
+    signaling_store[f"{room_id}_candidates"].append(candidate)
+    return jsonify({'success': True})
+
+@app.route('/get_signaling/<string:room_id>')
+@login_required
+def get_signaling(room_id):
+    result = {}
+    offer_key = f"{room_id}_offer"
+    answer_key = f"{room_id}_answer"
+    candidates_key = f"{room_id}_candidates"
+    
+    if offer_key in signaling_store:
+        result['offer'] = signaling_store[offer_key]
+        del signaling_store[offer_key]
+    if answer_key in signaling_store:
+        result['answer'] = signaling_store[answer_key]
+        del signaling_store[answer_key]
+    if candidates_key in signaling_store and signaling_store[candidates_key]:
+        result['candidate'] = signaling_store[candidates_key].pop(0)
+    
+    return jsonify(result)
+
+# ========== ВИДЕОЗВОНКИ ==========
+@app.route('/start_call/<int:user_id>', methods=['POST'])
+@login_required
+def start_call(user_id):
+    other_user = db.session.get(User, user_id)
+    if not other_user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    room_id = f"call_{current_user.id}_{user_id}_{uuid.uuid4().hex[:8]}"
+    
+    existing = VideoCall.query.filter(
+        ((VideoCall.from_user_id == current_user.id) & (VideoCall.to_user_id == user_id)) |
+        ((VideoCall.from_user_id == user_id) & (VideoCall.to_user_id == current_user.id)),
+        VideoCall.status != 'ended'
+    ).first()
+    
+    if existing:
+        return jsonify({'room_id': existing.room_id, 'existing': True})
+    
+    call = VideoCall(from_user_id=current_user.id, to_user_id=user_id, room_id=room_id)
+    db.session.add(call)
+    db.session.commit()
+    
+    return jsonify({'room_id': room_id, 'existing': False})
+
+@app.route('/call/<string:room_id>')
+@login_required
+def call_room(room_id):
+    call = VideoCall.query.filter_by(room_id=room_id).first()
+    if not call:
+        flash('Звонок не найден', 'danger')
+        return redirect(url_for('chat'))
+    
+    if call.from_user_id != current_user.id and call.to_user_id != current_user.id:
+        flash('Нет доступа', 'danger')
+        return redirect(url_for('chat'))
+    
+    other_id = call.to_user_id if call.from_user_id == current_user.id else call.from_user_id
+    other_user = db.session.get(User, other_id)
+    
+    return render_template('call.html', room_id=room_id, other_user=other_user)
+
+@app.route('/end_call/<string:room_id>', methods=['POST'])
+@login_required
+def end_call(room_id):
+    call = VideoCall.query.filter_by(room_id=room_id).first()
+    if call:
+        call.status = 'ended'
+        db.session.commit()
+    return jsonify({'success': True})
 
 # ========== СЕКРЕТНЫЕ ЧАТЫ ==========
 @app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
@@ -1346,4 +1462,4 @@ def get_new_group_messages(last_id, group_id):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, threaded=True)

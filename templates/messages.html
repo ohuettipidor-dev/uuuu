@@ -9,18 +9,18 @@
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         
-        .header{padding:10px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .header{padding:8px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .back{background:#ff6b6b;padding:5px 12px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none;font-size:13px}
-        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0}
         .avatar img{width:100%;height:100%;object-fit:cover}
-        .user-info{flex:1;cursor:pointer}
-        .user-name{font-weight:600;font-size:15px;color:#333}
+        .user-info{flex:1;cursor:pointer;min-width:0}
+        .user-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .user-status{font-size:10px}
         .user-status.online{color:#4cd964}
         .user-status.offline{color:#3a86ff}
         .user-status.typing{color:#ff6b6b;font-style:italic}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b}
-        .profile-btn:hover{background:white;transform:translateY(-1px)}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
+        .call-btn{background:#ff6b6b;color:white;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;margin-right:4px;flex-shrink:0}
         
         .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
         .message{display:flex;animation:fadeInUp 0.2s ease;position:relative}
@@ -30,7 +30,7 @@
         .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:14px;word-wrap:break-word;position:relative}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px}
+        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px}
         img,audio,video{max-width:160px;border-radius:10px;margin-top:3px}
@@ -52,14 +52,13 @@
         .favorite-star{color:gold;font-size:12px}
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px}
         
-        /* НОВАЯ СТРОКА ВВОДА - ВСЁ ВНУТРИ, КРОМЕ ОТПРАВКИ */
-        .input-area{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:15px;padding:8px 4px;outline:none}
-        .input-wrapper input::placeholder{color:#aaa;font-size:14px}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:20px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:36px;height:36px}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
+        .input-wrapper input::placeholder{color:#aaa;font-size:13px}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
@@ -87,12 +86,16 @@
         
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:32px;height:32px;font-size:18px;padding:4px}
-            .send-btn{width:42px;height:42px;font-size:20px}
+            .input-icon{width:28px;height:28px;font-size:15px;padding:4px}
+            .send-btn{width:34px;height:34px;font-size:16px}
             .input-wrapper{padding:2px 6px}
-            .header{padding:8px 10px}
-            .avatar{width:32px;height:32px}
-            .back{padding:4px 10px;font-size:12px}
+            .input-wrapper input{font-size:13px;padding:6px 2px}
+            .header{padding:6px 10px}
+            .avatar{width:30px;height:30px}
+            .back{padding:4px 8px;font-size:11px}
+            .profile-btn{padding:4px 8px;font-size:11px}
+            .call-btn{padding:4px 8px;font-size:11px}
+            .user-name{font-size:12px}
         }
     </style>
 </head>
@@ -117,11 +120,11 @@
                 {% endif %}
             </div>
         </div>
+        <button class="call-btn" onclick="startVideoCall()">📹</button>
         <a href="/profile" class="profile-btn">🧸</a>
     </div>
     
     <div class="messages" id="messages">
-        <!-- Закрепленное сообщение -->
         <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
             <span>📌 Закреплено: </span>
             <span id="pinnedMessageContent"></span>
@@ -216,14 +219,13 @@
         <button class="cancel-reply" onclick="cancelReply()">✖</button>
     </div>
     
-    <!-- НОВАЯ СТРОКА ВВОДА - ВСЁ ВНУТРИ, КРОМЕ ОТПРАВКИ -->
     <div class="input-area">
         <div class="input-wrapper" style="position:relative">
-            <input type="text" id="msgInput" placeholder="Сообщение... @username">
+            <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <button class="input-icon" id="emojiBtn" style="font-size:20px">😊</button>
-            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:18px">📎</button>
-            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:18px">🎤</button>
+            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
+            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
+            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
         <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
@@ -251,24 +253,34 @@
     let mentionSearchTimeout = null;
     let currentMentionStart = -1;
     let typingTimeout = null;
+    let isSending = false;
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
+    
+    // ВИДЕОЗВОНОК
+    function startVideoCall() {
+        fetch('/start_call/' + receiver_id, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                window.open('/call/' + data.room_id, '_blank', 'width=800,height=600');
+            });
+    }
     
     // СТАТУС "ПЕЧАТАЕТ..."
     msgInput.addEventListener('input', function() {
         fetch('/typing', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({receiver_id: receiver_id, is_typing: true, chat_type: 'private'})
+            body: JSON.stringify({receiver_id: receiver_id, is_typing: true})
         });
         if(typingTimeout) clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => {
             fetch('/typing', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({receiver_id: receiver_id, is_typing: false, chat_type: 'private'})
+                body: JSON.stringify({receiver_id: receiver_id, is_typing: false})
             });
         }, 1000);
     });
@@ -321,7 +333,7 @@
             setTimeout(() => {
                 checkNewMessages();
                 loadPinnedMessage();
-            }, 500);
+            }, 300);
         });
     }
     
@@ -358,6 +370,10 @@
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
     function addNewMessage(msg) {
+        if(msg.id && msg.id.toString().startsWith('temp_')) {
+            if(document.querySelector(`.message[data-id="${msg.id}"]`)) return;
+        }
+        
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
@@ -388,30 +404,83 @@
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        lastMsgId = msg.id;
+        
+        if(!msg.id.toString().startsWith('temp_')) {
+            lastMsgId = msg.id;
+        }
         if(msg.is_pinned) loadPinnedMessage();
     }
     
-    function checkNewMessages() { fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => msgs.forEach(m => addNewMessage(m))); }
-    
+    // ОПТИМИЗИРОВАННАЯ ОТПРАВКА - БЕЗ ДУБЛЕЙ
     function sendMsg() {
         let content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
+        if(isSending) return;
+        isSending = true;
+        
         let fd = new FormData();
         fd.append('receiver_id', receiver_id);
         if(content) fd.append('content', content);
         if(currentReplyToId) fd.append('reply_to_id', currentReplyToId);
-        fetch('/send', {method: 'POST', body: fd}).then(() => { msgInput.value = ''; currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; localStorage.setItem('msg_' + receiver_id, ''); setTimeout(checkNewMessages, 500); });
+        
+        msgInput.value = '';
+        let tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        let tempMsg = {
+            id: tempId,
+            content: content,
+            file_path: null,
+            file_name: null,
+            file_type: null,
+            timestamp: new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}),
+            is_own: true,
+            voice_duration: 0,
+            edited: false,
+            reply_to_id: currentReplyToId,
+            is_favorite: false,
+            is_read: false,
+            is_pinned: false
+        };
+        addNewMessage(tempMsg);
+        
+        let savedReplyId = currentReplyToId;
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+        localStorage.setItem('msg_' + receiver_id, '');
+        
+        fetch('/send', {method: 'POST', body: fd})
+            .then(() => {
+                isSending = false;
+                setTimeout(() => checkNewMessages(), 200);
+            })
+            .catch(() => { isSending = false; });
     }
     
     function sendFile(file) {
         let fd = new FormData(); fd.append('file', file);
-        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', d.name); fd2.append('file_type', d.type); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 500); }); } });
+        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { 
+            let fd2 = new FormData(); 
+            fd2.append('receiver_id', receiver_id); 
+            fd2.append('file_path', d.path); 
+            fd2.append('file_name', d.name); 
+            fd2.append('file_type', d.type); 
+            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); 
+            fetch('/send', {method: 'POST', body: fd2}).then(() => { 
+                currentReplyToId = null; 
+                document.getElementById('replyBar').style.display = 'none'; 
+                setTimeout(() => checkNewMessages(), 200); 
+            }); 
+        } });
     }
     
-    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); } }
+    function checkNewMessages() { 
+        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
+            .then(r => r.json())
+            .then(msgs => msgs.forEach(m => addNewMessage(m))); 
+    }
+    
+    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); } }
     function deleteMessage(id, type, all) { if(confirm('Удалить?')) { fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all}) }).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
-    function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); }
+    function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); }
     function replyToMessage(id, content) { currentReplyToId = id; const bar = document.getElementById('replyBar'); document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); bar.style.display = 'flex'; msgInput.focus(); }
     function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
     function forwardMessage(id, type) { let target = prompt('ID пользователя:'); if(target) { fetch('/forward_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type}) }).then(() => alert('Переслано!')); } }
@@ -429,7 +498,7 @@
                 const fd = new FormData();
                 fd.append('audio', blob);
                 fd.append('duration', duration);
-                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 500); }); } });
+                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 200); }); } });
                 stream.getTracks().forEach(t => t.stop());
                 document.getElementById('voiceBtn').classList.remove('recording');
                 document.getElementById('voiceBtn').textContent = '🎤';
@@ -464,7 +533,7 @@
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    pollingInterval = setInterval(checkNewMessages, 3000);
+    pollingInterval = setInterval(checkNewMessages, 2000);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
 </script>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📹 Видеозвонок с {{ other_user.username }} | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:#0a0a0a;height:100vh;display:flex;align-items:center;justify-content:center}
+        .call-container{width:100%;max-width:800px;height:100vh;display:flex;flex-direction:column;background:#0f0f1a}
+        .video-container{flex:1;display:flex;flex-direction:column;padding:16px;gap:16px;position:relative}
+        .remote-video{flex:1;background:#1a1a2e;border-radius:24px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+        .remote-video video{width:100%;height:100%;object-fit:cover}
+        .waiting-text{position:absolute;color:#888;font-size:16px;text-align:center}
+        .local-video{position:absolute;bottom:20px;right:20px;width:120px;height:160px;background:#1a1a2e;border-radius:16px;overflow:hidden;border:2px solid #ff6b6b;z-index:10}
+        .local-video video{width:100%;height:100%;object-fit:cover}
+        .controls{display:flex;gap:20px;justify-content:center;padding:20px;background:#1e1e2e;flex-shrink:0}
+        .control-btn{width:60px;height:60px;border-radius:50%;border:none;font-size:24px;cursor:pointer;transition:transform 0.2s}
+        .control-btn:hover{transform:scale(1.05)}
+        .hangup{background:#ff4444;color:white}
+        .mic{background:#3a3a4e;color:white}
+        .camera{background:#3a3a4e;color:white}
+        .status{text-align:center;padding:10px;color:#888;font-size:14px;background:#1e1e2e;flex-shrink:0}
+        @media (max-width:480px){
+            .local-video{width:90px;height:120px}
+            .control-btn{width:50px;height:50px;font-size:20px}
+        }
+    </style>
+</head>
+<body>
+<div class="call-container">
+    <div class="video-container">
+        <div class="remote-video">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="waiting-text" id="waitingText">⏳ Ожидание подключения...</div>
+        </div>
+        <div class="local-video">
+            <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+    </div>
+    <div class="controls">
+        <button class="control-btn mic" id="micBtn" onclick="toggleMic()">🎤</button>
+        <button class="control-btn camera" id="cameraBtn" onclick="toggleCamera()">📷</button>
+        <button class="control-btn hangup" onclick="hangUp()">🔴</button>
+    </div>
+    <div class="status" id="status">🔒 Соединение защищено</div>
+</div>
+
+<script>
+    const room_id = "{{ room_id }}";
+    let localStream = null;
+    let peerConnection = null;
+    let isMicOn = true;
+    let isCameraOn = true;
+    
+    const configuration = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+    };
+    
+    // Периодический опрос для сигнализации (polling)
+    let pollInterval = null;
+    let lastOffer = null;
+    
+    async function init() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('waitingText')?.remove();
+            startPolling();
+        } catch(e) {
+            document.getElementById('status').innerHTML = '❌ Нет доступа к камере/микрофону';
+            console.error(e);
+        }
+    }
+    
+    function startPolling() {
+        // Создаём offer если мы инициатор
+        checkAndCreateOffer();
+        pollInterval = setInterval(() => {
+            checkSignaling();
+        }, 2000);
+    }
+    
+    async function checkAndCreateOffer() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isInitiator = !urlParams.has('existing');
+        
+        if(isInitiator && !peerConnection) {
+            await createOffer();
+        }
+    }
+    
+    async function checkSignaling() {
+        // Получаем сигнальные данные с сервера
+        const response = await fetch(`/get_signaling/${room_id}`);
+        const data = await response.json();
+        
+        if(data.offer && !peerConnection) {
+            await handleOffer(data.offer);
+        }
+        if(data.answer && peerConnection && peerConnection.signalingState === 'have-local-offer') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+        if(data.candidate && peerConnection) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            } catch(e) { console.log('ICE кандидат ошибка', e); }
+        }
+    }
+    
+    async function createOffer() {
+        peerConnection = new RTCPeerConnection(configuration);
+        
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+        
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+            document.getElementById('status').innerHTML = '🟢 В звонке';
+            document.getElementById('waitingText')?.remove();
+        };
+        
+        peerConnection.onicecandidate = (event) => {
+            if(event.candidate) {
+                sendIceCandidate(event.candidate);
+            }
+        };
+        
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        sendOffer(offer);
+    }
+    
+    async function handleOffer(offer) {
+        peerConnection = new RTCPeerConnection(configuration);
+        
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+        
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+            document.getElementById('status').innerHTML = '🟢 В звонке';
+            document.getElementById('waitingText')?.remove();
+        };
+        
+        peerConnection.onicecandidate = (event) => {
+            if(event.candidate) {
+                sendIceCandidate(event.candidate);
+            }
+        };
+        
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        sendAnswer(answer);
+    }
+    
+    function sendOffer(offer) {
+        fetch('/send_offer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({room_id: room_id, offer: offer})
+        });
+    }
+    
+    function sendAnswer(answer) {
+        fetch('/send_answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({room_id: room_id, answer: answer})
+        });
+    }
+    
+    function sendIceCandidate(candidate) {
+        fetch('/send_ice_candidate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({room_id: room_id, candidate: candidate})
+        });
+    }
+    
+    function toggleMic() {
+        if(localStream) {
+            const audioTracks = localStream.getAudioTracks();
+            audioTracks.forEach(track => track.enabled = !track.enabled);
+            isMicOn = !isMicOn;
+            document.getElementById('micBtn').style.background = isMicOn ? '#3a3a4e' : '#ff4444';
+        }
+    }
+    
+    function toggleCamera() {
+        if(localStream) {
+            const videoTracks = localStream.getVideoTracks();
+            videoTracks.forEach(track => track.enabled = !track.enabled);
+            isCameraOn = !isCameraOn;
+            document.getElementById('cameraBtn').style.background = isCameraOn ? '#3a3a4e' : '#ff4444';
+        }
+    }
+    
+    function hangUp() {
+        fetch('/end_call/' + room_id, {method: 'POST'});
+        if(pollInterval) clearInterval(pollInterval);
+        if(peerConnection) peerConnection.close();
+        if(localStream) localStream.getTracks().forEach(track => track.stop());
+        window.close();
+    }
+    
+    init();
+</script>
+</body>
+</html>
