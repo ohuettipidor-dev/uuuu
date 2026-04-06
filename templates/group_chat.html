@@ -9,16 +9,15 @@
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         
-        .header{padding:10px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .header{padding:8px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .back{background:#ff6b6b;padding:5px 12px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none;font-size:13px}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden}
         .avatar img{width:100%;height:100%;object-fit:cover}
         .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white}
         .group-info{flex:1;cursor:pointer}
-        .group-name{font-weight:600;font-size:15px;color:#333}
+        .group-name{font-weight:600;font-size:14px;color:#333}
         .member-count{font-size:10px;color:#888}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 12px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b}
-        .profile-btn:hover{background:white;transform:translateY(-1px)}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
         .settings-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px}
         .settings-btn:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
         
@@ -31,9 +30,11 @@
         .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:14px;word-wrap:break-word;position:relative}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px}
+        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px}
+        .video-circle{width:180px;height:180px;border-radius:50%;object-fit:cover;margin-top:5px;cursor:pointer;border:2px solid #ff6b6b}
+        .video-circle video{width:100%;height:100%;border-radius:50%;object-fit:cover}
         img,audio,video{max-width:160px;border-radius:10px;margin-top:3px}
         .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0}
         .voice-wave{display:flex;align-items:center;gap:2px}
@@ -51,18 +52,23 @@
         .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
         .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
         .favorite-star{color:gold;font-size:12px}
-        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px}
+        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
+        .pinned-badge:hover{background:#ff6b6b40}
         
-        .input-area{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:15px;padding:8px 4px;outline:none}
-        .input-wrapper input::placeholder{color:#aaa;font-size:14px}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:20px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:36px;height:36px}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
+        .input-wrapper input::placeholder{color:#aaa;font-size:13px}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+        
+        .video-preview{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);width:100px;height:100px;border-radius:50%;background:#1a1a2e;border:3px solid #ff6b6b;z-index:1000;overflow:hidden;display:none}
+        .video-preview video{width:100%;height:100%;object-fit:cover}
+        .recording-timer{position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);background:#ff6b6b;color:white;padding:2px 8px;border-radius:20px;font-size:11px;white-space:nowrap}
         
         .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
         .mention-suggestions.active{display:block}
@@ -87,12 +93,15 @@
         
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:32px;height:32px;font-size:18px;padding:4px}
-            .send-btn{width:42px;height:42px;font-size:20px}
+            .input-icon{width:28px;height:28px;font-size:15px;padding:4px}
+            .send-btn{width:34px;height:34px;font-size:16px}
             .input-wrapper{padding:2px 6px}
-            .header{padding:8px 10px}
-            .avatar{width:32px;height:32px}
-            .back{padding:4px 10px;font-size:12px}
+            .input-wrapper input{font-size:13px;padding:6px 2px}
+            .header{padding:6px 10px}
+            .avatar{width:30px;height:30px}
+            .back{padding:4px 8px;font-size:11px}
+            .profile-btn{padding:4px 8px;font-size:11px}
+            .video-preview{width:80px;height:80px}
         }
         #avatarInput{display:none}
     </style>
@@ -125,6 +134,7 @@
             <span>📌 Закреплено: </span>
             <span id="pinnedMessageContent"></span>
             <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+            <button onclick="unpinMessage()" style="background:#888; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:5px; cursor:pointer;">✖ Открепить</button>
         </div>
         
         {% for m in messages %}
@@ -134,7 +144,7 @@
             {% endif %}
             <div class="bubble">
                 {% if m.is_pinned %}
-                <div class="pinned-badge">📌 Закреплено</div>
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
                 {% endif %}
                 {% if m.forwarded_from_id %}
                 <div class="forward-badge">📎 Переслано</div>
@@ -148,13 +158,19 @@
                 <div class="message-content">
                     {% if m.content %}
                         {{ m.content|safe }}
+                    {% elif m.file_path and m.file_type == 'video' %}
+                        📹 Видеосообщение
                     {% elif m.file_path %}
                         📎 Файл
                     {% else %}
                         💬 Сообщение
                     {% endif %}
                 </div>
-                {% if m.file_path and not m.content %}
+                {% if m.file_path and m.file_type == 'video' %}
+                    <div class="video-circle" onclick="playVideoMessage(this)">
+                        <video src="{{ m.file_path }}" preload="metadata"></video>
+                    </div>
+                {% elif m.file_path and not m.content %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
@@ -210,14 +226,19 @@
     
     <div class="input-area">
         <div class="input-wrapper" style="position:relative">
-            <input type="text" id="msgInput" placeholder="Сообщение... @username">
+            <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <button class="input-icon" id="emojiBtn" style="font-size:20px">😊</button>
-            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:18px">📎</button>
-            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:18px">🎤</button>
+            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
+            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
+            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
         <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
+    </div>
+    
+    <div class="video-preview" id="videoPreview">
+        <video id="previewVideo" autoplay muted playsinline></video>
+        <div class="recording-timer" id="recordingTimer">0:00</div>
     </div>
     
     <div class="emoji-picker" id="emojiPicker">
@@ -234,19 +255,131 @@
     const msgInput = document.getElementById('msgInput');
     let mediaRecorder = null;
     let audioChunks = [];
-    let isRecording = false;
+    let isAudioRecording = false;
     let startTime = null;
     let lastMsgId = {{ messages[-1].id if messages else 0 }};
     let pollingInterval = null;
     let currentReplyToId = null;
     let mentionSearchTimeout = null;
     let currentMentionStart = -1;
+    let isSending = false;
+    let processedIds = new Set();
+    
+    // ВИДЕОСООБЩЕНИЯ
+    let videoRecorder = null;
+    let videoChunks = [];
+    let isVideoRecording = false;
+    let videoStream = null;
+    let videoStartTime = null;
+    let videoTimerInterval = null;
+    let longPressTimer = null;
+    const voiceBtn = document.getElementById('voiceBtn');
+    const videoPreview = document.getElementById('videoPreview');
+    const previewVideo = document.getElementById('previewVideo');
+    const recordingTimer = document.getElementById('recordingTimer');
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
+    function playVideoMessage(el) { const video = el.querySelector('video'); if(video) { video.play(); } }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
     
-    // ЗАКРЕПЛЕННЫЕ СООБЩЕНИЯ
+    // ДОЛГОЕ НАЖАТИЕ ДЛЯ ВИДЕО
+    voiceBtn.addEventListener('mousedown', startVideoRecording);
+    voiceBtn.addEventListener('mouseup', stopVideoRecording);
+    voiceBtn.addEventListener('mouseleave', stopVideoRecording);
+    voiceBtn.addEventListener('touchstart', startVideoRecording);
+    voiceBtn.addEventListener('touchend', stopVideoRecording);
+    voiceBtn.addEventListener('touchcancel', stopVideoRecording);
+    
+    async function startVideoRecording(e) {
+        e.preventDefault();
+        if(isVideoRecording) return;
+        
+        longPressTimer = setTimeout(async () => {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 480 }, height: { ideal: 480 } }, audio: true });
+                previewVideo.srcObject = videoStream;
+                videoPreview.style.display = 'block';
+                
+                videoRecorder = new MediaRecorder(videoStream, { mimeType: 'video/webm' });
+                videoChunks = [];
+                
+                videoRecorder.ondataavailable = e => videoChunks.push(e.data);
+                videoRecorder.onstop = () => {
+                    const blob = new Blob(videoChunks, { type: 'video/webm' });
+                    const file = new File([blob], 'video_msg.webm', { type: 'video/webm' });
+                    sendVideoMessage(file);
+                    
+                    if(videoStream) videoStream.getTracks().forEach(track => track.stop());
+                    videoPreview.style.display = 'none';
+                    previewVideo.srcObject = null;
+                    isVideoRecording = false;
+                    voiceBtn.classList.remove('recording');
+                    if(videoTimerInterval) clearInterval(videoTimerInterval);
+                };
+                
+                videoRecorder.start();
+                isVideoRecording = true;
+                videoStartTime = Date.now();
+                voiceBtn.classList.add('recording');
+                
+                videoTimerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - videoStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    recordingTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    if(elapsed >= 60) stopVideoRecording();
+                }, 1000);
+                
+            } catch(e) {
+                console.error('Video recording error:', e);
+                showNotification('❌ Нет доступа к камере');
+            }
+        }, 300);
+    }
+    
+    function stopVideoRecording() {
+        if(longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        if(isVideoRecording && videoRecorder && videoRecorder.state === 'recording') {
+            videoRecorder.stop();
+        }
+    }
+    
+    function sendVideoMessage(file) {
+        let fd = new FormData();
+        fd.append('video', file);
+        fetch('/upload_video_message', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(d => {
+                if(d.path) {
+                    let fd2 = new FormData();
+                    fd2.append('group_id', group_id);
+                    fd2.append('file_path', d.path);
+                    fd2.append('file_name', 'Видеосообщение');
+                    fd2.append('file_type', 'video');
+                    if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                    fetch('/send_group', { method: 'POST', body: fd2 }).then(() => {
+                        currentReplyToId = null;
+                        document.getElementById('replyBar').style.display = 'none';
+                        setTimeout(() => checkNewMessages(), 100);
+                    });
+                }
+            });
+    }
+    
+    function unpinMessage() {
+        if(window.pinnedMsgId) {
+            pinMessage(window.pinnedMsgId, 'group');
+        }
+    }
+    
+    function unpinThisMessage(msgId) {
+        pinMessage(msgId, 'group');
+    }
+    
     function loadPinnedMessage() {
         fetch(`/get_pinned_message/${group_id}/group`)
             .then(r => r.json())
@@ -257,6 +390,7 @@
                     window.pinnedMsgId = data.id;
                 } else {
                     document.getElementById('pinnedMessageBar').style.display = 'none';
+                    window.pinnedMsgId = null;
                 }
             });
     }
@@ -277,7 +411,7 @@
             setTimeout(() => {
                 checkNewMessages();
                 loadPinnedMessage();
-            }, 500);
+            }, 300);
         });
     }
     
@@ -314,6 +448,9 @@
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
     function addNewMessage(msg) {
+        if(processedIds.has(msg.id)) return;
+        processedIds.add(msg.id);
+        
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
@@ -322,17 +459,23 @@
         let content = msg.content || '';
         let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
         let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
-        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge">📌 Закреплено</div>' : '';
+        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
         
         let fileHtml = '';
         if(msg.file_path) {
-            if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
-            else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-            else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}"></video>`;
-            else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            if(msg.file_type == 'video') {
+                fileHtml = `<div class="video-circle" onclick="playVideoMessage(this)"><video src="${msg.file_path}" preload="metadata"></video></div>`;
+            } else if(msg.file_type == 'image') {
+                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
+            } else if(msg.file_type == 'audio') {
+                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+            } else {
+                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            }
         }
         
-        if(!content && msg.file_path) content = '📎 Файл';
+        if(!content && msg.file_path && msg.file_type != 'video') content = '📎 Файл';
+        if(!content && msg.file_path && msg.file_type == 'video') content = '📹 Видеосообщение';
         
         if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
@@ -344,35 +487,79 @@
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/group`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
         lastMsgId = msg.id;
         if(msg.is_pinned) loadPinnedMessage();
     }
     
-    function checkNewMessages() { fetch(`/get_new_group_messages/${lastMsgId}/${group_id}`).then(r=>r.json()).then(msgs => msgs.forEach(m => addNewMessage(m))); }
-    
     function sendMsg() {
         let content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
+        if(isSending) return;
+        isSending = true;
+        
         let fd = new FormData();
         fd.append('group_id', group_id);
         if(content) fd.append('content', content);
         if(currentReplyToId) fd.append('reply_to_id', currentReplyToId);
-        fetch('/send_group', {method: 'POST', body: fd}).then(() => { msgInput.value = ''; currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; localStorage.setItem('group_msg_' + group_id, ''); setTimeout(checkNewMessages, 500); });
+        
+        let savedReplyId = currentReplyToId;
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+        localStorage.setItem('group_msg_' + group_id, '');
+        
+        fetch('/send_group', {method: 'POST', body: fd})
+            .then(() => {
+                setTimeout(() => checkNewMessages(), 100);
+            })
+            .catch(() => { 
+                isSending = false;
+                alert('Ошибка отправки');
+            });
+        
+        msgInput.value = '';
     }
     
     function sendFile(file) {
         let fd = new FormData(); fd.append('file', file);
-        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('group_id', group_id); fd2.append('file_path', d.path); fd2.append('file_name', d.name); fd2.append('file_type', d.type); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send_group', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 500); }); } });
+        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { 
+            let fd2 = new FormData(); 
+            fd2.append('group_id', group_id); 
+            fd2.append('file_path', d.path); 
+            fd2.append('file_name', d.name); 
+            fd2.append('file_type', d.type); 
+            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); 
+            fetch('/send_group', {method: 'POST', body: fd2}).then(() => { 
+                currentReplyToId = null; 
+                document.getElementById('replyBar').style.display = 'none'; 
+                setTimeout(() => checkNewMessages(), 100); 
+            }); 
+        } });
     }
     
-    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); } }
+    function checkNewMessages() { 
+        fetch(`/get_new_group_messages/${lastMsgId}/${group_id}`)
+            .then(r => r.json())
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    msgs.forEach(m => addNewMessage(m));
+                    isSending = false;
+                } else {
+                    isSending = false;
+                }
+            })
+            .catch(() => { isSending = false; });
+    }
+    
+    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); } }
     function deleteMessage(id, type) { if(confirm('Удалить?')) { fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: false}) }).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
-    function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 500)); }
+    function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); }
     function replyToMessage(id, content) { currentReplyToId = id; const bar = document.getElementById('replyBar'); document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); bar.style.display = 'flex'; msgInput.focus(); }
     function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
     function forwardMessage(id, type) { let target = prompt('ID пользователя:'); if(target) { fetch('/forward_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type}) }).then(() => alert('Переслано!')); } }
     
-    async function startRecording() {
+    // Обычная голосовая запись
+    async function startVoiceRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
@@ -385,23 +572,40 @@
                 const fd = new FormData();
                 fd.append('audio', blob);
                 fd.append('duration', duration);
-                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('group_id', group_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send_group', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 500); }); } });
+                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('group_id', group_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send_group', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 100); }); } });
                 stream.getTracks().forEach(t => t.stop());
-                document.getElementById('voiceBtn').classList.remove('recording');
-                document.getElementById('voiceBtn').textContent = '🎤';
-                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                voiceBtn.textContent = '🎤';
+                isAudioRecording = false;
             };
             mediaRecorder.start();
-            isRecording = true;
-            document.getElementById('voiceBtn').classList.add('recording');
-            document.getElementById('voiceBtn').textContent = '⏹️';
-            setTimeout(() => isRecording && stopRecording(), 30000);
+            isAudioRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceBtn.textContent = '⏹️';
+            setTimeout(() => isAudioRecording && stopVoiceRecording(), 30000);
         } catch(e) { alert('Микрофон не доступен'); }
     }
-    function stopRecording() { if(mediaRecorder && isRecording) mediaRecorder.stop(); }
-    function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
     
-    document.getElementById('voiceBtn').onclick = toggleRecording;
+    function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
+    function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
+    
+    let voiceLongPressTimer = null;
+    let isVoiceLongPress = false;
+    
+    voiceBtn.addEventListener('mousedown', function(e) {
+        voiceLongPressTimer = setTimeout(() => {
+            isVoiceLongPress = true;
+        }, 300);
+    });
+    
+    voiceBtn.addEventListener('mouseup', function(e) {
+        if(voiceLongPressTimer) clearTimeout(voiceLongPressTimer);
+        if(!isVoiceLongPress && !isVideoRecording) {
+            toggleVoiceRecording();
+        }
+        isVoiceLongPress = false;
+    });
+    
     document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); };
     document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
@@ -420,7 +624,7 @@
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/group`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    pollingInterval = setInterval(checkNewMessages, 3000);
+    pollingInterval = setInterval(checkNewMessages, 800);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
 </script>
