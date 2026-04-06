@@ -256,8 +256,7 @@
     let currentMentionStart = -1;
     let typingTimeout = null;
     let isSending = false;
-    let tempMsgElement = null;
-    let tempMsgId = null;
+    let pendingMessage = null;
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
@@ -381,18 +380,13 @@
     
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
+    // Множество уже обработанных ID сообщений
+    let processedIds = new Set();
+    
     function addNewMessage(msg) {
-        // Если это временное сообщение и оно уже есть в DOM - не добавляем
-        if(msg.id && msg.id.toString().startsWith('temp_')) {
-            if(document.querySelector(`.message[data-id="${msg.id}"]`)) return;
-        }
-        
-        // Если это реальное сообщение и есть временное с таким же ID - удаляем временное
-        if(!msg.id.toString().startsWith('temp_') && tempMsgId && msg.id.toString() === tempMsgId.replace('temp_', '')) {
-            if(tempMsgElement) tempMsgElement.remove();
-            tempMsgElement = null;
-            tempMsgId = null;
-        }
+        // Проверяем, не обрабатывали ли уже это сообщение
+        if(processedIds.has(msg.id)) return;
+        processedIds.add(msg.id);
         
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
@@ -422,22 +416,21 @@
         
         div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}<div class="message-content">${content}</div>${fileHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
         
-        // Если это временное сообщение - сохраняем ссылку на него
-        if(msg.id.toString().startsWith('temp_')) {
-            tempMsgElement = div;
-            tempMsgId = msg.id;
-        }
-        
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         
-        if(!msg.id.toString().startsWith('temp_')) {
-            lastMsgId = msg.id;
-        }
+        lastMsgId = msg.id;
         if(msg.is_pinned) loadPinnedMessage();
+        
+        // Если есть отложенное сообщение и оно совпадает - очищаем флаг отправки
+        if(pendingMessage && pendingMessage === msg.id) {
+            isSending = false;
+            pendingMessage = null;
+        }
     }
     
+    // ОТПРАВКА БЕЗ ВРЕМЕННОГО СООБЩЕНИЯ
     function sendMsg() {
         let content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
@@ -449,25 +442,6 @@
         if(content) fd.append('content', content);
         if(currentReplyToId) fd.append('reply_to_id', currentReplyToId);
         
-        msgInput.value = '';
-        let tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        let tempMsg = {
-            id: tempId,
-            content: content,
-            file_path: null,
-            file_name: null,
-            file_type: null,
-            timestamp: new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}),
-            is_own: true,
-            voice_duration: 0,
-            edited: false,
-            reply_to_id: currentReplyToId,
-            is_favorite: false,
-            is_read: false,
-            is_pinned: false
-        };
-        addNewMessage(tempMsg);
-        
         let savedReplyId = currentReplyToId;
         currentReplyToId = null;
         document.getElementById('replyBar').style.display = 'none';
@@ -475,10 +449,15 @@
         
         fetch('/send', {method: 'POST', body: fd})
             .then(() => {
-                isSending = false;
-                setTimeout(() => checkNewMessages(), 200);
+                setTimeout(() => checkNewMessages(), 100);
             })
-            .catch(() => { isSending = false; });
+            .catch(() => { 
+                isSending = false;
+                alert('Ошибка отправки');
+            });
+        
+        msgInput.value = '';
+        // Не показываем временное сообщение, просто ждём ответа от сервера
     }
     
     function sendFile(file) {
@@ -493,7 +472,7 @@
             fetch('/send', {method: 'POST', body: fd2}).then(() => { 
                 currentReplyToId = null; 
                 document.getElementById('replyBar').style.display = 'none'; 
-                setTimeout(() => checkNewMessages(), 200); 
+                setTimeout(() => checkNewMessages(), 100); 
             }); 
         } });
     }
@@ -501,7 +480,15 @@
     function checkNewMessages() { 
         fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
             .then(r => r.json())
-            .then(msgs => msgs.forEach(m => addNewMessage(m))); 
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    msgs.forEach(m => addNewMessage(m));
+                    isSending = false;
+                } else {
+                    isSending = false;
+                }
+            })
+            .catch(() => { isSending = false; });
     }
     
     function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); } }
@@ -524,7 +511,7 @@
                 const fd = new FormData();
                 fd.append('audio', blob);
                 fd.append('duration', duration);
-                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 200); }); } });
+                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 100); }); } });
                 stream.getTracks().forEach(t => t.stop());
                 document.getElementById('voiceBtn').classList.remove('recording');
                 document.getElementById('voiceBtn').textContent = '🎤';
@@ -559,7 +546,8 @@
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    pollingInterval = setInterval(checkNewMessages, 2000);
+    // Запрашиваем новые сообщения каждые 1.5 секунды (быстрее)
+    pollingInterval = setInterval(checkNewMessages, 1500);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
 </script>
