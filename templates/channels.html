@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📢 Каналы | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        .container{max-width:700px;margin:0 auto;padding:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none}
+        h2{color:#333}
+        .section{margin-bottom:30px}
+        .section-title{font-size:14px;color:#888;margin-bottom:10px;padding-left:8px;display:flex;justify-content:space-between;align-items:center}
+        .section-title a{color:#ff6b6b;font-size:12px;text-decoration:none}
+        .channel-card{background:rgba(255,255,255,0.9);border-radius:20px;padding:15px;display:flex;align-items:center;gap:15px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,107,107,0.3);margin-bottom:8px}
+        .channel-card:hover{transform:translateX(5px);background:white}
+        .channel-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+        .channel-avatar img{width:100%;height:100%;object-fit:cover}
+        .channel-info{flex:1}
+        .channel-name{font-weight:600;color:#333}
+        .channel-username{font-size:11px;color:#888}
+        .channel-stats{font-size:11px;color:#aaa;margin-top:4px}
+        .create-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);border:none;color:white;padding:12px;border-radius:30px;width:100%;margin-bottom:20px;cursor:pointer;font-weight:bold}
+        .empty{text-align:center;padding:40px;color:#888}
+        .search-box{margin-bottom:20px}
+        .search-input{width:100%;padding:12px;border-radius:30px;border:1px solid rgba(255,107,107,0.3);background:rgba(255,255,255,0.9);font-size:14px;outline:none}
+        .search-input:focus{border-color:#ff6b6b;background:white}
+        .search-results{background:white;border-radius:20px;margin-top:8px;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+        .search-results.active{display:block}
+        .search-result-item{padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+        .search-result-item:hover{background:#f9f9f9}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/chat" class="back">← Назад</a>
+        <h2>📢 Каналы</h2>
+    </div>
+    
+    <button class="create-btn" onclick="location.href='/channel/create'">✨ + Создать канал ✨</button>
+    
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск каналов...">
+        <div class="search-results" id="searchResults"></div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">🔔 МОИ КАНАЛЫ</div>
+        {% for ch in my_channels %}
+        <div class="channel-card" onclick="location.href='/channel/{{ ch.id }}'">
+            <div class="channel-avatar">📢</div>
+            <div class="channel-info">
+                <div class="channel-name">{{ ch.name }}</div>
+                {% if ch.username %}<div class="channel-username">@{{ ch.username }}</div>{% endif %}
+                <div class="channel-stats">👥 {{ ch.subscribers_count }} подписчиков</div>
+            </div>
+            <div style="color:#ff6b6b">→</div>
+        </div>
+        {% else %}
+        <div class="empty">У вас нет созданных каналов</div>
+        {% endfor %}
+    </div>
+    
+    <div class="section">
+        <div class="section-title">📌 ПОДПИСКИ</div>
+        {% for ch in subscribed_channels %}
+        <div class="channel-card" onclick="location.href='/channel/{{ ch.id }}'">
+            <div class="channel-avatar">📢</div>
+            <div class="channel-info">
+                <div class="channel-name">{{ ch.name }}</div>
+                <div class="channel-stats">👥 {{ ch.subscribers_count }} подписчиков</div>
+            </div>
+            <div style="color:#ff6b6b">→</div>
+        </div>
+        {% else %}
+        <div class="empty">Вы не подписаны ни на один канал</div>
+        {% endfor %}
+    </div>
+    
+    <div class="section">
+        <div class="section-title">🔥 ПОПУЛЯРНЫЕ</div>
+        {% for ch in popular %}
+        <div class="channel-card" onclick="location.href='/channel/{{ ch.id }}'">
+            <div class="channel-avatar">📢</div>
+            <div class="channel-info">
+                <div class="channel-name">{{ ch.name }}</div>
+                <div class="channel-stats">👥 {{ ch.subscribers_count }} подписчиков</div>
+            </div>
+            <div style="color:#ff6b6b">→</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    let searchTimeout = null;
+    
+    function searchChannels() {
+        const query = searchInput.value.trim();
+        if(query.length < 2) {
+            searchResults.classList.remove('active');
+            return;
+        }
+        
+        fetch(`/api/channels/search?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(channels => {
+                if(channels.length === 0) {
+                    searchResults.innerHTML = '<div style="padding:12px;text-align:center;color:#888;">Каналы не найдены</div>';
+                    searchResults.classList.add('active');
+                    return;
+                }
+                
+                searchResults.innerHTML = '';
+                channels.forEach(ch => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.onclick = () => location.href = '/channel/' + ch.id;
+                    div.innerHTML = `
+                        <div class="channel-avatar" style="width:40px;height:40px;font-size:20px">📢</div>
+                        <div class="channel-info">
+                            <div class="channel-name">${escapeHtml(ch.name)}</div>
+                            <div class="channel-username">${escapeHtml(ch.username || '')}</div>
+                            <div class="channel-stats">👥 ${ch.subscribers} подписчиков</div>
+                        </div>
+                        <div style="color:#ff6b6b">→</div>
+                    `;
+                    searchResults.appendChild(div);
+                });
+                searchResults.classList.add('active');
+            });
+    }
+    
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return div.innerHTML;
+    }
+    
+    searchInput.addEventListener('input', function() {
+        if(searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(searchChannels, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        if(!searchResults.contains(e.target) && e.target !== searchInput) {
+            searchResults.classList.remove('active');
+        }
+    });
+</script>
+</body>
+</html>

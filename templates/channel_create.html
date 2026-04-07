@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📢 Создать канал | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        .container{max-width:600px;margin:0 auto;padding:20px}
+        .card{background:rgba(255,255,255,0.95);border-radius:30px;padding:25px;margin-bottom:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none}
+        h2{color:#333;margin-bottom:20px}
+        .form-group{margin-bottom:20px}
+        label{display:block;margin-bottom:8px;color:#333;font-weight:500}
+        input,textarea{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;outline:none;font-size:14px}
+        input:focus,textarea:focus{border-color:#ff6b6b}
+        textarea{border-radius:20px;resize:vertical}
+        .help-text{font-size:11px;color:#888;margin-top:5px}
+        .btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:30px;width:100%;cursor:pointer;font-weight:bold;font-size:16px}
+        .btn:hover{transform:translateY(-1px)}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/channels" class="back">← Назад</a>
+    </div>
+    
+    <div class="card">
+        <h2>📢 Создать канал</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label>Название канала *</label>
+                <input type="text" name="name" placeholder="Мой крутой канал" required>
+            </div>
+            <div class="form-group">
+                <label>@username канала</label>
+                <input type="text" name="username" placeholder="my_channel">
+                <div class="help-text">Короткая ссылка: beargram.com/@my_channel</div>
+            </div>
+            <div class="form-group">
+                <label>Описание</label>
+                <textarea name="description" rows="3" placeholder="Расскажите о вашем канале..."></textarea>
+            </div>
+            <button type="submit" class="btn">✨ Создать канал ✨</button>
+        </form>
+    </div>
+    
+    <div class="card" style="background:rgba(255,255,255,0.8)">
+        <h3 style="color:#ff6b6b;margin-bottom:10px">📢 Что такое канал?</h3>
+        <p style="color:#666;font-size:14px;line-height:1.5">
+            • Только администратор может публиковать посты<br>
+            • Подписчики читают и могут комментировать<br>
+            • Идеально для блогов, новостей, анонсов<br>
+            • Как в Telegram, но в BearGram!
+        </p>
+    </div>
+</div>
+</body>
+</html>

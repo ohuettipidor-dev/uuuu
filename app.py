@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from datetime import timedelta
 import os
 import uuid
 import re
@@ -109,6 +108,7 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     notifications_enabled = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    current_theme_id = db.Column(db.Integer, nullable=True)
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -226,12 +226,73 @@ class VoiceChannelMember(db.Model):
     
     channel = db.relationship('VoiceChannel', foreign_keys=[channel_id])
     user = db.relationship('User', foreign_keys=[user_id])
-# ========== МОДЕЛИ ДЛЯ МОНЕТИЗАЦИИ ==========
 
+# ========== ВИДЕОЗВОНКИ ==========
+class VideoCall(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    room_id = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(20), default='waiting')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    from_user = db.relationship('User', foreign_keys=[from_user_id])
+    to_user = db.relationship('User', foreign_keys=[to_user_id])
+
+# ========== КАНАЛЫ (КАК В TELEGRAM) ==========
+class Channel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, default='')
+    avatar = db.Column(db.String(200), default='channel_default.png')
+    username = db.Column(db.String(80), unique=True, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_private = db.Column(db.Boolean, default=False)
+    subscribers_count = db.Column(db.Integer, default=0)
+    
+    creator = db.relationship('User', foreign_keys=[created_by])
+
+class ChannelSubscriber(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_muted = db.Column(db.Boolean, default=False)
+    
+    channel = db.relationship('Channel', foreign_keys=[channel_id])
+    user = db.relationship('User', foreign_keys=[user_id])
+
+class ChannelPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_name = db.Column(db.String(200), nullable=True)
+    file_type = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'), nullable=False)
+    views = db.Column(db.Integer, default=0)
+    comments_enabled = db.Column(db.Boolean, default=True)
+    
+    author = db.relationship('User', foreign_keys=[author_id])
+    channel = db.relationship('Channel', foreign_keys=[channel_id])
+
+class ChannelComment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    post = db.relationship('ChannelPost', foreign_keys=[post_id])
+    user = db.relationship('User', foreign_keys=[user_id])
+
+# ========== МОНЕТИЗАЦИЯ ==========
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    plan = db.Column(db.String(50), default='free')  # free, premium, family
+    plan = db.Column(db.String(50), default='free')
     expires_at = db.Column(db.DateTime, nullable=True)
     auto_renew = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -242,7 +303,7 @@ class StickerPack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    is_premium = db.Column(db.Boolean, default=False)  # платный набор
+    is_premium = db.Column(db.Boolean, default=False)
     price = db.Column(db.Float, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -293,7 +354,7 @@ class CloudStorage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     used_bytes = db.Column(db.BigInteger, default=0)
-    total_bytes = db.Column(db.BigInteger, default=2 * 1024 * 1024 * 1024)  # 2 GB free
+    total_bytes = db.Column(db.BigInteger, default=2 * 1024 * 1024 * 1024)
     upgraded_at = db.Column(db.DateTime, nullable=True)
     
     user = db.relationship('User', foreign_keys=[user_id])
@@ -302,8 +363,8 @@ class Gift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    gift_type = db.Column(db.String(50), nullable=False)  # premium_month, sticker_pack, theme
-    gift_id = db.Column(db.Integer, nullable=False)  # ID подарка
+    gift_type = db.Column(db.String(50), nullable=False)
+    gift_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_used = db.Column(db.Boolean, default=False)
@@ -316,7 +377,7 @@ class VoiceTranscription(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     message_id = db.Column(db.Integer, nullable=False)
     transcription = db.Column(db.Text, nullable=True)
-    used_premium = db.Column(db.Boolean, default=False)  # использована ли премиум-транскрипция
+    used_premium = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', foreign_keys=[user_id])
@@ -338,277 +399,7 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-
-
-# ========== ВИДЕОЗВОНКИ ==========
-class VideoCall(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    room_id = db.Column(db.String(100), unique=True, nullable=False)
-    status = db.Column(db.String(20), default='waiting')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    from_user = db.relationship('User', foreign_keys=[from_user_id])
-    to_user = db.relationship('User', foreign_keys=[to_user_id])
-# ========== МАРШРУТЫ МОНЕТИЗАЦИИ ==========
-
-# ПОДПИСКИ
-@app.route('/subscription/plans')
-@login_required
-def subscription_plans():
-    plans = [
-        {'name': 'Free', 'price': 0, 'storage': 2, 'features': ['Базовые функции', '2 ГБ хранилища']},
-        {'name': 'Premium', 'price': 299, 'storage': 10, 'features': ['10 ГБ хранилища', 'Транскрипция голосовых', 'Кастомные темы', 'Платные стикеры']},
-        {'name': 'Family', 'price': 499, 'storage': 50, 'features': ['50 ГБ хранилища', 'До 5 участников', 'Все функции Premium']}
-    ]
-    return jsonify(plans)
-
-@app.route('/subscription/subscribe', methods=['POST'])
-@login_required
-def subscribe():
-    data = request.get_json()
-    plan = data.get('plan')
-    # Здесь интеграция с платежной системой (Stripe, ЮKassa и т.д.)
-    # Для демо просто обновляем подписку
-    sub = Subscription.query.filter_by(user_id=current_user.id).first()
-    if not sub:
-        sub = Subscription(user_id=current_user.id)
-        db.session.add(sub)
-    sub.plan = plan
-    sub.expires_at = datetime.utcnow() + timedelta(days=30)
-    db.session.commit()
-    return jsonify({'success': True})
-
-# СТИКЕРЫ
-@app.route('/stickers/packs')
-@login_required
-def sticker_packs():
-    packs = StickerPack.query.all()
-    result = []
-    for pack in packs:
-        user_has = UserSticker.query.filter_by(user_id=current_user.id, pack_id=pack.id).first() is not None
-        result.append({
-            'id': pack.id,
-            'name': pack.name,
-            'is_premium': pack.is_premium,
-            'price': pack.price,
-            'author': pack.author.username,
-            'user_has': user_has
-        })
-    return jsonify(result)
-
-@app.route('/stickers/purchase/<int:pack_id>', methods=['POST'])
-@login_required
-def purchase_sticker_pack(pack_id):
-    pack = StickerPack.query.get(pack_id)
-    if not pack:
-        return jsonify({'error': 'Набор не найден'}), 404
-    
-    if pack.is_premium:
-        # Проверяем подписку Premium
-        sub = Subscription.query.filter_by(user_id=current_user.id, plan='premium').first()
-        if not sub or sub.expires_at < datetime.utcnow():
-            # Здесь интеграция с платежной системой
-            pass
-    
-    existing = UserSticker.query.filter_by(user_id=current_user.id, pack_id=pack_id).first()
-    if not existing:
-        user_pack = UserSticker(user_id=current_user.id, pack_id=pack_id)
-        db.session.add(user_pack)
-        db.session.commit()
-    return jsonify({'success': True})
-
-# КАСТОМНЫЕ ТЕМЫ
-@app.route('/themes')
-@login_required
-def themes():
-    themes = CustomTheme.query.all()
-    result = []
-    for theme in themes:
-        user_has = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme.id).first() is not None
-        result.append({
-            'id': theme.id,
-            'name': theme.name,
-            'colors': {
-                'primary': theme.primary_color,
-                'secondary': theme.secondary_color,
-                'bubble_sent': theme.bubble_color_sent,
-                'bubble_received': theme.bubble_color_received,
-                'text': theme.text_color
-            },
-            'is_premium': theme.is_premium,
-            'price': theme.price,
-            'user_has': user_has
-        })
-    return jsonify(result)
-
-@app.route('/themes/apply/<int:theme_id>', methods=['POST'])
-@login_required
-def apply_theme(theme_id):
-    theme = CustomTheme.query.get(theme_id)
-    if not theme:
-        return jsonify({'error': 'Тема не найдена'}), 404
-    
-    user_has = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
-    if not user_has and theme.is_premium:
-        return jsonify({'error': 'Тема не куплена'}), 403
-    
-    # Сохраняем выбранную тему в сессию пользователя
-    current_user.current_theme_id = theme_id
-    db.session.commit()
-    return jsonify({'success': True})
-
-# ОБЛАЧНОЕ ХРАНИЛИЩЕ
-@app.route('/storage/info')
-@login_required
-def storage_info():
-    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-    if not storage:
-        storage = CloudStorage(user_id=current_user.id)
-        db.session.add(storage)
-        db.session.commit()
-    
-    return jsonify({
-        'used_gb': round(storage.used_bytes / (1024**3), 2),
-        'total_gb': round(storage.total_bytes / (1024**3), 2),
-        'percent': round(storage.used_bytes / storage.total_bytes * 100, 2)
-    })
-
-@app.route('/storage/upgrade', methods=['POST'])
-@login_required
-def upgrade_storage():
-    data = request.get_json()
-    additional_gb = data.get('gb', 10)
-    price = additional_gb * 50  # 50 рублей за ГБ
-    
-    # Здесь интеграция с платежной системой
-    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-    if not storage:
-        storage = CloudStorage(user_id=current_user.id)
-        db.session.add(storage)
-    
-    storage.total_bytes += additional_gb * 1024 * 1024 * 1024
-    storage.upgraded_at = datetime.utcnow()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'price': price})
-
-# ПОДАРКИ
-@app.route('/gifts/send', methods=['POST'])
-@login_required
-def send_gift():
-    data = request.get_json()
-    to_user_id = data.get('to_user_id')
-    gift_type = data.get('gift_type')  # premium_month, sticker_pack, theme
-    gift_id = data.get('gift_id')
-    message = data.get('message', '')
-    
-    to_user = User.query.get(to_user_id)
-    if not to_user:
-        return jsonify({'error': 'Пользователь не найден'}), 404
-    
-    # Здесь интеграция с платежной системой
-    gift = Gift(
-        from_user_id=current_user.id,
-        to_user_id=to_user_id,
-        gift_type=gift_type,
-        gift_id=gift_id,
-        message=message
-    )
-    db.session.add(gift)
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-# ТРАНСКРИПЦИЯ ГОЛОСОВЫХ
-@app.route('/voice/transcribe/<int:message_id>', methods=['POST'])
-@login_required
-def transcribe_voice(message_id):
-    # Проверяем подписку Premium
-    sub = Subscription.query.filter_by(user_id=current_user.id, plan='premium').first()
-    if not sub or sub.expires_at < datetime.utcnow():
-        return jsonify({'error': 'Требуется Premium подписка'}), 403
-    
-    message = Message.query.get(message_id)
-    if not message or not message.file_path or message.file_type != 'audio':
-        return jsonify({'error': 'Голосовое сообщение не найдено'}), 404
-    
-    # Здесь интеграция с API распознавания речи (Google Speech, Yandex SpeechKit)
-    # Для демо возвращаем заглушку
-    transcription = "Это пример транскрипции голосового сообщения"
-    
-    existing = VoiceTranscription.query.filter_by(message_id=message_id).first()
-    if not existing:
-        trans = VoiceTranscription(user_id=current_user.id, message_id=message_id, transcription=transcription, used_premium=True)
-        db.session.add(trans)
-        db.session.commit()
-    
-    return jsonify({'transcription': transcription})
-
-# СЕМЕЙНЫЕ АККАУНТЫ
-@app.route('/family/create', methods=['POST'])
-@login_required
-def create_family():
-    data = request.get_json()
-    name = data.get('name', 'Моя семья')
-    
-    family = FamilyAccount(owner_id=current_user.id, name=name)
-    db.session.add(family)
-    db.session.commit()
-    
-    member = FamilyMember(family_id=family.id, user_id=current_user.id)
-    db.session.add(member)
-    db.session.commit()
-    
-    return jsonify({'family_id': family.id})
-
-@app.route('/family/invite/<int:family_id>', methods=['POST'])
-@login_required
-def invite_to_family(family_id):
-    family = FamilyAccount.query.get(family_id)
-    if not family or family.owner_id != current_user.id:
-        return jsonify({'error': 'Нет прав'}), 403
-    
-    data = request.get_json()
-    username = data.get('username')
-    user = User.query.filter_by(username=username).first()
-    
-    if not user:
-        return jsonify({'error': 'Пользователь не найден'}), 404
-    
-    existing = FamilyMember.query.filter_by(family_id=family_id, user_id=user.id).first()
-    if existing:
-        return jsonify({'error': 'Уже в семье'}), 400
-    
-    member = FamilyMember(family_id=family_id, user_id=user.id)
-    db.session.add(member)
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-@app.route('/family/members/<int:family_id>')
-@login_required
-def family_members(family_id):
-    family = FamilyAccount.query.get(family_id)
-    if not family:
-        return jsonify({'error': 'Семья не найдена'}), 404
-    
-    members = FamilyMember.query.filter_by(family_id=family_id).all()
-    result = []
-    for m in members:
-        result.append({
-            'id': m.user.id,
-            'username': m.user.username,
-            'avatar': m.user.avatar,
-            'is_owner': m.user_id == family.owner_id
-        })
-    
-    return jsonify(result)
-
-
-
-# ========== ХРАНИЛИЩЕ ДЛЯ СИГНАЛИЗАЦИИ ВИДЕОЗВОНКОВ ==========
+# ========== ХРАНИЛИЩЕ ДЛЯ СИГНАЛИЗАЦИИ ==========
 signaling_store = {}
 
 @login_manager.user_loader
@@ -728,6 +519,16 @@ def profile():
             VoiceChannelMember.query.filter_by(user_id=current_user.id).delete()
             VoiceChannel.query.filter_by(created_by=current_user.id).delete()
             VideoCall.query.filter((VideoCall.from_user_id == current_user.id) | (VideoCall.to_user_id == current_user.id)).delete()
+            ChannelSubscriber.query.filter_by(user_id=current_user.id).delete()
+            Channel.query.filter_by(created_by=current_user.id).delete()
+            Subscription.query.filter_by(user_id=current_user.id).delete()
+            UserSticker.query.filter_by(user_id=current_user.id).delete()
+            UserTheme.query.filter_by(user_id=current_user.id).delete()
+            CloudStorage.query.filter_by(user_id=current_user.id).delete()
+            Gift.query.filter((Gift.from_user_id == current_user.id) | (Gift.to_user_id == current_user.id)).delete()
+            VoiceTranscription.query.filter_by(user_id=current_user.id).delete()
+            FamilyMember.query.filter_by(user_id=current_user.id).delete()
+            FamilyAccount.query.filter_by(owner_id=current_user.id).delete()
             
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
@@ -807,7 +608,21 @@ def upload_voice():
     duration = request.form.get('duration', 0)
     return jsonify({'path': f'/static/voices/{name}', 'duration': duration})
 
-# ========== СИГНАЛИЗАЦИЯ ДЛЯ ВИДЕОЗВОНКОВ (POLLING) ==========
+@app.route('/upload_video_message', methods=['POST'])
+@login_required
+def upload_video_message():
+    if 'video' not in request.files:
+        return jsonify({'error': 'Нет видео'}), 400
+    f = request.files['video']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    
+    name = f"video_msg_{current_user.id}_{uuid.uuid4().hex}.webm"
+    f.save(os.path.join(FILE_FOLDER, name))
+    
+    return jsonify({'path': f'/static/uploads/{name}', 'duration': 0})
+
+# ========== СИГНАЛИЗАЦИЯ ДЛЯ ВИДЕОЗВОНКОВ ==========
 @app.route('/send_offer', methods=['POST'])
 @login_required
 def send_offer():
@@ -1254,6 +1069,193 @@ def get_voice_channel_members(channel_id):
         })
     return jsonify(result)
 
+# ========== КАНАЛЫ (ТЕЛЕГРАМ СТИЛЬ) ==========
+@app.route('/channels')
+@login_required
+def channels_list():
+    my_channels = Channel.query.filter_by(created_by=current_user.id).all()
+    subscribed = ChannelSubscriber.query.filter_by(user_id=current_user.id).all()
+    subscribed_ids = [s.channel_id for s in subscribed]
+    subscribed_channels = Channel.query.filter(Channel.id.in_(subscribed_ids)).all() if subscribed_ids else []
+    popular = Channel.query.order_by(Channel.subscribers_count.desc()).limit(10).all()
+    
+    return render_template('channels.html', 
+                         my_channels=my_channels,
+                         subscribed_channels=subscribed_channels,
+                         popular=popular)
+
+@app.route('/channel/<string:identifier>')
+@login_required
+def channel_view(identifier):
+    if identifier.startswith('@'):
+        channel = Channel.query.filter_by(username=identifier[1:]).first()
+    else:
+        channel = Channel.query.get(int(identifier))
+    
+    if not channel:
+        flash('Канал не найден', 'danger')
+        return redirect(url_for('channels_list'))
+    
+    is_subscribed = ChannelSubscriber.query.filter_by(channel_id=channel.id, user_id=current_user.id).first() is not None
+    is_admin = channel.created_by == current_user.id
+    
+    posts = ChannelPost.query.filter_by(channel_id=channel.id).order_by(ChannelPost.timestamp.desc()).all()
+    
+    return render_template('channel.html', 
+                         channel=channel, 
+                         posts=posts, 
+                         is_subscribed=is_subscribed,
+                         is_admin=is_admin)
+
+@app.route('/channel/create', methods=['GET', 'POST'])
+@login_required
+def channel_create():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        username = request.form.get('username')
+        description = request.form.get('description', '')
+        
+        if not name:
+            flash('Название канала обязательно', 'danger')
+            return redirect(url_for('channel_create'))
+        
+        if username and Channel.query.filter_by(username=username).first():
+            flash('Такой @username канала уже занят', 'danger')
+            return redirect(url_for('channel_create'))
+        
+        channel = Channel(
+            name=name,
+            username=username,
+            description=description,
+            created_by=current_user.id
+        )
+        db.session.add(channel)
+        db.session.commit()
+        
+        flash(f'Канал "{name}" создан!', 'success')
+        return redirect(url_for('channel_view', identifier=channel.id))
+    
+    return render_template('channel_create.html')
+
+@app.route('/channel/subscribe/<int:channel_id>', methods=['POST'])
+@login_required
+def channel_subscribe(channel_id):
+    existing = ChannelSubscriber.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
+    if not existing:
+        sub = ChannelSubscriber(channel_id=channel_id, user_id=current_user.id)
+        db.session.add(sub)
+        
+        channel = Channel.query.get(channel_id)
+        channel.subscribers_count += 1
+        db.session.commit()
+        flash('Вы подписались на канал!', 'success')
+    else:
+        db.session.delete(existing)
+        channel = Channel.query.get(channel_id)
+        channel.subscribers_count -= 1
+        db.session.commit()
+        flash('Вы отписались от канала', 'info')
+    
+    return redirect(url_for('channel_view', identifier=channel_id))
+
+@app.route('/channel/post/<int:channel_id>', methods=['POST'])
+@login_required
+def channel_post_create(channel_id):
+    channel = Channel.query.get(channel_id)
+    if not channel or channel.created_by != current_user.id:
+        flash('Нет прав для публикации', 'danger')
+        return redirect(url_for('channel_view', identifier=channel_id))
+    
+    content = request.form.get('content', '')
+    if not content and not request.files.get('file'):
+        flash('Введите текст или прикрепите файл', 'danger')
+        return redirect(url_for('channel_view', identifier=channel_id))
+    
+    file_path = None
+    file_name = None
+    file_type = None
+    
+    if 'file' in request.files:
+        f = request.files['file']
+        if f and allowed_file(f.filename):
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            name = f"channel_{channel_id}_{uuid.uuid4().hex}.{ext}"
+            f.save(os.path.join(FILE_FOLDER, name))
+            file_path = f'/static/uploads/{name}'
+            file_name = f.filename
+            if ext in ['png','jpg','jpeg','gif','webp','bmp']:
+                file_type = 'image'
+            elif ext in ['mp3','wav','ogg','flac','m4a']:
+                file_type = 'audio'
+            elif ext in ['mp4','avi','mov','mkv','webm']:
+                file_type = 'video'
+            else:
+                file_type = 'document'
+    
+    post = ChannelPost(
+        content=content,
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
+        author_id=current_user.id,
+        channel_id=channel_id
+    )
+    db.session.add(post)
+    db.session.commit()
+    
+    return redirect(url_for('channel_view', identifier=channel_id))
+
+@app.route('/channel/comment/<int:post_id>', methods=['POST'])
+@login_required
+def channel_comment_create(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post:
+        flash('Пост не найден', 'danger')
+        return redirect(url_for('channels_list'))
+    
+    if not post.comments_enabled:
+        flash('Комментарии отключены', 'danger')
+        return redirect(url_for('channel_view', identifier=post.channel_id))
+    
+    content = request.form.get('content')
+    if not content:
+        flash('Введите текст комментария', 'danger')
+        return redirect(url_for('channel_view', identifier=post.channel_id))
+    
+    comment = ChannelComment(
+        content=content,
+        post_id=post_id,
+        user_id=current_user.id
+    )
+    db.session.add(comment)
+    db.session.commit()
+    
+    return redirect(url_for('channel_view', identifier=post.channel_id))
+
+@app.route('/api/channels/search')
+@login_required
+def api_channels_search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    channels = Channel.query.filter(
+        (Channel.name.ilike(f'%{query}%')) | 
+        (Channel.username.ilike(f'%{query}%'))
+    ).limit(20).all()
+    
+    result = []
+    for ch in channels:
+        result.append({
+            'id': ch.id,
+            'name': ch.name,
+            'username': f'@{ch.username}' if ch.username else None,
+            'avatar': ch.avatar,
+            'subscribers': ch.subscribers_count
+        })
+    
+    return jsonify(result)
+
 # ========== ОБЫЧНЫЕ ЧАТЫ ==========
 @app.route('/create_group', methods=['POST'])
 @login_required
@@ -1437,6 +1439,7 @@ def chat():
         (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
         SecretChat.is_active == True
     ).all()
+    user_channels = Channel.query.join(ChannelSubscriber).filter(ChannelSubscriber.user_id == current_user.id).all()
     
     convs = []
     
@@ -1460,7 +1463,7 @@ def chat():
         convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
     
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
-    return render_template('chat.html', convs=convs)
+    return render_template('chat.html', convs=convs, user_channels=user_channels)
 
 @app.route('/messages/<int:uid>')
 @login_required
