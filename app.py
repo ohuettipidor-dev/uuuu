@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import uuid
 import re
@@ -21,13 +21,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 VOICE_FOLDER = 'static/voices'
+STICKER_FOLDER = 'static/stickers'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
+os.makedirs(STICKER_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
+app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
@@ -40,7 +43,7 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ========== КРИПТОГРАФИЯ ДЛЯ СЕКРЕТНЫХ ЧАТОВ ==========
+# ========== КРИПТОГРАФИЯ ==========
 def generate_secret_key(user_id, other_id):
     combined = f"beargram_secret_{min(user_id, other_id)}_{max(user_id, other_id)}_bear"
     return hashlib.sha256(combined.encode()).digest()
@@ -206,7 +209,6 @@ class GroupMessage(db.Model):
     sender = db.relationship('User', foreign_keys=[sender_id])
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
 
-# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
 class VoiceChannel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -227,7 +229,6 @@ class VoiceChannelMember(db.Model):
     channel = db.relationship('VoiceChannel', foreign_keys=[channel_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-# ========== ВИДЕОЗВОНКИ ==========
 class VideoCall(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -239,7 +240,6 @@ class VideoCall(db.Model):
     from_user = db.relationship('User', foreign_keys=[from_user_id])
     to_user = db.relationship('User', foreign_keys=[to_user_id])
 
-# ========== КАНАЛЫ (КАК В TELEGRAM) ==========
 class Channel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -288,23 +288,14 @@ class ChannelComment(db.Model):
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-# ========== МОНЕТИЗАЦИЯ ==========
-class Subscription(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    plan = db.Column(db.String(50), default='free')
-    expires_at = db.Column(db.DateTime, nullable=True)
-    auto_renew = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    user = db.relationship('User', foreign_keys=[user_id])
-
+# ========== ПОДАРКИ И СТИКЕРЫ ==========
 class StickerPack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_premium = db.Column(db.Boolean, default=False)
     price = db.Column(db.Float, default=0)
+    preview = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     author = db.relationship('User', foreign_keys=[author_id])
@@ -325,6 +316,30 @@ class UserSticker(db.Model):
     
     user = db.relationship('User', foreign_keys=[user_id])
     pack = db.relationship('StickerPack', foreign_keys=[pack_id])
+
+class Gift(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    gift_type = db.Column(db.String(50), nullable=False)
+    gift_id = db.Column(db.Integer, nullable=False)
+    message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_used = db.Column(db.Boolean, default=False)
+    
+    from_user = db.relationship('User', foreign_keys=[from_user_id])
+    to_user = db.relationship('User', foreign_keys=[to_user_id])
+
+# ========== МОНЕТИЗАЦИЯ ==========
+class Subscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan = db.Column(db.String(50), default='free')
+    expires_at = db.Column(db.DateTime, nullable=True)
+    auto_renew = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', foreign_keys=[user_id])
 
 class CustomTheme(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -359,29 +374,6 @@ class CloudStorage(db.Model):
     
     user = db.relationship('User', foreign_keys=[user_id])
 
-class Gift(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    gift_type = db.Column(db.String(50), nullable=False)
-    gift_id = db.Column(db.Integer, nullable=False)
-    message = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_used = db.Column(db.Boolean, default=False)
-    
-    from_user = db.relationship('User', foreign_keys=[from_user_id])
-    to_user = db.relationship('User', foreign_keys=[to_user_id])
-
-class VoiceTranscription(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    message_id = db.Column(db.Integer, nullable=False)
-    transcription = db.Column(db.Text, nullable=True)
-    used_premium = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    user = db.relationship('User', foreign_keys=[user_id])
-
 class FamilyAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -399,7 +391,6 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-# ========== ХРАНИЛИЩЕ ДЛЯ СИГНАЛИЗАЦИИ ==========
 signaling_store = {}
 
 @login_manager.user_loader
@@ -408,6 +399,14 @@ def load_user(uid):
 
 with app.app_context():
     db.create_all()
+    
+    # Добавляем тестовые стикерпаки
+    if StickerPack.query.count() == 0:
+        pack1 = StickerPack(name='Классические мишки', author_id=1, is_premium=False)
+        pack2 = StickerPack(name='Премиум набор', author_id=1, is_premium=True, price=99)
+        db.session.add(pack1)
+        db.session.add(pack2)
+        db.session.commit()
 
 @app.route('/')
 def index():
@@ -526,7 +525,6 @@ def profile():
             UserTheme.query.filter_by(user_id=current_user.id).delete()
             CloudStorage.query.filter_by(user_id=current_user.id).delete()
             Gift.query.filter((Gift.from_user_id == current_user.id) | (Gift.to_user_id == current_user.id)).delete()
-            VoiceTranscription.query.filter_by(user_id=current_user.id).delete()
             FamilyMember.query.filter_by(user_id=current_user.id).delete()
             FamilyAccount.query.filter_by(owner_id=current_user.id).delete()
             
@@ -1069,7 +1067,7 @@ def get_voice_channel_members(channel_id):
         })
     return jsonify(result)
 
-# ========== КАНАЛЫ (ТЕЛЕГРАМ СТИЛЬ) ==========
+# ========== КАНАЛЫ ==========
 @app.route('/channels')
 @login_required
 def channels_list():
@@ -1100,6 +1098,9 @@ def channel_view(identifier):
     is_admin = channel.created_by == current_user.id
     
     posts = ChannelPost.query.filter_by(channel_id=channel.id).order_by(ChannelPost.timestamp.desc()).all()
+    
+    for post in posts:
+        post.comments = ChannelComment.query.filter_by(post_id=post.id).order_by(ChannelComment.timestamp.asc()).all()
     
     return render_template('channel.html', 
                          channel=channel, 
@@ -1252,6 +1253,436 @@ def api_channels_search():
             'username': f'@{ch.username}' if ch.username else None,
             'avatar': ch.avatar,
             'subscribers': ch.subscribers_count
+        })
+    
+    return jsonify(result)
+
+# ========== СТИКЕРЫ ==========
+@app.route('/stickers')
+@login_required
+def stickers_list():
+    free_packs = StickerPack.query.filter_by(is_premium=False).all()
+    premium_packs = StickerPack.query.filter_by(is_premium=True).all()
+    
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    user_pack_ids = [up.pack_id for up in user_packs]
+    
+    return render_template('stickers.html', 
+                         free_packs=free_packs, 
+                         premium_packs=premium_packs,
+                         user_pack_ids=user_pack_ids)
+
+@app.route('/stickers/purchase/<int:pack_id>', methods=['POST'])
+@login_required
+def purchase_sticker_pack(pack_id):
+    pack = StickerPack.query.get(pack_id)
+    if not pack:
+        return jsonify({'error': 'Стикерпак не найден'}), 404
+    
+    existing = UserSticker.query.filter_by(user_id=current_user.id, pack_id=pack_id).first()
+    if existing:
+        return jsonify({'error': 'У вас уже есть этот стикерпак'}), 400
+    
+    if pack.is_premium and pack.price > 0:
+        # Здесь интеграция с платёжной системой
+        pass
+    
+    user_pack = UserSticker(user_id=current_user.id, pack_id=pack_id)
+    db.session.add(user_pack)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'pack_id': pack_id})
+
+@app.route('/stickers/my')
+@login_required
+def my_stickers():
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    packs = []
+    for up in user_packs:
+        pack = StickerPack.query.get(up.pack_id)
+        if pack:
+            stickers = Sticker.query.filter_by(pack_id=pack.id).limit(12).all()
+            packs.append({
+                'id': pack.id,
+                'name': pack.name,
+                'preview': pack.preview,
+                'stickers': stickers
+            })
+    return render_template('my_stickers.html', packs=packs)
+
+@app.route('/stickers/send/<int:sticker_id>', methods=['POST'])
+@login_required
+def send_sticker(sticker_id):
+    data = request.get_json()
+    receiver_id = data.get('receiver_id')
+    chat_type = data.get('chat_type', 'private')
+    
+    sticker = Sticker.query.get(sticker_id)
+    if not sticker:
+        return jsonify({'error': 'Стикер не найден'}), 404
+    
+    user_pack = UserSticker.query.filter_by(user_id=current_user.id, pack_id=sticker.pack_id).first()
+    if not user_pack:
+        pack = StickerPack.query.get(sticker.pack_id)
+        if pack and pack.is_premium:
+            return jsonify({'error': 'У вас нет этого стикерпака'}), 403
+    
+    if chat_type == 'private':
+        msg = Message(
+            content=f'<img src="{sticker.file_path}" class="sticker" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
+            sender_id=current_user.id,
+            receiver_id=receiver_id
+        )
+        db.session.add(msg)
+    else:
+        msg = GroupMessage(
+            content=f'<img src="{sticker.file_path}" class="sticker" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
+            sender_id=current_user.id,
+            group_id=receiver_id
+        )
+        db.session.add(msg)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ========== ПОДАРКИ ==========
+@app.route('/gifts/send', methods=['POST'])
+@login_required
+def send_gift():
+    data = request.get_json()
+    to_user_id = data.get('to_user_id')
+    gift_type = data.get('gift_type')
+    gift_id = data.get('gift_id')
+    message = data.get('message', '')
+    
+    to_user = User.query.get(to_user_id)
+    if not to_user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    if gift_type == 'sticker_pack':
+        item = StickerPack.query.get(gift_id)
+        if not item:
+            return jsonify({'error': 'Стикерпак не найден'}), 404
+        price = item.price
+    elif gift_type == 'premium_month':
+        price = 299
+    else:
+        return jsonify({'error': 'Неверный тип подарка'}), 400
+    
+    gift = Gift(
+        from_user_id=current_user.id,
+        to_user_id=to_user_id,
+        gift_type=gift_type,
+        gift_id=gift_id,
+        message=message
+    )
+    db.session.add(gift)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'price': price})
+
+@app.route('/gifts/my')
+@login_required
+def my_gifts():
+    gifts = Gift.query.filter_by(to_user_id=current_user.id, is_used=False).all()
+    gifts_data = []
+    for g in gifts:
+        from_user = User.query.get(g.from_user_id)
+        gift_info = {'type': g.gift_type, 'id': g.gift_id, 'message': g.message}
+        
+        if g.gift_type == 'sticker_pack':
+            pack = StickerPack.query.get(g.gift_id)
+            gift_info['name'] = pack.name if pack else 'Стикерпак'
+        elif g.gift_type == 'premium_month':
+            gift_info['name'] = 'Premium подписка на месяц'
+        
+        gifts_data.append({
+            'id': g.id,
+            'from_user': from_user,
+            'gift': gift_info,
+            'created_at': g.created_at
+        })
+    
+    return render_template('my_gifts.html', gifts=gifts_data)
+
+@app.route('/gifts/use/<int:gift_id>', methods=['POST'])
+@login_required
+def use_gift(gift_id):
+    gift = Gift.query.get(gift_id)
+    if not gift or gift.to_user_id != current_user.id:
+        return jsonify({'error': 'Подарок не найден'}), 404
+    
+    if gift.is_used:
+        return jsonify({'error': 'Подарок уже использован'}), 400
+    
+    if gift.gift_type == 'sticker_pack':
+        existing = UserSticker.query.filter_by(user_id=current_user.id, pack_id=gift.gift_id).first()
+        if not existing:
+            user_pack = UserSticker(user_id=current_user.id, pack_id=gift.gift_id)
+            db.session.add(user_pack)
+    elif gift.gift_type == 'premium_month':
+        sub = Subscription.query.filter_by(user_id=current_user.id).first()
+        if not sub:
+            sub = Subscription(user_id=current_user.id)
+            db.session.add(sub)
+        sub.plan = 'premium'
+        sub.expires_at = datetime.utcnow() + timedelta(days=30)
+    
+    gift.is_used = True
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+# ========== КАСТОМНЫЕ ТЕМЫ ==========
+@app.route('/themes')
+@login_required
+def themes_list():
+    free_themes = CustomTheme.query.filter_by(is_premium=False).all()
+    premium_themes = CustomTheme.query.filter_by(is_premium=True).all()
+    
+    user_themes = UserTheme.query.filter_by(user_id=current_user.id).all()
+    user_theme_ids = [ut.theme_id for ut in user_themes]
+    
+    current_theme = None
+    if current_user.current_theme_id:
+        current_theme = CustomTheme.query.get(current_user.current_theme_id)
+    
+    return render_template('themes.html', 
+                         free_themes=free_themes,
+                         premium_themes=premium_themes,
+                         user_theme_ids=user_theme_ids,
+                         current_theme=current_theme)
+
+@app.route('/themes/apply/<int:theme_id>', methods=['POST'])
+@login_required
+def apply_theme(theme_id):
+    theme = CustomTheme.query.get(theme_id)
+    if not theme:
+        return jsonify({'error': 'Тема не найдена'}), 404
+    
+    if theme.is_premium:
+        user_has = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
+        if not user_has:
+            return jsonify({'error': 'Тема не куплена'}), 403
+    
+    current_user.current_theme_id = theme_id
+    db.session.commit()
+    
+    return jsonify({'success': True, 'theme': {
+        'primary': theme.primary_color,
+        'secondary': theme.secondary_color,
+        'bubble_sent': theme.bubble_color_sent,
+        'bubble_received': theme.bubble_color_received,
+        'text': theme.text_color
+    }})
+
+@app.route('/themes/purchase/<int:theme_id>', methods=['POST'])
+@login_required
+def purchase_theme(theme_id):
+    theme = CustomTheme.query.get(theme_id)
+    if not theme:
+        return jsonify({'error': 'Тема не найдена'}), 404
+    
+    existing = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
+    if existing:
+        return jsonify({'error': 'Тема уже куплена'}), 400
+    
+    if theme.is_premium and theme.price > 0:
+        pass
+    
+    user_theme = UserTheme(user_id=current_user.id, theme_id=theme_id)
+    db.session.add(user_theme)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/themes/create', methods=['GET', 'POST'])
+@login_required
+def create_theme():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        primary = request.form.get('primary_color', '#ff9a9e')
+        secondary = request.form.get('secondary_color', '#fecfef')
+        bubble_sent = request.form.get('bubble_sent', '#ff6b6b')
+        bubble_received = request.form.get('bubble_received', '#ffffff')
+        text = request.form.get('text_color', '#333333')
+        is_premium = request.form.get('is_premium') == 'on'
+        price = float(request.form.get('price', 0))
+        
+        theme = CustomTheme(
+            name=name,
+            author_id=current_user.id,
+            primary_color=primary,
+            secondary_color=secondary,
+            bubble_color_sent=bubble_sent,
+            bubble_color_received=bubble_received,
+            text_color=text,
+            is_premium=is_premium,
+            price=price
+        )
+        db.session.add(theme)
+        db.session.commit()
+        
+        flash('Тема создана!', 'success')
+        return redirect(url_for('themes_list'))
+    
+    return render_template('create_theme.html')
+
+# ========== ОБЛАЧНОЕ ХРАНИЛИЩЕ ==========
+@app.route('/storage')
+@login_required
+def storage_page():
+    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
+    if not storage:
+        storage = CloudStorage(user_id=current_user.id)
+        db.session.add(storage)
+        db.session.commit()
+    
+    user_files = []
+    if os.path.exists(FILE_FOLDER):
+        for f in os.listdir(FILE_FOLDER):
+            if f.startswith(f"user_{current_user.id}_"):
+                file_path = os.path.join(FILE_FOLDER, f)
+                user_files.append({
+                    'name': f,
+                    'size': os.path.getsize(file_path),
+                    'modified': datetime.fromtimestamp(os.path.getmtime(file_path)),
+                    'url': f'/static/uploads/{f}'
+                })
+    
+    return render_template('storage.html', 
+                         storage=storage,
+                         user_files=user_files)
+
+@app.route('/storage/upload', methods=['POST'])
+@login_required
+def upload_to_storage():
+    if 'file' not in request.files:
+        flash('Нет файла', 'danger')
+        return redirect(url_for('storage_page'))
+    
+    f = request.files['file']
+    if f.filename == '':
+        flash('Файл не выбран', 'danger')
+        return redirect(url_for('storage_page'))
+    
+    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
+    if not storage:
+        storage = CloudStorage(user_id=current_user.id)
+        db.session.add(storage)
+        db.session.commit()
+    
+    file_size = len(f.read())
+    f.seek(0)
+    
+    if storage.used_bytes + file_size > storage.total_bytes:
+        flash('Недостаточно места в хранилище', 'danger')
+        return redirect(url_for('storage_page'))
+    
+    ext = f.filename.rsplit('.', 1)[1].lower() if '.' in f.filename else 'bin'
+    name = f"user_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+    f.save(os.path.join(FILE_FOLDER, name))
+    
+    storage.used_bytes += file_size
+    db.session.commit()
+    
+    flash('Файл загружен!', 'success')
+    return redirect(url_for('storage_page'))
+
+@app.route('/storage/delete/<string:filename>', methods=['POST'])
+@login_required
+def delete_from_storage(filename):
+    file_path = os.path.join(FILE_FOLDER, filename)
+    if os.path.exists(file_path) and filename.startswith(f"user_{current_user.id}_"):
+        file_size = os.path.getsize(file_path)
+        os.remove(file_path)
+        
+        storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
+        if storage:
+            storage.used_bytes -= file_size
+            db.session.commit()
+        
+        flash('Файл удалён', 'success')
+    else:
+        flash('Файл не найден', 'danger')
+    
+    return redirect(url_for('storage_page'))
+
+@app.route('/storage/upgrade', methods=['POST'])
+@login_required
+def upgrade_storage():
+    data = request.get_json()
+    additional_gb = data.get('gb', 10)
+    price = additional_gb * 50
+    
+    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
+    if not storage:
+        storage = CloudStorage(user_id=current_user.id)
+        db.session.add(storage)
+        db.session.commit()
+    
+    storage.total_bytes += additional_gb * 1024 * 1024 * 1024
+    storage.upgraded_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'total_gb': storage.total_bytes / (1024**3)})
+
+# ========== СЕМЕЙНЫЕ АККАУНТЫ ==========
+@app.route('/family/create', methods=['POST'])
+@login_required
+def create_family():
+    data = request.get_json()
+    name = data.get('name', 'Моя семья')
+    
+    family = FamilyAccount(owner_id=current_user.id, name=name)
+    db.session.add(family)
+    db.session.commit()
+    
+    member = FamilyMember(family_id=family.id, user_id=current_user.id)
+    db.session.add(member)
+    db.session.commit()
+    
+    return jsonify({'family_id': family.id})
+
+@app.route('/family/invite/<int:family_id>', methods=['POST'])
+@login_required
+def invite_to_family(family_id):
+    family = FamilyAccount.query.get(family_id)
+    if not family or family.owner_id != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    data = request.get_json()
+    username = data.get('username')
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    existing = FamilyMember.query.filter_by(family_id=family_id, user_id=user.id).first()
+    if existing:
+        return jsonify({'error': 'Уже в семье'}), 400
+    
+    member = FamilyMember(family_id=family_id, user_id=user.id)
+    db.session.add(member)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/family/members/<int:family_id>')
+@login_required
+def family_members(family_id):
+    family = FamilyAccount.query.get(family_id)
+    if not family:
+        return jsonify({'error': 'Семья не найдена'}), 404
+    
+    members = FamilyMember.query.filter_by(family_id=family_id).all()
+    result = []
+    for m in members:
+        result.append({
+            'id': m.user.id,
+            'username': m.user.username,
+            'avatar': m.user.avatar,
+            'is_owner': m.user_id == family.owner_id
         })
     
     return jsonify(result)
