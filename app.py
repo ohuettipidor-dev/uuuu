@@ -9,6 +9,7 @@ import re
 import json
 import hashlib
 import base64
+import requests
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -274,6 +275,7 @@ class ChannelPost(db.Model):
     channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'), nullable=False)
     views = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
+    attachments = db.Column(db.Text, default='')
     
     author = db.relationship('User', foreign_keys=[author_id])
     channel = db.relationship('Channel', foreign_keys=[channel_id])
@@ -399,14 +401,13 @@ def load_user(uid):
 
 with app.app_context():
     db.create_all()
-    
-    # Добавляем тестовые стикерпаки
-    if StickerPack.query.count() == 0:
-        pack1 = StickerPack(name='Классические мишки', author_id=1, is_premium=False)
-        pack2 = StickerPack(name='Премиум набор', author_id=1, is_premium=True, price=99)
-        db.session.add(pack1)
-        db.session.add(pack2)
-        db.session.commit()
+
+@app.template_filter('json_decode')
+def json_decode_filter(data):
+    try:
+        return json.loads(data) if data else []
+    except:
+        return []
 
 @app.route('/')
 def index():
@@ -1159,6 +1160,7 @@ def channel_subscribe(channel_id):
     
     return redirect(url_for('channel_view', identifier=channel_id))
 
+# ========== ОСНОВНОЙ МАРШРУТ ДЛЯ СОЗДАНИЯ ПОСТА С НЕСКОЛЬКИМИ ФАЙЛАМИ ==========
 @app.route('/channel/post/<int:channel_id>', methods=['POST'])
 @login_required
 def channel_post_create(channel_id):
@@ -1168,22 +1170,29 @@ def channel_post_create(channel_id):
         return redirect(url_for('channel_view', identifier=channel_id))
     
     content = request.form.get('content', '')
-    if not content and not request.files.get('file'):
-        flash('Введите текст или прикрепите файл', 'danger')
+    files = request.files.getlist('files')
+    
+    if not content and not files:
+        flash('Введите текст или прикрепите файлы', 'danger')
         return redirect(url_for('channel_view', identifier=channel_id))
     
-    file_path = None
-    file_name = None
-    file_type = None
+    # Создаём пост
+    post = ChannelPost(
+        content=content,
+        author_id=current_user.id,
+        channel_id=channel_id
+    )
+    db.session.add(post)
+    db.session.commit()
     
-    if 'file' in request.files:
-        f = request.files['file']
-        if f and allowed_file(f.filename):
+    # Сохраняем ВСЕ файлы
+    attachments = []
+    for f in files:
+        if f and f.filename and allowed_file(f.filename):
             ext = f.filename.rsplit('.', 1)[1].lower()
-            name = f"channel_{channel_id}_{uuid.uuid4().hex}.{ext}"
+            name = f"channel_{channel_id}_{post.id}_{uuid.uuid4().hex}.{ext}"
             f.save(os.path.join(FILE_FOLDER, name))
-            file_path = f'/static/uploads/{name}'
-            file_name = f.filename
+            
             if ext in ['png','jpg','jpeg','gif','webp','bmp']:
                 file_type = 'image'
             elif ext in ['mp3','wav','ogg','flac','m4a']:
@@ -1192,19 +1201,100 @@ def channel_post_create(channel_id):
                 file_type = 'video'
             else:
                 file_type = 'document'
+            
+            attachments.append({
+                'path': f'/static/uploads/{name}',
+                'name': f.filename,
+                'type': file_type
+            })
     
-    post = ChannelPost(
-        content=content,
-        file_path=file_path,
-        file_name=file_name,
-        file_type=file_type,
-        author_id=current_user.id,
-        channel_id=channel_id
-    )
-    db.session.add(post)
+    post.attachments = json.dumps(attachments)
     db.session.commit()
     
+    flash('Пост опубликован!', 'success')
     return redirect(url_for('channel_view', identifier=channel_id))
+
+# ========== РЕДАКТИРОВАНИЕ ПОСТОВ КАНАЛА ==========
+@app.route('/channel/post/edit/<int:post_id>', methods=['POST'])
+@login_required
+def edit_channel_post(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post or post.channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    data = request.get_json()
+    post.content = data.get('content', post.content)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/channel/post/delete/<int:post_id>', methods=['POST'])
+@login_required
+def delete_channel_post(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post or post.channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    # Удаляем файлы, если есть
+    if post.attachments:
+        attachments = json.loads(post.attachments)
+        for att in attachments:
+            file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+    
+    if post.file_path and os.path.exists(os.path.join(FILE_FOLDER, os.path.basename(post.file_path))):
+        os.remove(os.path.join(FILE_FOLDER, os.path.basename(post.file_path)))
+    
+    db.session.delete(post)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/channel/delete/<int:channel_id>', methods=['POST'])
+@login_required
+def delete_channel(channel_id):
+    channel = Channel.query.get(channel_id)
+    if not channel or channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    # Удаляем все посты и их файлы
+    posts = ChannelPost.query.filter_by(channel_id=channel_id).all()
+    for post in posts:
+        if post.attachments:
+            attachments = json.loads(post.attachments)
+            for att in attachments:
+                file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+        if post.file_path:
+            file_path = os.path.join(FILE_FOLDER, os.path.basename(post.file_path))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        db.session.delete(post)
+    
+    ChannelComment.query.filter_by(channel_id=channel_id).delete()
+    ChannelSubscriber.query.filter_by(channel_id=channel_id).delete()
+    
+    db.session.delete(channel)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/channel/edit/<int:channel_id>', methods=['POST'])
+@login_required
+def edit_channel(channel_id):
+    channel = Channel.query.get(channel_id)
+    if not channel or channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    data = request.get_json()
+    channel.name = data.get('name', channel.name)
+    channel.description = data.get('description', channel.description)
+    channel.username = data.get('username', channel.username)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/channel/comment/<int:post_id>', methods=['POST'])
 @login_required
@@ -1432,260 +1522,6 @@ def use_gift(gift_id):
     db.session.commit()
     
     return jsonify({'success': True})
-
-# ========== КАСТОМНЫЕ ТЕМЫ ==========
-@app.route('/themes')
-@login_required
-def themes_list():
-    free_themes = CustomTheme.query.filter_by(is_premium=False).all()
-    premium_themes = CustomTheme.query.filter_by(is_premium=True).all()
-    
-    user_themes = UserTheme.query.filter_by(user_id=current_user.id).all()
-    user_theme_ids = [ut.theme_id for ut in user_themes]
-    
-    current_theme = None
-    if current_user.current_theme_id:
-        current_theme = CustomTheme.query.get(current_user.current_theme_id)
-    
-    return render_template('themes.html', 
-                         free_themes=free_themes,
-                         premium_themes=premium_themes,
-                         user_theme_ids=user_theme_ids,
-                         current_theme=current_theme)
-
-@app.route('/themes/apply/<int:theme_id>', methods=['POST'])
-@login_required
-def apply_theme(theme_id):
-    theme = CustomTheme.query.get(theme_id)
-    if not theme:
-        return jsonify({'error': 'Тема не найдена'}), 404
-    
-    if theme.is_premium:
-        user_has = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
-        if not user_has:
-            return jsonify({'error': 'Тема не куплена'}), 403
-    
-    current_user.current_theme_id = theme_id
-    db.session.commit()
-    
-    return jsonify({'success': True, 'theme': {
-        'primary': theme.primary_color,
-        'secondary': theme.secondary_color,
-        'bubble_sent': theme.bubble_color_sent,
-        'bubble_received': theme.bubble_color_received,
-        'text': theme.text_color
-    }})
-
-@app.route('/themes/purchase/<int:theme_id>', methods=['POST'])
-@login_required
-def purchase_theme(theme_id):
-    theme = CustomTheme.query.get(theme_id)
-    if not theme:
-        return jsonify({'error': 'Тема не найдена'}), 404
-    
-    existing = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
-    if existing:
-        return jsonify({'error': 'Тема уже куплена'}), 400
-    
-    if theme.is_premium and theme.price > 0:
-        pass
-    
-    user_theme = UserTheme(user_id=current_user.id, theme_id=theme_id)
-    db.session.add(user_theme)
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-@app.route('/themes/create', methods=['GET', 'POST'])
-@login_required
-def create_theme():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        primary = request.form.get('primary_color', '#ff9a9e')
-        secondary = request.form.get('secondary_color', '#fecfef')
-        bubble_sent = request.form.get('bubble_sent', '#ff6b6b')
-        bubble_received = request.form.get('bubble_received', '#ffffff')
-        text = request.form.get('text_color', '#333333')
-        is_premium = request.form.get('is_premium') == 'on'
-        price = float(request.form.get('price', 0))
-        
-        theme = CustomTheme(
-            name=name,
-            author_id=current_user.id,
-            primary_color=primary,
-            secondary_color=secondary,
-            bubble_color_sent=bubble_sent,
-            bubble_color_received=bubble_received,
-            text_color=text,
-            is_premium=is_premium,
-            price=price
-        )
-        db.session.add(theme)
-        db.session.commit()
-        
-        flash('Тема создана!', 'success')
-        return redirect(url_for('themes_list'))
-    
-    return render_template('create_theme.html')
-
-# ========== ОБЛАЧНОЕ ХРАНИЛИЩЕ ==========
-@app.route('/storage')
-@login_required
-def storage_page():
-    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-    if not storage:
-        storage = CloudStorage(user_id=current_user.id)
-        db.session.add(storage)
-        db.session.commit()
-    
-    user_files = []
-    if os.path.exists(FILE_FOLDER):
-        for f in os.listdir(FILE_FOLDER):
-            if f.startswith(f"user_{current_user.id}_"):
-                file_path = os.path.join(FILE_FOLDER, f)
-                user_files.append({
-                    'name': f,
-                    'size': os.path.getsize(file_path),
-                    'modified': datetime.fromtimestamp(os.path.getmtime(file_path)),
-                    'url': f'/static/uploads/{f}'
-                })
-    
-    return render_template('storage.html', 
-                         storage=storage,
-                         user_files=user_files)
-
-@app.route('/storage/upload', methods=['POST'])
-@login_required
-def upload_to_storage():
-    if 'file' not in request.files:
-        flash('Нет файла', 'danger')
-        return redirect(url_for('storage_page'))
-    
-    f = request.files['file']
-    if f.filename == '':
-        flash('Файл не выбран', 'danger')
-        return redirect(url_for('storage_page'))
-    
-    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-    if not storage:
-        storage = CloudStorage(user_id=current_user.id)
-        db.session.add(storage)
-        db.session.commit()
-    
-    file_size = len(f.read())
-    f.seek(0)
-    
-    if storage.used_bytes + file_size > storage.total_bytes:
-        flash('Недостаточно места в хранилище', 'danger')
-        return redirect(url_for('storage_page'))
-    
-    ext = f.filename.rsplit('.', 1)[1].lower() if '.' in f.filename else 'bin'
-    name = f"user_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-    f.save(os.path.join(FILE_FOLDER, name))
-    
-    storage.used_bytes += file_size
-    db.session.commit()
-    
-    flash('Файл загружен!', 'success')
-    return redirect(url_for('storage_page'))
-
-@app.route('/storage/delete/<string:filename>', methods=['POST'])
-@login_required
-def delete_from_storage(filename):
-    file_path = os.path.join(FILE_FOLDER, filename)
-    if os.path.exists(file_path) and filename.startswith(f"user_{current_user.id}_"):
-        file_size = os.path.getsize(file_path)
-        os.remove(file_path)
-        
-        storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-        if storage:
-            storage.used_bytes -= file_size
-            db.session.commit()
-        
-        flash('Файл удалён', 'success')
-    else:
-        flash('Файл не найден', 'danger')
-    
-    return redirect(url_for('storage_page'))
-
-@app.route('/storage/upgrade', methods=['POST'])
-@login_required
-def upgrade_storage():
-    data = request.get_json()
-    additional_gb = data.get('gb', 10)
-    price = additional_gb * 50
-    
-    storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
-    if not storage:
-        storage = CloudStorage(user_id=current_user.id)
-        db.session.add(storage)
-        db.session.commit()
-    
-    storage.total_bytes += additional_gb * 1024 * 1024 * 1024
-    storage.upgraded_at = datetime.utcnow()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'total_gb': storage.total_bytes / (1024**3)})
-
-# ========== СЕМЕЙНЫЕ АККАУНТЫ ==========
-@app.route('/family/create', methods=['POST'])
-@login_required
-def create_family():
-    data = request.get_json()
-    name = data.get('name', 'Моя семья')
-    
-    family = FamilyAccount(owner_id=current_user.id, name=name)
-    db.session.add(family)
-    db.session.commit()
-    
-    member = FamilyMember(family_id=family.id, user_id=current_user.id)
-    db.session.add(member)
-    db.session.commit()
-    
-    return jsonify({'family_id': family.id})
-
-@app.route('/family/invite/<int:family_id>', methods=['POST'])
-@login_required
-def invite_to_family(family_id):
-    family = FamilyAccount.query.get(family_id)
-    if not family or family.owner_id != current_user.id:
-        return jsonify({'error': 'Нет прав'}), 403
-    
-    data = request.get_json()
-    username = data.get('username')
-    user = User.query.filter_by(username=username).first()
-    
-    if not user:
-        return jsonify({'error': 'Пользователь не найден'}), 404
-    
-    existing = FamilyMember.query.filter_by(family_id=family_id, user_id=user.id).first()
-    if existing:
-        return jsonify({'error': 'Уже в семье'}), 400
-    
-    member = FamilyMember(family_id=family_id, user_id=user.id)
-    db.session.add(member)
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-@app.route('/family/members/<int:family_id>')
-@login_required
-def family_members(family_id):
-    family = FamilyAccount.query.get(family_id)
-    if not family:
-        return jsonify({'error': 'Семья не найдена'}), 404
-    
-    members = FamilyMember.query.filter_by(family_id=family_id).all()
-    result = []
-    for m in members:
-        result.append({
-            'id': m.user.id,
-            'username': m.user.username,
-            'avatar': m.user.avatar,
-            'is_owner': m.user_id == family.owner_id
-        })
-    
-    return jsonify(result)
 
 # ========== ОБЫЧНЫЕ ЧАТЫ ==========
 @app.route('/create_group', methods=['POST'])

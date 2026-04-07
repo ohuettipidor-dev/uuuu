@@ -31,7 +31,13 @@
         .post-author-name{font-weight:500;font-size:13px;color:#333}
         .post-time{font-size:10px;color:#aaa}
         .post-content{font-size:14px;color:#333;margin-bottom:12px;line-height:1.4}
-        .post-media img,.post-media video{max-width:100%;border-radius:16px;margin-top:8px}
+        .attachments-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:8px;margin-top:8px}
+        .attachment-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;transition:all 0.2s;text-align:center}
+        .attachment-item:hover{background:#e8e8e8;transform:scale(1.02)}
+        .attachment-image{width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:4px}
+        .attachment-audio{width:100%;height:40px;margin-top:4px}
+        .attachment-video{width:100%;border-radius:8px}
+        .attachment-document{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;color:#ff6b6b}
         .post-stats{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0}
         .post-stat{font-size:12px;color:#888;display:flex;align-items:center;gap:4px;cursor:pointer}
         .comment-section{margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:none}
@@ -53,7 +59,11 @@
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
         .new-post-input textarea:focus{border-color:#ff6b6b}
-        .file-input{display:none}
+        .selected-files-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;margin-bottom:8px}
+        .selected-file{background:#f0f0f0;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px}
+        .remove-file{cursor:pointer;color:#ff4444;font-weight:bold;margin-left:5px}
+        .post-submit-btn{background:#4cd964;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-top:8px}
+        .attach-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-right:8px;display:inline-block}
         
         @media (max-width:480px){
             .container{padding:0}
@@ -61,6 +71,7 @@
             .header{padding:10px}
             .channel-avatar{width:40px;height:40px;font-size:20px}
             .subscribe-btn,.subscribed-btn{padding:6px 14px;font-size:12px}
+            .attachments-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
         }
     </style>
 </head>
@@ -112,7 +123,24 @@
                 </div>
             </div>
             <div class="post-content">{{ post.content|safe }}</div>
-            {% if post.file_path %}
+            
+            {% if post.attachments %}
+            <div class="attachments-grid">
+                {% for att in post.attachments|json_decode %}
+                <div class="attachment-item" onclick="window.open('{{ att.path }}')">
+                    {% if att.type == 'image' %}
+                        <img src="{{ att.path }}" class="attachment-image">
+                    {% elif att.type == 'audio' %}
+                        <audio controls src="{{ att.path }}" class="attachment-audio"></audio>
+                    {% elif att.type == 'video' %}
+                        <video controls src="{{ att.path }}" class="attachment-video"></video>
+                    {% else %}
+                        <div class="attachment-document">📎 {{ att.name[:20] }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% elif post.file_path %}
                 <div class="post-media">
                     {% if post.file_type == 'image' %}
                         <img src="{{ post.file_path }}" onclick="window.open(this.src)">
@@ -125,6 +153,7 @@
                     {% endif %}
                 </div>
             {% endif %}
+            
             <div class="post-stats">
                 <div class="post-stat" onclick="toggleComments({{ post.id }})">💬 Комментарии ({{ post.comments|length }})</div>
                 <div class="post-stat">👁 {{ post.views }} просмотров</div>
@@ -173,16 +202,17 @@
     
     {% if is_admin %}
     <div class="new-post-area">
-        <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data">
+        <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
             <div class="new-post-input">
                 <textarea name="content" rows="3" placeholder="📢 Напишите пост..."></textarea>
-                <div class="post-actions" style="margin-top:0;border-top:none;padding-top:0">
-                    <label class="post-action-btn" style="cursor:pointer;background:#ff6b6b;color:white;">
-                        📎 Выбрать файлы
-                        <input type="file" name="files" multiple class="file-input" onchange="this.form.submit()">
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <label class="attach-btn" style="cursor:pointer; display:inline-block;">
+                        📎 Выбрать файлы (до 10)
+                        <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileList()">
                     </label>
-                    <button type="submit" class="post-action-btn" style="background:#4cd964;color:white;">📤 Опубликовать</button>
+                    <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
+                <div class="selected-files-list" id="selectedFilesList"></div>
             </div>
         </form>
     </div>
@@ -190,6 +220,35 @@
 </div>
 
 <script>
+    let selectedFiles = [];
+    
+    function updateFileList() {
+        const input = document.getElementById('fileInput');
+        const listDiv = document.getElementById('selectedFilesList');
+        selectedFiles = Array.from(input.files);
+        
+        if(selectedFiles.length === 0) {
+            listDiv.innerHTML = '';
+            return;
+        }
+        
+        listDiv.innerHTML = selectedFiles.map((file, idx) => `
+            <div class="selected-file">
+                📎 ${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}
+                <span class="remove-file" onclick="removeFile(${idx})">✖</span>
+            </div>
+        `).join('');
+    }
+    
+    function removeFile(index) {
+        const input = document.getElementById('fileInput');
+        const dt = new DataTransfer();
+        selectedFiles = selectedFiles.filter((_, i) => i !== index);
+        selectedFiles.forEach(f => dt.items.add(f));
+        input.files = dt.files;
+        updateFileList();
+    }
+    
     function toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
         section.classList.toggle('active');
