@@ -18,7 +18,6 @@
         .icon-btn{background:rgba(255,255,255,0.9);padding:8px;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
         
-        /* ПОИСКОВАЯ СТРОКА */
         .search-container{display:none;margin-bottom:16px;animation:slideDown 0.3s ease}
         .search-container.active{display:block}
         @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
@@ -26,7 +25,7 @@
         .search-input:focus{border-color:#ff6b6b;background:white}
         .search-results{background:white;border-radius:20px;margin-top:8px;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
         .search-results.active{display:block}
-        .search-result-item{padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.2s}
+        .search-result-item{padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
         .search-result-item:hover{background:#f9f9f9}
         .search-result-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
         .search-result-avatar img{width:100%;height:100%;object-fit:cover}
@@ -94,12 +93,13 @@
             <a href="/channels" class="icon-btn">📢</a>
             <a href="/voice_channels" class="icon-btn">🎤</a>
             <a href="/secret_chats" class="icon-btn">🔒</a>
+            <a href="/stickers" class="icon-btn">🎨</a>
+            <a href="/my_gifts" class="icon-btn">🎁</a>
             <a href="/profile" class="icon-btn">🧸</a>
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
     </div>
     
-    <!-- СКРЫТАЯ ПОИСКОВАЯ СТРОКА -->
     <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
@@ -225,7 +225,6 @@
         }
     };
     
-    // ПОИСК ПОЛЬЗОВАТЕЛЕЙ
     const searchToggleBtn = document.getElementById('searchToggleBtn');
     const searchContainer = document.getElementById('searchContainer');
     const searchInput = document.getElementById('searchInput');
