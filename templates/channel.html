@@ -9,7 +9,7 @@
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94);backdrop-filter:blur(10px)}
         
-        .header{padding:12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .header{padding:12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap}
         .back{background:#ff6b6b;padding:6px 14px;border-radius:25px;cursor:pointer;color:white;text-decoration:none;font-size:13px}
         .channel-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
         .channel-avatar img{width:100%;height:100%;object-fit:cover}
@@ -19,12 +19,15 @@
         .channel-stats{font-size:11px;color:#aaa}
         .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
         .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:25px;text-decoration:none;color:#ff6b6b;font-size:13px}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:25px;text-decoration:none;color:#ff6b6b;font-size:13px;cursor:pointer;border:none}
+        .danger-btn{background:#ff4444;color:white;padding:6px 12px;border-radius:25px;text-decoration:none;font-size:13px;cursor:pointer;border:none}
+        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 12px;border-radius:25px;cursor:pointer;font-size:13px}
         
         .posts{flex:1;overflow-y:auto;padding:12px}
         .post{background:white;border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
         .post-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
         .post-author-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
+        .post-author-avatar img{width:100%;height:100%;object-fit:cover}
         .post-author-name{font-weight:500;font-size:13px;color:#333}
         .post-time{font-size:10px;color:#aaa}
         .post-content{font-size:14px;color:#333;margin-bottom:12px;line-height:1.4}
@@ -37,24 +40,27 @@
         .comment-input input{flex:1;padding:10px;border-radius:25px;border:1px solid #ffb3b3;outline:none}
         .comment-input button{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:25px;cursor:pointer}
         .comment{display:flex;gap:10px;margin-bottom:10px;padding:8px;background:#f9f9f9;border-radius:16px}
-        .comment-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px}
+        .comment-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;overflow:hidden}
+        .comment-avatar img{width:100%;height:100%;object-fit:cover}
         .comment-content{flex:1}
         .comment-name{font-weight:500;font-size:12px;color:#333}
         .comment-text{font-size:12px;color:#666}
         .comment-time{font-size:9px;color:#aaa}
-        
-        .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .new-post-input{display:flex;gap:8px;align-items:flex-start}
-        .new-post-input textarea{flex:1;padding:10px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit}
-        .new-post-input textarea:focus{border-color:#ff6b6b}
-        .post-actions{display:flex;gap:8px;margin-top:8px}
+        .post-actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0}
         .post-action-btn{background:#f0f0f0;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px}
         .post-action-btn:hover{background:#e0e0e0}
+        
+        .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
+        .new-post-input textarea:focus{border-color:#ff6b6b}
         .file-input{display:none}
         
         @media (max-width:480px){
             .container{padding:0}
             .post{padding:12px}
+            .header{padding:10px}
+            .channel-avatar{width:40px;height:40px;font-size:20px}
+            .subscribe-btn,.subscribed-btn{padding:6px 14px;font-size:12px}
         }
     </style>
 </head>
@@ -75,7 +81,10 @@
             <div class="channel-stats">👥 {{ channel.subscribers_count }} подписчиков</div>
         </div>
         {% if is_admin %}
-            <span style="background:#ff6b6b20;color:#ff6b6b;padding:4px 10px;border-radius:20px;font-size:12px">Админ</span>
+            <div style="display:flex; gap:8px;">
+                <button class="edit-btn" onclick="editChannel()">✏️ Редактировать</button>
+                <button class="danger-btn" onclick="deleteChannel()">🗑️ Удалить</button>
+            </div>
         {% else %}
             <form method="POST" action="/channel/subscribe/{{ channel.id }}" style="margin:0">
                 <button type="submit" class="{% if is_subscribed %}subscribed-btn{% else %}subscribe-btn{% endif %}">
@@ -117,7 +126,7 @@
                 </div>
             {% endif %}
             <div class="post-stats">
-                <div class="post-stat" onclick="toggleComments({{ post.id }})">💬 Комментарии</div>
+                <div class="post-stat" onclick="toggleComments({{ post.id }})">💬 Комментарии ({{ post.comments|length }})</div>
                 <div class="post-stat">👁 {{ post.views }} просмотров</div>
             </div>
             <div class="comment-section" id="comments-{{ post.id }}">
@@ -144,6 +153,12 @@
                     {% endfor %}
                 </div>
             </div>
+            {% if is_admin %}
+            <div class="post-actions">
+                <button class="post-action-btn" onclick="editPost({{ post.id }})">✏️ Редактировать</button>
+                <button class="post-action-btn" onclick="deletePost({{ post.id }})" style="color:#ff4444;">🗑️ Удалить</button>
+            </div>
+            {% endif %}
         </div>
         {% else %}
         <div style="text-align:center;padding:60px;color:#888">
@@ -160,13 +175,14 @@
     <div class="new-post-area">
         <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data">
             <div class="new-post-input">
-                <textarea name="content" rows="2" placeholder="📢 Напишите пост..." style="flex:1"></textarea>
-            </div>
-            <div class="post-actions">
-                <label class="post-action-btn">📎 Прикрепить файл
-                    <input type="file" name="file" class="file-input" onchange="this.form.submit()">
-                </label>
-                <button type="submit" class="post-action-btn" style="background:#ff6b6b;color:white">📤 Опубликовать</button>
+                <textarea name="content" rows="3" placeholder="📢 Напишите пост..."></textarea>
+                <div class="post-actions" style="margin-top:0;border-top:none;padding-top:0">
+                    <label class="post-action-btn" style="cursor:pointer;background:#ff6b6b;color:white;">
+                        📎 Выбрать файлы
+                        <input type="file" name="files" multiple class="file-input" onchange="this.form.submit()">
+                    </label>
+                    <button type="submit" class="post-action-btn" style="background:#4cd964;color:white;">📤 Опубликовать</button>
+                </div>
             </div>
         </form>
     </div>
@@ -191,6 +207,50 @@
         }).then(() => {
             location.reload();
         });
+    }
+    
+    function editPost(postId) {
+        const newContent = prompt('Введите новый текст поста:');
+        if(newContent !== null && newContent.trim()) {
+            fetch(`/channel/post/edit/${postId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({content: newContent})
+            }).then(() => location.reload());
+        }
+    }
+    
+    function deletePost(postId) {
+        if(confirm('Удалить этот пост?')) {
+            fetch(`/channel/post/delete/${postId}`, {method: 'POST'})
+                .then(() => location.reload());
+        }
+    }
+    
+    function editChannel() {
+        const newName = prompt('Новое название канала:', '{{ channel.name }}');
+        const newUsername = prompt('Новый @username (без @):', '{{ channel.username }}');
+        const newDesc = prompt('Новое описание:', '{{ channel.description }}');
+        
+        const data = {};
+        if(newName !== null && newName.trim()) data.name = newName.trim();
+        if(newUsername !== null) data.username = newUsername.trim() || null;
+        if(newDesc !== null) data.description = newDesc;
+        
+        if(Object.keys(data).length > 0) {
+            fetch(`/channel/edit/{{ channel.id }}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(() => location.reload());
+        }
+    }
+    
+    function deleteChannel() {
+        if(confirm('УДАЛИТЬ КАНАЛ НАВСЕГДА? Все посты и подписчики будут потеряны!')) {
+            fetch(`/channel/delete/{{ channel.id }}`, {method: 'POST'})
+                .then(() => window.location.href = '/channels');
+        }
     }
 </script>
 </body>
