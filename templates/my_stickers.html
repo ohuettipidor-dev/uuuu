@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎨 Мои стикеры | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        .container{max-width:700px;margin:0 auto;padding:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none}
+        h2{color:#333}
+        .pack-card{background:rgba(255,255,255,0.9);border-radius:20px;padding:15px;margin-bottom:12px}
+        .pack-name{font-weight:600;margin-bottom:12px}
+        .sticker-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+        .sticker{background:#f0f0f0;border-radius:12px;padding:10px;text-align:center;font-size:28px;cursor:pointer;transition:transform 0.2s}
+        .sticker:hover{transform:scale(1.05);background:#e0e0e0}
+        .empty{text-align:center;padding:60px;color:#888}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/stickers" class="back">← Назад</a>
+        <h2>🎨 Мои стикеры</h2>
+    </div>
+    
+    {% for pack in packs %}
+    <div class="pack-card">
+        <div class="pack-name">{{ pack.name }}</div>
+        <div class="sticker-grid">
+            <div class="sticker">😊</div>
+            <div class="sticker">🐻</div>
+            <div class="sticker">❤️</div>
+            <div class="sticker">🔥</div>
+            <div class="sticker">✨</div>
+            <div class="sticker">⭐</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty">
+        <span style="font-size:48px">🎨</span>
+        <p>У вас пока нет стикерпаков</p>
+        <p style="font-size:13px;margin-top:8px">Купите стикеры в магазине!</p>
+    </div>
+    {% endfor %}
+</div>
+</body>
+</html>
