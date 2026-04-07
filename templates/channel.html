@@ -11,8 +11,9 @@
         
         .header{padding:12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap}
         .back{background:#ff6b6b;padding:6px 14px;border-radius:25px;cursor:pointer;color:white;text-decoration:none;font-size:13px}
-        .channel-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+        .channel-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;cursor:pointer;position:relative}
         .channel-avatar img{width:100%;height:100%;object-fit:cover}
+        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;cursor:pointer}
         .channel-info{flex:1}
         .channel-name{font-weight:600;font-size:16px;color:#333}
         .channel-username{font-size:11px;color:#888}
@@ -65,6 +66,17 @@
         .post-submit-btn{background:#4cd964;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-top:8px}
         .attach-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-right:8px;display:inline-block}
         
+        /* Модальное окно для аватарки */
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .modal.active{opacity:1;visibility:visible}
+        .modal-content{background:white;border-radius:28px;padding:20px;width:280px;text-align:center}
+        .modal-content h3{color:#ff6b6b;margin-bottom:16px}
+        .modal-content input{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:16px;outline:none}
+        .modal-buttons{display:flex;gap:10px}
+        .modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
+        .modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .modal-buttons button:last-child{background:#f0f0f0;color:#888}
+        
         @media (max-width:480px){
             .container{padding:0}
             .post{padding:12px}
@@ -79,11 +91,14 @@
 <div class="container">
     <div class="header">
         <a href="/channels" class="back">←</a>
-        <div class="channel-avatar">
+        <div class="channel-avatar" onclick="openAvatarModal()">
             {% if channel.avatar != 'channel_default.png' %}
                 <img src="/static/avatars/{{ channel.avatar }}">
             {% else %}
                 📢
+            {% endif %}
+            {% if is_admin %}
+            <div class="avatar-overlay">📷</div>
             {% endif %}
         </div>
         <div class="channel-info">
@@ -105,6 +120,11 @@
         {% endif %}
         <a href="/profile" class="profile-btn">🧸</a>
     </div>
+    
+    <!-- Форма для загрузки аватарки -->
+    <form id="avatarForm" method="POST" action="/channel/{{ channel.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
+        <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
+    </form>
     
     <div class="posts" id="posts">
         {% for post in posts %}
@@ -208,7 +228,7 @@
                 <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
                     <label class="attach-btn" style="cursor:pointer; display:inline-block;">
                         📎 Выбрать файлы (до 10)
-                        <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileList()">
+                        <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileList()" accept="image/*,audio/*,video/*,application/pdf,application/msword,text/plain,.zip,.rar">
                     </label>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
@@ -219,8 +239,21 @@
     {% endif %}
 </div>
 
+<!-- Модальное окно для аватарки -->
+<div class="modal" id="avatarModal">
+    <div class="modal-content">
+        <h3>📷 Аватар канала</h3>
+        <input type="file" id="avatarFile" accept="image/*">
+        <div class="modal-buttons">
+            <button onclick="uploadAvatar()">Загрузить</button>
+            <button onclick="closeAvatarModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let selectedFiles = [];
+    let maxFiles = 10;
     
     function updateFileList() {
         const input = document.getElementById('fileInput');
@@ -232,9 +265,18 @@
             return;
         }
         
+        if(selectedFiles.length > maxFiles) {
+            alert(`Можно выбрать не более ${maxFiles} файлов`);
+            const dt = new DataTransfer();
+            selectedFiles.slice(0, maxFiles).forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            selectedFiles = Array.from(input.files);
+        }
+        
         listDiv.innerHTML = selectedFiles.map((file, idx) => `
             <div class="selected-file">
-                📎 ${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}
+                ${file.type.startsWith('image/') ? '🖼️' : file.type.startsWith('audio/') ? '🎵' : file.type.startsWith('video/') ? '🎬' : '📎'} 
+                ${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}
                 <span class="remove-file" onclick="removeFile(${idx})">✖</span>
             </div>
         `).join('');
@@ -247,6 +289,33 @@
         selectedFiles.forEach(f => dt.items.add(f));
         input.files = dt.files;
         updateFileList();
+    }
+    
+    function openAvatarModal() {
+        document.getElementById('avatarModal').classList.add('active');
+    }
+    
+    function closeAvatarModal() {
+        document.getElementById('avatarModal').classList.remove('active');
+    }
+    
+    function uploadAvatar() {
+        const fileInput = document.getElementById('avatarFile');
+        const file = fileInput.files[0];
+        if(!file) {
+            alert('Выберите файл');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        fetch('/channel/{{ channel.id }}/upload_avatar', {
+            method: 'POST',
+            body: formData
+        }).then(() => {
+            location.reload();
+        });
     }
     
     function toggleComments(postId) {
@@ -311,6 +380,10 @@
                 .then(() => window.location.href = '/channels');
         }
     }
+    
+    document.getElementById('avatarModal').addEventListener('click', function(e) {
+        if(e.target === this) closeAvatarModal();
+    });
 </script>
 </body>
 </html>
