@@ -32,13 +32,19 @@
         .post-author-name{font-weight:500;font-size:13px;color:#333}
         .post-time{font-size:10px;color:#aaa}
         .post-content{font-size:14px;color:#333;margin-bottom:12px;line-height:1.4}
-        .attachments-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;margin-top:8px}
-        .attachment-item{background:#f5f5f5;border-radius:12px;padding:6px;cursor:pointer;transition:all 0.2s;text-align:center}
-        .attachment-item:hover{background:#e8e8e8;transform:scale(1.02)}
-        .attachment-image{width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:4px}
-        .attachment-audio{width:100%;height:36px;margin-top:4px}
-        .attachment-video{width:100%;border-radius:8px}
-        .attachment-document{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;color:#ff6b6b}
+        
+        /* СЕТКА ДЛЯ ФАЙЛОВ КАК В TELEGRAM */
+        .attachments-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:8px;margin-top:8px}
+        .attachment-item{position:relative;background:#f5f5f5;border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.2s;aspect-ratio:1/1}
+        .attachment-item:hover{transform:scale(1.02);background:#e8e8e8}
+        .attachment-image{width:100%;height:100%;object-fit:cover}
+        .attachment-audio{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:8px;color:white;font-size:12px;text-align:center}
+        .attachment-video{width:100%;height:100%;object-fit:cover}
+        .attachment-document{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:#ff6b6b;font-size:12px;text-align:center;padding:8px}
+        .attachment-document span{font-size:28px}
+        .attachment-count{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:white;border-radius:20px;padding:2px 8px;font-size:11px}
+        .attachment-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px}
+        
         .post-stats{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0}
         .post-stat{font-size:12px;color:#888;display:flex;align-items:center;gap:4px;cursor:pointer}
         .comment-section{margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:none}
@@ -60,10 +66,11 @@
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
         .new-post-input textarea:focus{border-color:#ff6b6b}
-        .selected-files-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;margin-bottom:8px;max-height:120px;overflow-y:auto;background:#f9f9f9;padding:8px;border-radius:16px}
-        .selected-file{background:#e8e8e8;padding:4px 10px;border-radius:20px;font-size:11px;display:flex;align-items:center;gap:6px}
-        .remove-file{cursor:pointer;color:#ff4444;font-weight:bold;margin-left:5px;padding:0 4px;border-radius:50%}
-        .remove-file:hover{background:#ff4444;color:white}
+        .selected-files-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));gap:8px;margin-top:8px;margin-bottom:8px}
+        .selected-file-item{position:relative;background:#f0f0f0;border-radius:12px;overflow:hidden;aspect-ratio:1/1}
+        .selected-file-item img{width:100%;height:100%;object-fit:cover}
+        .selected-file-item .remove-file{position:absolute;top:4px;right:4px;background:#ff4444;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2}
+        .selected-file-type{position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 4px;border-radius:8px;text-align:center}
         .post-submit-btn{background:#4cd964;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;margin-top:8px}
         .attach-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;margin-right:8px;display:inline-block}
         
@@ -83,8 +90,7 @@
             .header{padding:10px}
             .channel-avatar{width:40px;height:40px;font-size:20px}
             .subscribe-btn,.subscribed-btn{padding:6px 14px;font-size:12px}
-            .attachments-grid{grid-template-columns:repeat(auto-fill, minmax(80px,1fr))}
-            .attachment-image{height:70px}
+            .attachments-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
         }
     </style>
 </head>
@@ -151,11 +157,16 @@
                     {% if att.type == 'image' %}
                         <img src="{{ att.path }}" class="attachment-image">
                     {% elif att.type == 'audio' %}
-                        <audio controls src="{{ att.path }}" class="attachment-audio"></audio>
+                        <div class="attachment-image" style="background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:32px">🎵</div>
+                        <div class="attachment-audio">{{ att.name[:15] }}</div>
                     {% elif att.type == 'video' %}
-                        <video controls src="{{ att.path }}" class="attachment-video"></video>
+                        <video src="{{ att.path }}" class="attachment-video"></video>
+                        <div class="attachment-play">▶️</div>
                     {% else %}
-                        <div class="attachment-document">📎</div>
+                        <div class="attachment-document">
+                            <span>📎</span>
+                            {{ att.name[:15] }}
+                        </div>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -163,13 +174,13 @@
             {% elif post.file_path %}
                 <div class="post-media">
                     {% if post.file_type == 'image' %}
-                        <img src="{{ post.file_path }}" onclick="window.open(this.src)">
+                        <img src="{{ post.file_path }}" onclick="window.open(this.src)" style="max-width:100%;border-radius:16px">
                     {% elif post.file_type == 'audio' %}
                         <audio controls src="{{ post.file_path }}"></audio>
                     {% elif post.file_type == 'video' %}
-                        <video controls src="{{ post.file_path }}"></video>
+                        <video controls src="{{ post.file_path }}" style="max-width:100%;border-radius:16px"></video>
                     {% else %}
-                        <a href="{{ post.file_path }}" download="{{ post.file_name }}">📎</a>
+                        <a href="{{ post.file_path }}" download="{{ post.file_name }}">📎 {{ post.file_name }}</a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -226,14 +237,14 @@
             <div class="new-post-input">
                 <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
                 
-                <!-- ГЛАВНОЕ: ЭТА ФОРМА С multiple="multiple" РАБОТАЕТ -->
                 <div style="margin-top: 8px;">
-                    <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileList()">
+                    <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileGrid()">
                     <button type="button" class="attach-btn" onclick="document.getElementById('fileInput').click()">📎 Выбрать файлы (до 10)</button>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
                 
-                <div class="selected-files-list" id="selectedFilesList"></div>
+                <!-- СЕТКА ВЫБРАННЫХ ФАЙЛОВ -->
+                <div class="selected-files-grid" id="selectedFilesGrid"></div>
             </div>
         </form>
     </div>
@@ -255,9 +266,9 @@
     let selectedFiles = [];
     const MAX_FILES = 10;
     
-    function updateFileList() {
+    function updateFileGrid() {
         const input = document.getElementById('fileInput');
-        const listDiv = document.getElementById('selectedFilesList');
+        const gridDiv = document.getElementById('selectedFilesGrid');
         let files = Array.from(input.files);
         
         if(files.length > MAX_FILES) {
@@ -271,26 +282,44 @@
         selectedFiles = files;
         
         if(selectedFiles.length === 0) {
-            listDiv.innerHTML = '';
+            gridDiv.innerHTML = '';
             return;
         }
         
-        listDiv.innerHTML = selectedFiles.map((file, idx) => `
-            <div class="selected-file">
-                ${file.type.startsWith('image/') ? '🖼️' : file.type.startsWith('audio/') ? '🎵' : file.type.startsWith('video/') ? '🎬' : '📎'} 
-                ${file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name}
-                <span class="remove-file" onclick="removeFile(${idx})">✖</span>
-            </div>
-        `).join('');
+        gridDiv.innerHTML = selectedFiles.map((file, idx) => {
+            const isImage = file.type.startsWith('image/');
+            const isAudio = file.type.startsWith('audio/');
+            const isVideo = file.type.startsWith('video/');
+            
+            let previewHtml = '';
+            if(isImage) {
+                const url = URL.createObjectURL(file);
+                previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
+            } else if(isVideo) {
+                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🎬</div>`;
+            } else if(isAudio) {
+                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🎵</div>`;
+            } else {
+                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
+            }
+            
+            return `
+                <div class="selected-file-item">
+                    <div class="remove-file" onclick="removeFileFromGrid(${idx})">✖</div>
+                    ${previewHtml}
+                    <div class="selected-file-type">${file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name}</div>
+                </div>
+            `;
+        }).join('');
     }
     
-    function removeFile(index) {
+    function removeFileFromGrid(index) {
         const input = document.getElementById('fileInput');
         const dt = new DataTransfer();
         selectedFiles = selectedFiles.filter((_, i) => i !== index);
         selectedFiles.forEach(f => dt.items.add(f));
         input.files = dt.files;
-        updateFileList();
+        updateFileGrid();
     }
     
     function openAvatarModal() {
