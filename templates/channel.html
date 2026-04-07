@@ -60,13 +60,12 @@
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
         .new-post-input textarea:focus{border-color:#ff6b6b}
-        .selected-files-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;margin-bottom:8px}
+        .selected-files-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;margin-bottom:8px;max-height:120px;overflow-y:auto}
         .selected-file{background:#f0f0f0;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px}
         .remove-file{cursor:pointer;color:#ff4444;font-weight:bold;margin-left:5px}
         .post-submit-btn{background:#4cd964;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-top:8px}
         .attach-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:30px;cursor:pointer;font-weight:500;margin-right:8px;display:inline-block}
         
-        /* Модальное окно для аватарки */
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
         .modal-content{background:white;border-radius:28px;padding:20px;width:280px;text-align:center}
@@ -121,7 +120,6 @@
         <a href="/profile" class="profile-btn">🧸</a>
     </div>
     
-    <!-- Форма для загрузки аватарки -->
     <form id="avatarForm" method="POST" action="/channel/{{ channel.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
         <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
     </form>
@@ -239,7 +237,6 @@
     {% endif %}
 </div>
 
-<!-- Модальное окно для аватарки -->
 <div class="modal" id="avatarModal">
     <div class="modal-content">
         <h3>📷 Аватар канала</h3>
@@ -253,24 +250,26 @@
 
 <script>
     let selectedFiles = [];
-    let maxFiles = 10;
+    const MAX_FILES = 10;
     
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const listDiv = document.getElementById('selectedFilesList');
-        selectedFiles = Array.from(input.files);
+        let files = Array.from(input.files);
+        
+        if(files.length > MAX_FILES) {
+            alert(`Можно выбрать не более ${MAX_FILES} файлов`);
+            const dt = new DataTransfer();
+            files.slice(0, MAX_FILES).forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            files = Array.from(input.files);
+        }
+        
+        selectedFiles = files;
         
         if(selectedFiles.length === 0) {
             listDiv.innerHTML = '';
             return;
-        }
-        
-        if(selectedFiles.length > maxFiles) {
-            alert(`Можно выбрать не более ${maxFiles} файлов`);
-            const dt = new DataTransfer();
-            selectedFiles.slice(0, maxFiles).forEach(f => dt.items.add(f));
-            input.files = dt.files;
-            selectedFiles = Array.from(input.files);
         }
         
         listDiv.innerHTML = selectedFiles.map((file, idx) => `
