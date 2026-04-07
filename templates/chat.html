@@ -39,19 +39,6 @@
         .create-btn{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);border:none;color:white;padding:10px;border-radius:30px;width:100%;margin-bottom:16px;cursor:pointer;font-weight:bold;transition:transform 0.2s;box-shadow:0 2px 8px rgba(255,107,107,0.3);font-size:14px}
         .create-btn:hover{transform:translateY(-1px)}
         
-        /* Секция каналов */
-        .section-title{font-size:13px;color:#888;margin:16px 0 8px 8px;display:flex;justify-content:space-between;align-items:center}
-        .section-title a{color:#ff6b6b;font-size:12px;text-decoration:none;background:rgba(255,107,107,0.1);padding:4px 12px;border-radius:20px}
-        .channel-item{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-radius:20px;padding:12px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,107,107,0.3);margin-bottom:8px}
-        .channel-item:hover{transform:translateX(3px);background:white}
-        .channel-avatar{width:50px;height:50px;border-radius:50%;margin-right:12px;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:#ff6b6b;cursor:pointer;flex-shrink:0;overflow:hidden}
-        .channel-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-        .channel-info{flex:1;min-width:0}
-        .channel-name{font-weight:600;margin-bottom:4px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
-        .channel-stats{font-size:11px;color:#888}
-        .admin-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 8px;border-radius:20px;font-size:10px;margin-left:8px}
-        
-        /* Список чатов */
         .chats-list{display:flex;flex-direction:column;gap:10px}
         .chat-item{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-radius:20px;padding:12px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.5)}
         .chat-item:hover{transform:translateX(3px);background:white}
@@ -86,12 +73,7 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
         
-        @media (max-width:480px){
-            .container{padding:12px}
-            .channel-avatar,.chat-avatar{width:45px;height:45px;font-size:18px}
-            .channel-item,.chat-item{padding:10px}
-            .channel-name,.chat-name{font-size:14px}
-        }
+        @media (max-width:480px){.container{padding:12px}.chat-avatar{width:45px;height:45px;font-size:18px}.chat-item{padding:10px}.chat-name{font-size:14px}}
     </style>
 </head>
 <body>
@@ -109,6 +91,7 @@
         </div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
+            <a href="/channels" class="icon-btn">📢</a>
             <a href="/voice_channels" class="icon-btn">🎤</a>
             <a href="/secret_chats" class="icon-btn">🔒</a>
             <a href="/profile" class="icon-btn">🧸</a>
@@ -124,48 +107,6 @@
     </div>
     
     <button class="create-btn" onclick="openGroupModal()">✨ + Создать группу ✨</button>
-    
-    <!-- ========== БЛОК КАНАЛОВ ========== -->
-    <div class="section-title">
-        <span>📢 КАНАЛЫ</span>
-        <a href="/channels">Все каналы →</a>
-    </div>
-    
-    {% for channel in user_channels %}
-    <div class="channel-item" onclick="location.href='/channel/{{ channel.id }}'">
-        <div class="channel-avatar">
-            {% if channel.avatar != 'channel_default.png' %}
-                <img src="/static/avatars/{{ channel.avatar }}">
-            {% else %}
-                📢
-            {% endif %}
-        </div>
-        <div class="channel-info">
-            <div class="channel-name">
-                {{ channel.name }}
-                {% if channel.username %}
-                    <span style="font-size: 10px; color: #888;">{{ channel.username }}</span>
-                {% endif %}
-                {% if channel.created_by == current_user.id %}
-                    <span class="admin-badge">Админ</span>
-                {% endif %}
-            </div>
-            <div class="channel-stats">👥 {{ channel.subscribers_count }} подписчиков</div>
-        </div>
-        <div class="chat-meta">
-            <div style="color:#ff6b6b">→</div>
-        </div>
-    </div>
-    {% else %}
-    <div class="channel-item" style="justify-content: center; color: #888;">
-        Нет подписок на каналы
-    </div>
-    {% endfor %}
-    
-    <!-- ========== ЧАТЫ ========== -->
-    <div class="section-title">
-        <span>💬 ЧАТЫ</span>
-    </div>
     
     <div class="chats-list" id="chats">
         {% for c in convs %}
