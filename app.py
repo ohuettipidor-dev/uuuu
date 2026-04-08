@@ -100,6 +100,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# ========== МОДЕЛИ ==========
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -291,15 +292,11 @@ class ChannelComment(db.Model):
 class StickerPack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    title = db.Column(db.String(200), nullable=False, default='')
+    title = db.Column(db.String(200), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_premium = db.Column(db.Boolean, default=False)
-    price = db.Column(db.Float, default=0)
     preview = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    sticker_count = db.Column(db.Integer, default=0)
-    
-    author = db.relationship('User', foreign_keys=[author_id], backref='sticker_packs')
 
 class Sticker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -308,16 +305,13 @@ class Sticker(db.Model):
     file_path = db.Column(db.String(500), nullable=False)
     order_num = db.Column(db.Integer, default=0)
     
-    pack = db.relationship('StickerPack', foreign_keys=[pack_id], backref='stickers')
+    pack = db.relationship('StickerPack', backref='stickers')
 
 class UserSticker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     pack_id = db.Column(db.Integer, db.ForeignKey('sticker_pack.id'), nullable=False)
     purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    user = db.relationship('User', foreign_keys=[user_id], backref='owned_stickers')
-    pack = db.relationship('StickerPack', foreign_keys=[pack_id])
 
 class Gift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -401,96 +395,18 @@ def load_user(uid):
 with app.app_context():
     db.create_all()
     
-    # Создаём стикерпаки если их нет
+    # Создаём стикерпак если нет
     if StickerPack.query.count() == 0:
-        # Бесплатный стикерпак
-        free_pack = StickerPack(
-            name='mishki',
-            title='🐻 Милые мишки',
+        pack = StickerPack(
+            name='emotions',
+            title='😊 МОИ ЭМОЦИИ',
             author_id=1,
             is_premium=False,
-            price=0
+            preview='/static/stickers/preview.png'
         )
-        db.session.add(free_pack)
+        db.session.add(pack)
         db.session.commit()
-        
-        # Платный стикерпак
-        premium_pack = StickerPack(
-            name='premium_art',
-            title='✨ Премиум стикеры',
-            author_id=1,
-            is_premium=True,
-            price=99
-        )
-        db.session.add(premium_pack)
-        db.session.commit()
-        
-        # Создаём папки для стикеров
-        free_folder = os.path.join(STICKER_FOLDER, str(free_pack.id))
-        premium_folder = os.path.join(STICKER_FOLDER, str(premium_pack.id))
-        os.makedirs(free_folder, exist_ok=True)
-        os.makedirs(premium_folder, exist_ok=True)
-        
-        # Добавляем тестовые стикеры (создаём простые изображения)
-        emojis = ['🐻', '🐼', '🐨', '🦊', '🐱', '🐶', '🐭', '🐹']
-        
-        for i, emoji in enumerate(emojis[:6]):
-            # Простой SVG стикер
-            svg_content = f'''<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-                <rect width="512" height="512" rx="100" fill="#FFD700"/>
-                <text x="256" y="380" font-size="280" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji">{emoji}</text>
-            </svg>'''
-            
-            filename = f"sticker_{free_pack.id}_{i}.svg"
-            filepath = os.path.join(free_folder, filename)
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(svg_content)
-            
-            sticker = Sticker(
-                pack_id=free_pack.id,
-                emoji=emoji,
-                file_path=f'/static/stickers/{free_pack.id}/{filename}',
-                order_num=i
-            )
-            db.session.add(sticker)
-        
-        free_pack.sticker_count = 6
-        free_pack.preview = f'/static/stickers/{free_pack.id}/sticker_{free_pack.id}_0.svg'
-        
-        # Premium стикеры
-        premium_emojis = ['⭐', '🌟', '💎', '👑', '🔥', '✨']
-        for i, emoji in enumerate(premium_emojis):
-            svg_content = f'''<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-                <rect width="512" height="512" rx="100" fill="url(#grad)"/>
-                <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF6B6B"/><stop offset="100%" stop-color="#FFE66D"/></linearGradient></defs>
-                <text x="256" y="380" font-size="280" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji">{emoji}</text>
-            </svg>'''
-            
-            filename = f"sticker_{premium_pack.id}_{i}.svg"
-            filepath = os.path.join(premium_folder, filename)
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(svg_content)
-            
-            sticker = Sticker(
-                pack_id=premium_pack.id,
-                emoji=emoji,
-                file_path=f'/static/stickers/{premium_pack.id}/{filename}',
-                order_num=i
-            )
-            db.session.add(sticker)
-        
-        premium_pack.sticker_count = 6
-        premium_pack.preview = f'/static/stickers/{premium_pack.id}/sticker_{premium_pack.id}_0.svg'
-        db.session.commit()
-        
-        # Даём бесплатный стикерпак первому пользователю
-        first_user = User.query.first()
-        if first_user:
-            existing = UserSticker.query.filter_by(user_id=first_user.id, pack_id=free_pack.id).first()
-            if not existing:
-                user_pack = UserSticker(user_id=first_user.id, pack_id=free_pack.id)
-                db.session.add(user_pack)
-                db.session.commit()
+        print("✅ Стикерпак создан")
 
 @app.template_filter('json_decode')
 def json_decode_filter(data):
@@ -499,274 +415,7 @@ def json_decode_filter(data):
     except:
         return []
 
-# ========== СТИКЕРНЫЕ МАРШРУТЫ ==========
-@app.route('/stickers')
-@login_required
-def stickers_list():
-    """Страница со всеми стикерпаками"""
-    free_packs = StickerPack.query.filter_by(is_premium=False).all()
-    premium_packs = StickerPack.query.filter_by(is_premium=True).all()
-    
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    user_pack_ids = [up.pack_id for up in user_packs]
-    
-    return render_template('stickers.html', 
-                         free_packs=free_packs, 
-                         premium_packs=premium_packs,
-                         user_pack_ids=user_pack_ids)
-
-@app.route('/stickers/purchase/<int:pack_id>', methods=['POST'])
-@login_required
-def purchase_sticker_pack(pack_id):
-    """Покупка стикерпака"""
-    pack = StickerPack.query.get(pack_id)
-    if not pack:
-        return jsonify({'error': 'Стикерпак не найден'}), 404
-    
-    existing = UserSticker.query.filter_by(user_id=current_user.id, pack_id=pack_id).first()
-    if existing:
-        return jsonify({'error': 'У вас уже есть этот стикерпак'}), 400
-    
-    # Проверка премиум подписки для платных пачек
-    if pack.is_premium and pack.price > 0:
-        subscription = Subscription.query.filter_by(user_id=current_user.id).first()
-        if not subscription or subscription.expires_at < datetime.utcnow():
-            return jsonify({'error': 'Premium подписка требуется'}), 403
-    
-    user_pack = UserSticker(user_id=current_user.id, pack_id=pack_id)
-    db.session.add(user_pack)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'pack_id': pack_id})
-
-@app.route('/stickers/my')
-@login_required
-def my_stickers():
-    """Мои стикеры"""
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    packs = []
-    for up in user_packs:
-        pack = StickerPack.query.get(up.pack_id)
-        if pack:
-            stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
-            packs.append({
-                'id': pack.id,
-                'name': pack.title,
-                'preview': pack.preview,
-                'stickers': stickers
-            })
-    return render_template('my_stickers.html', packs=packs)
-
-@app.route('/stickers/send/<int:sticker_id>', methods=['POST'])
-@login_required
-def send_sticker(sticker_id):
-    """Отправка стикера"""
-    data = request.get_json()
-    receiver_id = data.get('receiver_id')
-    chat_type = data.get('chat_type', 'private')
-    
-    sticker = Sticker.query.get(sticker_id)
-    if not sticker:
-        return jsonify({'error': 'Стикер не найден'}), 404
-    
-    # Проверка наличия стикерпака у пользователя
-    user_pack = UserSticker.query.filter_by(user_id=current_user.id, pack_id=sticker.pack_id).first()
-    pack = StickerPack.query.get(sticker.pack_id)
-    
-    if not user_pack and pack and pack.is_premium:
-        return jsonify({'error': 'У вас нет этого стикерпака'}), 403
-    
-    sticker_html = f'<img src="{sticker.file_path}" class="sticker-img" style="max-width:128px;max-height:128px;cursor:pointer" data-sticker-id="{sticker.id}" data-emoji="{sticker.emoji}">'
-    
-    if chat_type == 'private':
-        msg = Message(
-            content=sticker_html,
-            sender_id=current_user.id,
-            receiver_id=receiver_id,
-            file_type='sticker',
-            file_path=sticker.file_path
-        )
-        db.session.add(msg)
-    else:
-        msg = GroupMessage(
-            content=sticker_html,
-            sender_id=current_user.id,
-            group_id=receiver_id,
-            file_type='sticker',
-            file_path=sticker.file_path
-        )
-        db.session.add(msg)
-    
-    db.session.commit()
-    return jsonify({'success': True})
-
-@app.route('/stickers/my/api')
-@login_required
-def my_stickers_api():
-    """API для получения моих стикерпаков"""
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    packs = []
-    for up in user_packs:
-        pack = StickerPack.query.get(up.pack_id)
-        if pack:
-            stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
-            packs.append({
-                'id': pack.id,
-                'name': pack.title,
-                'stickers': [{'id': s.id, 'file_path': s.file_path, 'emoji': s.emoji} for s in stickers]
-            })
-    return jsonify(packs)
-
-@app.route('/stickers/all/api')
-@login_required
-def all_stickers_api():
-    """API для получения всех доступных стикерпаков"""
-    all_packs = StickerPack.query.all()
-    user_pack_ids = [up.pack_id for up in UserSticker.query.filter_by(user_id=current_user.id).all()]
-    
-    packs = []
-    for pack in all_packs:
-        stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
-        packs.append({
-            'id': pack.id,
-            'name': pack.title,
-            'is_premium': pack.is_premium,
-            'has': pack.id in user_pack_ids,
-            'stickers': [{'id': s.id, 'file_path': s.file_path, 'emoji': s.emoji} for s in stickers]
-        })
-    return jsonify(packs)
-
-@app.route('/upload_sticker_by_url', methods=['POST'])
-@login_required
-def upload_sticker_by_url():
-    data = request.get_json()
-    url = data.get('url')
-    receiver_id = data.get('receiver_id')
-    
-    response = requests.get(url, timeout=10)
-    filename = f"sticker_{uuid.uuid4().hex}.png"
-    filepath = os.path.join(STICKER_FOLDER, filename)
-    with open(filepath, 'wb') as f:
-        f.write(response.content)
-    
-    msg = Message(
-        content='',
-        file_path=f'/static/stickers/{filename}',
-        file_name='sticker.png',
-        file_type='sticker',
-        sender_id=current_user.id,
-        receiver_id=receiver_id
-    )
-    db.session.add(msg)
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-@app.route('/create_sticker_pack', methods=['GET', 'POST'])
-@login_required
-def create_sticker_pack():
-    """Создание своего стикерпака"""
-    if request.method == 'POST':
-        name = request.form.get('name', '').lower().replace(' ', '_')
-        title = request.form.get('title')
-        is_premium = request.form.get('is_premium') == 'on'
-        
-        if not name or not title:
-            flash('Заполните все поля', 'danger')
-            return redirect(url_for('create_sticker_pack'))
-        
-        existing = StickerPack.query.filter_by(name=name).first()
-        if existing:
-            flash('Стикерпак с таким именем уже существует', 'danger')
-            return redirect(url_for('create_sticker_pack'))
-        
-        pack = StickerPack(
-            name=name,
-            title=title,
-            author_id=current_user.id,
-            is_premium=is_premium,
-            price=99 if is_premium else 0
-        )
-        db.session.add(pack)
-        db.session.commit()
-        
-        # Создаём папку
-        pack_folder = os.path.join(STICKER_FOLDER, str(pack.id))
-        os.makedirs(pack_folder, exist_ok=True)
-        
-        # Добавляем пользователю его же пачку
-        user_pack = UserSticker(user_id=current_user.id, pack_id=pack.id)
-        db.session.add(user_pack)
-        db.session.commit()
-        
-        flash(f'Стикерпак "{title}" создан! Теперь добавьте стикеры', 'success')
-        return redirect(url_for('edit_sticker_pack', pack_id=pack.id))
-    
-    return render_template('create_sticker_pack.html')
-
-@app.route('/edit_sticker_pack/<int:pack_id>', methods=['GET', 'POST'])
-@login_required
-def edit_sticker_pack(pack_id):
-    """Редактирование стикерпака"""
-    pack = StickerPack.query.get_or_404(pack_id)
-    
-    if pack.author_id != current_user.id:
-        flash('Вы не автор этого стикерпака', 'danger')
-        return redirect(url_for('stickers_list'))
-    
-    if request.method == 'POST':
-        if 'add_sticker' in request.form:
-            emoji = request.form.get('emoji', '😊')
-            svg_content = request.form.get('svg_content')
-            
-            if svg_content:
-                pack_folder = os.path.join(STICKER_FOLDER, str(pack.id))
-                os.makedirs(pack_folder, exist_ok=True)
-                
-                order_num = Sticker.query.filter_by(pack_id=pack.id).count()
-                filename = f"sticker_{pack.id}_{order_num}.svg"
-                filepath = os.path.join(pack_folder, filename)
-                
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    f.write(svg_content)
-                
-                sticker = Sticker(
-                    pack_id=pack.id,
-                    emoji=emoji,
-                    file_path=f'/static/stickers/{pack.id}/{filename}',
-                    order_num=order_num
-                )
-                db.session.add(sticker)
-                pack.sticker_count += 1
-                if not pack.preview:
-                    pack.preview = sticker.file_path
-                db.session.commit()
-                flash('Стикер добавлен!', 'success')
-            else:
-                flash('Введите SVG код стикера', 'danger')
-        
-        elif 'delete_sticker' in request.form:
-            sticker_id = request.form.get('sticker_id')
-            sticker = Sticker.query.get_or_404(sticker_id)
-            if sticker.pack_id == pack.id:
-                filepath = os.path.join('static', sticker.file_path.lstrip('/'))
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                db.session.delete(sticker)
-                pack.sticker_count -= 1
-                db.session.commit()
-                flash('Стикер удалён', 'success')
-        
-        elif 'update_pack' in request.form:
-            pack.title = request.form.get('title', pack.title)
-            db.session.commit()
-            flash('Название обновлено', 'success')
-        
-        return redirect(url_for('edit_sticker_pack', pack_id=pack.id))
-    
-    stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
-    return render_template('edit_sticker_pack.html', pack=pack, stickers=stickers)
-
+# ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
 def index():
     return redirect(url_for('chat')) if current_user.is_authenticated else render_template('index.html')
@@ -979,6 +628,7 @@ def upload_video_message():
     
     return jsonify({'path': f'/static/uploads/{name}', 'duration': 0})
 
+# ========== ВИДЕОЗВОНКИ ==========
 @app.route('/send_offer', methods=['POST'])
 @login_required
 def send_offer():
@@ -1077,6 +727,7 @@ def end_call(room_id):
         db.session.commit()
     return jsonify({'success': True})
 
+# ========== СЕКРЕТНЫЕ ЧАТЫ ==========
 @app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
 @login_required
 def create_secret_chat(user_id):
@@ -1252,108 +903,7 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
-@app.route('/typing', methods=['POST'])
-@login_required
-def typing():
-    data = request.get_json()
-    receiver_id = data.get('receiver_id')
-    is_typing = data.get('is_typing', False)
-    
-    if not hasattr(app, 'typing_status'):
-        app.typing_status = {}
-    
-    key = f"typing_{current_user.id}_{receiver_id}"
-    if is_typing:
-        app.typing_status[key] = datetime.utcnow()
-    else:
-        app.typing_status.pop(key, None)
-    
-    return jsonify({'success': True})
-
-@app.route('/get_typing/<int:receiver_id>')
-@login_required
-def get_typing(receiver_id):
-    if not hasattr(app, 'typing_status'):
-        return jsonify({'is_typing': False})
-    
-    key = f"typing_{receiver_id}_{current_user.id}"
-    typing_time = app.typing_status.get(key)
-    
-    if typing_time and (datetime.utcnow() - typing_time).seconds < 3:
-        return jsonify({'is_typing': True})
-    return jsonify({'is_typing': False})
-
-@app.route('/pin_message', methods=['POST'])
-@login_required
-def pin_message():
-    data = request.get_json()
-    msg_id = data['msg_id']
-    msg_type = data['type']
-    
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-        if msg and (msg.sender_id == current_user.id or msg.receiver_id == current_user.id):
-            old_pinned = Message.query.filter(
-                ((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)),
-                ((Message.sender_id == msg.receiver_id) | (Message.receiver_id == msg.sender_id)),
-                Message.is_pinned == True
-            ).first()
-            if old_pinned:
-                old_pinned.is_pinned = False
-                old_pinned.pinned_at = None
-            
-            msg.is_pinned = not msg.is_pinned
-            msg.pinned_at = datetime.utcnow() if msg.is_pinned else None
-            db.session.commit()
-            return jsonify({'success': True, 'is_pinned': msg.is_pinned})
-    elif msg_type == 'group':
-        msg = GroupMessage.query.get(msg_id)
-        if msg:
-            old_pinned = GroupMessage.query.filter_by(group_id=msg.group_id, is_pinned=True).first()
-            if old_pinned:
-                old_pinned.is_pinned = False
-                old_pinned.pinned_at = None
-            
-            msg.is_pinned = not msg.is_pinned
-            msg.pinned_at = datetime.utcnow() if msg.is_pinned else None
-            db.session.commit()
-            return jsonify({'success': True, 'is_pinned': msg.is_pinned})
-    
-    return jsonify({'error': 'Сообщение не найдено'}), 404
-
-@app.route('/get_pinned_message/<int:chat_id>/<string:chat_type>')
-@login_required
-def get_pinned_message(chat_id, chat_type):
-    if chat_type == 'private':
-        pinned = Message.query.filter(
-            ((Message.sender_id == current_user.id) & (Message.receiver_id == chat_id)) |
-            ((Message.sender_id == chat_id) & (Message.receiver_id == current_user.id)),
-            Message.is_pinned == True
-        ).first()
-        if pinned:
-            return jsonify({
-                'id': pinned.id,
-                'content': pinned.content[:100] if pinned.content else '[Файл]',
-                'sender_name': pinned.sender.username
-            })
-    elif chat_type == 'group':
-        pinned = GroupMessage.query.filter_by(group_id=chat_id, is_pinned=True).first()
-        if pinned:
-            return jsonify({
-                'id': pinned.id,
-                'content': pinned.content[:100] if pinned.content else '[Файл]',
-                'sender_name': pinned.sender.username
-            })
-    return jsonify({'error': 'Нет закрепленных сообщений'}), 404
-
-@app.route('/check_screenshot', methods=['POST'])
-@login_required
-def check_screenshot():
-    data = request.get_json()
-    chat_id = data.get('chat_id')
-    print(f"[СЕКРЕТНО] Пользователь {current_user.username} пытался сделать скриншот в чате {chat_id}")
-    return jsonify({'warning': 'Скриншоты в секретных чатах запрещены!'}), 200
-
+# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
 @app.route('/create_voice_channel', methods=['POST'])
 @login_required
 def create_voice_channel():
@@ -1419,6 +969,7 @@ def get_voice_channel_members(channel_id):
         })
     return jsonify(result)
 
+# ========== КАНАЛЫ ==========
 @app.route('/channels')
 @login_required
 def channels_list():
@@ -1717,6 +1268,78 @@ def edit_channel(channel_id):
     
     return jsonify({'success': True})
 
+# ========== СТИКЕРЫ ==========
+@app.route('/stickers')
+@login_required
+def stickers_page():
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    packs = []
+    for up in user_packs:
+        pack = StickerPack.query.get(up.pack_id)
+        if pack:
+            stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
+            packs.append({'id': pack.id, 'title': pack.title, 'stickers': stickers})
+    return render_template('stickers.html', packs=packs)
+
+@app.route('/stickers/send/<int:sticker_id>', methods=['POST'])
+@login_required
+def send_sticker(sticker_id):
+    data = request.get_json()
+    receiver_id = data.get('receiver_id')
+    sticker = Sticker.query.get(sticker_id)
+    
+    if sticker:
+        msg = Message(
+            content=f'[СТИКЕР] {sticker.emoji}',
+            file_path=sticker.file_path,
+            file_type='sticker',
+            sender_id=current_user.id,
+            receiver_id=receiver_id
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'error': 'Стикер не найден'}), 404
+
+@app.route('/stickers/api')
+@login_required
+def stickers_api():
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    stickers_list = []
+    for up in user_packs:
+        pack = StickerPack.query.get(up.pack_id)
+        if pack:
+            for s in Sticker.query.filter_by(pack_id=pack.id).all():
+                stickers_list.append({'id': s.id, 'emoji': s.emoji, 'url': s.file_path})
+    return jsonify(stickers_list)
+
+@app.route('/upload_sticker_by_url', methods=['POST'])
+@login_required
+def upload_sticker_by_url():
+    data = request.get_json()
+    url = data.get('url')
+    receiver_id = data.get('receiver_id')
+    
+    response = requests.get(url, timeout=10)
+    filename = f"sticker_{uuid.uuid4().hex}.png"
+    filepath = os.path.join(STICKER_FOLDER, filename)
+    with open(filepath, 'wb') as f:
+        f.write(response.content)
+    
+    msg = Message(
+        content='',
+        file_path=f'/static/stickers/{filename}',
+        file_name='sticker.png',
+        file_type='sticker',
+        sender_id=current_user.id,
+        receiver_id=receiver_id
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+# ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
 @login_required
 def send_gift():
@@ -1804,6 +1427,7 @@ def use_gift(gift_id):
     
     return jsonify({'success': True})
 
+# ========== ТЕМЫ ==========
 @app.route('/themes')
 @login_required
 def themes_list():
@@ -1898,6 +1522,7 @@ def create_theme():
     
     return render_template('create_theme.html')
 
+# ========== ХРАНИЛИЩЕ ==========
 @app.route('/storage')
 @login_required
 def storage_page():
@@ -1996,6 +1621,7 @@ def upgrade_storage():
     
     return jsonify({'success': True, 'total_gb': storage.total_bytes / (1024**3)})
 
+# ========== СЕМЕЙНЫЕ АККАУНТЫ ==========
 @app.route('/family/create', methods=['POST'])
 @login_required
 def create_family():
@@ -2055,6 +1681,7 @@ def family_members(family_id):
     
     return jsonify(result)
 
+# ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
@@ -2223,6 +1850,7 @@ def send_group():
     
     return redirect(url_for('group_chat', gid=request.form['group_id']))
 
+# ========== ЧАТ ==========
 @app.route('/chat')
 @login_required
 def chat():
@@ -2630,47 +2258,8 @@ def get_new_group_messages(last_id, group_id):
             'mentions': m.mentions
         })
     return jsonify(result)
-@app.route('/get_stickers_panel')
-@login_required
-def get_stickers_panel():
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    stickers_html = '<div class="stickers-panel"><h4>📦 Мои стикеры</h4><div class="stickers-list">'
-    
-    for up in user_packs:
-        pack = StickerPack.query.get(up.pack_id)
-        if pack:
-            stickers = Sticker.query.filter_by(pack_id=pack.id).all()
-            for s in stickers:
-                stickers_html += f'<img src="{s.file_path}" class="sticker-btn" onclick="sendSticker({s.id})" title="{s.emoji}">'
-    
-    stickers_html += '</div></div>'
-    return stickers_html
-@app.route('/upload_sticker_by_url', methods=['POST'])
-@login_required
-def upload_sticker_by_url():
-    data = request.get_json()
-    url = data.get('url')
-    receiver_id = data.get('receiver_id')
-    
-    import requests
-    response = requests.get(url, timeout=10)
-    filename = f"sticker_{uuid.uuid4().hex}.png"
-    filepath = os.path.join(STICKER_FOLDER, filename)
-    with open(filepath, 'wb') as f:
-        f.write(response.content)
-    
-    msg = Message(
-        content='',
-        file_path=f'/static/stickers/{filename}',
-        file_name='sticker.png',
-        file_type='sticker',
-        sender_id=current_user.id,
-        receiver_id=receiver_id
-    )
-    db.session.add(msg)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+
+# ========== ЗАПУСК ==========
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=True)
