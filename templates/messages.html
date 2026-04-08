@@ -32,7 +32,6 @@
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
-        .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px}
         .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
         .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0}
         .voice-wave{display:flex;align-items:center;gap:2px}
@@ -53,7 +52,7 @@
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         .pinned-badge:hover{background:#ff6b6b40}
         
-        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0;position:relative}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
@@ -64,14 +63,14 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-        /* СТИКЕРЫ - выезжающая панель */
-        .sticker-panel{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:20px 20px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);max-height:250px;overflow-y:auto;z-index:100;display:none;margin-bottom:5px;padding:10px}
-        .sticker-panel.active{display:block}
-        .sticker-pack-title{font-size:12px;color:#888;margin-bottom:8px;padding-left:4px}
-        .sticker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-        .sticker-item{background:#f5f5f5;border-radius:16px;padding:8px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
-        .sticker-item:hover{background:#e8e8e8;transform:scale(1.05)}
-        .sticker-item img{width:100%;max-width:80px;height:auto;object-fit:contain}
+        /* СТИКЕР ПАНЕЛЬ */
+        .sticker-panel-fixed{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:20px 20px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);max-height:280px;overflow-y:auto;z-index:1000;display:none;margin-bottom:5px;padding:12px}
+        .sticker-panel-fixed.active{display:block}
+        .sticker-grid-fixed{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .sticker-item-fixed{background:#f5f5f5;border-radius:16px;padding:10px;cursor:pointer;text-align:center;transition:0.2s}
+        .sticker-item-fixed:hover{background:#e8e8e8;transform:scale(1.05)}
+        .sticker-item-fixed img{width:80px;height:80px;object-fit:contain}
+        .sticker-item-fixed div{font-size:12px;margin-top:5px;color:#333}
         
         .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
         .mention-suggestions.active{display:block}
@@ -106,8 +105,7 @@
             .profile-btn{padding:4px 8px;font-size:11px}
             .call-btn{padding:4px 8px;font-size:11px}
             .user-name{font-size:12px}
-            .sticker-grid{grid-template-columns:repeat(4,1fr)}
-            .sticker-item img{max-width:60px}
+            .sticker-item-fixed img{width:60px;height:60px}
         }
     </style>
 </head>
@@ -171,7 +169,6 @@
                     {% endif %}
                 </div>
                 {% if m.file_path and m.file_type == 'sticker' and not m.content %}
-                    <!-- уже отображено выше -->
                 {% elif m.file_path and not m.content %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
@@ -240,12 +237,6 @@
         <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <!-- ПАНЕЛЬ СТИКЕРОВ -->
-            <div class="sticker-panel" id="stickerPanel">
-                <div class="sticker-pack-title">🐻 Милые мишки</div>
-                <div class="sticker-grid" id="stickerGrid"></div>
-            </div>
-            <button class="input-icon" id="stickerBtn" style="font-size:18px">🎨</button>
             <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
@@ -260,6 +251,31 @@
         <span>😡</span><span>🤔</span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
         <span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span>
         <span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span><span>🧸</span><span>🎈</span><span>🎀</span>
+    </div>
+</div>
+
+<!-- СТИКЕР ПАНЕЛЬ (ВСТРОЕННАЯ ПРЯМО СЮДА) -->
+<div id="stickerPanelFixed" class="sticker-panel-fixed">
+    <div style="font-size:14px; color:#ff6b6b; margin-bottom:10px; font-weight:bold;">📦 МОИ СТИКЕРЫ</div>
+    <div class="sticker-grid-fixed">
+        <div class="sticker-item-fixed" data-emoji="❤️" data-text="Люблю" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998630.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998630.png"><div>❤️ Люблю</div>
+        </div>
+        <div class="sticker-item-fixed" data-emoji="🤗" data-text="Обнял" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998635.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998635.png"><div>🤗 Обнял</div>
+        </div>
+        <div class="sticker-item-fixed" data-emoji="👍" data-text="Да" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998628.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998628.png"><div>👍 Да</div>
+        </div>
+        <div class="sticker-item-fixed" data-emoji="👎" data-text="Нет" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998640.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998640.png"><div>👎 Нет</div>
+        </div>
+        <div class="sticker-item-fixed" data-emoji="🙏" data-text="Спасибо" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998645.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998645.png"><div>🙏 Спасибо</div>
+        </div>
+        <div class="sticker-item-fixed" data-emoji="🔄" data-text="Всегда пожалуйста" data-url="https://cdn-icons-png.flaticon.com/512/1998/1998648.png">
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998648.png"><div>🔄 Всегда пожалуйста</div>
+        </div>
     </div>
 </div>
 
@@ -279,101 +295,55 @@
     let isSending = false;
     let processedIds = new Set();
     
-    // СТИКЕРЫ
-    let stickerPacks = [];
-    let stickerLongPressTimer = null;
-    let isStickerLongPress = false;
-    const stickerBtn = document.getElementById('stickerBtn');
-    const stickerPanel = document.getElementById('stickerPanel');
-    const stickerGrid = document.getElementById('stickerGrid');
+    // ========== СТИКЕРЫ ==========
+    const stickerBtn = document.createElement('button');
+    stickerBtn.className = 'input-icon';
+    stickerBtn.style.cssText = 'font-size:20px; background:#ff6b6b; color:white; border-radius:50%; width:36px; height:36px; margin:0 4px; display:flex; align-items:center; justify-content:center;';
+    stickerBtn.innerHTML = '🎨';
     
-    // Загрузка стикерпаков
-    function loadStickers() {
-        fetch('/stickers/my/api')
-            .then(r => r.json())
-            .then(data => {
-                stickerPacks = data;
-                renderStickerPanel();
-            })
-            .catch(() => {
-                // Тестовые стикеры для демо
-                stickerGrid.innerHTML = `
-                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png')"><img src="https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png"></div>
-                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png')"><img src="https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png"></div>
-                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png')"><img src="https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png"></div>
-                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png')"><img src="https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png"></div>
-                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png')"><img src="https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png"></div>
-                `;
+    // Добавляем кнопку в input-wrapper
+    const inputWrapper = document.querySelector('.input-wrapper');
+    if(inputWrapper) {
+        inputWrapper.appendChild(stickerBtn);
+    }
+    
+    const stickerPanel = document.getElementById('stickerPanelFixed');
+    
+    // Открытие/закрытие панели
+    stickerBtn.onclick = function(e) {
+        e.stopPropagation();
+        if(stickerPanel.style.display === 'block') {
+            stickerPanel.style.display = 'none';
+        } else {
+            stickerPanel.style.display = 'block';
+            document.getElementById('emojiPicker').classList.remove('active');
+        }
+    };
+    
+    // Отправка стикера
+    document.querySelectorAll('.sticker-item-fixed').forEach(item => {
+        item.onclick = function() {
+            const url = this.getAttribute('data-url');
+            const emoji = this.getAttribute('data-emoji');
+            const text = this.getAttribute('data-text');
+            
+            // Отправляем стикер как сообщение с картинкой
+            fetch('/upload_sticker_by_url', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: url, receiver_id: receiver_id})
+            }).then(() => {
+                setTimeout(() => checkNewMessages(), 200);
+                stickerPanel.style.display = 'none';
             });
-    }
-    
-    function renderStickerPanel() {
-        if(!stickerPacks.length) return;
-        stickerGrid.innerHTML = '';
-        stickerPacks.forEach(pack => {
-            if(pack.stickers && pack.stickers.length) {
-                pack.stickers.forEach(sticker => {
-                    const div = document.createElement('div');
-                    div.className = 'sticker-item';
-                    div.onclick = () => sendSticker(sticker.id);
-                    div.innerHTML = `<img src="${sticker.file_path}">`;
-                    stickerGrid.appendChild(div);
-                });
-            }
-        });
-    }
-    
-    function sendSticker(stickerId) {
-        fetch('/stickers/send/' + stickerId, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({receiver_id: receiver_id, chat_type: 'private'})
-        }).then(() => {
-            setTimeout(() => checkNewMessages(), 200);
-            stickerPanel.classList.remove('active');
-        });
-    }
-    
-    function sendStickerByUrl(url) {
-        fetch('/upload_sticker_by_url', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({url: url, receiver_id: receiver_id})
-        }).then(() => {
-            setTimeout(() => checkNewMessages(), 200);
-            stickerPanel.classList.remove('active');
-        });
-    }
-    
-    // Долгое нажатие для стикеров
-    stickerBtn.addEventListener('mousedown', function(e) {
-        stickerLongPressTimer = setTimeout(() => {
-            isStickerLongPress = true;
-            stickerPanel.classList.toggle('active');
-            if(stickerPanel.classList.contains('active')) {
-                document.getElementById('emojiPicker').classList.remove('active');
-            }
-        }, 300);
+        };
     });
     
-    stickerBtn.addEventListener('mouseup', function() {
-        if(stickerLongPressTimer) clearTimeout(stickerLongPressTimer);
-        setTimeout(() => { isStickerLongPress = false; }, 100);
-    });
-    
-    stickerBtn.addEventListener('touchstart', function(e) {
-        stickerLongPressTimer = setTimeout(() => {
-            isStickerLongPress = true;
-            stickerPanel.classList.toggle('active');
-            if(stickerPanel.classList.contains('active')) {
-                document.getElementById('emojiPicker').classList.remove('active');
-            }
-        }, 300);
-    });
-    
-    stickerBtn.addEventListener('touchend', function() {
-        if(stickerLongPressTimer) clearTimeout(stickerLongPressTimer);
-        setTimeout(() => { isStickerLongPress = false; }, 100);
+    // Закрытие панели при клике вне её
+    document.addEventListener('click', function(e) {
+        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
+            stickerPanel.style.display = 'none';
+        }
     });
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
@@ -644,7 +614,7 @@
     
     voiceBtn.addEventListener('mouseup', function(e) {
         if(voiceLongPressTimer) clearTimeout(voiceLongPressTimer);
-        if(!isVoiceLongPress && !isVideoRecording) {
+        if(!isVoiceLongPress && !isAudioRecording) {
             toggleVoiceRecording();
         }
         isVoiceLongPress = false;
@@ -652,7 +622,7 @@
     
     document.getElementById('emojiBtn').onclick = () => { 
         document.getElementById('emojiPicker').classList.toggle('active');
-        stickerPanel.classList.remove('active');
+        stickerPanel.style.display = 'none';
     };
     document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
@@ -671,15 +641,11 @@
         if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
             document.getElementById('emojiPicker').classList.remove('active');
         }
-        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
-            stickerPanel.classList.remove('active');
-        }
     });
     
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    loadStickers();
     pollingInterval = setInterval(checkNewMessages, 800);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);

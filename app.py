@@ -2630,7 +2630,47 @@ def get_new_group_messages(last_id, group_id):
             'mentions': m.mentions
         })
     return jsonify(result)
-
+@app.route('/get_stickers_panel')
+@login_required
+def get_stickers_panel():
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    stickers_html = '<div class="stickers-panel"><h4>📦 Мои стикеры</h4><div class="stickers-list">'
+    
+    for up in user_packs:
+        pack = StickerPack.query.get(up.pack_id)
+        if pack:
+            stickers = Sticker.query.filter_by(pack_id=pack.id).all()
+            for s in stickers:
+                stickers_html += f'<img src="{s.file_path}" class="sticker-btn" onclick="sendSticker({s.id})" title="{s.emoji}">'
+    
+    stickers_html += '</div></div>'
+    return stickers_html
+@app.route('/upload_sticker_by_url', methods=['POST'])
+@login_required
+def upload_sticker_by_url():
+    data = request.get_json()
+    url = data.get('url')
+    receiver_id = data.get('receiver_id')
+    
+    import requests
+    response = requests.get(url, timeout=10)
+    filename = f"sticker_{uuid.uuid4().hex}.png"
+    filepath = os.path.join(STICKER_FOLDER, filename)
+    with open(filepath, 'wb') as f:
+        f.write(response.content)
+    
+    msg = Message(
+        content='',
+        file_path=f'/static/stickers/{filename}',
+        file_name='sticker.png',
+        file_type='sticker',
+        sender_id=current_user.id,
+        receiver_id=receiver_id
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, threaded=True)
