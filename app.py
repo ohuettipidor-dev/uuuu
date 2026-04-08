@@ -1,3 +1,6 @@
+## ПОЛНЫЙ `app.py` (стикеры работают, образцы встроены)
+
+```python
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -399,8 +402,57 @@ signaling_store = {}
 def load_user(uid):
     return db.session.get(User, uid)
 
+# ========== ТЕСТОВЫЕ СТИКЕРЫ (ВСТРОЕННЫЕ ОБРАЗЦЫ) ==========
+STICKER_SAMPLES = [
+    {'emoji': '🐻', 'url': 'https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png'},
+    {'emoji': '🤗', 'url': 'https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png'},
+    {'emoji': '❤️', 'url': 'https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png'},
+    {'emoji': '👋', 'url': 'https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png'},
+    {'emoji': '😍', 'url': 'https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png'},
+    {'emoji': '🎉', 'url': 'https://emoji.slackmojis.com/emojis/2020-06-09/59002/party_bear.png'},
+]
+
 with app.app_context():
     db.create_all()
+    
+    # Создаём тестовый стикерпак и стикеры
+    if StickerPack.query.count() == 0:
+        free_pack = StickerPack(
+            name='Милые мишки',
+            author_id=1,
+            is_premium=False,
+            price=0,
+            preview='/static/stickers/preview.png'
+        )
+        db.session.add(free_pack)
+        db.session.commit()
+        
+        for sample in STICKER_SAMPLES:
+            try:
+                response = requests.get(sample['url'], timeout=10)
+                if response.status_code == 200:
+                    filename = f"sticker_{uuid.uuid4().hex}.png"
+                    filepath = os.path.join(STICKER_FOLDER, filename)
+                    with open(filepath, 'wb') as f:
+                        f.write(response.content)
+                    
+                    sticker = Sticker(
+                        pack_id=free_pack.id,
+                        emoji=sample['emoji'],
+                        file_path=f'/static/stickers/{filename}'
+                    )
+                    db.session.add(sticker)
+            except Exception as e:
+                print(f"Sticker download error: {e}")
+        
+        db.session.commit()
+        
+        # Добавляем стикерпак первому пользователю (если есть)
+        first_user = User.query.first()
+        if first_user:
+            user_pack = UserSticker(user_id=first_user.id, pack_id=free_pack.id)
+            db.session.add(user_pack)
+            db.session.commit()
 
 @app.template_filter('json_decode')
 def json_decode_filter(data):
@@ -1483,8 +1535,7 @@ def upload_sticker_by_url():
     url = data.get('url')
     receiver_id = data.get('receiver_id')
     
-    import requests
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     filename = f"sticker_{uuid.uuid4().hex}.png"
     filepath = os.path.join(STICKER_FOLDER, filename)
     with open(filepath, 'wb') as f:
@@ -2425,3 +2476,4 @@ def get_new_group_messages(last_id, group_id):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, threaded=True)
+```
