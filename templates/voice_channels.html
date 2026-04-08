@@ -5,62 +5,335 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);font-family:'Segoe UI',sans-serif;min-height:100vh;color:#fff}
-        .container{max-width:1000px;margin:0 auto;padding:20px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:15px;border-bottom:1px solid rgba(255,255,255,0.1)}
-        .header h1{font-size:24px;display:flex;align-items:center;gap:10px}
-        .back-btn{background:rgba(255,255,255,0.1);color:white;padding:8px 20px;border-radius:20px;text-decoration:none}
-        .create-channel{background:linear-gradient(135deg,#5865F2,#4752C4);border:none;color:white;padding:12px 24px;border-radius:30px;cursor:pointer;margin-bottom:25px;display:flex;align-items:center;gap:8px}
-        .channels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
-        .channel-card{background:rgba(255,255,255,0.08);border-radius:20px;padding:20px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1)}
-        .channel-header{display:flex;align-items:center;gap:12px;margin-bottom:15px}
-        .channel-icon{width:50px;height:50px;background:#5865F2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
-        .channel-info h3{font-size:18px;margin-bottom:4px}
-        .channel-info p{font-size:12px;color:#aaa}
-        .members-list{margin:15px 0;padding:10px;background:rgba(0,0,0,0.2);border-radius:12px;max-height:120px;overflow-y:auto}
-        .member{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;font-size:13px}
-        .join-btn{width:100%;background:#5865F2;border:none;color:white;padding:10px;border-radius:12px;cursor:pointer;font-weight:600}
-        .join-btn.leave{background:#ed4245}
-        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center}
-        .modal.active{display:flex}
-        .modal-content{background:#2c2f33;border-radius:20px;padding:30px;width:90%;max-width:400px}
-        .modal-content input{width:100%;padding:12px;margin:15px 0;border-radius:10px;border:none;background:#23272a;color:white}
-        .modal-buttons{display:flex;gap:10px}
-        .modal-buttons button{flex:1;padding:10px;border:none;border-radius:10px;cursor:pointer}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1e1e2e;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            color: #fff;
+        }
+        
+        /* ЛЕЙАУТ КАК В DISCORD */
+        .discord-layout {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* БОКОВАЯ ПАНЕЛЬ С КАНАЛАМИ */
+        .channels-sidebar {
+            width: 280px;
+            background: #1e1e2e;
+            border-right: 1px solid #2a2a3e;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .server-header {
+            padding: 20px;
+            background: #181825;
+            border-bottom: 1px solid #2a2a3e;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .voice-channels-list {
+            padding: 15px;
+        }
+        
+        .voice-category {
+            margin-bottom: 20px;
+        }
+        
+        .category-title {
+            font-size: 12px;
+            color: #a0a0b0;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            padding-left: 8px;
+        }
+        
+        .voice-channel-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .voice-channel-item:hover {
+            background: #2a2a3e;
+        }
+        
+        .voice-channel-item.active {
+            background: #3a3a4e;
+        }
+        
+        .channel-icon {
+            font-size: 18px;
+        }
+        
+        .channel-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .member-count {
+            font-size: 11px;
+            color: #a0a0b0;
+        }
+        
+        /* ОСНОВНАЯ ОБЛАСТЬ - ВИДЕО */
+        .video-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a2a;
+        }
+        
+        /* ВИДЕО-СЕТКА */
+        .video-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            overflow-y: auto;
+            background: #1a1a2a;
+        }
+        
+        .video-card {
+            background: #2a2a3e;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/9;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        
+        .video-card.speaking {
+            border-color: #43b581;
+            box-shadow: 0 0 20px rgba(67, 181, 129, 0.3);
+        }
+        
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #1a1a2a;
+        }
+        
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .mic-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43b581;
+        }
+        
+        .mic-status.muted {
+            background: #ed4245;
+        }
+        
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
+        .control-panel {
+            background: #181825;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #2a2a3e;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .control-btn {
+            background: #2a2a3e;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: #3a3a4e;
+        }
+        
+        .control-btn.danger {
+            background: #ed4245;
+        }
+        
+        .control-btn.danger:hover {
+            background: #c03537;
+        }
+        
+        .control-btn.success {
+            background: #43b581;
+        }
+        
+        .current-channel-info {
+            font-size: 14px;
+            color: #a0a0b0;
+        }
+        
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #2a2a3e;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: none;
+            background: #1e1e2e;
+            color: white;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .device-select {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #1e1e2e;
+            color: white;
+            border: none;
+            width: 100%;
+        }
+        
+        .video-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: #2a2a3e;
+            font-size: 48px;
+        }
+        
+        /* Адаптив */
+        @media (max-width: 768px) {
+            .channels-sidebar {
+                width: 200px;
+            }
+            .video-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 10px;
+            }
+            .control-btn span:last-child {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>🎤 Голосовые каналы</h1>
-        <a href="/chat" class="back-btn">← Назад</a>
+<div class="discord-layout">
+    <!-- Боковая панель с каналами -->
+    <div class="channels-sidebar">
+        <div class="server-header">
+            <span>🎤 BearGram</span>
+            <button class="create-channel" style="background:none; font-size:18px; padding:0;" onclick="openCreateModal()">➕</button>
+        </div>
+        <div class="voice-channels-list">
+            <div class="voice-category">
+                <div class="category-title">ГОЛОСОВЫЕ КАНАЛЫ</div>
+                <div id="channelsList"></div>
+            </div>
+        </div>
     </div>
     
-    <button class="create-channel" onclick="openCreateModal()">➕ Создать канал</button>
-    
-    <div class="channels-grid" id="channelsGrid">
-        {% for channel in channels %}
-        <div class="channel-card" data-channel-id="{{ channel.id }}">
-            <div class="channel-header">
-                <div class="channel-icon">🎤</div>
-                <div class="channel-info">
-                    <h3>{{ channel.name }}</h3>
-                    <p>👥 {{ channel.member_count }} участников</p>
-                </div>
-            </div>
-            <div class="members-list" id="members-{{ channel.id }}">
-                {% for member in channel.members %}
-                <div class="member">🔵 {{ member.username }}</div>
-                {% endfor %}
-            </div>
-            {% if channel.is_joined %}
-            <button class="join-btn leave" onclick="leaveChannel({{ channel.id }})">🚪 Покинуть</button>
-            {% else %}
-            <button class="join-btn" onclick="joinChannel({{ channel.id }})">🎤 Подключиться</button>
-            {% endif %}
+    <!-- Основная область с видео -->
+    <div class="video-area">
+        <div class="video-grid" id="videoGrid">
+            <div class="video-placeholder">🎤 Выберите голосовой канал</div>
         </div>
-        {% endfor %}
+        
+        <div class="control-panel">
+            <div class="current-channel-info" id="currentChannelInfo">
+                Не в канале
+            </div>
+            <div class="control-buttons">
+                <button class="control-btn" id="muteBtn" onclick="toggleMute()">
+                    🎤 Микрофон
+                </button>
+                <button class="control-btn" id="videoBtn" onclick="toggleVideo()">
+                    📷 Камера
+                </button>
+                <button class="control-btn" id="deafenBtn" onclick="toggleDeafen()">
+                    🔊 Звук
+                </button>
+                <button class="control-btn danger" id="leaveBtn" onclick="leaveCurrentChannel()" style="display:none;">
+                    🚪 Выйти
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -76,44 +349,436 @@
 </div>
 
 <script>
-    function openCreateModal() {
-        document.getElementById('createModal').classList.add('active');
-    }
-    function closeCreateModal() {
-        document.getElementById('createModal').classList.remove('active');
-    }
-    async function createChannel() {
-        const name = document.getElementById('channelName').value.trim();
-        if(!name) { alert('Введите название'); return; }
-        const formData = new FormData();
-        formData.append('name', name);
-        const response = await fetch('/create_voice_channel', { method: 'POST', body: formData });
-        const data = await response.json();
-        if(data.success || data.redirect) {
-            location.reload();
-        } else {
-            alert('Ошибка создания');
+    // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+    let currentChannelId = null;
+    let localStream = null;
+    let peerConnections = {};
+    let isMuted = false;
+    let isVideoOff = false;
+    let isDeafened = false;
+    let localVideoElement = null;
+    let participants = {};
+    
+    // Конфигурация WebRTC
+    const configuration = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+    };
+    
+    // ========== ПОЛУЧЕНИЕ МЕДИА (МИКРОФОН + КАМЕРА) ==========
+    async function getMedia() {
+        try {
+            const constraints = {
+                audio: true,
+                video: !isVideoOff
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            localStream = stream;
+            
+            // Создаём локальное видео
+            if (!localVideoElement) {
+                localVideoElement = document.createElement('video');
+                localVideoElement.autoplay = true;
+                localVideoElement.muted = true;
+                localVideoElement.playsInline = true;
+            }
+            
+            localVideoElement.srcObject = stream;
+            
+            // Обновляем кнопки
+            updateMuteButton();
+            updateVideoButton();
+            
+            return stream;
+        } catch (error) {
+            console.error('Ошибка доступа к медиа:', error);
+            alert('Не удалось получить доступ к микрофону/камере');
+            return null;
         }
     }
+    
+    // ========== ЗАГРУЗКА СПИСКА КАНАЛОВ ==========
+    async function loadChannels() {
+        const response = await fetch('/voice/channels/list');
+        const channels = await response.json();
+        
+        const channelsList = document.getElementById('channelsList');
+        channelsList.innerHTML = '';
+        
+        for (const ch of channels) {
+            const div = document.createElement('div');
+            div.className = `voice-channel-item ${currentChannelId === ch.id ? 'active' : ''}`;
+            div.onclick = () => joinChannel(ch.id);
+            div.innerHTML = `
+                <div class="channel-icon">🔊</div>
+                <div class="channel-name">${escapeHtml(ch.name)}</div>
+                <div class="member-count">${ch.member_count}</div>
+            `;
+            channelsList.appendChild(div);
+        }
+    }
+    
+    // ========== ПОДКЛЮЧЕНИЕ К КАНАЛУ ==========
     async function joinChannel(channelId) {
+        if (currentChannelId === channelId) return;
+        
+        // Выходим из текущего канала
+        if (currentChannelId) {
+            await leaveCurrentChannel();
+        }
+        
+        const stream = await getMedia();
+        if (!stream) return;
+        
         const response = await fetch(`/voice/join/${channelId}`, { method: 'POST' });
         const data = await response.json();
-        if(data.success) {
-            location.reload();
+        
+        if (data.success) {
+            currentChannelId = channelId;
+            document.getElementById('currentChannelInfo').innerHTML = `🔊 В канале...`;
+            document.getElementById('leaveBtn').style.display = 'block';
+            
+            // Загружаем участников
+            await loadParticipants();
+            
+            // Начинаем периодическое обновление
+            startPolling();
+            
+            // Обновляем список каналов
+            loadChannels();
         } else {
             alert(data.error || 'Ошибка подключения');
         }
     }
-    async function leaveChannel(channelId) {
-        const response = await fetch(`/voice/leave/${channelId}`, { method: 'POST' });
-        const data = await response.json();
-        if(data.success) {
-            location.reload();
-        } else {
-            alert('Ошибка выхода');
+    
+    // ========== ЗАГРУЗКА УЧАСТНИКОВ И УСТАНОВКА СОЕДИНЕНИЙ ==========
+    async function loadParticipants() {
+        if (!currentChannelId) return;
+        
+        const response = await fetch(`/voice/members/${currentChannelId}`);
+        const members = await response.json();
+        
+        const currentUserId = {{ current_user.id }};
+        
+        // Обновляем видео-сетку
+        const videoGrid = document.getElementById('videoGrid');
+        
+        // Добавляем локальное видео
+        if (localStream && !document.getElementById('local-video')) {
+            const localCard = document.createElement('div');
+            localCard.className = 'video-card';
+            localCard.id = 'local-video';
+            localCard.innerHTML = `
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-label">
+                    <div class="mic-status" id="local-mic-status"></div>
+                    Вы (${escapeHtml('{{ current_user.username }}')})
+                </div>
+            `;
+            videoGrid.appendChild(localCard);
+            const videoEl = localCard.querySelector('video');
+            videoEl.srcObject = localStream;
+        }
+        
+        // Обновляем статус микрофона
+        const localMicStatus = document.getElementById('local-mic-status');
+        if (localMicStatus) {
+            localMicStatus.className = `mic-status ${isMuted ? 'muted' : ''}`;
+        }
+        
+        // Для каждого участника создаём соединение
+        for (const member of members) {
+            if (member.id !== currentUserId && !peerConnections[member.id]) {
+                createPeerConnection(member.id);
+            }
+        }
+        
+        // Удаляем соединения с теми, кто вышел
+        for (const peerId in peerConnections) {
+            if (!members.find(m => m.id == peerId)) {
+                peerConnections[peerId].close();
+                delete peerConnections[peerId];
+                const videoCard = document.getElementById(`video-${peerId}`);
+                if (videoCard) videoCard.remove();
+            }
         }
     }
-    setInterval(() => { location.reload(); }, 5000);
+    
+    // ========== СОЗДАНИЕ WEBRTC СОЕДИНЕНИЯ ==========
+    async function createPeerConnection(remoteUserId) {
+        const pc = new RTCPeerConnection(configuration);
+        peerConnections[remoteUserId] = pc;
+        
+        // Добавляем локальные треки
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+            });
+        }
+        
+        // Обработка входящих треков
+        pc.ontrack = (event) => {
+            let videoCard = document.getElementById(`video-${remoteUserId}`);
+            if (!videoCard) {
+                const videoGrid = document.getElementById('videoGrid');
+                videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.id = `video-${remoteUserId}`;
+                videoCard.innerHTML = `
+                    <video autoplay playsinline></video>
+                    <div class="video-label">
+                        <div class="mic-status"></div>
+                        <span id="username-${remoteUserId}">Загрузка...</span>
+                    </div>
+                `;
+                videoGrid.appendChild(videoCard);
+            }
+            
+            const videoEl = videoCard.querySelector('video');
+            if (videoEl && !videoEl.srcObject) {
+                videoEl.srcObject = event.streams[0];
+            }
+        };
+        
+        // ICE кандидаты
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                sendSignal(remoteUserId, { ice: event.candidate });
+            }
+        };
+        
+        // Создаём offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendSignal(remoteUserId, { sdp: pc.localDescription, type: 'offer' });
+        
+        // Получаем username
+        const response = await fetch(`/get_user/${remoteUserId}`);
+        const user = await response.json();
+        const nameSpan = document.getElementById(`username-${remoteUserId}`);
+        if (nameSpan) nameSpan.textContent = user.username;
+    }
+    
+    // ========== ОТПРАВКА СИГНАЛОВ ==========
+    async function sendSignal(remoteUserId, data) {
+        if (!currentChannelId) return;
+        
+        await fetch('/voice/signal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                channel_id: currentChannelId,
+                to_user_id: remoteUserId,
+                ...data
+            })
+        });
+    }
+    
+    // ========== ПОЛУЧЕНИЕ СИГНАЛОВ ==========
+    async function pollSignals() {
+        if (!currentChannelId) return;
+        
+        const response = await fetch(`/voice/get_signals/${currentChannelId}/{{ current_user.id }}`);
+        const signals = await response.json();
+        
+        for (const fromUserId in signals) {
+            const signal = signals[fromUserId];
+            let pc = peerConnections[fromUserId];
+            
+            if (!pc) {
+                pc = new RTCPeerConnection(configuration);
+                peerConnections[fromUserId] = pc;
+                
+                if (localStream) {
+                    localStream.getTracks().forEach(track => {
+                        pc.addTrack(track, localStream);
+                    });
+                }
+                
+                pc.ontrack = (event) => {
+                    let videoCard = document.getElementById(`video-${fromUserId}`);
+                    if (!videoCard) {
+                        const videoGrid = document.getElementById('videoGrid');
+                        videoCard = document.createElement('div');
+                        videoCard.className = 'video-card';
+                        videoCard.id = `video-${fromUserId}`;
+                        videoCard.innerHTML = `
+                            <video autoplay playsinline></video>
+                            <div class="video-label">
+                                <div class="mic-status"></div>
+                                <span>Пользователь</span>
+                            </div>
+                        `;
+                        videoGrid.appendChild(videoCard);
+                    }
+                    const videoEl = videoCard.querySelector('video');
+                    if (videoEl && !videoEl.srcObject) {
+                        videoEl.srcObject = event.streams[0];
+                    }
+                };
+                
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        sendSignal(fromUserId, { ice: event.candidate });
+                    }
+                };
+            }
+            
+            if (signal.sdp) {
+                await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                if (signal.sdp_type === 'offer') {
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    sendSignal(fromUserId, { sdp: pc.localDescription, type: 'answer' });
+                }
+            }
+            
+            if (signal.ice) {
+                await pc.addIceCandidate(new RTCIceCandidate(signal.ice));
+            }
+        }
+    }
+    
+    // ========== ВЫХОД ИЗ КАНАЛА ==========
+    async function leaveCurrentChannel() {
+        if (!currentChannelId) return;
+        
+        await fetch(`/voice/leave/${currentChannelId}`, { method: 'POST' });
+        
+        // Закрываем все соединения
+        for (const pc of Object.values(peerConnections)) {
+            pc.close();
+        }
+        peerConnections = {};
+        
+        // Останавливаем локальный стрим
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        
+        // Очищаем видео-сетку
+        document.getElementById('videoGrid').innerHTML = '<div class="video-placeholder">🎤 Выберите голосовой канал</div>';
+        localVideoElement = null;
+        
+        currentChannelId = null;
+        document.getElementById('currentChannelInfo').innerHTML = 'Не в канале';
+        document.getElementById('leaveBtn').style.display = 'none';
+        
+        loadChannels();
+    }
+    
+    // ========== УПРАВЛЕНИЕ МЕДИА ==========
+    function toggleMute() {
+        if (localStream) {
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                isMuted = !audioTrack.enabled;
+                updateMuteButton();
+                
+                const localMicStatus = document.getElementById('local-mic-status');
+                if (localMicStatus) {
+                    localMicStatus.className = `mic-status ${isMuted ? 'muted' : ''}`;
+                }
+            }
+        }
+    }
+    
+    function toggleVideo() {
+        isVideoOff = !isVideoOff;
+        getMedia(); // Перезапрашиваем стрим с новыми настройками
+        updateVideoButton();
+    }
+    
+    function toggleDeafen() {
+        isDeafened = !isDeafened;
+        const deafenBtn = document.getElementById('deafenBtn');
+        
+        for (const pc of Object.values(peerConnections)) {
+            // Отключаем звук на всех соединениях
+            pc.getReceivers().forEach(receiver => {
+                receiver.track.enabled = !isDeafened;
+            });
+        }
+        
+        deafenBtn.innerHTML = isDeafened ? '🔇 Звук выкл' : ' 🔊 Звук вкл';
+        deafenBtn.style.background = isDeafened ? '#ed4245' : '#2a2a3e';
+    }
+    
+    function updateMuteButton() {
+        const muteBtn = document.getElementById('muteBtn');
+        muteBtn.innerHTML = isMuted ? '🔇 Микрофон выкл' : '🎤 Микрофон вкл';
+        muteBtn.style.background = isMuted ? '#ed4245' : '#2a2a3e';
+    }
+    
+    function updateVideoButton() {
+        const videoBtn = document.getElementById('videoBtn');
+        videoBtn.innerHTML = isVideoOff ? '📷 Камера выкл' : '📷 Камера вкл';
+        videoBtn.style.background = isVideoOff ? '#ed4245' : '#2a2a3e';
+    }
+    
+    // ========== ОБНОВЛЕНИЕ УЧАСТНИКОВ ==========
+    let pollingInterval = null;
+    
+    function startPolling() {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(async () => {
+            if (currentChannelId) {
+                await loadParticipants();
+                await pollSignals();
+            }
+        }, 2000);
+    }
+    
+    // ========== СОЗДАНИЕ КАНАЛА ==========
+    function openCreateModal() {
+        document.getElementById('createModal').classList.add('active');
+    }
+    
+    function closeCreateModal() {
+        document.getElementById('createModal').classList.remove('active');
+    }
+    
+    async function createChannel() {
+        const name = document.getElementById('channelName').value.trim();
+        if (!name) {
+            alert('Введите название канала');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('name', name);
+        
+        const response = await fetch('/create_voice_channel', { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.success) {
+            closeCreateModal();
+            loadChannels();
+        } else {
+            alert('Ошибка создания канала');
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    loadChannels();
+    setInterval(loadChannels, 5000);
 </script>
 </body>
 </html>
