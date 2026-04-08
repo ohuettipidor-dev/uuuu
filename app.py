@@ -1,6 +1,3 @@
-## ПОЛНЫЙ `app.py` (стикеры работают, образцы встроены)
-
-```python
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -47,7 +44,6 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ========== КРИПТОГРАФИЯ ==========
 def generate_secret_key(user_id, other_id):
     combined = f"beargram_secret_{min(user_id, other_id)}_{max(user_id, other_id)}_bear"
     return hashlib.sha256(combined.encode()).digest()
@@ -77,7 +73,6 @@ def decrypt_message(encrypted_message, user_id, other_id):
     except Exception:
         return "[Зашифрованное сообщение]"
 
-# ========== render_mentions ==========
 def render_mentions(text, current_user_id=None):
     if not text:
         return text, []
@@ -293,7 +288,6 @@ class ChannelComment(db.Model):
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-# ========== ПОДАРКИ И СТИКЕРЫ ==========
 class StickerPack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -335,7 +329,6 @@ class Gift(db.Model):
     from_user = db.relationship('User', foreign_keys=[from_user_id])
     to_user = db.relationship('User', foreign_keys=[to_user_id])
 
-# ========== МОНЕТИЗАЦИЯ ==========
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -398,24 +391,21 @@ class FamilyMember(db.Model):
 
 signaling_store = {}
 
-@login_manager.user_loader
-def load_user(uid):
-    return db.session.get(User, uid)
-
-# ========== ТЕСТОВЫЕ СТИКЕРЫ (ВСТРОЕННЫЕ ОБРАЗЦЫ) ==========
 STICKER_SAMPLES = [
     {'emoji': '🐻', 'url': 'https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png'},
     {'emoji': '🤗', 'url': 'https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png'},
     {'emoji': '❤️', 'url': 'https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png'},
     {'emoji': '👋', 'url': 'https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png'},
     {'emoji': '😍', 'url': 'https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png'},
-    {'emoji': '🎉', 'url': 'https://emoji.slackmojis.com/emojis/2020-06-09/59002/party_bear.png'},
 ]
+
+@login_manager.user_loader
+def load_user(uid):
+    return db.session.get(User, uid)
 
 with app.app_context():
     db.create_all()
     
-    # Создаём тестовый стикерпак и стикеры
     if StickerPack.query.count() == 0:
         free_pack = StickerPack(
             name='Милые мишки',
@@ -447,7 +437,6 @@ with app.app_context():
         
         db.session.commit()
         
-        # Добавляем стикерпак первому пользователю (если есть)
         first_user = User.query.first()
         if first_user:
             user_pack = UserSticker(user_id=first_user.id, pack_id=free_pack.id)
@@ -673,7 +662,6 @@ def upload_video_message():
     
     return jsonify({'path': f'/static/uploads/{name}', 'duration': 0})
 
-# ========== СИГНАЛИЗАЦИЯ ДЛЯ ВИДЕОЗВОНКОВ ==========
 @app.route('/send_offer', methods=['POST'])
 @login_required
 def send_offer():
@@ -722,7 +710,6 @@ def get_signaling(room_id):
     
     return jsonify(result)
 
-# ========== ВИДЕОЗВОНКИ ==========
 @app.route('/start_call/<int:user_id>', methods=['POST'])
 @login_required
 def start_call(user_id):
@@ -773,7 +760,6 @@ def end_call(room_id):
         db.session.commit()
     return jsonify({'success': True})
 
-# ========== СЕКРЕТНЫЕ ЧАТЫ ==========
 @app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
 @login_required
 def create_secret_chat(user_id):
@@ -949,7 +935,6 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
-# ========== СТАТУС "ПЕЧАТАЕТ..." ==========
 @app.route('/typing', methods=['POST'])
 @login_required
 def typing():
@@ -981,7 +966,6 @@ def get_typing(receiver_id):
         return jsonify({'is_typing': True})
     return jsonify({'is_typing': False})
 
-# ========== ЗАКРЕПЛЕННЫЕ СООБЩЕНИЯ ==========
 @app.route('/pin_message', methods=['POST'])
 @login_required
 def pin_message():
@@ -1045,7 +1029,6 @@ def get_pinned_message(chat_id, chat_type):
             })
     return jsonify({'error': 'Нет закрепленных сообщений'}), 404
 
-# ========== ЗАЩИТА СКРИНШОТОВ ==========
 @app.route('/check_screenshot', methods=['POST'])
 @login_required
 def check_screenshot():
@@ -1054,7 +1037,6 @@ def check_screenshot():
     print(f"[СЕКРЕТНО] Пользователь {current_user.username} пытался сделать скриншот в чате {chat_id}")
     return jsonify({'warning': 'Скриншоты в секретных чатах запрещены!'}), 200
 
-# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
 @app.route('/create_voice_channel', methods=['POST'])
 @login_required
 def create_voice_channel():
@@ -1120,7 +1102,6 @@ def get_voice_channel_members(channel_id):
         })
     return jsonify(result)
 
-# ========== КАНАЛЫ ==========
 @app.route('/channels')
 @login_required
 def channels_list():
@@ -1340,7 +1321,6 @@ def api_channels_search():
     
     return jsonify(result)
 
-# ========== РЕДАКТИРОВАНИЕ ПОСТОВ КАНАЛА ==========
 @app.route('/channel/post/edit/<int:post_id>', methods=['POST'])
 @login_required
 def edit_channel_post(post_id):
@@ -1420,7 +1400,6 @@ def edit_channel(channel_id):
     
     return jsonify({'success': True})
 
-# ========== СТИКЕРЫ ==========
 @app.route('/stickers')
 @login_required
 def stickers_list():
@@ -1511,7 +1490,6 @@ def send_sticker(sticker_id):
     db.session.commit()
     return jsonify({'success': True})
 
-# ========== СТИКЕРЫ API ДЛЯ ПАНЕЛИ ==========
 @app.route('/stickers/my/api')
 @login_required
 def my_stickers_api():
@@ -1554,7 +1532,6 @@ def upload_sticker_by_url():
     
     return jsonify({'success': True})
 
-# ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
 @login_required
 def send_gift():
@@ -1642,7 +1619,6 @@ def use_gift(gift_id):
     
     return jsonify({'success': True})
 
-# ========== КАСТОМНЫЕ ТЕМЫ ==========
 @app.route('/themes')
 @login_required
 def themes_list():
@@ -1737,7 +1713,6 @@ def create_theme():
     
     return render_template('create_theme.html')
 
-# ========== ОБЛАЧНОЕ ХРАНИЛИЩЕ ==========
 @app.route('/storage')
 @login_required
 def storage_page():
@@ -1836,7 +1811,6 @@ def upgrade_storage():
     
     return jsonify({'success': True, 'total_gb': storage.total_bytes / (1024**3)})
 
-# ========== СЕМЕЙНЫЕ АККАУНТЫ ==========
 @app.route('/family/create', methods=['POST'])
 @login_required
 def create_family():
@@ -1896,7 +1870,6 @@ def family_members(family_id):
     
     return jsonify(result)
 
-# ========== ОБЫЧНЫЕ ЧАТЫ ==========
 @app.route('/create_group', methods=['POST'])
 @login_required
 def create_group():
@@ -2476,4 +2449,3 @@ def get_new_group_messages(last_id, group_id):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, threaded=True)
-```
