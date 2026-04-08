@@ -393,6 +393,7 @@ class FamilyMember(db.Model):
     user = db.relationship('User', foreign_keys=[user_id])
 
 signaling_store = {}
+voice_signals = {}
 
 @login_manager.user_loader
 def load_user(uid):
@@ -897,7 +898,8 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
-# ========== ГОЛОСОВЫЕ КАНАЛЫ (КАК В DISCORD) ==========
+# ========== ГОЛОСОВЫЕ КАНАЛЫ С ВИДЕО (КАК В DISCORD) ==========
+
 @app.route('/voice_channels')
 @login_required
 def voice_channels_page():
@@ -905,12 +907,11 @@ def voice_channels_page():
     channel_data = []
     for ch in channels:
         members = VoiceChannelMember.query.filter_by(channel_id=ch.id).all()
-        member_count = len(members)
         is_joined = VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
         channel_data.append({
             'id': ch.id,
             'name': ch.name,
-            'member_count': member_count,
+            'member_count': len(members),
             'creator': ch.creator.username,
             'is_joined': is_joined,
             'max_users': ch.max_users,
@@ -1030,22 +1031,19 @@ def voice_signal():
     channel_id = data.get('channel_id')
     to_user_id = data.get('to_user_id')
     
-    if not hasattr(app, 'voice_signals'):
-        app.voice_signals = {}
-    
     key = f"voice_{channel_id}_{current_user.id}_{to_user_id}"
     
     if 'sdp' in data:
-        if key not in app.voice_signals:
-            app.voice_signals[key] = {}
-        app.voice_signals[key]['sdp'] = data['sdp']
-        app.voice_signals[key]['sdp_type'] = data.get('type', 'offer')
+        if key not in voice_signals:
+            voice_signals[key] = {}
+        voice_signals[key]['sdp'] = data['sdp']
+        voice_signals[key]['sdp_type'] = data.get('type', 'offer')
     elif 'ice' in data:
-        if key not in app.voice_signals:
-            app.voice_signals[key] = {}
-        if 'ice_candidates' not in app.voice_signals[key]:
-            app.voice_signals[key]['ice_candidates'] = []
-        app.voice_signals[key]['ice_candidates'].append(data['ice'])
+        if key not in voice_signals:
+            voice_signals[key] = {}
+        if 'ice_candidates' not in voice_signals[key]:
+            voice_signals[key]['ice_candidates'] = []
+        voice_signals[key]['ice_candidates'].append(data['ice'])
     
     return jsonify({'success': True})
 
@@ -1055,8 +1053,8 @@ def voice_get_signals(channel_id, from_user_id):
     key = f"voice_{channel_id}_{from_user_id}_{current_user.id}"
     result = {}
     
-    if hasattr(app, 'voice_signals') and key in app.voice_signals:
-        signal = app.voice_signals[key]
+    if key in voice_signals:
+        signal = voice_signals[key]
         if 'sdp' in signal:
             result['sdp'] = signal['sdp']
             result['sdp_type'] = signal.get('sdp_type', 'offer')
@@ -1067,7 +1065,7 @@ def voice_get_signals(channel_id, from_user_id):
             result['ice'] = signal['ice_candidates'].pop(0)
         
         if not signal:
-            del app.voice_signals[key]
+            del voice_signals[key]
     
     return jsonify(result)
 
@@ -1080,10 +1078,9 @@ def voice_delete_channel(channel_id):
     
     VoiceChannelMember.query.filter_by(channel_id=channel_id).delete()
     
-    if hasattr(app, 'voice_signals'):
-        keys_to_delete = [k for k in app.voice_signals.keys() if f"voice_{channel_id}" in k]
-        for k in keys_to_delete:
-            del app.voice_signals[k]
+    keys_to_delete = [k for k in voice_signals.keys() if f"voice_{channel_id}" in k]
+    for k in keys_to_delete:
+        del voice_signals[k]
     
     db.session.delete(channel)
     db.session.commit()
@@ -1132,6 +1129,19 @@ def create_voice_channel():
     
     flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
     return redirect(url_for('voice_channels_page'))
+
+@app.route('/get_user/<int:user_id>')
+@login_required
+def get_user_by_id(user_id):
+    user = User.query.get(user_id)
+    if user:
+        return jsonify({
+            'id': user.id, 
+            'username': user.username, 
+            'avatar': user.avatar,
+            'status': user.status
+        })
+    return jsonify({'error': 'User not found'}), 404
 
 # ========== КАНАЛЫ ==========
 @app.route('/channels')
