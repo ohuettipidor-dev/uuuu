@@ -1201,7 +1201,6 @@ def channel_post_create(channel_id):
         flash('Введите текст или прикрепите файлы', 'danger')
         return redirect(url_for('channel_view', identifier=channel_id))
     
-    # Создаём пост
     post = ChannelPost(
         content=content,
         author_id=current_user.id,
@@ -1210,7 +1209,6 @@ def channel_post_create(channel_id):
     db.session.add(post)
     db.session.commit()
     
-    # Сохраняем ВСЕ файлы
     attachments = []
     for f in files:
         if f and f.filename and allowed_file(f.filename):
@@ -1441,20 +1439,68 @@ def send_sticker(sticker_id):
     
     if chat_type == 'private':
         msg = Message(
-            content=f'<img src="{sticker.file_path}" class="sticker" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
+            content=f'<img src="{sticker.file_path}" class="sticker-img" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
             sender_id=current_user.id,
-            receiver_id=receiver_id
+            receiver_id=receiver_id,
+            file_type='sticker',
+            file_path=sticker.file_path
         )
         db.session.add(msg)
     else:
         msg = GroupMessage(
-            content=f'<img src="{sticker.file_path}" class="sticker" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
+            content=f'<img src="{sticker.file_path}" class="sticker-img" style="width:120px;height:120px;object-fit:contain;cursor:pointer">',
             sender_id=current_user.id,
-            group_id=receiver_id
+            group_id=receiver_id,
+            file_type='sticker',
+            file_path=sticker.file_path
         )
         db.session.add(msg)
     
     db.session.commit()
+    return jsonify({'success': True})
+
+# ========== СТИКЕРЫ API ДЛЯ ПАНЕЛИ ==========
+@app.route('/stickers/my/api')
+@login_required
+def my_stickers_api():
+    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
+    packs = []
+    for up in user_packs:
+        pack = StickerPack.query.get(up.pack_id)
+        if pack:
+            stickers = Sticker.query.filter_by(pack_id=pack.id).all()
+            packs.append({
+                'id': pack.id,
+                'name': pack.name,
+                'stickers': [{'id': s.id, 'file_path': s.file_path, 'emoji': s.emoji} for s in stickers]
+            })
+    return jsonify(packs)
+
+@app.route('/upload_sticker_by_url', methods=['POST'])
+@login_required
+def upload_sticker_by_url():
+    data = request.get_json()
+    url = data.get('url')
+    receiver_id = data.get('receiver_id')
+    
+    import requests
+    response = requests.get(url)
+    filename = f"sticker_{uuid.uuid4().hex}.png"
+    filepath = os.path.join(STICKER_FOLDER, filename)
+    with open(filepath, 'wb') as f:
+        f.write(response.content)
+    
+    msg = Message(
+        content='',
+        file_path=f'/static/stickers/{filename}',
+        file_name='sticker.png',
+        file_type='sticker',
+        sender_id=current_user.id,
+        receiver_id=receiver_id
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
     return jsonify({'success': True})
 
 # ========== ПОДАРКИ ==========

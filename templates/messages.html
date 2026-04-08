@@ -33,7 +33,7 @@
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px}
-        img,audio,video{max-width:160px;border-radius:10px;margin-top:3px}
+        .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
         .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
@@ -54,7 +54,7 @@
         .pinned-badge:hover{background:#ff6b6b40}
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
@@ -63,6 +63,15 @@
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+        
+        /* СТИКЕРЫ - выезжающая панель */
+        .sticker-panel{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:20px 20px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);max-height:250px;overflow-y:auto;z-index:100;display:none;margin-bottom:5px;padding:10px}
+        .sticker-panel.active{display:block}
+        .sticker-pack-title{font-size:12px;color:#888;margin-bottom:8px;padding-left:4px}
+        .sticker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+        .sticker-item{background:#f5f5f5;border-radius:16px;padding:8px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+        .sticker-item:hover{background:#e8e8e8;transform:scale(1.05)}
+        .sticker-item img{width:100%;max-width:80px;height:auto;object-fit:contain}
         
         .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
         .mention-suggestions.active{display:block}
@@ -97,6 +106,8 @@
             .profile-btn{padding:4px 8px;font-size:11px}
             .call-btn{padding:4px 8px;font-size:11px}
             .user-name{font-size:12px}
+            .sticker-grid{grid-template-columns:repeat(4,1fr)}
+            .sticker-item img{max-width:60px}
         }
     </style>
 </head>
@@ -151,13 +162,17 @@
                 <div class="message-content">
                     {% if m.content %}
                         {{ m.content|safe }}
+                    {% elif m.file_path and m.file_type == 'sticker' %}
+                        <img src="{{ m.file_path }}" class="sticker-img">
                     {% elif m.file_path %}
                         📎 Файл
                     {% else %}
                         💬 Сообщение
                     {% endif %}
                 </div>
-                {% if m.file_path and not m.content %}
+                {% if m.file_path and m.file_type == 'sticker' and not m.content %}
+                    <!-- уже отображено выше -->
+                {% elif m.file_path and not m.content %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
@@ -193,7 +208,7 @@
                         {% if m.is_read %}
                             <span style="color:#4cd964">✓✓</span>
                         {% else %}
-                            <span style="color:#aaa">✓✓</span>
+                            <span>✓✓</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -225,6 +240,12 @@
         <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
+            <!-- ПАНЕЛЬ СТИКЕРОВ -->
+            <div class="sticker-panel" id="stickerPanel">
+                <div class="sticker-pack-title">🐻 Милые мишки</div>
+                <div class="sticker-grid" id="stickerGrid"></div>
+            </div>
+            <button class="input-icon" id="stickerBtn" style="font-size:18px">🎨</button>
             <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
@@ -247,7 +268,7 @@
     const msgInput = document.getElementById('msgInput');
     let mediaRecorder = null;
     let audioChunks = [];
-    let isRecording = false;
+    let isAudioRecording = false;
     let startTime = null;
     let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
     let pollingInterval = null;
@@ -256,28 +277,118 @@
     let currentMentionStart = -1;
     let typingTimeout = null;
     let isSending = false;
-    let pendingMessage = null;
+    let processedIds = new Set();
+    
+    // СТИКЕРЫ
+    let stickerPacks = [];
+    let stickerLongPressTimer = null;
+    let isStickerLongPress = false;
+    const stickerBtn = document.getElementById('stickerBtn');
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerGrid = document.getElementById('stickerGrid');
+    
+    // Загрузка стикерпаков
+    function loadStickers() {
+        fetch('/stickers/my/api')
+            .then(r => r.json())
+            .then(data => {
+                stickerPacks = data;
+                renderStickerPanel();
+            })
+            .catch(() => {
+                // Тестовые стикеры для демо
+                stickerGrid.innerHTML = `
+                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png')"><img src="https://emoji.slackmojis.com/emojis/2020-07-09/61502/bear.png"></div>
+                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png')"><img src="https://emoji.slackmojis.com/emojis/2020-04-21/56759/hi_bear.png"></div>
+                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png')"><img src="https://emoji.slackmojis.com/emojis/2020-01-17/46305/bear_face.png"></div>
+                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png')"><img src="https://emoji.slackmojis.com/emojis/2020-02-17/51479/bear_heart.png"></div>
+                    <div class="sticker-item" onclick="sendStickerByUrl('https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png')"><img src="https://emoji.slackmojis.com/emojis/2020-05-01/57627/bear_hug.png"></div>
+                `;
+            });
+    }
+    
+    function renderStickerPanel() {
+        if(!stickerPacks.length) return;
+        stickerGrid.innerHTML = '';
+        stickerPacks.forEach(pack => {
+            if(pack.stickers && pack.stickers.length) {
+                pack.stickers.forEach(sticker => {
+                    const div = document.createElement('div');
+                    div.className = 'sticker-item';
+                    div.onclick = () => sendSticker(sticker.id);
+                    div.innerHTML = `<img src="${sticker.file_path}">`;
+                    stickerGrid.appendChild(div);
+                });
+            }
+        });
+    }
+    
+    function sendSticker(stickerId) {
+        fetch('/stickers/send/' + stickerId, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({receiver_id: receiver_id, chat_type: 'private'})
+        }).then(() => {
+            setTimeout(() => checkNewMessages(), 200);
+            stickerPanel.classList.remove('active');
+        });
+    }
+    
+    function sendStickerByUrl(url) {
+        fetch('/upload_sticker_by_url', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({url: url, receiver_id: receiver_id})
+        }).then(() => {
+            setTimeout(() => checkNewMessages(), 200);
+            stickerPanel.classList.remove('active');
+        });
+    }
+    
+    // Долгое нажатие для стикеров
+    stickerBtn.addEventListener('mousedown', function(e) {
+        stickerLongPressTimer = setTimeout(() => {
+            isStickerLongPress = true;
+            stickerPanel.classList.toggle('active');
+            if(stickerPanel.classList.contains('active')) {
+                document.getElementById('emojiPicker').classList.remove('active');
+            }
+        }, 300);
+    });
+    
+    stickerBtn.addEventListener('mouseup', function() {
+        if(stickerLongPressTimer) clearTimeout(stickerLongPressTimer);
+        setTimeout(() => { isStickerLongPress = false; }, 100);
+    });
+    
+    stickerBtn.addEventListener('touchstart', function(e) {
+        stickerLongPressTimer = setTimeout(() => {
+            isStickerLongPress = true;
+            stickerPanel.classList.toggle('active');
+            if(stickerPanel.classList.contains('active')) {
+                document.getElementById('emojiPicker').classList.remove('active');
+            }
+        }, 300);
+    });
+    
+    stickerBtn.addEventListener('touchend', function() {
+        if(stickerLongPressTimer) clearTimeout(stickerLongPressTimer);
+        setTimeout(() => { isStickerLongPress = false; }, 100);
+    });
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
     
     function unpinMessage() {
-        if(window.pinnedMsgId) {
-            pinMessage(window.pinnedMsgId, 'private');
-        }
+        if(window.pinnedMsgId) { pinMessage(window.pinnedMsgId, 'private'); }
     }
-    
-    function unpinThisMessage(msgId) {
-        pinMessage(msgId, 'private');
-    }
+    function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
     
     function startVideoCall() {
         fetch('/start_call/' + receiver_id, {method: 'POST'})
             .then(r => r.json())
-            .then(data => {
-                window.open('/call/' + data.room_id, '_blank', 'width=800,height=600');
-            });
+            .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
     }
     
     msgInput.addEventListener('input', function() {
@@ -380,11 +491,7 @@
     
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
-    // Множество уже обработанных ID сообщений
-    let processedIds = new Set();
-    
     function addNewMessage(msg) {
-        // Проверяем, не обрабатывали ли уже это сообщение
         if(processedIds.has(msg.id)) return;
         processedIds.add(msg.id);
         
@@ -399,38 +506,37 @@
         
         let fileHtml = '';
         if(msg.file_path) {
-            if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
-            else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-            else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}"></video>`;
-            else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            if(msg.file_type == 'sticker') {
+                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+            } else if(msg.file_type == 'image') {
+                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
+            } else if(msg.file_type == 'audio') {
+                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+            } else if(msg.file_type == 'video') {
+                fileHtml = `<video controls src="${msg.file_path}"></video>`;
+            } else {
+                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            }
         }
         
-        if(!content && msg.file_path) content = '📎 Файл';
+        if(!content && msg.file_path && msg.file_type != 'sticker') content = '📎 Файл';
         
         if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '<span style="color:#aaa">✓✓</span>') : '';
+        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
         if(msg.mentions && msg.mentions.includes('{{ current_user.id }}') && !msg.is_own) showNotification(`🔔 Вас упомянули`);
         const safeContent = (msg.content || '').replace(/`/g, '\\`');
         
         div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}<div class="message-content">${content}</div>${fileHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
-        
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         
         lastMsgId = msg.id;
         if(msg.is_pinned) loadPinnedMessage();
-        
-        // Если есть отложенное сообщение и оно совпадает - очищаем флаг отправки
-        if(pendingMessage && pendingMessage === msg.id) {
-            isSending = false;
-            pendingMessage = null;
-        }
     }
     
-    // ОТПРАВКА БЕЗ ВРЕМЕННОГО СООБЩЕНИЯ
     function sendMsg() {
         let content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
@@ -457,7 +563,6 @@
             });
         
         msgInput.value = '';
-        // Не показываем временное сообщение, просто ждём ответа от сервера
     }
     
     function sendFile(file) {
@@ -498,7 +603,7 @@
     function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
     function forwardMessage(id, type) { let target = prompt('ID пользователя:'); if(target) { fetch('/forward_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type}) }).then(() => alert('Переслано!')); } }
     
-    async function startRecording() {
+    async function startVoiceRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
@@ -515,20 +620,40 @@
                 stream.getTracks().forEach(t => t.stop());
                 document.getElementById('voiceBtn').classList.remove('recording');
                 document.getElementById('voiceBtn').textContent = '🎤';
-                isRecording = false;
+                isAudioRecording = false;
             };
             mediaRecorder.start();
-            isRecording = true;
+            isAudioRecording = true;
             document.getElementById('voiceBtn').classList.add('recording');
             document.getElementById('voiceBtn').textContent = '⏹️';
-            setTimeout(() => isRecording && stopRecording(), 30000);
+            setTimeout(() => isAudioRecording && stopVoiceRecording(), 30000);
         } catch(e) { alert('Микрофон не доступен'); }
     }
-    function stopRecording() { if(mediaRecorder && isRecording) mediaRecorder.stop(); }
-    function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
+    function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
+    function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
     
-    document.getElementById('voiceBtn').onclick = toggleRecording;
-    document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); };
+    let voiceLongPressTimer = null;
+    let isVoiceLongPress = false;
+    const voiceBtn = document.getElementById('voiceBtn');
+    
+    voiceBtn.addEventListener('mousedown', function(e) {
+        voiceLongPressTimer = setTimeout(() => {
+            isVoiceLongPress = true;
+        }, 300);
+    });
+    
+    voiceBtn.addEventListener('mouseup', function(e) {
+        if(voiceLongPressTimer) clearTimeout(voiceLongPressTimer);
+        if(!isVoiceLongPress && !isVideoRecording) {
+            toggleVoiceRecording();
+        }
+        isVoiceLongPress = false;
+    });
+    
+    document.getElementById('emojiBtn').onclick = () => { 
+        document.getElementById('emojiPicker').classList.toggle('active');
+        stickerPanel.classList.remove('active');
+    };
     document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
@@ -541,13 +666,21 @@
         if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
     });
     
-    document.addEventListener('click', (e) => { if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { document.getElementById('emojiPicker').classList.remove('active'); } });
+    document.addEventListener('click', (e) => { 
+        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); 
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker').classList.remove('active');
+        }
+        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
+            stickerPanel.classList.remove('active');
+        }
+    });
     
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    // Запрашиваем новые сообщения каждые 1.5 секунды (быстрее)
-    pollingInterval = setInterval(checkNewMessages, 1500);
+    loadStickers();
+    pollingInterval = setInterval(checkNewMessages, 800);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
 </script>
