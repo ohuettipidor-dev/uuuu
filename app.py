@@ -216,6 +216,8 @@ class VoiceChannel(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    max_users = db.Column(db.Integer, default=0)
+    is_private = db.Column(db.Boolean, default=False)
     
     creator = db.relationship('User', foreign_keys=[created_by])
     group = db.relationship('Group', foreign_keys=[group_id])
@@ -225,6 +227,8 @@ class VoiceChannelMember(db.Model):
     channel_id = db.Column(db.Integer, db.ForeignKey('voice_channel.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_speaking = db.Column(db.Boolean, default=False)
+    muted = db.Column(db.Boolean, default=False)
     
     channel = db.relationship('VoiceChannel', foreign_keys=[channel_id])
     user = db.relationship('User', foreign_keys=[user_id])
@@ -295,6 +299,8 @@ class StickerPack(db.Model):
     title = db.Column(db.String(200), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_premium = db.Column(db.Boolean, default=False)
+    price_coins = db.Column(db.Integer, default=0)
+    price_diamonds = db.Column(db.Integer, default=0)
     preview = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -394,19 +400,7 @@ def load_user(uid):
 
 with app.app_context():
     db.create_all()
-    
-    # Создаём стикерпак если нет
-    if StickerPack.query.count() == 0:
-        pack = StickerPack(
-            name='emotions',
-            title='😊 МОИ ЭМОЦИИ',
-            author_id=1,
-            is_premium=False,
-            preview='/static/stickers/preview.png'
-        )
-        db.session.add(pack)
-        db.session.commit()
-        print("✅ Стикерпак создан")
+    print("✅ База данных создана/обновлена")
 
 @app.template_filter('json_decode')
 def json_decode_filter(data):
@@ -903,71 +897,241 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
-# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
-@app.route('/create_voice_channel', methods=['POST'])
-@login_required
-def create_voice_channel():
-    name = request.form.get('name')
-    if not name:
-        flash('Введите название канала', 'danger')
-        return redirect(url_for('voice_channels'))
-    
-    channel = VoiceChannel(name=name, created_by=current_user.id)
-    db.session.add(channel)
-    db.session.commit()
-    
-    flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
-    return redirect(url_for('voice_channels'))
-
+# ========== ГОЛОСОВЫЕ КАНАЛЫ (КАК В DISCORD) ==========
 @app.route('/voice_channels')
 @login_required
-def voice_channels():
+def voice_channels_page():
     channels = VoiceChannel.query.filter_by(is_active=True).all()
-    
     channel_data = []
     for ch in channels:
-        member_count = VoiceChannelMember.query.filter_by(channel_id=ch.id).count()
+        members = VoiceChannelMember.query.filter_by(channel_id=ch.id).all()
+        member_count = len(members)
+        is_joined = VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
         channel_data.append({
             'id': ch.id,
             'name': ch.name,
             'member_count': member_count,
             'creator': ch.creator.username,
-            'is_joined': VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
+            'is_joined': is_joined,
+            'max_users': ch.max_users,
+            'members': [{'id': m.user.id, 'username': m.user.username, 'muted': m.muted} for m in members]
         })
-    
     return render_template('voice_channels.html', channels=channel_data)
 
-@app.route('/join_voice_channel/<int:channel_id>', methods=['POST'])
+@app.route('/voice/channels/list')
 @login_required
-def join_voice_channel(channel_id):
+def voice_channels_list_api():
+    channels = VoiceChannel.query.filter_by(is_active=True).all()
+    result = []
+    for ch in channels:
+        members = VoiceChannelMember.query.filter_by(channel_id=ch.id).all()
+        is_joined = VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
+        result.append({
+            'id': ch.id,
+            'name': ch.name,
+            'member_count': len(members),
+            'creator': ch.creator.username,
+            'is_joined': is_joined,
+            'max_users': ch.max_users,
+            'is_private': ch.is_private,
+            'members': [{'id': m.user.id, 'username': m.user.username, 'muted': m.muted} for m in members]
+        })
+    return jsonify(result)
+
+@app.route('/voice/join/<int:channel_id>', methods=['POST'])
+@login_required
+def voice_join_channel(channel_id):
+    channel = VoiceChannel.query.get(channel_id)
+    if not channel:
+        return jsonify({'error': 'Канал не найден'}), 404
+    
+    if channel.max_users > 0:
+        current_members = VoiceChannelMember.query.filter_by(channel_id=channel_id).count()
+        if current_members >= channel.max_users:
+            return jsonify({'error': 'Канал переполнен'}), 403
+    
     existing = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
     if not existing:
-        member = VoiceChannelMember(channel_id=channel_id, user_id=current_user.id)
+        member = VoiceChannelMember(
+            channel_id=channel_id, 
+            user_id=current_user.id,
+            joined_at=datetime.utcnow(),
+            is_speaking=False,
+            muted=False
+        )
         db.session.add(member)
         db.session.commit()
-    return jsonify({'success': True})
+    
+    current_user.status = 'in_voice'
+    db.session.commit()
+    
+    return jsonify({'success': True, 'channel_id': channel_id})
 
-@app.route('/leave_voice_channel/<int:channel_id>', methods=['POST'])
+@app.route('/voice/leave/<int:channel_id>', methods=['POST'])
 @login_required
-def leave_voice_channel(channel_id):
+def voice_leave_channel(channel_id):
     member = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
     if member:
         db.session.delete(member)
         db.session.commit()
+    
+    other_memberships = VoiceChannelMember.query.filter_by(user_id=current_user.id).first()
+    if not other_memberships:
+        current_user.status = 'online'
+        db.session.commit()
+    
     return jsonify({'success': True})
 
-@app.route('/get_voice_channel_members/<int:channel_id>')
+@app.route('/voice/members/<int:channel_id>')
 @login_required
-def get_voice_channel_members(channel_id):
+def voice_members_api(channel_id):
     members = VoiceChannelMember.query.filter_by(channel_id=channel_id).all()
     result = []
     for m in members:
+        user = User.query.get(m.user_id)
         result.append({
-            'id': m.user.id,
-            'username': m.user.username,
-            'avatar': m.user.avatar
+            'id': user.id,
+            'username': user.username,
+            'avatar': user.avatar,
+            'status': user.status,
+            'joined_at': m.joined_at.isoformat() if m.joined_at else None,
+            'muted': m.muted,
+            'is_speaking': m.is_speaking
         })
     return jsonify(result)
+
+@app.route('/voice/mute/<int:channel_id>', methods=['POST'])
+@login_required
+def voice_mute_member(channel_id):
+    member = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
+    if member:
+        member.muted = not member.muted
+        db.session.commit()
+        return jsonify({'success': True, 'muted': member.muted})
+    return jsonify({'error': 'Не в канале'}), 403
+
+@app.route('/voice/speaking/<int:channel_id>', methods=['POST'])
+@login_required
+def voice_speaking_status(channel_id):
+    data = request.get_json()
+    is_speaking = data.get('is_speaking', False)
+    
+    member = VoiceChannelMember.query.filter_by(channel_id=channel_id, user_id=current_user.id).first()
+    if member:
+        member.is_speaking = is_speaking
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'error': 'Не в канале'}), 403
+
+@app.route('/voice/signal', methods=['POST'])
+@login_required
+def voice_signal():
+    data = request.get_json()
+    channel_id = data.get('channel_id')
+    to_user_id = data.get('to_user_id')
+    
+    if not hasattr(app, 'voice_signals'):
+        app.voice_signals = {}
+    
+    key = f"voice_{channel_id}_{current_user.id}_{to_user_id}"
+    
+    if 'sdp' in data:
+        if key not in app.voice_signals:
+            app.voice_signals[key] = {}
+        app.voice_signals[key]['sdp'] = data['sdp']
+        app.voice_signals[key]['sdp_type'] = data.get('type', 'offer')
+    elif 'ice' in data:
+        if key not in app.voice_signals:
+            app.voice_signals[key] = {}
+        if 'ice_candidates' not in app.voice_signals[key]:
+            app.voice_signals[key]['ice_candidates'] = []
+        app.voice_signals[key]['ice_candidates'].append(data['ice'])
+    
+    return jsonify({'success': True})
+
+@app.route('/voice/get_signals/<int:channel_id>/<int:from_user_id>')
+@login_required
+def voice_get_signals(channel_id, from_user_id):
+    key = f"voice_{channel_id}_{from_user_id}_{current_user.id}"
+    result = {}
+    
+    if hasattr(app, 'voice_signals') and key in app.voice_signals:
+        signal = app.voice_signals[key]
+        if 'sdp' in signal:
+            result['sdp'] = signal['sdp']
+            result['sdp_type'] = signal.get('sdp_type', 'offer')
+            del signal['sdp']
+            if 'sdp_type' in signal:
+                del signal['sdp_type']
+        if 'ice_candidates' in signal and signal['ice_candidates']:
+            result['ice'] = signal['ice_candidates'].pop(0)
+        
+        if not signal:
+            del app.voice_signals[key]
+    
+    return jsonify(result)
+
+@app.route('/voice/delete_channel/<int:channel_id>', methods=['POST'])
+@login_required
+def voice_delete_channel(channel_id):
+    channel = VoiceChannel.query.get(channel_id)
+    if not channel or channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    VoiceChannelMember.query.filter_by(channel_id=channel_id).delete()
+    
+    if hasattr(app, 'voice_signals'):
+        keys_to_delete = [k for k in app.voice_signals.keys() if f"voice_{channel_id}" in k]
+        for k in keys_to_delete:
+            del app.voice_signals[k]
+    
+    db.session.delete(channel)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/voice/rename_channel/<int:channel_id>', methods=['POST'])
+@login_required
+def voice_rename_channel(channel_id):
+    data = request.get_json()
+    new_name = data.get('name', '').strip()
+    
+    if not new_name:
+        return jsonify({'error': 'Имя не может быть пустым'}), 400
+    
+    channel = VoiceChannel.query.get(channel_id)
+    if not channel or channel.created_by != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    channel.name = new_name
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/create_voice_channel', methods=['POST'])
+@login_required
+def create_voice_channel():
+    name = request.form.get('name', '').strip()
+    max_users = int(request.form.get('max_users', 0))
+    is_private = request.form.get('is_private') == 'on'
+    
+    if not name:
+        flash('Введите название канала', 'danger')
+        return redirect(url_for('voice_channels_page'))
+    
+    channel = VoiceChannel(
+        name=name,
+        created_by=current_user.id,
+        max_users=max_users,
+        is_private=is_private,
+        created_at=datetime.utcnow(),
+        is_active=True
+    )
+    db.session.add(channel)
+    db.session.commit()
+    
+    flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
+    return redirect(url_for('voice_channels_page'))
 
 # ========== КАНАЛЫ ==========
 @app.route('/channels')
@@ -1357,7 +1521,7 @@ def send_gift():
         item = StickerPack.query.get(gift_id)
         if not item:
             return jsonify({'error': 'Стикерпак не найден'}), 404
-        price = item.price
+        price = item.price_coins
     elif gift_type == 'premium_month':
         price = 299
     else:
@@ -1607,7 +1771,6 @@ def delete_from_storage(filename):
 def upgrade_storage():
     data = request.get_json()
     additional_gb = data.get('gb', 10)
-    price = additional_gb * 50
     
     storage = CloudStorage.query.filter_by(user_id=current_user.id).first()
     if not storage:
