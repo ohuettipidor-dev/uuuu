@@ -13,8 +13,6 @@ import requests
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-import time
-from threading import Thread
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -51,6 +49,8 @@ def generate_secret_key(user_id, other_id):
     return hashlib.sha256(combined.encode()).digest()
 
 def encrypt_message(message, user_id, other_id):
+    if not message:
+        return ""
     key = generate_secret_key(user_id, other_id)
     iv = os.urandom(16)
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
@@ -61,6 +61,8 @@ def encrypt_message(message, user_id, other_id):
     return base64.b64encode(iv + encrypted).decode('utf-8')
 
 def decrypt_message(encrypted_message, user_id, other_id):
+    if not encrypted_message:
+        return ""
     try:
         key = generate_secret_key(user_id, other_id)
         data = base64.b64decode(encrypted_message)
@@ -74,56 +76,6 @@ def decrypt_message(encrypted_message, user_id, other_id):
         return decrypted.decode('utf-8')
     except Exception:
         return "[Зашифрованное сообщение]"
-
-def render_mentions(text, current_user_id=None):
-    if not text:
-        return text, []
-    
-    mentioned_users = []
-    users = User.query.all()
-    
-    for user in users:
-        if user.id == current_user_id:
-            continue
-        
-        if user.username_link:
-            mention_name = user.username_link[1:]
-        else:
-            mention_name = user.username
-        
-        pattern = r'@' + re.escape(mention_name) + r'\b'
-        if re.search(pattern, text):
-            text = re.sub(pattern, f'<a href="/profile/{user.id}" class="mention">@{mention_name}</a>', text)
-            mentioned_users.append(user.id)
-    
-    return text, mentioned_users
-
-# ========== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ПОСЛЕДНЕГО ВИЗИТА ==========
-def format_last_seen(last_seen):
-    """Форматирует время последнего посещения в человекочитаемый вид"""
-    if not last_seen:
-        return "давно"
-    
-    now = datetime.utcnow()
-    diff = now - last_seen
-    
-    if diff.total_seconds() < 60:
-        return "только что"
-    elif diff.total_seconds() < 3600:
-        minutes = int(diff.total_seconds() // 60)
-        return f"{minutes} мин. назад"
-    elif diff.total_seconds() < 86400:
-        hours = int(diff.total_seconds() // 3600)
-        return f"{hours} ч. назад"
-    elif diff.total_seconds() < 604800:
-        days = int(diff.total_seconds() // 86400)
-        if days == 1:
-            return "вчера"
-        return f"{days} дн. назад"
-    else:
-        return last_seen.strftime('%d.%m.%Y')
-
-app.jinja_env.globals.update(format_last_seen=format_last_seen)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -160,7 +112,7 @@ class SecretChat(db.Model):
 
 class SecretMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    encrypted_content = db.Column(db.Text, nullable=False)
+    encrypted_content = db.Column(db.Text, nullable=True)
     file_path = db.Column(db.String(500), nullable=True)
     file_name = db.Column(db.String(200), nullable=True)
     file_type = db.Column(db.String(50), nullable=True)
@@ -169,7 +121,6 @@ class SecretMessage(db.Model):
     secret_chat_id = db.Column(db.Integer, db.ForeignKey('secret_chat.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     is_burn_after_read = db.Column(db.Boolean, default=False)
-    burn_after_read_timer = db.Column(db.Integer, default=0)
     voice_duration = db.Column(db.Integer, default=0)
     
     sender = db.relationship('User', foreign_keys=[sender_id])
@@ -308,7 +259,6 @@ class ChannelPost(db.Model):
     views = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
     attachments = db.Column(db.Text, default='')
-    likes_count = db.Column(db.Integer, default=0)
     
     author = db.relationship('User', foreign_keys=[author_id])
     channel = db.relationship('Channel', foreign_keys=[channel_id])
@@ -319,7 +269,6 @@ class ChannelComment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    likes_count = db.Column(db.Integer, default=0)
     
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
@@ -334,7 +283,6 @@ class StickerPack(db.Model):
     price_diamonds = db.Column(db.Integer, default=0)
     preview = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
 
 class Sticker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -360,7 +308,6 @@ class Gift(db.Model):
     message = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_used = db.Column(db.Boolean, default=False)
-    is_active = db.Column(db.Boolean, default=True)
     
     from_user = db.relationship('User', foreign_keys=[from_user_id])
     to_user = db.relationship('User', foreign_keys=[to_user_id])
@@ -425,32 +372,7 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-class PostLike(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='unique_post_like'),)
-
-class CommentLike(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    comment_id = db.Column(db.Integer, db.ForeignKey('channel_comment.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    __table_args__ = (db.UniqueConstraint('comment_id', 'user_id', name='unique_comment_like'),)
-
-class PostView(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='unique_post_view'),)
-
 signaling_store = {}
-voice_signals = {}
 
 @login_manager.user_loader
 def load_user(uid):
@@ -466,57 +388,6 @@ def json_decode_filter(data):
         return json.loads(data) if data else []
     except:
         return []
-
-# ========== ПРОВЕРКА НЕРАБОТАЮЩИХ СТИКЕРПАКОВ ==========
-def check_inactive_stickerpacks():
-    with app.app_context():
-        packs = StickerPack.query.all()
-        for pack in packs:
-            try:
-                first_sticker = Sticker.query.filter_by(pack_id=pack.id).first()
-                if first_sticker and first_sticker.file_path:
-                    test_url = request.host_url.rstrip('/') + first_sticker.file_path
-                    response = requests.head(test_url, timeout=5, allow_redirects=True)
-                    pack.is_active = response.status_code == 200
-                else:
-                    pack.is_active = False
-            except:
-                pack.is_active = False
-        db.session.commit()
-
-def check_inactive_gifts():
-    with app.app_context():
-        gifts = Gift.query.all()
-        for gift in gifts:
-            if gift.gift_type == 'sticker_pack':
-                pack = StickerPack.query.get(gift.gift_id)
-                gift.is_active = pack is not None and pack.is_active
-        db.session.commit()
-
-def start_background_checks():
-    time.sleep(5)
-    check_inactive_stickerpacks()
-    check_inactive_gifts()
-
-Thread(target=start_background_checks, daemon=True).start()
-
-# ========== API АКТИВНОСТИ ==========
-@app.route('/api/user_activity/<int:user_id>')
-@login_required
-def get_user_activity(user_id):
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'Пользователь не найден'}), 404
-    
-    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=user_id).first():
-        return jsonify({'error': 'Доступ запрещен'}), 403
-    
-    return jsonify({
-        'status': user.status,
-        'last_seen': user.last_seen.isoformat() if user.last_seen else None,
-        'last_seen_formatted': format_last_seen(user.last_seen),
-        'is_online': user.status == 'online' or user.status == 'in_voice'
-    })
 
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
@@ -731,6 +602,194 @@ def upload_video_message():
     
     return jsonify({'path': f'/static/uploads/{name}', 'duration': 0})
 
+# ========== СЕКРЕТНЫЕ ЧАТЫ (ПОЛНОСТЬЮ РАБОЧИЕ) ==========
+@app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
+@login_required
+def create_secret_chat(user_id):
+    if user_id == current_user.id:
+        flash('Нельзя создать секретный чат с самим собой', 'danger')
+        return redirect(url_for('chat'))
+    
+    other_user = User.query.get(user_id)
+    if not other_user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('chat'))
+    
+    existing = SecretChat.query.filter(
+        ((SecretChat.user1_id == current_user.id) & (SecretChat.user2_id == user_id)) |
+        ((SecretChat.user1_id == user_id) & (SecretChat.user2_id == current_user.id))
+    ).first()
+    
+    if existing:
+        return redirect(url_for('secret_chat', chat_id=existing.id))
+    
+    secret_chat = SecretChat(user1_id=current_user.id, user2_id=user_id)
+    db.session.add(secret_chat)
+    db.session.commit()
+    
+    flash(f'🔒 Секретный чат с {other_user.username} создан! Сообщения зашифрованы AES-256', 'success')
+    return redirect(url_for('secret_chat', chat_id=secret_chat.id))
+
+@app.route('/secret_chat/<int:chat_id>')
+@login_required
+def secret_chat(chat_id):
+    secret_chat = SecretChat.query.get(chat_id)
+    if not secret_chat:
+        flash('Чат не найден', 'danger')
+        return redirect(url_for('chat'))
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        flash('Нет доступа к этому чату', 'danger')
+        return redirect(url_for('chat'))
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    other_user = User.query.get(other_user_id)
+    
+    messages = SecretMessage.query.filter_by(secret_chat_id=chat_id).order_by(SecretMessage.timestamp).all()
+    
+    decrypted_messages = []
+    for msg in messages:
+        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
+        decrypted_messages.append({
+            'id': msg.id,
+            'content': decrypted_content,
+            'file_path': msg.file_path,
+            'file_name': msg.file_name,
+            'file_type': msg.file_type,
+            'timestamp': msg.timestamp,
+            'sender_id': msg.sender_id,
+            'is_own': msg.sender_id == current_user.id,
+            'is_read': msg.is_read,
+            'is_burn_after_read': msg.is_burn_after_read,
+            'voice_duration': msg.voice_duration
+        })
+        
+        if msg.sender_id != current_user.id and not msg.is_read:
+            msg.is_read = True
+    
+    db.session.commit()
+    
+    return render_template('secret_chat.html', 
+                         secret_chat=secret_chat, 
+                         other_user=other_user, 
+                         messages=decrypted_messages)
+
+@app.route('/send_secret', methods=['POST'])
+@login_required
+def send_secret():
+    chat_id = int(request.form['chat_id'])
+    secret_chat = SecretChat.query.get(chat_id)
+    
+    if not secret_chat:
+        return jsonify({'error': 'Чат не найден'}), 404
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        return jsonify({'error': 'Нет доступа'}), 403
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    content = request.form.get('content', '')
+    file_path = request.form.get('file_path')
+    file_name = request.form.get('file_name')
+    file_type = request.form.get('file_type')
+    voice_duration = request.form.get('voice_duration', 0)
+    burn_after_read = request.form.get('burn_after_read') == 'true'
+    
+    encrypted_content = encrypt_message(content, current_user.id, other_user_id) if content else None
+    
+    msg = SecretMessage(
+        encrypted_content=encrypted_content,
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
+        sender_id=current_user.id,
+        secret_chat_id=chat_id,
+        voice_duration=voice_duration,
+        is_burn_after_read=burn_after_read
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    return redirect(url_for('secret_chat', chat_id=chat_id))
+
+@app.route('/upload_secret_file', methods=['POST'])
+@login_required
+def upload_secret_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Нет файла'}), 400
+    f = request.files['file']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    if allowed_file(f.filename):
+        ext = f.filename.rsplit('.', 1)[1].lower()
+        name = f"secret_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+        f.save(os.path.join(FILE_FOLDER, name))
+        if ext in ['png','jpg','jpeg','gif','webp','bmp']: ft = 'image'
+        elif ext in ['mp3','wav','ogg','flac','m4a']: ft = 'audio'
+        elif ext in ['mp4','avi','mov','mkv','webm']: ft = 'video'
+        else: ft = 'document'
+        return jsonify({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': ft})
+    return jsonify({'error': 'Формат не поддерживается'}), 400
+
+@app.route('/get_secret_messages/<int:chat_id>/<int:last_id>')
+@login_required
+def get_secret_messages(chat_id, last_id):
+    secret_chat = SecretChat.query.get(chat_id)
+    if not secret_chat:
+        return jsonify([])
+    
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        return jsonify([])
+    
+    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
+    
+    messages = SecretMessage.query.filter(
+        SecretMessage.secret_chat_id == chat_id,
+        SecretMessage.id > last_id
+    ).order_by(SecretMessage.timestamp).all()
+    
+    result = []
+    for msg in messages:
+        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
+        result.append({
+            'id': msg.id,
+            'content': decrypted_content,
+            'file_path': msg.file_path,
+            'file_name': msg.file_name,
+            'file_type': msg.file_type,
+            'timestamp': msg.timestamp.strftime('%H:%M'),
+            'is_own': msg.sender_id == current_user.id,
+            'voice_duration': msg.voice_duration,
+            'is_burn_after_read': msg.is_burn_after_read
+        })
+        
+        if msg.sender_id != current_user.id and not msg.is_read:
+            msg.is_read = True
+    
+    db.session.commit()
+    return jsonify(result)
+
+@app.route('/secret_chats')
+@login_required
+def secret_chats_list():
+    secret_chats = SecretChat.query.filter(
+        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
+        SecretChat.is_active == True
+    ).all()
+    
+    chats_data = []
+    for sc in secret_chats:
+        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
+        other_user = User.query.get(other_id)
+        last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+        
+        chats_data.append({
+            'id': sc.id,
+            'other_user': other_user,
+            'last_msg': last_msg
+        })
+    
+    return render_template('secret_chats.html', secret_chats=chats_data)
+
 # ========== ВИДЕОЗВОНКИ ==========
 @app.route('/send_offer', methods=['POST'])
 @login_required
@@ -783,7 +842,7 @@ def get_signaling(room_id):
 @app.route('/start_call/<int:user_id>', methods=['POST'])
 @login_required
 def start_call(user_id):
-    other_user = db.session.get(User, user_id)
+    other_user = User.query.get(user_id)
     if not other_user:
         return jsonify({'error': 'Пользователь не найден'}), 404
     
@@ -817,7 +876,7 @@ def call_room(room_id):
         return redirect(url_for('chat'))
     
     other_id = call.to_user_id if call.from_user_id == current_user.id else call.from_user_id
-    other_user = db.session.get(User, other_id)
+    other_user = User.query.get(other_id)
     
     return render_template('call.html', room_id=room_id, other_user=other_user)
 
@@ -830,193 +889,583 @@ def end_call(room_id):
         db.session.commit()
     return jsonify({'success': True})
 
-# ========== СЕКРЕТНЫЕ ЧАТЫ ==========
-@app.route('/create_secret_chat/<int:user_id>', methods=['POST'])
+# ========== ГРУППЫ ==========
+@app.route('/create_group', methods=['POST'])
 @login_required
-def create_secret_chat(user_id):
-    if user_id == current_user.id:
-        if request.is_json:
-            return jsonify({'error': 'Нельзя создать секретный чат с самим собой'}), 400
-        flash('Нельзя создать секретный чат с самим собой', 'danger')
-        return redirect(url_for('profile_by_id', uid=user_id))
+def create_group():
+    name = request.form.get('name')
+    if not name:
+        flash('Название группы обязательно', 'danger')
+        return redirect(url_for('chat'))
+    group = Group(name=name, created_by=current_user.id)
+    db.session.add(group)
+    db.session.commit()
+    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id, is_admin=True))
+    db.session.commit()
+    flash(f'Группа "{name}" создана!', 'success')
+    return redirect(url_for('chat'))
+
+@app.route('/group/<int:gid>/upload_avatar', methods=['POST'])
+@login_required
+def upload_group_avatar(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
     
-    other_user = db.session.get(User, user_id)
-    if not other_user:
-        if request.is_json:
-            return jsonify({'error': 'Пользователь не найден'}), 404
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может менять аватар группы', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if 'avatar' in request.files:
+        f = request.files['avatar']
+        if f and allowed_file(f.filename):
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            name = f"group_{gid}_{uuid.uuid4().hex}.{ext}"
+            f.save(os.path.join(AVATAR_FOLDER, name))
+            if group.avatar != 'group_default.png':
+                old = os.path.join(AVATAR_FOLDER, group.avatar)
+                if os.path.exists(old):
+                    os.remove(old)
+            group.avatar = name
+            db.session.commit()
+            flash('Аватар группы обновлён!', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>/info')
+@login_required
+def group_info(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    members_list = []
+    for m in members:
+        user = User.query.get(m.user_id)
+        members_list.append({'user': user, 'is_admin': m.is_admin})
+    
+    is_admin = member.is_admin
+    
+    return render_template('group_info.html', group=group, members=members_list, is_admin=is_admin)
+
+@app.route('/add_member/<int:gid>', methods=['POST'])
+@login_required
+def add_member(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может добавлять участников', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    username = request.form.get('username')
+    if not username:
+        flash('Введите имя пользователя', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    user = User.query.filter_by(username=username).first()
+    if not user:
         flash('Пользователь не найден', 'danger')
-        return redirect(url_for('chat'))
-    
-    existing = SecretChat.query.filter(
-        ((SecretChat.user1_id == current_user.id) & (SecretChat.user2_id == user_id)) |
-        ((SecretChat.user1_id == user_id) & (SecretChat.user2_id == current_user.id))
-    ).first()
-    
-    if existing:
-        if request.is_json:
-            return jsonify({'chat_id': existing.id, 'redirect': f'/secret_chat/{existing.id}'})
-        flash('Секретный чат уже существует', 'info')
-        return redirect(url_for('secret_chat', chat_id=existing.id))
-    
-    secret_chat = SecretChat(user1_id=current_user.id, user2_id=user_id)
-    db.session.add(secret_chat)
-    db.session.commit()
-    
-    if request.is_json:
-        return jsonify({'chat_id': secret_chat.id, 'redirect': f'/secret_chat/{secret_chat.id}'})
-    
-    flash(f'Секретный чат с {other_user.username} создан! Сообщения зашифрованы AES-256', 'success')
-    return redirect(url_for('secret_chat', chat_id=secret_chat.id))
-
-@app.route('/secret_chat/<int:chat_id>')
-@login_required
-def secret_chat(chat_id):
-    secret_chat = db.session.get(SecretChat, chat_id)
-    if not secret_chat:
-        flash('Чат не найден', 'danger')
-        return redirect(url_for('chat'))
-    
-    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
-        flash('Нет доступа к этому чату', 'danger')
-        return redirect(url_for('chat'))
-    
-    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
-    other_user = db.session.get(User, other_user_id)
-    
-    messages = SecretMessage.query.filter_by(secret_chat_id=chat_id).order_by(SecretMessage.timestamp).all()
-    
-    decrypted_messages = []
-    for msg in messages:
-        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
-        decrypted_messages.append({
-            'id': msg.id,
-            'content': decrypted_content,
-            'file_path': msg.file_path,
-            'file_name': msg.file_name,
-            'file_type': msg.file_type,
-            'timestamp': msg.timestamp,
-            'sender_id': msg.sender_id,
-            'is_own': msg.sender_id == current_user.id,
-            'is_read': msg.is_read,
-            'is_burn_after_read': msg.is_burn_after_read,
-            'voice_duration': msg.voice_duration
-        })
-        
-        if msg.sender_id != current_user.id and not msg.is_read:
-            msg.is_read = True
-    
-    db.session.commit()
-    
-    return render_template('secret_chat.html', 
-                         secret_chat=secret_chat, 
-                         other_user=other_user, 
-                         messages=decrypted_messages)
-
-@app.route('/send_secret', methods=['POST'])
-@login_required
-def send_secret():
-    chat_id = int(request.form['chat_id'])
-    secret_chat = db.session.get(SecretChat, chat_id)
-    
-    if not secret_chat:
-        return jsonify({'error': 'Чат не найден'}), 404
-    
-    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
-        return jsonify({'error': 'Нет доступа'}), 403
-    
-    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
-    content = request.form.get('content', '')
-    file_path = request.form.get('file_path')
-    file_name = request.form.get('file_name')
-    file_type = request.form.get('file_type')
-    voice_duration = request.form.get('voice_duration', 0)
-    burn_after_read = request.form.get('burn_after_read') == 'true'
-    
-    if file_type == 'sticker':
-        encrypted_content = encrypt_message('[СТИКЕР]', current_user.id, other_user_id)
-    elif file_path:
-        encrypted_content = encrypt_message(f'[ФАЙЛ] {file_name}', current_user.id, other_user_id)
+    elif GroupMember.query.filter_by(user_id=user.id, group_id=gid).first():
+        flash('Пользователь уже в группе', 'danger')
     else:
-        encrypted_content = encrypt_message(content, current_user.id, other_user_id)
+        db.session.add(GroupMember(user_id=user.id, group_id=gid))
+        db.session.commit()
+        flash(f'{user.username} добавлен в группу!', 'success')
     
-    msg = SecretMessage(
-        encrypted_content=encrypted_content,
-        file_path=file_path,
-        file_name=file_name,
-        file_type=file_type,
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/remove_member/<int:gid>/<int:uid>', methods=['POST'])
+@login_required
+def remove_member(gid, uid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Только администратор может удалять участников', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if uid == current_user.id:
+        flash('Нельзя удалить самого себя', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    target = GroupMember.query.filter_by(user_id=uid, group_id=gid).first()
+    if target:
+        db.session.delete(target)
+        db.session.commit()
+        flash('Пользователь удалён из группы', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>')
+@login_required
+def group_chat(gid):
+    group = Group.query.get(gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    members_list = []
+    for m in members:
+        user = User.query.get(m.user_id)
+        members_list.append(user)
+    return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
+
+@app.route('/send_group', methods=['POST'])
+@login_required
+def send_group():
+    content = request.form.get('content', '')
+    reply_to_id = request.form.get('reply_to_id', type=int)
+    
+    content, mentioned_ids = render_mentions(content, current_user.id)
+    
+    if not content and request.form.get('file_path'):
+        content = '📎 Файл'
+    
+    msg = GroupMessage(
+        content=content,
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
         sender_id=current_user.id,
-        secret_chat_id=chat_id,
-        voice_duration=voice_duration,
-        is_burn_after_read=burn_after_read,
-        burn_after_read_timer=5 if burn_after_read else 0
+        group_id=request.form['group_id'],
+        voice_duration=request.form.get('voice_duration', 0),
+        reply_to_id=reply_to_id,
+        mentions=json.dumps(mentioned_ids)
     )
     db.session.add(msg)
     db.session.commit()
     
-    if request.is_json:
-        return jsonify({'success': True})
-    return redirect(url_for('secret_chat', chat_id=chat_id))
+    return redirect(url_for('group_chat', gid=request.form['group_id']))
 
-@app.route('/get_secret_messages/<int:chat_id>/<int:last_id>')
+# ========== ЧАТ ==========
+@app.route('/chat')
 @login_required
-def get_secret_messages(chat_id, last_id):
-    secret_chat = db.session.get(SecretChat, chat_id)
-    if not secret_chat:
-        return jsonify([])
-    
-    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
-        return jsonify([])
-    
-    other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
-    
-    messages = SecretMessage.query.filter(
-        SecretMessage.secret_chat_id == chat_id,
-        SecretMessage.id > last_id
-    ).order_by(SecretMessage.timestamp).all()
-    
-    result = []
-    for msg in messages:
-        decrypted_content = decrypt_message(msg.encrypted_content, current_user.id, other_user_id)
-        result.append({
-            'id': msg.id,
-            'content': decrypted_content,
-            'file_path': msg.file_path,
-            'file_name': msg.file_name,
-            'file_type': msg.file_type,
-            'timestamp': msg.timestamp.strftime('%H:%M'),
-            'is_own': msg.sender_id == current_user.id,
-            'voice_duration': msg.voice_duration,
-            'is_burn_after_read': msg.is_burn_after_read
-        })
-        
-        if msg.sender_id != current_user.id and not msg.is_read:
-            msg.is_read = True
-    
+def chat():
+    current_user.last_seen = datetime.utcnow()
     db.session.commit()
-    return jsonify(result)
+    
+    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
+    
+    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
+    groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    secret_chats = SecretChat.query.filter(
+        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
+        SecretChat.is_active == True
+    ).all()
+    user_channels = Channel.query.join(ChannelSubscriber).filter(ChannelSubscriber.user_id == current_user.id).all()
+    
+    convs = []
+    
+    for u in users:
+        last = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == u.id)) |
+            ((Message.sender_id == u.id) & (Message.receiver_id == current_user.id)),
+            ~Message.deleted_for.contains(str(current_user.id))
+        ).order_by(Message.timestamp.desc()).first()
+        unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False, ~Message.deleted_for.contains(str(current_user.id))).count()
+        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
+    
+    for g in groups:
+        last = GroupMessage.query.filter_by(group_id=g.id).filter(~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
+        convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar, 'last': last, 'unread': 0})
+    
+    for sc in secret_chats:
+        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
+        other_user = User.query.get(other_id)
+        last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+        convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
+    
+    convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
+    return render_template('chat.html', convs=convs, user_channels=user_channels)
 
-@app.route('/secret_chats')
+@app.route('/messages/<int:uid>')
 @login_required
-def secret_chats():
-    secret_chats_list = SecretChat.query.filter(
+def messages(uid):
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first():
+        flash('Вы заблокировали этого пользователя', 'danger')
+        return redirect(url_for('chat'))
+    if Blacklist.query.filter_by(user_id=uid, blocked_user_id=current_user.id).first():
+        flash('Этот пользователь заблокировал вас', 'danger')
+        return redirect(url_for('chat'))
+    
+    other = User.query.get(uid)
+    if not other:
+        flash('Пользователь не найден')
+        return redirect(url_for('chat'))
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == uid)) |
+        ((Message.sender_id == uid) & (Message.receiver_id == current_user.id)),
+        ~Message.deleted_for.contains(str(current_user.id))
+    ).order_by(Message.timestamp).all()
+    for m in msgs:
+        if m.receiver_id == current_user.id and not m.is_read:
+            m.is_read = True
+    db.session.commit()
+    return render_template('messages.html', msgs=msgs, other=other)
+
+@app.route('/send', methods=['POST'])
+@login_required
+def send():
+    receiver_id = int(request.form['receiver_id'])
+    
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
+        flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
+        return redirect(url_for('chat'))
+    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
+        flash('Этот пользователь заблокировал вас', 'danger')
+        return redirect(url_for('chat'))
+    
+    content = request.form.get('content', '')
+    reply_to_id = request.form.get('reply_to_id', type=int)
+    
+    content, mentioned_ids = render_mentions(content, current_user.id)
+    
+    if not content and request.form.get('file_path'):
+        content = '📎 Файл'
+    
+    msg = Message(
+        content=content,
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        voice_duration=request.form.get('voice_duration', 0),
+        reply_to_id=reply_to_id,
+        mentions=json.dumps(mentioned_ids)
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    return redirect(url_for('messages', uid=receiver_id))
+
+@app.route('/edit_message', methods=['POST'])
+@login_required
+def edit_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    new_content = data['new_content']
+    msg_type = data['type']
+    
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+        if msg and msg.sender_id == current_user.id:
+            content, mentioned_ids = render_mentions(new_content, current_user.id)
+            msg.content = content
+            msg.mentions = json.dumps(mentioned_ids)
+            msg.edited = True
+            db.session.commit()
+            return jsonify({'success': True})
+    elif msg_type == 'group':
+        msg = GroupMessage.query.get(msg_id)
+        if msg and msg.sender_id == current_user.id:
+            content, mentioned_ids = render_mentions(new_content, current_user.id)
+            msg.content = content
+            msg.mentions = json.dumps(mentioned_ids)
+            msg.edited = True
+            db.session.commit()
+            return jsonify({'success': True})
+    return jsonify({'error': 'Нельзя редактировать чужое сообщение'}), 403
+
+@app.route('/delete_message', methods=['POST'])
+@login_required
+def delete_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    msg_type = data['type']
+    delete_for_all = data.get('delete_for_all', False)
+    
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+        if msg:
+            if delete_for_all or msg.sender_id == current_user.id:
+                if delete_for_all:
+                    db.session.delete(msg)
+                else:
+                    if msg.deleted_for:
+                        msg.deleted_for += f',{current_user.id}'
+                    else:
+                        msg.deleted_for = str(current_user.id)
+                db.session.commit()
+                return jsonify({'success': True})
+            else:
+                return jsonify({'error': 'Нельзя удалить чужое сообщение'}), 403
+    elif msg_type == 'group':
+        msg = GroupMessage.query.get(msg_id)
+        if msg and msg.sender_id == current_user.id:
+            if msg.deleted_for:
+                msg.deleted_for += f',{current_user.id}'
+            else:
+                msg.deleted_for = str(current_user.id)
+            db.session.commit()
+            return jsonify({'success': True})
+    return jsonify({'error': 'Сообщение не найдено'}), 404
+
+@app.route('/forward_message', methods=['POST'])
+@login_required
+def forward_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    target_type = data['target_type']
+    target_id = data['target_id']
+    msg_type = data['msg_type']
+    
+    if msg_type == 'private':
+        original = Message.query.get(msg_id)
+        if not original:
+            return jsonify({'error': 'Сообщение не найдено'}), 404
+        if target_type == 'private':
+            new_msg = Message(
+                content=original.content,
+                file_path=original.file_path,
+                file_name=original.file_name,
+                file_type=original.file_type,
+                sender_id=current_user.id,
+                receiver_id=target_id,
+                voice_duration=original.voice_duration,
+                forwarded_from_id=original.sender_id,
+                forwarded_message_id=original.id
+            )
+            db.session.add(new_msg)
+        else:
+            new_msg = GroupMessage(
+                content=original.content,
+                file_path=original.file_path,
+                file_name=original.file_name,
+                file_type=original.file_type,
+                sender_id=current_user.id,
+                group_id=target_id,
+                voice_duration=original.voice_duration,
+                forwarded_from_id=original.sender_id,
+                forwarded_message_id=original.id
+            )
+            db.session.add(new_msg)
+    else:
+        original = GroupMessage.query.get(msg_id)
+        if not original:
+            return jsonify({'error': 'Сообщение не найдено'}), 404
+        if target_type == 'private':
+            new_msg = Message(
+                content=original.content,
+                file_path=original.file_path,
+                file_name=original.file_name,
+                file_type=original.file_type,
+                sender_id=current_user.id,
+                receiver_id=target_id,
+                voice_duration=original.voice_duration,
+                forwarded_from_id=original.sender_id,
+                forwarded_message_id=original.id
+            )
+            db.session.add(new_msg)
+        else:
+            new_msg = GroupMessage(
+                content=original.content,
+                file_path=original.file_path,
+                file_name=original.file_name,
+                file_type=original.file_type,
+                sender_id=current_user.id,
+                group_id=target_id,
+                voice_duration=original.voice_duration,
+                forwarded_from_id=original.sender_id,
+                forwarded_message_id=original.id
+            )
+            db.session.add(new_msg)
+    db.session.commit()
+    return jsonify({'success': True, 'target_type': target_type, 'target_id': target_id})
+
+@app.route('/toggle_favorite', methods=['POST'])
+@login_required
+def toggle_favorite():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    msg_type = data['type']
+    
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+        if msg and (msg.sender_id == current_user.id or msg.receiver_id == current_user.id):
+            msg.is_favorite = not msg.is_favorite
+            db.session.commit()
+            return jsonify({'success': True, 'is_favorite': msg.is_favorite})
+    elif msg_type == 'group':
+        msg = GroupMessage.query.get(msg_id)
+        if msg:
+            msg.is_favorite = not msg.is_favorite
+            db.session.commit()
+            return jsonify({'success': True, 'is_favorite': msg.is_favorite})
+    return jsonify({'error': 'Сообщение не найдено'}), 404
+
+@app.route('/get_reply_preview/<int:msg_id>/<string:msg_type>')
+@login_required
+def get_reply_preview(msg_id, msg_type):
+    if msg_type == 'private':
+        msg = Message.query.get(msg_id)
+    else:
+        msg = GroupMessage.query.get(msg_id)
+    if not msg:
+        return jsonify({'error': 'Сообщение не найдено'}), 404
+    return jsonify({
+        'id': msg.id,
+        'content': msg.content[:100] if msg.content else '[Файл]',
+        'sender_name': msg.sender.username if msg.sender else User.query.get(msg.sender_id).username
+    })
+
+@app.route('/get_chats_list')
+@login_required
+def get_chats_list():
+    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
+    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
+    groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    secret_chats = SecretChat.query.filter(
         (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
         SecretChat.is_active == True
     ).all()
     
-    chats_data = []
-    for sc in secret_chats_list:
+    chats = []
+    for u in users:
+        chats.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar})
+    for g in groups:
+        chats.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar})
+    for sc in secret_chats:
         other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
-        other_user = db.session.get(User, other_id)
-        if other_user:
-            last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
-            
-            chats_data.append({
-                'id': sc.id,
-                'other_user': other_user,
-                'last_msg': last_msg
-            })
+        other_user = User.query.get(other_id)
+        chats.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar})
+    return jsonify(chats)
+
+@app.route('/search_users')
+@login_required
+def search_users():
+    query = request.args.get('q', '').lower().strip()
+    if not query:
+        return jsonify([])
     
-    return render_template('secret_chats.html', secret_chats=chats_data)
+    if query.startswith('@'):
+        query = query[1:]
+    
+    users = User.query.filter(
+        User.id != current_user.id,
+        (User.username.ilike(f'%{query}%')) | 
+        (User.username_link.ilike(f'%@{query}%'))
+    ).limit(10).all()
+    
+    result = []
+    for user in users:
+        result.append({
+            'id': user.id,
+            'username': user.username,
+            'username_link': user.username_link if user.username_link else f'@{user.username}',
+            'avatar': user.avatar
+        })
+    return jsonify(result)
+
+@app.route('/get_mention_notifications')
+@login_required
+def get_mention_notifications():
+    private_mentions = Message.query.filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+        Message.mentions != '',
+        Message.mentions.contains(str(current_user.id))
+    ).count()
+    
+    group_mentions = GroupMessage.query.filter(
+        GroupMessage.group_id.in_([gm.group_id for gm in GroupMember.query.filter_by(user_id=current_user.id).all()]),
+        GroupMessage.mentions != '',
+        GroupMessage.mentions.contains(str(current_user.id))
+    ).count()
+    
+    return jsonify({'count': private_mentions + group_mentions})
+
+@app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
+@login_required
+def get_new_messages(last_id, receiver_id):
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
+        return jsonify([])
+    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
+        return jsonify([])
+    
+    msgs = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
+        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
+        Message.id > last_id,
+        ~Message.deleted_for.contains(str(current_user.id))
+    ).order_by(Message.timestamp).all()
+    
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'is_own': m.sender_id == current_user.id,
+            'voice_duration': m.voice_duration,
+            'edited': m.edited,
+            'reply_to_id': m.reply_to_id,
+            'is_favorite': m.is_favorite,
+            'is_pinned': m.is_pinned,
+            'forwarded_from_id': m.forwarded_from_id,
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
+            'mentions': m.mentions
+        })
+    return jsonify(result)
+
+@app.route('/get_new_group_messages/<int:last_id>/<int:group_id>')
+@login_required
+def get_new_group_messages(last_id, group_id):
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
+    if not member:
+        return jsonify([])
+    
+    msgs = GroupMessage.query.filter(
+        GroupMessage.group_id == group_id,
+        GroupMessage.id > last_id,
+        ~GroupMessage.deleted_for.contains(str(current_user.id))
+    ).order_by(GroupMessage.timestamp).all()
+    
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'is_own': m.sender_id == current_user.id,
+            'sender_name': m.sender.username if m.sender else 'Unknown',
+            'voice_duration': m.voice_duration,
+            'edited': m.edited,
+            'reply_to_id': m.reply_to_id,
+            'is_favorite': m.is_favorite,
+            'is_pinned': m.is_pinned,
+            'forwarded_from_id': m.forwarded_from_id,
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
+            'mentions': m.mentions
+        })
+    return jsonify(result)
 
 # ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
 @app.route('/voice_channels')
@@ -1026,11 +1475,12 @@ def voice_channels_page():
     channel_data = []
     for ch in channels:
         members = VoiceChannelMember.query.filter_by(channel_id=ch.id).all()
+        member_count = len(members)
         is_joined = VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
         channel_data.append({
             'id': ch.id,
             'name': ch.name,
-            'member_count': len(members),
+            'member_count': member_count,
             'creator': ch.creator.username,
             'is_joined': is_joined,
             'max_users': ch.max_users,
@@ -1150,19 +1600,22 @@ def voice_signal():
     channel_id = data.get('channel_id')
     to_user_id = data.get('to_user_id')
     
+    if not hasattr(app, 'voice_signals'):
+        app.voice_signals = {}
+    
     key = f"voice_{channel_id}_{current_user.id}_{to_user_id}"
     
     if 'sdp' in data:
-        if key not in voice_signals:
-            voice_signals[key] = {}
-        voice_signals[key]['sdp'] = data['sdp']
-        voice_signals[key]['sdp_type'] = data.get('type', 'offer')
+        if key not in app.voice_signals:
+            app.voice_signals[key] = {}
+        app.voice_signals[key]['sdp'] = data['sdp']
+        app.voice_signals[key]['sdp_type'] = data.get('type', 'offer')
     elif 'ice' in data:
-        if key not in voice_signals:
-            voice_signals[key] = {}
-        if 'ice_candidates' not in voice_signals[key]:
-            voice_signals[key]['ice_candidates'] = []
-        voice_signals[key]['ice_candidates'].append(data['ice'])
+        if key not in app.voice_signals:
+            app.voice_signals[key] = {}
+        if 'ice_candidates' not in app.voice_signals[key]:
+            app.voice_signals[key]['ice_candidates'] = []
+        app.voice_signals[key]['ice_candidates'].append(data['ice'])
     
     return jsonify({'success': True})
 
@@ -1172,8 +1625,8 @@ def voice_get_signals(channel_id, from_user_id):
     key = f"voice_{channel_id}_{from_user_id}_{current_user.id}"
     result = {}
     
-    if key in voice_signals:
-        signal = voice_signals[key]
+    if hasattr(app, 'voice_signals') and key in app.voice_signals:
+        signal = app.voice_signals[key]
         if 'sdp' in signal:
             result['sdp'] = signal['sdp']
             result['sdp_type'] = signal.get('sdp_type', 'offer')
@@ -1184,7 +1637,7 @@ def voice_get_signals(channel_id, from_user_id):
             result['ice'] = signal['ice_candidates'].pop(0)
         
         if not signal:
-            del voice_signals[key]
+            del app.voice_signals[key]
     
     return jsonify(result)
 
@@ -1197,9 +1650,10 @@ def voice_delete_channel(channel_id):
     
     VoiceChannelMember.query.filter_by(channel_id=channel_id).delete()
     
-    keys_to_delete = [k for k in voice_signals.keys() if f"voice_{channel_id}" in k]
-    for k in keys_to_delete:
-        del voice_signals[k]
+    if hasattr(app, 'voice_signals'):
+        keys_to_delete = [k for k in app.voice_signals.keys() if f"voice_{channel_id}" in k]
+        for k in keys_to_delete:
+            del app.voice_signals[k]
     
     db.session.delete(channel)
     db.session.commit()
@@ -1249,19 +1703,6 @@ def create_voice_channel():
     flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
     return redirect(url_for('voice_channels_page'))
 
-@app.route('/get_user/<int:user_id>')
-@login_required
-def get_user_by_id(user_id):
-    user = User.query.get(user_id)
-    if user:
-        return jsonify({
-            'id': user.id, 
-            'username': user.username, 
-            'avatar': user.avatar,
-            'status': user.status
-        })
-    return jsonify({'error': 'User not found'}), 404
-
 # ========== КАНАЛЫ ==========
 @app.route('/channels')
 @login_required
@@ -1296,7 +1737,6 @@ def channel_view(identifier):
     
     for post in posts:
         post.comments = ChannelComment.query.filter_by(post_id=post.id).order_by(ChannelComment.timestamp.asc()).all()
-        post.likes_count = PostLike.query.filter_by(post_id=post.id).count()
     
     return render_template('channel.html', 
                          channel=channel, 
@@ -1562,61 +2002,6 @@ def edit_channel(channel_id):
     
     return jsonify({'success': True})
 
-# ========== ЛАЙКИ И ПРОСМОТРЫ ==========
-@app.route('/channel/like_post/<int:post_id>', methods=['POST'])
-@login_required
-def like_post(post_id):
-    existing = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
-    
-    if existing:
-        db.session.delete(existing)
-        liked = False
-    else:
-        new_like = PostLike(post_id=post_id, user_id=current_user.id)
-        db.session.add(new_like)
-        liked = True
-    
-    post = ChannelPost.query.get(post_id)
-    post.likes_count = PostLike.query.filter_by(post_id=post_id).count()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'liked': liked, 'likes_count': post.likes_count})
-
-@app.route('/channel/like_comment/<int:comment_id>', methods=['POST'])
-@login_required
-def like_comment(comment_id):
-    existing = CommentLike.query.filter_by(comment_id=comment_id, user_id=current_user.id).first()
-    
-    if existing:
-        db.session.delete(existing)
-        liked = False
-    else:
-        new_like = CommentLike(comment_id=comment_id, user_id=current_user.id)
-        db.session.add(new_like)
-        liked = True
-    
-    comment = ChannelComment.query.get(comment_id)
-    comment.likes_count = CommentLike.query.filter_by(comment_id=comment_id).count()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'liked': liked, 'likes_count': comment.likes_count})
-
-@app.route('/channel/view_post/<int:post_id>', methods=['POST'])
-@login_required
-def view_post(post_id):
-    post = ChannelPost.query.get(post_id)
-    if not post:
-        return jsonify({'error': 'Пост не найден'}), 404
-    
-    existing = PostView.query.filter_by(post_id=post_id, user_id=current_user.id).first()
-    if not existing:
-        new_view = PostView(post_id=post_id, user_id=current_user.id)
-        db.session.add(new_view)
-        post.views = PostView.query.filter_by(post_id=post_id).count()
-        db.session.commit()
-    
-    return jsonify({'success': True, 'views': post.views})
-
 # ========== СТИКЕРЫ ==========
 @app.route('/stickers')
 @login_required
@@ -1625,7 +2010,7 @@ def stickers_page():
     packs = []
     for up in user_packs:
         pack = StickerPack.query.get(up.pack_id)
-        if pack and pack.is_active:
+        if pack:
             stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
             packs.append({'id': pack.id, 'title': pack.title, 'stickers': stickers})
     return render_template('stickers.html', packs=packs)
@@ -1657,7 +2042,7 @@ def stickers_api():
     stickers_list = []
     for up in user_packs:
         pack = StickerPack.query.get(up.pack_id)
-        if pack and pack.is_active:
+        if pack:
             for s in Sticker.query.filter_by(pack_id=pack.id).all():
                 stickers_list.append({'id': s.id, 'emoji': s.emoji, 'url': s.file_path})
     return jsonify(stickers_list)
@@ -1686,7 +2071,7 @@ def upload_sticker_by_url():
     db.session.add(msg)
     db.session.commit()
     
-    return jsonify({'success': True, 'path': f'/static/stickers/{filename}'})
+    return jsonify({'success': True})
 
 # ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
@@ -2028,630 +2413,6 @@ def family_members(family_id):
         })
     
     return jsonify(result)
-
-# ========== ГРУППЫ ==========
-@app.route('/create_group', methods=['POST'])
-@login_required
-def create_group():
-    name = request.form.get('name')
-    if not name:
-        flash('Название группы обязательно', 'danger')
-        return redirect(url_for('chat'))
-    group = Group(name=name, created_by=current_user.id)
-    db.session.add(group)
-    db.session.commit()
-    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id, is_admin=True))
-    db.session.commit()
-    flash(f'Группа "{name}" создана!', 'success')
-    return redirect(url_for('chat'))
-
-@app.route('/group/<int:gid>/upload_avatar', methods=['POST'])
-@login_required
-def upload_group_avatar(gid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member or not member.is_admin:
-        flash('Только администратор может менять аватар группы', 'danger')
-        return redirect(url_for('group_info', gid=gid))
-    
-    if 'avatar' in request.files:
-        f = request.files['avatar']
-        if f and allowed_file(f.filename):
-            ext = f.filename.rsplit('.', 1)[1].lower()
-            name = f"group_{gid}_{uuid.uuid4().hex}.{ext}"
-            f.save(os.path.join(AVATAR_FOLDER, name))
-            if group.avatar != 'group_default.png':
-                old = os.path.join(AVATAR_FOLDER, group.avatar)
-                if os.path.exists(old):
-                    os.remove(old)
-            group.avatar = name
-            db.session.commit()
-            flash('Аватар группы обновлён!', 'success')
-    
-    return redirect(url_for('group_info', gid=gid))
-
-@app.route('/group/<int:gid>/info')
-@login_required
-def group_info(gid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member:
-        flash('Вы не участник этой группы', 'danger')
-        return redirect(url_for('chat'))
-    
-    members = GroupMember.query.filter_by(group_id=gid).all()
-    members_list = []
-    for m in members:
-        user = db.session.get(User, m.user_id)
-        members_list.append({'user': user, 'is_admin': m.is_admin})
-    
-    is_admin = member.is_admin
-    
-    return render_template('group_info.html', group=group, members=members_list, is_admin=is_admin)
-
-@app.route('/add_member/<int:gid>', methods=['POST'])
-@login_required
-def add_member(gid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member or not member.is_admin:
-        flash('Только администратор может добавлять участников', 'danger')
-        return redirect(url_for('group_info', gid=gid))
-    
-    username = request.form.get('username')
-    if not username:
-        flash('Введите имя пользователя', 'danger')
-        return redirect(url_for('group_info', gid=gid))
-    
-    user = User.query.filter_by(username=username).first()
-    if not user:
-        flash('Пользователь не найден', 'danger')
-    elif GroupMember.query.filter_by(user_id=user.id, group_id=gid).first():
-        flash('Пользователь уже в группе', 'danger')
-    else:
-        db.session.add(GroupMember(user_id=user.id, group_id=gid))
-        db.session.commit()
-        flash(f'{user.username} добавлен в группу!', 'success')
-    
-    return redirect(url_for('group_info', gid=gid))
-
-@app.route('/remove_member/<int:gid>/<int:uid>', methods=['POST'])
-@login_required
-def remove_member(gid, uid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member or not member.is_admin:
-        flash('Только администратор может удалять участников', 'danger')
-        return redirect(url_for('group_info', gid=gid))
-    
-    if uid == current_user.id:
-        flash('Нельзя удалить самого себя', 'danger')
-        return redirect(url_for('group_info', gid=gid))
-    
-    target = GroupMember.query.filter_by(user_id=uid, group_id=gid).first()
-    if target:
-        db.session.delete(target)
-        db.session.commit()
-        flash('Пользователь удалён из группы', 'success')
-    
-    return redirect(url_for('group_info', gid=gid))
-
-@app.route('/group/<int:gid>')
-@login_required
-def group_chat(gid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member:
-        flash('Вы не участник этой группы', 'danger')
-        return redirect(url_for('chat'))
-    messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
-    members = GroupMember.query.filter_by(group_id=gid).all()
-    members_list = []
-    for m in members:
-        user = db.session.get(User, m.user_id)
-        members_list.append(user)
-    return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
-
-@app.route('/send_group', methods=['POST'])
-@login_required
-def send_group():
-    content = request.form.get('content', '')
-    reply_to_id = request.form.get('reply_to_id', type=int)
-    
-    content, mentioned_ids = render_mentions(content, current_user.id)
-    
-    if not content and request.form.get('file_path'):
-        content = '📎 Файл'
-    
-    msg = GroupMessage(
-        content=content,
-        file_path=request.form.get('file_path'),
-        file_name=request.form.get('file_name'),
-        file_type=request.form.get('file_type'),
-        sender_id=current_user.id,
-        group_id=request.form['group_id'],
-        voice_duration=request.form.get('voice_duration', 0),
-        reply_to_id=reply_to_id,
-        mentions=json.dumps(mentioned_ids)
-    )
-    db.session.add(msg)
-    db.session.commit()
-    
-    return redirect(url_for('group_chat', gid=request.form['group_id']))
-
-# ========== ЧАТ ==========
-@app.route('/chat')
-@login_required
-def chat():
-    current_user.last_seen = datetime.utcnow()
-    db.session.commit()
-    
-    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
-    
-    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
-    groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
-    secret_chats_list = SecretChat.query.filter(
-        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
-        SecretChat.is_active == True
-    ).all()
-    user_channels = Channel.query.join(ChannelSubscriber).filter(ChannelSubscriber.user_id == current_user.id).all()
-    
-    convs = []
-    
-    for u in users:
-        last = Message.query.filter(
-            ((Message.sender_id == current_user.id) & (Message.receiver_id == u.id)) |
-            ((Message.sender_id == u.id) & (Message.receiver_id == current_user.id)),
-            ~Message.deleted_for.contains(str(current_user.id))
-        ).order_by(Message.timestamp.desc()).first()
-        unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False, ~Message.deleted_for.contains(str(current_user.id))).count()
-        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last_seen': u.last_seen, 'last': last, 'unread': unread})
-    
-    for g in groups:
-        last = GroupMessage.query.filter_by(group_id=g.id).filter(~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
-        convs.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar, 'last': last, 'unread': 0})
-    
-    for sc in secret_chats_list:
-        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
-        other_user = db.session.get(User, other_id)
-        if other_user:
-            last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
-            convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
-    
-    convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
-    return render_template('chat.html', convs=convs, user_channels=user_channels)
-
-@app.route('/messages/<int:uid>')
-@login_required
-def messages(uid):
-    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=uid).first():
-        flash('Вы заблокировали этого пользователя', 'danger')
-        return redirect(url_for('chat'))
-    if Blacklist.query.filter_by(user_id=uid, blocked_user_id=current_user.id).first():
-        flash('Этот пользователь заблокировал вас', 'danger')
-        return redirect(url_for('chat'))
-    
-    other = db.session.get(User, uid)
-    if not other:
-        flash('Пользователь не найден')
-        return redirect(url_for('chat'))
-    msgs = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == uid)) |
-        ((Message.sender_id == uid) & (Message.receiver_id == current_user.id)),
-        ~Message.deleted_for.contains(str(current_user.id))
-    ).order_by(Message.timestamp).all()
-    for m in msgs:
-        if m.receiver_id == current_user.id and not m.is_read:
-            m.is_read = True
-    db.session.commit()
-    return render_template('messages.html', msgs=msgs, other=other)
-
-@app.route('/send', methods=['POST'])
-@login_required
-def send():
-    receiver_id = int(request.form['receiver_id'])
-    
-    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
-        flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
-        return redirect(url_for('chat'))
-    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
-        flash('Этот пользователь заблокировал вас', 'danger')
-        return redirect(url_for('chat'))
-    
-    content = request.form.get('content', '')
-    reply_to_id = request.form.get('reply_to_id', type=int)
-    
-    content, mentioned_ids = render_mentions(content, current_user.id)
-    
-    if not content and request.form.get('file_path'):
-        content = '📎 Файл'
-    
-    msg = Message(
-        content=content,
-        file_path=request.form.get('file_path'),
-        file_name=request.form.get('file_name'),
-        file_type=request.form.get('file_type'),
-        sender_id=current_user.id,
-        receiver_id=receiver_id,
-        voice_duration=request.form.get('voice_duration', 0),
-        reply_to_id=reply_to_id,
-        mentions=json.dumps(mentioned_ids)
-    )
-    db.session.add(msg)
-    db.session.commit()
-    
-    return redirect(url_for('messages', uid=receiver_id))
-
-@app.route('/edit_message', methods=['POST'])
-@login_required
-def edit_message():
-    data = request.get_json()
-    msg_id = data['msg_id']
-    new_content = data['new_content']
-    msg_type = data['type']
-    
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-        if msg and msg.sender_id == current_user.id:
-            content, mentioned_ids = render_mentions(new_content, current_user.id)
-            msg.content = content
-            msg.mentions = json.dumps(mentioned_ids)
-            msg.edited = True
-            db.session.commit()
-            return jsonify({'success': True})
-    elif msg_type == 'group':
-        msg = GroupMessage.query.get(msg_id)
-        if msg and msg.sender_id == current_user.id:
-            content, mentioned_ids = render_mentions(new_content, current_user.id)
-            msg.content = content
-            msg.mentions = json.dumps(mentioned_ids)
-            msg.edited = True
-            db.session.commit()
-            return jsonify({'success': True})
-    return jsonify({'error': 'Нельзя редактировать чужое сообщение'}), 403
-
-@app.route('/delete_message', methods=['POST'])
-@login_required
-def delete_message():
-    data = request.get_json()
-    msg_id = data['msg_id']
-    msg_type = data['type']
-    delete_for_all = data.get('delete_for_all', False)
-    
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-        if msg:
-            if delete_for_all or msg.sender_id == current_user.id:
-                if delete_for_all:
-                    db.session.delete(msg)
-                else:
-                    if msg.deleted_for:
-                        msg.deleted_for += f',{current_user.id}'
-                    else:
-                        msg.deleted_for = str(current_user.id)
-                db.session.commit()
-                return jsonify({'success': True})
-            else:
-                return jsonify({'error': 'Нельзя удалить чужое сообщение'}), 403
-    elif msg_type == 'group':
-        msg = GroupMessage.query.get(msg_id)
-        if msg and msg.sender_id == current_user.id:
-            if msg.deleted_for:
-                msg.deleted_for += f',{current_user.id}'
-            else:
-                msg.deleted_for = str(current_user.id)
-            db.session.commit()
-            return jsonify({'success': True})
-    return jsonify({'error': 'Сообщение не найдено'}), 404
-
-@app.route('/forward_message', methods=['POST'])
-@login_required
-def forward_message():
-    data = request.get_json()
-    msg_id = data['msg_id']
-    target_type = data['target_type']
-    target_id = data['target_id']
-    msg_type = data['msg_type']
-    
-    if msg_type == 'private':
-        original = Message.query.get(msg_id)
-        if not original:
-            return jsonify({'error': 'Сообщение не найдено'}), 404
-        if target_type == 'private':
-            new_msg = Message(
-                content=original.content,
-                file_path=original.file_path,
-                file_name=original.file_name,
-                file_type=original.file_type,
-                sender_id=current_user.id,
-                receiver_id=target_id,
-                voice_duration=original.voice_duration,
-                forwarded_from_id=original.sender_id,
-                forwarded_message_id=original.id
-            )
-            db.session.add(new_msg)
-        else:
-            new_msg = GroupMessage(
-                content=original.content,
-                file_path=original.file_path,
-                file_name=original.file_name,
-                file_type=original.file_type,
-                sender_id=current_user.id,
-                group_id=target_id,
-                voice_duration=original.voice_duration,
-                forwarded_from_id=original.sender_id,
-                forwarded_message_id=original.id
-            )
-            db.session.add(new_msg)
-    else:
-        original = GroupMessage.query.get(msg_id)
-        if not original:
-            return jsonify({'error': 'Сообщение не найдено'}), 404
-        if target_type == 'private':
-            new_msg = Message(
-                content=original.content,
-                file_path=original.file_path,
-                file_name=original.file_name,
-                file_type=original.file_type,
-                sender_id=current_user.id,
-                receiver_id=target_id,
-                voice_duration=original.voice_duration,
-                forwarded_from_id=original.sender_id,
-                forwarded_message_id=original.id
-            )
-            db.session.add(new_msg)
-        else:
-            new_msg = GroupMessage(
-                content=original.content,
-                file_path=original.file_path,
-                file_name=original.file_name,
-                file_type=original.file_type,
-                sender_id=current_user.id,
-                group_id=target_id,
-                voice_duration=original.voice_duration,
-                forwarded_from_id=original.sender_id,
-                forwarded_message_id=original.id
-            )
-            db.session.add(new_msg)
-    db.session.commit()
-    return jsonify({'success': True, 'target_type': target_type, 'target_id': target_id})
-
-@app.route('/toggle_favorite', methods=['POST'])
-@login_required
-def toggle_favorite():
-    data = request.get_json()
-    msg_id = data['msg_id']
-    msg_type = data['type']
-    
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-        if msg and (msg.sender_id == current_user.id or msg.receiver_id == current_user.id):
-            msg.is_favorite = not msg.is_favorite
-            db.session.commit()
-            return jsonify({'success': True, 'is_favorite': msg.is_favorite})
-    elif msg_type == 'group':
-        msg = GroupMessage.query.get(msg_id)
-        if msg:
-            msg.is_favorite = not msg.is_favorite
-            db.session.commit()
-            return jsonify({'success': True, 'is_favorite': msg.is_favorite})
-    return jsonify({'error': 'Сообщение не найдено'}), 404
-
-@app.route('/get_reply_preview/<int:msg_id>/<string:msg_type>')
-@login_required
-def get_reply_preview(msg_id, msg_type):
-    if msg_type == 'private':
-        msg = Message.query.get(msg_id)
-    else:
-        msg = GroupMessage.query.get(msg_id)
-    if not msg:
-        return jsonify({'error': 'Сообщение не найдено'}), 404
-    return jsonify({
-        'id': msg.id,
-        'content': msg.content[:100] if msg.content else '[Файл]',
-        'sender_name': msg.sender.username if msg.sender else User.query.get(msg.sender_id).username
-    })
-
-@app.route('/get_chats_list')
-@login_required
-def get_chats_list():
-    blocked_ids = [b.blocked_user_id for b in Blacklist.query.filter_by(user_id=current_user.id).all()]
-    users = User.query.filter(User.id != current_user.id, ~User.id.in_(blocked_ids)).all()
-    groups = Group.query.join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
-    secret_chats_list = SecretChat.query.filter(
-        (SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id),
-        SecretChat.is_active == True
-    ).all()
-    
-    chats = []
-    for u in users:
-        chats.append({'type': 'private', 'id': u.id, 'name': u.username, 'avatar': u.avatar})
-    for g in groups:
-        chats.append({'type': 'group', 'id': g.id, 'name': g.name, 'avatar': g.avatar})
-    for sc in secret_chats_list:
-        other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
-        other_user = db.session.get(User, other_id)
-        if other_user:
-            chats.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar})
-    return jsonify(chats)
-
-@app.route('/search_users')
-@login_required
-def search_users():
-    query = request.args.get('q', '').lower().strip()
-    if not query:
-        return jsonify([])
-    
-    if query.startswith('@'):
-        query = query[1:]
-    
-    users = User.query.filter(
-        User.id != current_user.id,
-        (User.username.ilike(f'%{query}%')) | 
-        (User.username_link.ilike(f'%@{query}%'))
-    ).limit(10).all()
-    
-    result = []
-    for user in users:
-        result.append({
-            'id': user.id,
-            'username': user.username,
-            'username_link': user.username_link if user.username_link else f'@{user.username}',
-            'avatar': user.avatar
-        })
-    return jsonify(result)
-
-@app.route('/get_mention_notifications')
-@login_required
-def get_mention_notifications():
-    private_mentions = Message.query.filter(
-        Message.receiver_id == current_user.id,
-        Message.is_read == False,
-        Message.mentions != '',
-        Message.mentions.contains(str(current_user.id))
-    ).count()
-    
-    group_mentions = GroupMessage.query.filter(
-        GroupMessage.group_id.in_([gm.group_id for gm in GroupMember.query.filter_by(user_id=current_user.id).all()]),
-        GroupMessage.mentions != '',
-        GroupMessage.mentions.contains(str(current_user.id))
-    ).count()
-    
-    return jsonify({'count': private_mentions + group_mentions})
-
-@app.route('/get_new_messages/<int:last_id>/<int:receiver_id>')
-@login_required
-def get_new_messages(last_id, receiver_id):
-    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
-        return jsonify([])
-    if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
-        return jsonify([])
-    
-    msgs = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == receiver_id)) |
-        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
-        Message.id > last_id,
-        ~Message.deleted_for.contains(str(current_user.id))
-    ).order_by(Message.timestamp).limit(50).all()
-    
-    result = []
-    for m in msgs:
-        result.append({
-            'id': m.id,
-            'content': m.content,
-            'file_path': m.file_path,
-            'file_name': m.file_name,
-            'file_type': m.file_type,
-            'timestamp': m.timestamp.strftime('%H:%M'),
-            'is_own': m.sender_id == current_user.id,
-            'voice_duration': m.voice_duration,
-            'edited': m.edited,
-            'reply_to_id': m.reply_to_id,
-            'is_favorite': m.is_favorite,
-            'is_pinned': m.is_pinned,
-            'forwarded_from_id': m.forwarded_from_id,
-            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
-            'mentions': m.mentions
-        })
-    return jsonify(result)
-
-@app.route('/get_new_group_messages/<int:last_id>/<int:group_id>')
-@login_required
-def get_new_group_messages(last_id, group_id):
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first()
-    if not member:
-        return jsonify([])
-    
-    msgs = GroupMessage.query.filter(
-        GroupMessage.group_id == group_id,
-        GroupMessage.id > last_id,
-        ~GroupMessage.deleted_for.contains(str(current_user.id))
-    ).order_by(GroupMessage.timestamp).limit(50).all()
-    
-    result = []
-    for m in msgs:
-        result.append({
-            'id': m.id,
-            'content': m.content,
-            'file_path': m.file_path,
-            'file_name': m.file_name,
-            'file_type': m.file_type,
-            'timestamp': m.timestamp.strftime('%H:%M'),
-            'is_own': m.sender_id == current_user.id,
-            'sender_name': m.sender.username if m.sender else 'Unknown',
-            'voice_duration': m.voice_duration,
-            'edited': m.edited,
-            'reply_to_id': m.reply_to_id,
-            'is_favorite': m.is_favorite,
-            'is_pinned': m.is_pinned,
-            'forwarded_from_id': m.forwarded_from_id,
-            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None,
-            'mentions': m.mentions
-        })
-    return jsonify(result)
-
-# ========== ОЧИСТКА НЕРАБОТАЮЩИХ СТИКЕРОВ ==========
-@app.route('/clean_inactive_content', methods=['POST'])
-@login_required
-def clean_inactive_content():
-    if current_user.id != 1:
-        return jsonify({'error': 'Нет прав'}), 403
-    
-    inactive_packs = StickerPack.query.filter_by(is_active=False).all()
-    cleaned_stickers = 0
-    cleaned_gifts = 0
-    
-    for pack in inactive_packs:
-        stickers = Sticker.query.filter_by(pack_id=pack.id).all()
-        sticker_paths = [s.file_path for s in stickers]
-        
-        for path in sticker_paths:
-            msgs = Message.query.filter_by(file_path=path, file_type='sticker').all()
-            for msg in msgs:
-                msg.content = '[Стикер из неработающего пака]'
-                msg.file_path = None
-                msg.file_type = 'text'
-                cleaned_stickers += 1
-            
-            group_msgs = GroupMessage.query.filter_by(file_path=path, file_type='sticker').all()
-            for msg in group_msgs:
-                msg.content = '[Стикер из неработающего пака]'
-                msg.file_path = None
-                msg.file_type = 'text'
-                cleaned_stickers += 1
-    
-    inactive_gifts = Gift.query.filter_by(is_active=False).all()
-    for gift in inactive_gifts:
-        gift.is_used = True
-        cleaned_gifts += 1
-    
-    db.session.commit()
-    
-    return jsonify({
-        'status': 'cleaned',
-        'sticker_packs_cleaned': len(inactive_packs),
-        'stickers_cleaned': cleaned_stickers,
-        'gifts_cleaned': cleaned_gifts
-    })
 
 # ========== ЗАПУСК ==========
 if __name__ == '__main__':
