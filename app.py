@@ -962,13 +962,14 @@ def secret_chats():
     for sc in secret_chats_list:
         other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
         other_user = db.session.get(User, other_id)
-        last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
-        
-        chats_data.append({
-            'id': sc.id,
-            'other_user': other_user,
-            'last_msg': last_msg
-        })
+        if other_user:
+            last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+            
+            chats_data.append({
+                'id': sc.id,
+                'other_user': other_user,
+                'last_msg': last_msg
+            })
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
@@ -2187,8 +2188,9 @@ def chat():
     for sc in secret_chats_list:
         other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
         other_user = db.session.get(User, other_id)
-        last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
-        convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
+        if other_user:
+            last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+            convs.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar, 'status': 'secret', 'last': last, 'unread': 0})
     
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] and x['last'].timestamp else datetime.min, reverse=True)
     return render_template('chat.html', convs=convs, user_channels=user_channels)
@@ -2443,7 +2445,8 @@ def get_chats_list():
     for sc in secret_chats_list:
         other_id = sc.user2_id if sc.user1_id == current_user.id else sc.user1_id
         other_user = db.session.get(User, other_id)
-        chats.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar})
+        if other_user:
+            chats.append({'type': 'secret', 'id': sc.id, 'name': f'🔒 {other_user.username}', 'avatar': other_user.avatar})
     return jsonify(chats)
 
 @app.route('/search_users')
