@@ -56,13 +56,13 @@
         .translate-btn:hover{background:#5865F240}
         .translated-text{margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,0.1);font-style:italic;font-size:11px;color:#666}
         
-        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0;position:relative}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
@@ -165,24 +165,13 @@
                 {% if m.content and m.file_type != 'sticker' and m.sender_id != current_user.id %}
                     <button class="translate-btn" onclick="translateMessage(this, {{ m.id }})">🌐 Перевод</button>
                 {% endif %}
-                {% if m.file_path and m.file_type == 'sticker' and not m.content %}
-                {% elif m.file_path and not m.content %}
+                {% if m.file_path and not m.content %}
                     {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
+                        <img src="{{ m.file_path }}" onclick="window.open(this.src)" style="max-width:200px;border-radius:12px;cursor:pointer">
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' %}
-                        <video controls src="{{ m.file_path }}"></video>
-                    {% else %}
-                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" class="file-link">📎 {{ m.file_name }}</a>
-                    {% endif %}
-                {% elif m.file_path %}
-                    {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" onclick="window.open(this.src)">
-                    {% elif m.file_type == 'audio' %}
-                        <audio controls src="{{ m.file_path }}"></audio>
-                    {% elif m.file_type == 'video' %}
-                        <video controls src="{{ m.file_path }}"></video>
+                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
                     {% else %}
                         <a href="{{ m.file_path }}" download="{{ m.file_name }}" class="file-link">📎 {{ m.file_name }}</a>
                     {% endif %}
@@ -231,14 +220,13 @@
     </div>
     
     <div class="input-area">
-        <div class="input-wrapper" style="position:relative">
+        <div class="input-wrapper">
             <input type="text" id="msgInput" placeholder="Сообщение...">
-            <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
+            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
-        <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
     </div>
     
@@ -259,19 +247,16 @@
     let isAudioRecording = false;
     let startTime = null;
     let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
-    let pollingInterval = null;
     let currentReplyToId = null;
     let mentionSearchTimeout = null;
     let currentMentionStart = -1;
     let typingTimeout = null;
-    let isSending = false;
     let processedIds = new Set();
     
-    // ========== ПЕРЕВОД СООБЩЕНИЙ ==========
+    // ========== ПЕРЕВОД ==========
     async function translateMessage(btn, msgId) {
         const msgDiv = document.getElementById(`msg-content-${msgId}`);
         if(!msgDiv) return;
-        
         const originalText = msgDiv.getAttribute('data-original') || msgDiv.innerText;
         if(!originalText || originalText.length < 2) return;
         
@@ -306,14 +291,17 @@
         }
     }
     
-    function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
-    function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
-    function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
-    
-    function unpinMessage() {
-        if(window.pinnedMsgId) { pinMessage(window.pinnedMsgId, 'private'); }
+    function playVoice(el) { 
+        const audio = el.closest('.bubble').querySelector('audio'); 
+        if(audio) audio.play(); 
     }
-    function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
+    
+    function escapeHtml(t) { 
+        if(!t) return ''; 
+        const div = document.createElement('div'); 
+        div.textContent = t; 
+        return div.innerHTML; 
+    }
     
     function startVideoCall() {
         fetch('/start_call/' + receiver_id, {method: 'POST'})
@@ -321,77 +309,230 @@
             .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
     }
     
+    // ========== ОТПРАВКА СООБЩЕНИЯ ==========
+    function sendMsg() {
+        const content = msgInput.value.trim();
+        if(!content) return;
+        
+        const formData = new FormData();
+        formData.append('receiver_id', receiver_id);
+        formData.append('content', content);
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
+        fetch('/send', {method: 'POST', body: formData})
+            .then(() => {
+                msgInput.value = '';
+                currentReplyToId = null;
+                document.getElementById('replyBar').style.display = 'none';
+                setTimeout(checkNewMessages, 100);
+            });
+    }
+    
+    // ========== ОТПРАВКА ФАЙЛА ==========
+    function sendFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/upload', {method: 'POST', body: formData})
+            .then(r => r.json())
+            .then(data => {
+                if(data.path) {
+                    const formData2 = new FormData();
+                    formData2.append('receiver_id', receiver_id);
+                    formData2.append('file_path', data.path);
+                    formData2.append('file_name', data.name);
+                    formData2.append('file_type', data.type);
+                    if(currentReplyToId) formData2.append('reply_to_id', currentReplyToId);
+                    fetch('/send', {method: 'POST', body: formData2})
+                        .then(() => {
+                            currentReplyToId = null;
+                            document.getElementById('replyBar').style.display = 'none';
+                            setTimeout(checkNewMessages, 100);
+                        });
+                }
+            });
+    }
+    
+    // ========== ГОЛОСОВЫЕ ==========
+    async function startVoiceRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            startTime = Date.now();
+            
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const duration = Math.round((Date.now() - startTime) / 1000);
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const fd = new FormData();
+                fd.append('audio', blob);
+                fd.append('duration', duration);
+                
+                fetch('/upload_voice', {method: 'POST', body: fd})
+                    .then(r => r.json())
+                    .then(d => {
+                        if(d.path) {
+                            const fd2 = new FormData();
+                            fd2.append('receiver_id', receiver_id);
+                            fd2.append('file_path', d.path);
+                            fd2.append('file_name', 'Голосовое');
+                            fd2.append('file_type', 'audio');
+                            fd2.append('voice_duration', duration);
+                            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                            fetch('/send', {method: 'POST', body: fd2})
+                                .then(() => {
+                                    currentReplyToId = null;
+                                    document.getElementById('replyBar').style.display = 'none';
+                                    setTimeout(checkNewMessages, 100);
+                                });
+                        }
+                    });
+                
+                stream.getTracks().forEach(t => t.stop());
+                document.getElementById('voiceBtn').classList.remove('recording');
+                document.getElementById('voiceBtn').textContent = '🎤';
+                isAudioRecording = false;
+            };
+            
+            mediaRecorder.start();
+            isAudioRecording = true;
+            document.getElementById('voiceBtn').classList.add('recording');
+            document.getElementById('voiceBtn').textContent = '⏹️';
+            
+            setTimeout(() => {
+                if(isAudioRecording) mediaRecorder.stop();
+            }, 30000);
+        } catch(e) { 
+            alert('Микрофон не доступен'); 
+        }
+    }
+    
+    function stopVoiceRecording() { 
+        if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); 
+    }
+    
+    function toggleVoiceRecording() { 
+        if(isAudioRecording) stopVoiceRecording();
+        else startVoiceRecording();
+    }
+    
+    // ========== ПОЛУЧЕНИЕ НОВЫХ СООБЩЕНИЙ ==========
+    function checkNewMessages() { 
+        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
+            .then(r => r.json())
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    const messagesDiv = document.getElementById('messages');
+                    msgs.forEach(msg => {
+                        if(processedIds.has(msg.id)) return;
+                        processedIds.add(msg.id);
+                        
+                        const div = document.createElement('div');
+                        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
+                        div.setAttribute('data-id', msg.id);
+                        
+                        let contentHtml = '';
+                        if(msg.file_type === 'sticker') {
+                            contentHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+                        } else if(msg.file_path) {
+                            if(msg.file_type === 'image') {
+                                contentHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)" style="max-width:200px;border-radius:12px;cursor:pointer">`;
+                            } else if(msg.file_type === 'audio') {
+                                contentHtml = `<audio controls src="${msg.file_path}"></audio>`;
+                            } else if(msg.file_type === 'video') {
+                                contentHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
+                            } else {
+                                contentHtml = `<a href="${msg.file_path}" download="${msg.file_name}" style="color:#ff6b6b">📎 ${msg.file_name}</a>`;
+                            }
+                        }
+                        
+                        if(msg.content && msg.file_type !== 'sticker') {
+                            contentHtml += `<div class="message-content" id="msg-content-${msg.id}" data-original="${escapeHtml(msg.content)}">${escapeHtml(msg.content)}</div>`;
+                            if(!msg.is_own) contentHtml += `<button class="translate-btn" onclick="translateMessage(this, ${msg.id})">🌐 Перевод</button>`;
+                        }
+                        
+                        if(msg.voice_duration) {
+                            contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+                        }
+                        
+                        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time">${msg.timestamp}</div></div>`;
+                        messagesDiv.appendChild(div);
+                        lastMsgId = msg.id;
+                    });
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+            });
+    }
+    
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function replyToMessage(id, content) { 
+        currentReplyToId = id; 
+        const bar = document.getElementById('replyBar'); 
+        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); 
+        bar.style.display = 'flex'; 
+        msgInput.focus(); 
+    }
+    function cancelReply() { 
+        currentReplyToId = null; 
+        document.getElementById('replyBar').style.display = 'none'; 
+    }
+    function pinMessage(msgId, type) {
+        fetch('/pin_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: msgId, type: type})})
+            .then(() => setTimeout(checkNewMessages, 300));
+    }
+    function unpinMessage() { if(window.pinnedMsgId) pinMessage(window.pinnedMsgId, 'private'); }
+    function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
+    function toggleFavorite(id, type) { 
+        fetch('/toggle_favorite', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})})
+            .then(() => setTimeout(checkNewMessages, 300)); 
+    }
+    function forwardMessage(id, type) { 
+        let target = prompt('ID пользователя:'); 
+        if(target) fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})})
+            .then(() => alert('Переслано!')); 
+    }
+    function editMessage(id, type) { 
+        let newText = prompt('Новый текст:'); 
+        if(newText) fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type})})
+            .then(() => setTimeout(checkNewMessages, 300)); 
+    }
+    function deleteMessage(id, type, all) { 
+        if(confirm('Удалить?')) fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})})
+            .then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); }); 
+    }
+    
+    // ========== ТАЙПИНГ ==========
     msgInput.addEventListener('input', function() {
-        fetch('/typing', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({receiver_id: receiver_id, is_typing: true})
-        });
+        fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
         if(typingTimeout) clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => {
-            fetch('/typing', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({receiver_id: receiver_id, is_typing: false})
-            });
+            fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})});
         }, 1000);
     });
     
     function checkTyping() {
-        fetch(`/get_typing/${receiver_id}`)
-            .then(r => r.json())
-            .then(data => {
-                const statusDiv = document.getElementById('typingStatus');
-                if(data.is_typing) {
-                    statusDiv.innerHTML = '✏️ Печатает...';
-                    statusDiv.className = 'user-status typing';
-                } else {
-                    const isOnline = '{{ other.status }}' === 'online';
-                    statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
-                    statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
-                }
-            });
+        fetch(`/get_typing/${receiver_id}`).then(r=>r.json()).then(data => {
+            const statusDiv = document.getElementById('typingStatus');
+            if(data.is_typing) {
+                statusDiv.innerHTML = '✏️ Печатает...';
+                statusDiv.className = 'user-status typing';
+            } else {
+                const isOnline = '{{ other.status }}' === 'online';
+                statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
+                statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
+            }
+        });
     }
     setInterval(checkTyping, 2000);
     
-    function loadPinnedMessage() {
-        fetch(`/get_pinned_message/${receiver_id}/private`)
-            .then(r => r.json())
-            .then(data => {
-                if(data.id) {
-                    document.getElementById('pinnedMessageBar').style.display = 'flex';
-                    document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
-                    window.pinnedMsgId = data.id;
-                } else {
-                    document.getElementById('pinnedMessageBar').style.display = 'none';
-                    window.pinnedMsgId = null;
-                }
-            });
-    }
-    
-    function scrollToPinned() {
-        if(window.pinnedMsgId) {
-            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
-            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-    
-    function pinMessage(msgId, type) {
-        fetch('/pin_message', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({msg_id: msgId, type: type})
-        }).then(() => {
-            setTimeout(() => {
-                checkNewMessages();
-                loadPinnedMessage();
-            }, 300);
-        });
-    }
-    
+    // ========== УПОМИНАНИЯ ==========
     function searchUsers(query) {
         if(!query) { hideSuggestions(); return; }
-        fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); });
+        fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { 
+            if(users.length) showSuggestions(users); 
+            else hideSuggestions(); 
+        });
     }
     
     function showSuggestions(users) {
@@ -421,196 +562,53 @@
     
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
-    function addNewMessage(msg) {
-        if(processedIds.has(msg.id)) return;
-        processedIds.add(msg.id);
-        
-        const messagesDiv = document.getElementById('messages');
-        const div = document.createElement('div');
-        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
-        div.setAttribute('data-id', msg.id);
-        let content = msg.content || '';
-        let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
-        let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
-        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
-        
-        let fileHtml = '';
-        if(msg.file_path) {
-            if(msg.file_type == 'sticker') {
-                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
-            } else if(msg.file_type == 'image') {
-                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
-            } else if(msg.file_type == 'audio') {
-                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-            } else if(msg.file_type == 'video') {
-                fileHtml = `<video controls src="${msg.file_path}"></video>`;
-            } else {
-                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
-            }
-        }
-        
-        if(!content && msg.file_path && msg.file_type != 'sticker') content = '📎 Файл';
-        
-        if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
-        let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
-        let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
-        if(msg.mentions && msg.mentions.includes('{{ current_user.id }}') && !msg.is_own) showNotification(`🔔 Вас упомянули`);
-        const safeContent = (msg.content || '').replace(/`/g, '\\`');
-        
-        const translateBtn = (!msg.is_own && msg.content && msg.file_type != 'sticker') ? `<button class="translate-btn" onclick="translateMessage(this, ${msg.id})">🌐 Перевод</button>` : '';
-        
-        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}<div class="message-content" id="msg-content-${msg.id}" data-original="${escapeHtml(msg.content || '')}">${content}</div>${translateBtn}${fileHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${safeContent}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
-        messagesDiv.appendChild(div);
-        if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        
-        lastMsgId = msg.id;
-        if(msg.is_pinned) loadPinnedMessage();
-    }
-    
-    function sendMsg() {
-        let content = msgInput.value.trim();
-        if(!content && !currentReplyToId) return;
-        if(isSending) return;
-        isSending = true;
-        
-        let fd = new FormData();
-        fd.append('receiver_id', receiver_id);
-        if(content) fd.append('content', content);
-        if(currentReplyToId) fd.append('reply_to_id', currentReplyToId);
-        
-        let savedReplyId = currentReplyToId;
-        currentReplyToId = null;
-        document.getElementById('replyBar').style.display = 'none';
-        localStorage.setItem('msg_' + receiver_id, '');
-        
-        fetch('/send', {method: 'POST', body: fd})
-            .then(() => {
-                setTimeout(() => checkNewMessages(), 100);
-            })
-            .catch(() => { 
-                isSending = false;
-                alert('Ошибка отправки');
-            });
-        
-        msgInput.value = '';
-    }
-    
-    function sendFile(file) {
-        let fd = new FormData(); fd.append('file', file);
-        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { 
-            let fd2 = new FormData(); 
-            fd2.append('receiver_id', receiver_id); 
-            fd2.append('file_path', d.path); 
-            fd2.append('file_name', d.name); 
-            fd2.append('file_type', d.type); 
-            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); 
-            fetch('/send', {method: 'POST', body: fd2}).then(() => { 
-                currentReplyToId = null; 
-                document.getElementById('replyBar').style.display = 'none'; 
-                setTimeout(() => checkNewMessages(), 100); 
-            }); 
-        } });
-    }
-    
-    function checkNewMessages() { 
-        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
-            .then(r => r.json())
-            .then(msgs => {
-                if(msgs && msgs.length) {
-                    msgs.forEach(m => addNewMessage(m));
-                    isSending = false;
-                } else {
-                    isSending = false;
-                }
-            })
-            .catch(() => { isSending = false; });
-    }
-    
-    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); } }
-    function deleteMessage(id, type, all) { if(confirm('Удалить?')) { fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all}) }).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
-    function toggleFavorite(id, type) { fetch('/toggle_favorite', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); }
-    function replyToMessage(id, content) { currentReplyToId = id; const bar = document.getElementById('replyBar'); document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); bar.style.display = 'flex'; msgInput.focus(); }
-    function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
-    function forwardMessage(id, type) { let target = prompt('ID пользователя:'); if(target) { fetch('/forward_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type}) }).then(() => alert('Переслано!')); } }
-    
-    async function startVoiceRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            startTime = Date.now();
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const duration = Math.round((Date.now() - startTime) / 1000);
-                const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                const fd = new FormData();
-                fd.append('audio', blob);
-                fd.append('duration', duration);
-                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('receiver_id', receiver_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 100); }); } });
-                stream.getTracks().forEach(t => t.stop());
-                document.getElementById('voiceBtn').classList.remove('recording');
-                document.getElementById('voiceBtn').textContent = '🎤';
-                isAudioRecording = false;
-            };
-            mediaRecorder.start();
-            isAudioRecording = true;
-            document.getElementById('voiceBtn').classList.add('recording');
-            document.getElementById('voiceBtn').textContent = '⏹️';
-            setTimeout(() => isAudioRecording && stopVoiceRecording(), 30000);
-        } catch(e) { alert('Микрофон не доступен'); }
-    }
-    function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
-    function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
-    
-    let voiceLongPressTimer = null;
-    let isVoiceLongPress = false;
-    const voiceBtn = document.getElementById('voiceBtn');
-    
-    voiceBtn.addEventListener('mousedown', function(e) {
-        voiceLongPressTimer = setTimeout(() => {
-            isVoiceLongPress = true;
-        }, 300);
-    });
-    
-    voiceBtn.addEventListener('mouseup', function(e) {
-        if(voiceLongPressTimer) clearTimeout(voiceLongPressTimer);
-        if(!isVoiceLongPress && !isAudioRecording) {
-            toggleVoiceRecording();
-        }
-        isVoiceLongPress = false;
-    });
-    
-    document.getElementById('emojiBtn').onclick = () => { 
-        document.getElementById('emojiPicker').classList.toggle('active');
-    };
-    document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
-    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
-    msgInput.value = localStorage.getItem('msg_' + receiver_id) || '';
-    msgInput.addEventListener('input', () => localStorage.setItem('msg_' + receiver_id, msgInput.value));
-    
     msgInput.addEventListener('input', function() {
         const val = this.value, cursor = this.selectionStart;
         let lastAt = -1;
-        for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
-        if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
-    });
-    
-    document.addEventListener('click', (e) => { 
-        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); 
-        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
-            document.getElementById('emojiPicker').classList.remove('active');
+        for(let i = cursor-1; i >= 0; i--) { 
+            if(val[i] === '@') { lastAt = i; break; } 
+            if(val[i] === ' ' || val[i] === '\n') break; 
+        }
+        if(lastAt !== -1) { 
+            currentMentionStart = lastAt; 
+            const query = val.substring(lastAt + 1, cursor); 
+            if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); 
+            mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); 
+        } else { 
+            hideSuggestions(); 
+            currentMentionStart = -1; 
         }
     });
     
-    document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
+    // ========== ЭМОДЗИ ==========
+    document.getElementById('emojiBtn').onclick = () => { 
+        document.getElementById('emojiPicker').classList.toggle('active');
+    };
+    document.querySelectorAll('.emoji-picker span').forEach(e => { 
+        e.onclick = () => { 
+            msgInput.value += e.textContent; 
+            document.getElementById('emojiPicker').classList.remove('active'); 
+            msgInput.focus(); 
+        }; 
+    });
     
-    loadPinnedMessage();
-    // БЫСТРЫЙ POLLING 200ms
-    pollingInterval = setInterval(checkNewMessages, 200);
-    function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
-    setInterval(checkMentions, 5000);
+    // ========== ГОЛОСОВАЯ КНОПКА ==========
+    document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
+    
+    // ========== ЗАКРЫТИЕ ПРИ КЛИКЕ ВНЕ ==========
+    document.addEventListener('click', (e) => { 
+        if(!document.getElementById('mentionSuggestions')?.contains(e.target) && e.target !== msgInput) hideSuggestions(); 
+        if(!document.getElementById('emojiPicker')?.contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker')?.classList.remove('active');
+        }
+    });
+    
+    // ========== ПОЛЛИНГ 200ms ==========
+    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
+    setInterval(checkNewMessages, 200);
+    
+    // Скролл вниз при загрузке
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
 </script>
 </body>
 </html>
