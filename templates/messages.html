@@ -52,7 +52,6 @@
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         .pinned-badge:hover{background:#ff6b6b40}
         
-        /* КНОПКА ПЕРЕВОДА */
         .translate-btn{background:#5865F220;border:1px solid #5865F2;color:#5865F2;padding:3px 8px;border-radius:15px;font-size:10px;cursor:pointer;margin-top:4px;display:inline-block;transition:0.2s}
         .translate-btn:hover{background:#5865F240}
         .translated-text{margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,0.1);font-style:italic;font-size:11px;color:#666}
@@ -268,7 +267,7 @@
     let isSending = false;
     let processedIds = new Set();
     
-    // ========== АВТОПЕРЕВОД СООБЩЕНИЙ ==========
+    // ========== ПЕРЕВОД СООБЩЕНИЙ ==========
     async function translateMessage(btn, msgId) {
         const msgDiv = document.getElementById(`msg-content-${msgId}`);
         if(!msgDiv) return;
@@ -515,7 +514,6 @@
         } });
     }
     
-    // ========== БЫСТРЫЙ POLLING 0.2 СЕКУНДЫ ==========
     function checkNewMessages() { 
         fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
             .then(r => r.json())
@@ -609,7 +607,7 @@
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
     loadPinnedMessage();
-    // БЫСТРЫЙ POLLING - 200 мс (0.2 секунды)
+    // БЫСТРЫЙ POLLING 200ms
     pollingInterval = setInterval(checkNewMessages, 200);
     function checkMentions() { fetch('/get_mention_notifications').then(r=>r.json()).then(data => { if(data.count) document.title = `(${data.count}) BearGram`; else document.title = 'BearGram'; }); }
     setInterval(checkMentions, 5000);
