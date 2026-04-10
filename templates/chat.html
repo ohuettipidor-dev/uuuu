@@ -51,6 +51,9 @@
         .badge{background:#ff6b6b;color:white;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:bold;display:inline-block}
         .online{color:#4cd964;font-size:10px;margin-left:6px}
         .offline{color:#3a86ff;font-size:10px;margin-left:6px}
+        .status-badge{font-size:10px;margin-left:6px}
+        .status-badge.online{color:#4cd964}
+        .status-badge.offline{color:#3a86ff}
         
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
@@ -73,6 +76,9 @@
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
         
         @media (max-width:480px){.container{padding:12px}.chat-avatar{width:45px;height:45px;font-size:18px}.chat-item{padding:10px}.chat-name{font-size:14px}}
+        
+        /* Форматирование времени последнего посещения */
+        .last-seen-time{font-size:9px;color:#aaa;margin-left:6px}
     </style>
 </head>
 <body>
@@ -93,8 +99,6 @@
             <a href="/channels" class="icon-btn">📢</a>
             <a href="/voice_channels" class="icon-btn">🎤</a>
             <a href="/secret_chats" class="icon-btn">🔒</a>
-            <a href="/stickers" class="icon-btn">🎨</a>
-            <a href="/my_gifts" class="icon-btn">🎁</a>
             <a href="/profile" class="icon-btn">🧸</a>
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
@@ -132,13 +136,19 @@
                 <div class="chat-name">
                     {% if c.type == 'secret' %}🔒 {% endif %}{{ c.name }}
                     {% if c.type == 'private' %}
-                        <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
-                            {% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}
+                        <span class="status-badge {% if c.status == 'online' %}online{% else %}offline{% endif %}" data-user-id="{{ c.id }}" data-last-seen="{{ c.last_seen.isoformat() if c.last_seen else '' }}">
+                            {% if c.status == 'online' %}
+                                🟢 онлайн
+                            {% elif c.status == 'in_voice' %}
+                                🎤 в голосовом
+                            {% else %}
+                                🔵 {{ format_last_seen(c.last_seen) if c.last_seen else 'давно' }}
+                            {% endif %}
                         </span>
                     {% elif c.type == 'secret' %}
-                        <span class="online" style="color:#4cd964">🔒 шифруется</span>
+                        <span class="status-badge online">🔒 шифруется</span>
                     {% else %}
-                        <span class="online">👥 группа</span>
+                        <span class="status-badge online">👥 группа</span>
                     {% endif %}
                 </div>
                 <div class="chat-last">
@@ -187,6 +197,51 @@
 <script>
     let selectedUserId = null;
     let searchTimeout = null;
+    
+    // ========== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ==========
+    function formatLastSeen(lastSeen) {
+        if (!lastSeen) return "давно";
+        
+        const now = new Date();
+        const last = new Date(lastSeen);
+        const diffMs = now - last;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+        
+        if (diffSec < 60) return "только что";
+        if (diffMin < 60) return `${diffMin} мин. назад`;
+        if (diffHour < 24) return `${diffHour} ч. назад`;
+        if (diffDay === 1) return "вчера";
+        if (diffDay < 7) return `${diffDay} дн. назад`;
+        
+        return last.toLocaleDateString('ru-RU');
+    }
+    
+    // ========== ОБНОВЛЕНИЕ СТАТУСОВ ==========
+    function updateUserStatuses() {
+        document.querySelectorAll('.status-badge[data-user-id]').forEach(async (badge) => {
+            const userId = badge.getAttribute('data-user-id');
+            if (!userId) return;
+            
+            try {
+                const response = await fetch(`/api/user_activity/${userId}`);
+                const data = await response.json();
+                
+                if (data.is_online) {
+                    badge.innerHTML = data.status === 'in_voice' ? '🎤 в голосовом' : '🟢 онлайн';
+                    badge.className = 'status-badge online';
+                } else {
+                    const formatted = formatLastSeen(data.last_seen);
+                    badge.innerHTML = `🔵 ${formatted}`;
+                    badge.className = 'status-badge offline';
+                }
+            } catch(e) {
+                console.error('Ошибка обновления статуса:', e);
+            }
+        });
+    }
     
     function openChat(type, id) {
         if(type === 'private') window.location.href = '/messages/' + id;
@@ -316,6 +371,11 @@
             form.submit();
         } else alert('Введите название группы');
     }
+    
+    // Обновляем статусы каждые 30 секунд
+    setInterval(updateUserStatuses, 30000);
+    // Первое обновление через 2 секунды
+    setTimeout(updateUserStatuses, 2000);
 </script>
 </body>
 </html>

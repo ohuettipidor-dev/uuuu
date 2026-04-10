@@ -98,6 +98,33 @@ def render_mentions(text, current_user_id=None):
     
     return text, mentioned_users
 
+# ========== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ПОСЛЕДНЕГО ВИЗИТА ==========
+def format_last_seen(last_seen):
+    """Форматирует время последнего посещения в человекочитаемый вид"""
+    if not last_seen:
+        return "давно"
+    
+    now = datetime.utcnow()
+    diff = now - last_seen
+    
+    if diff.total_seconds() < 60:
+        return "только что"
+    elif diff.total_seconds() < 3600:
+        minutes = int(diff.total_seconds() // 60)
+        return f"{minutes} мин. назад"
+    elif diff.total_seconds() < 86400:
+        hours = int(diff.total_seconds() // 3600)
+        return f"{hours} ч. назад"
+    elif diff.total_seconds() < 604800:
+        days = int(diff.total_seconds() // 86400)
+        if days == 1:
+            return "вчера"
+        return f"{days} дн. назад"
+    else:
+        return last_seen.strftime('%d.%m.%Y')
+
+app.jinja_env.globals.update(format_last_seen=format_last_seen)
+
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -472,6 +499,24 @@ def start_background_checks():
     check_inactive_gifts()
 
 Thread(target=start_background_checks, daemon=True).start()
+
+# ========== API АКТИВНОСТИ ==========
+@app.route('/api/user_activity/<int:user_id>')
+@login_required
+def get_user_activity(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=user_id).first():
+        return jsonify({'error': 'Доступ запрещен'}), 403
+    
+    return jsonify({
+        'status': user.status,
+        'last_seen': user.last_seen.isoformat() if user.last_seen else None,
+        'last_seen_formatted': format_last_seen(user.last_seen),
+        'is_online': user.status == 'online' or user.status == 'in_voice'
+    })
 
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
@@ -2179,7 +2224,7 @@ def chat():
             ~Message.deleted_for.contains(str(current_user.id))
         ).order_by(Message.timestamp.desc()).first()
         unread = Message.query.filter(Message.sender_id == u.id, Message.receiver_id == current_user.id, Message.is_read == False, ~Message.deleted_for.contains(str(current_user.id))).count()
-        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last': last, 'unread': unread})
+        convs.append({'type': 'private', 'id': u.id, 'name': u.username, 'username_link': u.username_link, 'avatar': u.avatar, 'status': u.status, 'last_seen': u.last_seen, 'last': last, 'unread': unread})
     
     for g in groups:
         last = GroupMessage.query.filter_by(group_id=g.id).filter(~GroupMessage.deleted_for.contains(str(current_user.id))).order_by(GroupMessage.timestamp.desc()).first()
