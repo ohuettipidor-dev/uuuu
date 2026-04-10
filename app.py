@@ -13,6 +13,8 @@ import requests
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+import time
+from threading import Thread
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -279,6 +281,7 @@ class ChannelPost(db.Model):
     views = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
     attachments = db.Column(db.Text, default='')
+    likes_count = db.Column(db.Integer, default=0)
     
     author = db.relationship('User', foreign_keys=[author_id])
     channel = db.relationship('Channel', foreign_keys=[channel_id])
@@ -289,6 +292,7 @@ class ChannelComment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    likes_count = db.Column(db.Integer, default=0)
     
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
@@ -303,6 +307,7 @@ class StickerPack(db.Model):
     price_diamonds = db.Column(db.Integer, default=0)
     preview = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
 
 class Sticker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -328,6 +333,7 @@ class Gift(db.Model):
     message = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_used = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
     
     from_user = db.relationship('User', foreign_keys=[from_user_id])
     to_user = db.relationship('User', foreign_keys=[to_user_id])
@@ -392,6 +398,31 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
+# ========== МОДЕЛИ ДЛЯ ЛАЙКОВ И ПРОСМОТРОВ ==========
+class PostLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='unique_post_like'),)
+
+class CommentLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('channel_comment.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('comment_id', 'user_id', name='unique_comment_like'),)
+
+class PostView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='unique_post_view'),)
+
 signaling_store = {}
 voice_signals = {}
 
@@ -402,6 +433,51 @@ def load_user(uid):
 with app.app_context():
     db.create_all()
     print("✅ База данных создана/обновлена")
+
+# ========== ПРОВЕРКА НЕРАБОТАЮЩИХ СТИКЕРПАКОВ И ПОДАРКОВ ==========
+def check_inactive_stickerpacks():
+    """Помечает неработающие стикерпаки (is_active=0)"""
+    with app.app_context():
+        packs = StickerPack.query.all()
+        for pack in packs:
+            try:
+                first_sticker = Sticker.query.filter_by(pack_id=pack.id).first()
+                if first_sticker and first_sticker.file_path:
+                    test_url = request.host_url.rstrip('/') + first_sticker.file_path
+                    response = requests.head(test_url, timeout=5, allow_redirects=True)
+                    if response.status_code != 200:
+                        pack.is_active = False
+                    else:
+                        pack.is_active = True
+                else:
+                    pack.is_active = False
+            except:
+                pack.is_active = False
+        db.session.commit()
+        print(f"✅ Проверено стикерпаков: {len(packs)}")
+
+def check_inactive_gifts():
+    """Помечает неработающие подарки (is_active=0)"""
+    with app.app_context():
+        gifts = Gift.query.all()
+        for gift in gifts:
+            if gift.gift_type == 'sticker_pack':
+                pack = StickerPack.query.get(gift.gift_id)
+                if not pack or pack.is_active == False:
+                    gift.is_active = False
+                else:
+                    gift.is_active = True
+        db.session.commit()
+        print(f"✅ Проверено подарков: {len(gifts)}")
+
+def start_background_checks():
+    """Запуск фоновой проверки"""
+    time.sleep(5)
+    check_inactive_stickerpacks()
+    check_inactive_gifts()
+
+# Запускаем фоновую проверку
+Thread(target=start_background_checks, daemon=True).start()
 
 @app.template_filter('json_decode')
 def json_decode_filter(data):
@@ -818,24 +894,36 @@ def send_secret():
     
     other_user_id = secret_chat.user2_id if secret_chat.user1_id == current_user.id else secret_chat.user1_id
     content = request.form.get('content', '')
+    file_path = request.form.get('file_path')
+    file_name = request.form.get('file_name')
+    file_type = request.form.get('file_type')
+    voice_duration = request.form.get('voice_duration', 0)
     burn_after_read = request.form.get('burn_after_read') == 'true'
     
-    encrypted_content = encrypt_message(content, current_user.id, other_user_id)
+    # Если это стикер или файл, шифруем соответствующее содержимое
+    if file_type == 'sticker':
+        encrypted_content = encrypt_message('[СТИКЕР]', current_user.id, other_user_id)
+    elif file_path:
+        encrypted_content = encrypt_message(f'[ФАЙЛ] {file_name}', current_user.id, other_user_id)
+    else:
+        encrypted_content = encrypt_message(content, current_user.id, other_user_id)
     
     msg = SecretMessage(
         encrypted_content=encrypted_content,
-        file_path=request.form.get('file_path'),
-        file_name=request.form.get('file_name'),
-        file_type=request.form.get('file_type'),
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
         sender_id=current_user.id,
         secret_chat_id=chat_id,
-        voice_duration=request.form.get('voice_duration', 0),
+        voice_duration=voice_duration,
         is_burn_after_read=burn_after_read,
         burn_after_read_timer=5 if burn_after_read else 0
     )
     db.session.add(msg)
     db.session.commit()
     
+    if request.is_json:
+        return jsonify({'success': True})
     return redirect(url_for('secret_chat', chat_id=chat_id))
 
 @app.route('/get_secret_messages/<int:chat_id>/<int:last_id>')
@@ -1177,6 +1265,7 @@ def channel_view(identifier):
     
     for post in posts:
         post.comments = ChannelComment.query.filter_by(post_id=post.id).order_by(ChannelComment.timestamp.asc()).all()
+        post.likes_count = PostLike.query.filter_by(post_id=post.id).count()
     
     return render_template('channel.html', 
                          channel=channel, 
@@ -1442,6 +1531,61 @@ def edit_channel(channel_id):
     
     return jsonify({'success': True})
 
+# ========== ЛАЙКИ И ПРОСМОТРЫ В КАНАЛАХ ==========
+@app.route('/channel/like_post/<int:post_id>', methods=['POST'])
+@login_required
+def like_post(post_id):
+    existing = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        new_like = PostLike(post_id=post_id, user_id=current_user.id)
+        db.session.add(new_like)
+        liked = True
+    
+    post = ChannelPost.query.get(post_id)
+    post.likes_count = PostLike.query.filter_by(post_id=post_id).count()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'liked': liked, 'likes_count': post.likes_count})
+
+@app.route('/channel/like_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def like_comment(comment_id):
+    existing = CommentLike.query.filter_by(comment_id=comment_id, user_id=current_user.id).first()
+    
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        new_like = CommentLike(comment_id=comment_id, user_id=current_user.id)
+        db.session.add(new_like)
+        liked = True
+    
+    comment = ChannelComment.query.get(comment_id)
+    comment.likes_count = CommentLike.query.filter_by(comment_id=comment_id).count()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'liked': liked, 'likes_count': comment.likes_count})
+
+@app.route('/channel/view_post/<int:post_id>', methods=['POST'])
+@login_required
+def view_post(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post:
+        return jsonify({'error': 'Пост не найден'}), 404
+    
+    existing = PostView.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    if not existing:
+        new_view = PostView(post_id=post_id, user_id=current_user.id)
+        db.session.add(new_view)
+        post.views = PostView.query.filter_by(post_id=post_id).count()
+        db.session.commit()
+    
+    return jsonify({'success': True, 'views': post.views})
+
 # ========== СТИКЕРЫ ==========
 @app.route('/stickers')
 @login_required
@@ -1450,7 +1594,7 @@ def stickers_page():
     packs = []
     for up in user_packs:
         pack = StickerPack.query.get(up.pack_id)
-        if pack:
+        if pack and pack.is_active:
             stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
             packs.append({'id': pack.id, 'title': pack.title, 'stickers': stickers})
     return render_template('stickers.html', packs=packs)
@@ -1482,7 +1626,7 @@ def stickers_api():
     stickers_list = []
     for up in user_packs:
         pack = StickerPack.query.get(up.pack_id)
-        if pack:
+        if pack and pack.is_active:
             for s in Sticker.query.filter_by(pack_id=pack.id).all():
                 stickers_list.append({'id': s.id, 'emoji': s.emoji, 'url': s.file_path})
     return jsonify(stickers_list)
@@ -1511,7 +1655,7 @@ def upload_sticker_by_url():
     db.session.add(msg)
     db.session.commit()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'path': f'/static/stickers/{filename}'})
 
 # ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
@@ -2374,7 +2518,7 @@ def get_new_messages(last_id, receiver_id):
         ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id)),
         Message.id > last_id,
         ~Message.deleted_for.contains(str(current_user.id))
-    ).order_by(Message.timestamp).all()
+    ).order_by(Message.timestamp).limit(50).all()
     
     result = []
     for m in msgs:
@@ -2408,7 +2552,7 @@ def get_new_group_messages(last_id, group_id):
         GroupMessage.group_id == group_id,
         GroupMessage.id > last_id,
         ~GroupMessage.deleted_for.contains(str(current_user.id))
-    ).order_by(GroupMessage.timestamp).all()
+    ).order_by(GroupMessage.timestamp).limit(50).all()
     
     result = []
     for m in msgs:
@@ -2431,6 +2575,50 @@ def get_new_group_messages(last_id, group_id):
             'mentions': m.mentions
         })
     return jsonify(result)
+
+# ========== ОЧИСТКА НЕРАБОТАЮЩИХ СТИКЕРОВ И ПОДАРКОВ ==========
+@app.route('/clean_inactive_content', methods=['POST'])
+@login_required
+def clean_inactive_content():
+    if current_user.id != 1:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    inactive_packs = StickerPack.query.filter_by(is_active=False).all()
+    cleaned_stickers = 0
+    cleaned_gifts = 0
+    
+    for pack in inactive_packs:
+        stickers = Sticker.query.filter_by(pack_id=pack.id).all()
+        sticker_paths = [s.file_path for s in stickers]
+        
+        for path in sticker_paths:
+            msgs = Message.query.filter_by(file_path=path, file_type='sticker').all()
+            for msg in msgs:
+                msg.content = '[Стикер из неработающего пака]'
+                msg.file_path = None
+                msg.file_type = 'text'
+                cleaned_stickers += 1
+            
+            group_msgs = GroupMessage.query.filter_by(file_path=path, file_type='sticker').all()
+            for msg in group_msgs:
+                msg.content = '[Стикер из неработающего пака]'
+                msg.file_path = None
+                msg.file_type = 'text'
+                cleaned_stickers += 1
+    
+    inactive_gifts = Gift.query.filter_by(is_active=False).all()
+    for gift in inactive_gifts:
+        gift.is_used = True
+        cleaned_gifts += 1
+    
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'cleaned',
+        'sticker_packs_cleaned': len(inactive_packs),
+        'stickers_cleaned': cleaned_stickers,
+        'gifts_cleaned': cleaned_gifts
+    })
 
 # ========== ЗАПУСК ==========
 if __name__ == '__main__':
