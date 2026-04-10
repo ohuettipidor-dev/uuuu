@@ -208,14 +208,12 @@
     
     document.getElementById('secretChatBtn').onclick = function() {
         if(selectedUserId) {
-            fetch('/create_secret_chat/' + selectedUserId, {method: 'POST'})
-                .then(r => r.json())
-                .then(data => {
+            fetch('/create_secret_chat/' + selectedUserId, {method: 'POST', headers: {'Content-Type': 'application/json'}})
+                .then(r => r.json()).then(data => {
                     if(data.chat_id) window.location.href = '/secret_chat/' + data.chat_id;
                     else if(data.redirect) window.location.href = data.redirect;
                     else alert('Ошибка создания секретного чата');
-                })
-                .catch(() => {
+                }).catch(() => {
                     let form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '/create_secret_chat/' + selectedUserId;
