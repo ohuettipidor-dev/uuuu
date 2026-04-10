@@ -398,7 +398,6 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-# ========== МОДЕЛИ ДЛЯ ЛАЙКОВ И ПРОСМОТРОВ ==========
 class PostLike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
@@ -434,9 +433,15 @@ with app.app_context():
     db.create_all()
     print("✅ База данных создана/обновлена")
 
-# ========== ПРОВЕРКА НЕРАБОТАЮЩИХ СТИКЕРПАКОВ И ПОДАРКОВ ==========
+@app.template_filter('json_decode')
+def json_decode_filter(data):
+    try:
+        return json.loads(data) if data else []
+    except:
+        return []
+
+# ========== ПРОВЕРКА НЕРАБОТАЮЩИХ СТИКЕРПАКОВ ==========
 def check_inactive_stickerpacks():
-    """Помечает неработающие стикерпаки (is_active=0)"""
     with app.app_context():
         packs = StickerPack.query.all()
         for pack in packs:
@@ -445,46 +450,28 @@ def check_inactive_stickerpacks():
                 if first_sticker and first_sticker.file_path:
                     test_url = request.host_url.rstrip('/') + first_sticker.file_path
                     response = requests.head(test_url, timeout=5, allow_redirects=True)
-                    if response.status_code != 200:
-                        pack.is_active = False
-                    else:
-                        pack.is_active = True
+                    pack.is_active = response.status_code == 200
                 else:
                     pack.is_active = False
             except:
                 pack.is_active = False
         db.session.commit()
-        print(f"✅ Проверено стикерпаков: {len(packs)}")
 
 def check_inactive_gifts():
-    """Помечает неработающие подарки (is_active=0)"""
     with app.app_context():
         gifts = Gift.query.all()
         for gift in gifts:
             if gift.gift_type == 'sticker_pack':
                 pack = StickerPack.query.get(gift.gift_id)
-                if not pack or pack.is_active == False:
-                    gift.is_active = False
-                else:
-                    gift.is_active = True
+                gift.is_active = pack is not None and pack.is_active
         db.session.commit()
-        print(f"✅ Проверено подарков: {len(gifts)}")
 
 def start_background_checks():
-    """Запуск фоновой проверки"""
     time.sleep(5)
     check_inactive_stickerpacks()
     check_inactive_gifts()
 
-# Запускаем фоновую проверку
 Thread(target=start_background_checks, daemon=True).start()
-
-@app.template_filter('json_decode')
-def json_decode_filter(data):
-    try:
-        return json.loads(data) if data else []
-    except:
-        return []
 
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
@@ -900,7 +887,6 @@ def send_secret():
     voice_duration = request.form.get('voice_duration', 0)
     burn_after_read = request.form.get('burn_after_read') == 'true'
     
-    # Если это стикер или файл, шифруем соответствующее содержимое
     if file_type == 'sticker':
         encrypted_content = encrypt_message('[СТИКЕР]', current_user.id, other_user_id)
     elif file_path:
@@ -986,8 +972,7 @@ def secret_chats():
     
     return render_template('secret_chats.html', secret_chats=chats_data)
 
-# ========== ГОЛОСОВЫЕ КАНАЛЫ С ВИДЕО (КАК В DISCORD) ==========
-
+# ========== ГОЛОСОВЫЕ КАНАЛЫ ==========
 @app.route('/voice_channels')
 @login_required
 def voice_channels_page():
@@ -1531,7 +1516,7 @@ def edit_channel(channel_id):
     
     return jsonify({'success': True})
 
-# ========== ЛАЙКИ И ПРОСМОТРЫ В КАНАЛАХ ==========
+# ========== ЛАЙКИ И ПРОСМОТРЫ ==========
 @app.route('/channel/like_post/<int:post_id>', methods=['POST'])
 @login_required
 def like_post(post_id):
@@ -2576,7 +2561,7 @@ def get_new_group_messages(last_id, group_id):
         })
     return jsonify(result)
 
-# ========== ОЧИСТКА НЕРАБОТАЮЩИХ СТИКЕРОВ И ПОДАРКОВ ==========
+# ========== ОЧИСТКА НЕРАБОТАЮЩИХ СТИКЕРОВ ==========
 @app.route('/clean_inactive_content', methods=['POST'])
 @login_required
 def clean_inactive_content():
