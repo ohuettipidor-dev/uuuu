@@ -1,98 +1,26 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>🎨 Мои стикеры | BearGram</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
-        .container{max-width:700px;margin:0 auto;padding:20px}
-        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
-        .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none}
-        h2{color:#333}
-        .pack-card{background:rgba(255,255,255,0.95);border-radius:24px;padding:20px;margin-bottom:20px}
-        .pack-name{font-weight:700;font-size:18px;margin-bottom:16px;color:#333}
-        .sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-        .sticker-item{background:#f8f8f8;border-radius:20px;padding:12px;cursor:pointer;transition:all 0.2s;text-align:center}
-        .sticker-item:hover{transform:scale(1.02);background:#ffe0e0}
-        .sticker-image{width:100%;aspect-ratio:1/1;object-fit:contain;margin-bottom:8px}
-        .sticker-emoji{font-size:12px;color:#888}
-        .empty{text-align:center;padding:60px;color:#888}
-        .send-notification{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#4cd964;color:white;padding:10px 20px;border-radius:30px;z-index:1000;animation:fadeOut 2s forwards}
-        @keyframes fadeOut{0%{opacity:1}70%{opacity:1}100%{opacity:0;visibility:hidden}}
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <a href="/stickers" class="back">← Назад</a>
-        <h2>🎨 Мои стикеры</h2>
-    </div>
+{% extends "base.html" %}
+{% block content %}
+<div class="stickers-container">
+    <h2>📦 Стикерпаки</h2>
     
-    {% for pack in packs %}
-    <div class="pack-card">
-        <div class="pack-name">{{ pack.name }}</div>
-        <div class="sticker-grid">
-            {% for sticker in pack.stickers %}
-            <div class="sticker-item" onclick="sendSticker({{ sticker.id }})">
-                <img src="{{ sticker.file_path }}" class="sticker-image" alt="sticker">
-                <div class="sticker-emoji">{{ sticker.emoji }}</div>
+    <div class="my-packs">
+        <h3>📱 Мои стикерпаки</h3>
+        <div class="packs-grid">
+            {% for pack in my_packs %}
+            <div class="pack-card">
+                <img src="{{ pack.preview }}" class="pack-preview">
+                <h4>{{ pack.title }}</h4>
+                <button onclick="usePack({{ pack.id }})">Использовать</button>
             </div>
             {% endfor %}
         </div>
     </div>
-    {% else %}
-    <div class="empty">
-        <span style="font-size:48px">🎨</span>
-        <p>У вас пока нет стикерпаков</p>
-        <p style="font-size:13px;margin-top:8px">Купите стикеры в магазине!</p>
-    </div>
-    {% endfor %}
 </div>
 
 <script>
-    let currentChatId = null;
-    let currentChatType = 'private';
-    
-    // Сохраняем ID текущего чата при открытии
-    if(window.opener) {
-        // Если открыто из чата
-    }
-    
-    function sendSticker(stickerId) {
-        const chatId = sessionStorage.getItem('current_chat_id');
-        const chatType = sessionStorage.getItem('current_chat_type') || 'private';
-        
-        if (!chatId) {
-            alert('Сначала откройте чат');
-            return;
-        }
-        
-        fetch('/stickers/send/' + stickerId, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                receiver_id: parseInt(chatId),
-                chat_type: chatType
-            })
-        }).then(r => r.json())
-          .then(data => {
-              if(data.success) {
-                  showNotification('Стикер отправлен!');
-              } else {
-                  alert('Ошибка: ' + data.error);
-              }
-          });
-    }
-    
-    function showNotification(msg) {
-        const toast = document.createElement('div');
-        toast.className = 'send-notification';
-        toast.textContent = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-    }
+function usePack(packId) {
+    fetch('/stickers/purchase/' + packId, {method: 'POST'})
+        .then(() => location.reload());
+}
 </script>
-</body>
-</html>
+{% endblock %}
