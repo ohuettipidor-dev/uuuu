@@ -52,13 +52,15 @@
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         .pinned-badge:hover{background:#ff6b6b40}
         
+        /* КНОПКА ПЕРЕВОДА */
         .translate-btn{background:#5865F220;border:1px solid #5865F2;color:#5865F2;padding:3px 8px;border-radius:15px;font-size:10px;cursor:pointer;margin-top:4px;display:inline-block;transition:0.2s}
         .translate-btn:hover{background:#5865F240}
         .translated-text{margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,0.1);font-style:italic;font-size:11px;color:#666}
+        .language-select{background:#5865F2;color:white;border:none;border-radius:15px;padding:2px 6px;font-size:10px;margin-left:5px;cursor:pointer}
         
-        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0;position:relative}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
@@ -163,9 +165,10 @@
                     {% endif %}
                 </div>
                 {% if m.content and m.file_type != 'sticker' and m.sender_id != current_user.id %}
-                    <button class="translate-btn" onclick="translateMessage(this, {{ m.id }})">🌐 Перевод</button>
+                    <button class="translate-btn" onclick="translateMessage(this, {{ m.id }}, 'ru')">🌐 Перевод</button>
                 {% endif %}
-                {% if m.file_path and not m.content %}
+                {% if m.file_path and m.file_type == 'sticker' and not m.content %}
+                {% elif m.file_path and not m.content %}
                     {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" onclick="window.open(this.src)" style="max-width:200px;border-radius:12px;cursor:pointer">
                     {% elif m.file_type == 'audio' %}
@@ -226,7 +229,7 @@
             <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
-        <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
+        <button class="send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
     </div>
     
@@ -252,11 +255,13 @@
     let currentMentionStart = -1;
     let typingTimeout = null;
     let processedIds = new Set();
+    let targetLang = 'ru';
     
-    // ========== ПЕРЕВОД ==========
-    async function translateMessage(btn, msgId) {
+    // ========== ПЕРЕВОД НА МНОГО ЯЗЫКОВ ==========
+    async function translateMessage(btn, msgId, lang) {
         const msgDiv = document.getElementById(`msg-content-${msgId}`);
         if(!msgDiv) return;
+        
         const originalText = msgDiv.getAttribute('data-original') || msgDiv.innerText;
         if(!originalText || originalText.length < 2) return;
         
@@ -264,7 +269,7 @@
         btn.disabled = true;
         
         try {
-            const response = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(originalText));
+            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(originalText)}`);
             const data = await response.json();
             const translated = data[0][0][0];
             
@@ -274,13 +279,28 @@
                 translatedDiv.className = 'translated-text';
                 btn.parentElement.appendChild(translatedDiv);
             }
-            translatedDiv.innerHTML = `🌐 ${translated}`;
+            
+            const langNames = {'ru':'🇷🇺 Русский','en':'🇬🇧 English','de':'🇩🇪 Deutsch','fr':'🇫🇷 Français','es':'🇪🇸 Español','it':'🇮🇹 Italiano','zh':'🇨🇳 中文','ja':'🇯🇵 日本語','ko':'🇰🇷 한국어'};
+            
+            translatedDiv.innerHTML = `🌐 ${translated}<br>
+                <select class="language-select" onchange="translateMessage(this.parentElement.parentElement.querySelector('.translate-btn'), ${msgId}, this.value)">
+                    <option value="ru" ${lang=='ru'?'selected':''}>🇷🇺 Русский</option>
+                    <option value="en" ${lang=='en'?'selected':''}>🇬🇧 English</option>
+                    <option value="de" ${lang=='de'?'selected':''}>🇩🇪 Deutsch</option>
+                    <option value="fr" ${lang=='fr'?'selected':''}>🇫🇷 Français</option>
+                    <option value="es" ${lang=='es'?'selected':''}>🇪🇸 Español</option>
+                    <option value="it" ${lang=='it'?'selected':''}>🇮🇹 Italiano</option>
+                    <option value="zh" ${lang=='zh'?'selected':''}>🇨🇳 中文</option>
+                    <option value="ja" ${lang=='ja'?'selected':''}>🇯🇵 日本語</option>
+                    <option value="ko" ${lang=='ko'?'selected':''}>🇰🇷 한국어</option>
+                </select>`;
             btn.textContent = '🌐 Скрыть';
+            btn.disabled = false;
             btn.onclick = () => {
                 const trans = btn.parentElement.querySelector('.translated-text');
                 if(trans) trans.remove();
                 btn.textContent = '🌐 Перевод';
-                btn.onclick = () => translateMessage(btn, msgId);
+                btn.onclick = () => translateMessage(btn, msgId, targetLang);
             };
         } catch(e) {
             btn.textContent = '🌐 Ошибка';
@@ -330,6 +350,7 @@
     
     // ========== ОТПРАВКА ФАЙЛА ==========
     function sendFile(file) {
+        if(!file) return;
         const formData = new FormData();
         formData.append('file', file);
         
@@ -417,7 +438,7 @@
         else startVoiceRecording();
     }
     
-    // ========== ПОЛУЧЕНИЕ НОВЫХ СООБЩЕНИЙ ==========
+    // ========== ПОЛУЧЕНИЕ НОВЫХ СООБЩЕНИЙ (БЫСТРЫЙ POLLING 200ms) ==========
     function checkNewMessages() { 
         fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
             .then(r => r.json())
@@ -449,7 +470,7 @@
                         
                         if(msg.content && msg.file_type !== 'sticker') {
                             contentHtml += `<div class="message-content" id="msg-content-${msg.id}" data-original="${escapeHtml(msg.content)}">${escapeHtml(msg.content)}</div>`;
-                            if(!msg.is_own) contentHtml += `<button class="translate-btn" onclick="translateMessage(this, ${msg.id})">🌐 Перевод</button>`;
+                            if(!msg.is_own) contentHtml += `<button class="translate-btn" onclick="translateMessage(this, ${msg.id}, 'ru')">🌐 Перевод</button>`;
                         }
                         
                         if(msg.voice_duration) {
@@ -606,6 +627,37 @@
     // ========== ПОЛЛИНГ 200ms ==========
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     setInterval(checkNewMessages, 200);
+    
+    // Закреплённые сообщения
+    function loadPinnedMessage() {
+        fetch(`/get_pinned_message/${receiver_id}/private`).then(r=>r.json()).then(data => {
+            if(data.id) {
+                document.getElementById('pinnedMessageBar').style.display = 'flex';
+                document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
+                window.pinnedMsgId = data.id;
+            } else {
+                document.getElementById('pinnedMessageBar').style.display = 'none';
+                window.pinnedMsgId = null;
+            }
+        });
+    }
+    function scrollToPinned() {
+        if(window.pinnedMsgId) {
+            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
+            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    loadPinnedMessage();
+    
+    // Предпросмотр ответов
+    document.querySelectorAll('.reply-preview').forEach(el => { 
+        const msgId = el.closest('.message')?.getAttribute('data-id'); 
+        if(msgId) { 
+            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { 
+                if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; 
+            }); 
+        } 
+    });
     
     // Скролл вниз при загрузке
     document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
