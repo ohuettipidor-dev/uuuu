@@ -52,11 +52,11 @@
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         .pinned-badge:hover{background:#ff6b6b40}
         
-        /* КНОПКА ПЕРЕВОДА */
-        .translate-btn{background:#5865F220;border:1px solid #5865F2;color:#5865F2;padding:3px 8px;border-radius:15px;font-size:10px;cursor:pointer;margin-top:4px;display:inline-block;transition:0.2s}
+        /* КНОПКА ПЕРЕВОДА - КАК В ТЕЛЕГРАМ (с краю) */
+        .translate-btn{background:#5865F220;border:none;color:#5865F2;padding:2px 6px;border-radius:12px;font-size:9px;cursor:pointer;margin-left:6px;display:inline-flex;align-items:center;gap:2px;transition:0.2s}
         .translate-btn:hover{background:#5865F240}
         .translated-text{margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,0.1);font-style:italic;font-size:11px;color:#666}
-        .language-select{background:#5865F2;color:white;border:none;border-radius:15px;padding:2px 6px;font-size:10px;margin-left:5px;cursor:pointer}
+        .language-select{background:#5865F2;color:white;border:none;border-radius:12px;padding:2px 6px;font-size:9px;margin-left:5px;cursor:pointer}
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0;position:relative}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
@@ -165,7 +165,7 @@
                     {% endif %}
                 </div>
                 {% if m.content and m.file_type != 'sticker' and m.sender_id != current_user.id %}
-                    <button class="translate-btn" onclick="translateMessage(this, {{ m.id }}, 'ru')">🌐 Перевод</button>
+                    <button class="translate-btn" onclick="translateMessage(this, {{ m.id }}, 'ru')">🌐</button>
                 {% endif %}
                 {% if m.file_path and m.file_type == 'sticker' and not m.content %}
                 {% elif m.file_path and not m.content %}
@@ -255,17 +255,15 @@
     let currentMentionStart = -1;
     let typingTimeout = null;
     let processedIds = new Set();
-    let targetLang = 'ru';
     
-    // ========== ПЕРЕВОД НА МНОГО ЯЗЫКОВ ==========
+    // ========== ПЕРЕВОД КАК В ТЕЛЕГРАМ (кнопка с краю) ==========
     async function translateMessage(btn, msgId, lang) {
         const msgDiv = document.getElementById(`msg-content-${msgId}`);
         if(!msgDiv) return;
-        
         const originalText = msgDiv.getAttribute('data-original') || msgDiv.innerText;
         if(!originalText || originalText.length < 2) return;
         
-        btn.textContent = '⏳...';
+        btn.innerHTML = '⏳';
         btn.disabled = true;
         
         try {
@@ -280,32 +278,30 @@
                 btn.parentElement.appendChild(translatedDiv);
             }
             
-            const langNames = {'ru':'🇷🇺 Русский','en':'🇬🇧 English','de':'🇩🇪 Deutsch','fr':'🇫🇷 Français','es':'🇪🇸 Español','it':'🇮🇹 Italiano','zh':'🇨🇳 中文','ja':'🇯🇵 日本語','ko':'🇰🇷 한국어'};
-            
-            translatedDiv.innerHTML = `🌐 ${translated}<br>
+            translatedDiv.innerHTML = `${translated}<br>
                 <select class="language-select" onchange="translateMessage(this.parentElement.parentElement.querySelector('.translate-btn'), ${msgId}, this.value)">
-                    <option value="ru" ${lang=='ru'?'selected':''}>🇷🇺 Русский</option>
-                    <option value="en" ${lang=='en'?'selected':''}>🇬🇧 English</option>
-                    <option value="de" ${lang=='de'?'selected':''}>🇩🇪 Deutsch</option>
-                    <option value="fr" ${lang=='fr'?'selected':''}>🇫🇷 Français</option>
-                    <option value="es" ${lang=='es'?'selected':''}>🇪🇸 Español</option>
-                    <option value="it" ${lang=='it'?'selected':''}>🇮🇹 Italiano</option>
-                    <option value="zh" ${lang=='zh'?'selected':''}>🇨🇳 中文</option>
-                    <option value="ja" ${lang=='ja'?'selected':''}>🇯🇵 日本語</option>
-                    <option value="ko" ${lang=='ko'?'selected':''}>🇰🇷 한국어</option>
+                    <option value="ru">🇷🇺</option>
+                    <option value="en">🇬🇧</option>
+                    <option value="de">🇩🇪</option>
+                    <option value="fr">🇫🇷</option>
+                    <option value="es">🇪🇸</option>
+                    <option value="it">🇮🇹</option>
+                    <option value="zh">🇨🇳</option>
+                    <option value="ja">🇯🇵</option>
+                    <option value="ko">🇰🇷</option>
                 </select>`;
-            btn.textContent = '🌐 Скрыть';
+            btn.innerHTML = '✖';
             btn.disabled = false;
             btn.onclick = () => {
                 const trans = btn.parentElement.querySelector('.translated-text');
                 if(trans) trans.remove();
-                btn.textContent = '🌐 Перевод';
-                btn.onclick = () => translateMessage(btn, msgId, targetLang);
+                btn.innerHTML = '🌐';
+                btn.onclick = () => translateMessage(btn, msgId, 'ru');
             };
         } catch(e) {
-            btn.textContent = '🌐 Ошибка';
+            btn.innerHTML = '❌';
             setTimeout(() => {
-                btn.textContent = '🌐 Перевод';
+                btn.innerHTML = '🌐';
                 btn.disabled = false;
             }, 2000);
         }
@@ -470,7 +466,7 @@
                         
                         if(msg.content && msg.file_type !== 'sticker') {
                             contentHtml += `<div class="message-content" id="msg-content-${msg.id}" data-original="${escapeHtml(msg.content)}">${escapeHtml(msg.content)}</div>`;
-                            if(!msg.is_own) contentHtml += `<button class="translate-btn" onclick="translateMessage(this, ${msg.id}, 'ru')">🌐 Перевод</button>`;
+                            if(!msg.is_own) contentHtml += `<button class="translate-btn" onclick="translateMessage(this, ${msg.id}, 'ru')">🌐</button>`;
                         }
                         
                         if(msg.voice_duration) {
