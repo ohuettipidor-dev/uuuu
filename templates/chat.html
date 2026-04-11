@@ -35,17 +35,17 @@
         .search-close{text-align:center;padding:8px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
         .search-close:hover{background:#f9f9f9}
         
-        /* STORIES BAR - КАК В TELEGRAM */
-        .stories-container{padding:6px 0;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
-        .stories-scroll{display:flex;gap:14px;overflow-x:auto;padding:4px 2px;-webkit-overflow-scrolling:touch}
+        /* STORIES - КОМПАКТНЫЕ КРУЖКИ КАК В TELEGRAM */
+        .stories-container{padding:8px 0;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
+        .stories-scroll{display:flex;gap:16px;overflow-x:auto;padding:4px 2px;-webkit-overflow-scrolling:touch}
         .stories-scroll::-webkit-scrollbar{display:none}
         .story-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0}
-        .story-avatar-wrapper{width:56px;height:56px;border-radius:50%;padding:2px;background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
-        .story-avatar-wrapper.viewed{background:#ccc}
-        .story-avatar-wrapper img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
-        .story-username{font-size:10px;color:#555;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .my-story-wrapper{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);padding:2px;cursor:pointer;flex-shrink:0}
-        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:24px;color:#ff6b6b}
+        .story-avatar{width:52px;height:52px;border-radius:50%;padding:2px;background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
+        .story-avatar.viewed{background:#ccc}
+        .story-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
+        .story-username{font-size:10px;color:#555;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .my-story-avatar{width:52px;height:52px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
+        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:22px;color:#ff6b6b}
         
         /* STORY VIEWER */
         .story-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:9999;display:none}
@@ -103,10 +103,10 @@
             .chat-avatar{width:40px;height:40px;font-size:16px}
             .chat-item{padding:8px}
             .chat-name{font-size:13px}
-            .story-avatar-wrapper{width:50px;height:50px}
-            .my-story-wrapper{width:50px;height:50px}
+            .story-avatar{width:48px;height:48px}
+            .my-story-avatar{width:48px;height:48px}
             .my-story-inner{font-size:20px}
-            .story-username{font-size:9px;max-width:50px}
+            .story-username{font-size:9px;max-width:48px}
         }
     </style>
 </head>
@@ -139,12 +139,12 @@
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
     
-    <!-- STORIES BAR (TELEGRAM STYLE) -->
+    <!-- STORIES BAR - КОМПАКТНЫЕ КРУЖКИ -->
     <div class="stories-container" id="storiesContainer">
         <div class="stories-scroll" id="storiesScroll">
-            <!-- Моя история -->
+            <!-- Моя история (компактный кружок с +) -->
             <div class="story-item" onclick="openStoryUpload()">
-                <div class="my-story-wrapper">
+                <div class="my-story-avatar">
                     <div class="my-story-inner">➕</div>
                 </div>
                 <span class="story-username">Моя</span>
@@ -285,11 +285,11 @@
             
             html += `
                 <div class="story-item" onclick="viewUserStories(${user.id})" data-user-id="${user.id}">
-                    <div class="story-avatar-wrapper ${!hasUnseen ? 'viewed' : ''}">
+                    <div class="story-avatar ${!hasUnseen ? 'viewed' : ''}">
                         <img src="${user.avatar !== 'default.png' ? '/static/avatars/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff'}" 
                              onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
                     </div>
-                    <span class="story-username">${escapeHtml(user.username)}</span>
+                    <span class="story-username">${escapeHtml(user.username.substring(0, 10))}</span>
                 </div>
             `;
         });
