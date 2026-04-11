@@ -35,17 +35,18 @@
         .search-close{text-align:center;padding:8px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
         .search-close:hover{background:#f9f9f9}
         
-        /* STORIES - КОМПАКТНЫЕ КРУЖКИ КАК В TELEGRAM */
-        .stories-container{padding:8px 0;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
-        .stories-scroll{display:flex;gap:16px;overflow-x:auto;padding:4px 2px;-webkit-overflow-scrolling:touch}
+        /* STORIES - КОМПАКТНЫЕ КРУЖКИ */
+        .stories-container{padding:4px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
+        .stories-scroll{display:flex;gap:12px;overflow-x:auto;padding:2px 0;-webkit-overflow-scrolling:touch}
         .stories-scroll::-webkit-scrollbar{display:none}
-        .story-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0}
-        .story-avatar{width:52px;height:52px;border-radius:50%;padding:2px;background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
-        .story-avatar.viewed{background:#ccc}
-        .story-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
-        .story-username{font-size:10px;color:#555;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .my-story-avatar{width:52px;height:52px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
-        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:22px;color:#ff6b6b}
+        .story-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0}
+        .story-avatar-wrapper{width:48px;height:48px;border-radius:50%;padding:2px}
+        .story-avatar-wrapper.unseen{background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
+        .story-avatar-wrapper.viewed{background:#ccc}
+        .story-avatar-wrapper img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
+        .story-username{font-size:9px;color:#666;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .my-story-wrapper{width:48px;height:48px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
+        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:20px;color:#ff6b6b}
         
         /* STORY VIEWER */
         .story-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:9999;display:none}
@@ -99,14 +100,14 @@
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
         
         @media (max-width:480px){
-            .container{padding:10px}
+            .container{padding:8px}
             .chat-avatar{width:40px;height:40px;font-size:16px}
             .chat-item{padding:8px}
             .chat-name{font-size:13px}
-            .story-avatar{width:48px;height:48px}
-            .my-story-avatar{width:48px;height:48px}
-            .my-story-inner{font-size:20px}
-            .story-username{font-size:9px;max-width:48px}
+            .story-avatar-wrapper{width:44px;height:44px}
+            .my-story-wrapper{width:44px;height:44px}
+            .my-story-inner{font-size:18px}
+            .story-username{font-size:8px;max-width:44px}
         }
     </style>
 </head>
@@ -139,17 +140,15 @@
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
     
-    <!-- STORIES BAR - КОМПАКТНЫЕ КРУЖКИ -->
+    <!-- STORIES BAR - КОМПАКТНЫЕ КРУЖКИ КАК В TELEGRAM -->
     <div class="stories-container" id="storiesContainer">
         <div class="stories-scroll" id="storiesScroll">
-            <!-- Моя история (компактный кружок с +) -->
             <div class="story-item" onclick="openStoryUpload()">
-                <div class="my-story-avatar">
+                <div class="my-story-wrapper">
                     <div class="my-story-inner">➕</div>
                 </div>
                 <span class="story-username">Моя</span>
             </div>
-            <!-- Истории друзей -->
             <div id="storiesList" style="display:contents;"></div>
         </div>
     </div>
@@ -181,26 +180,52 @@
                     {% if c.type == 'secret' %}🔒 {% endif %}{{ c.name }}
                     {% if c.type == 'private' %}
                         <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
-                            {% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}
+                    {% if c.type == 'private' %}
+                        <span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">
+                            {%                            {% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}
                         </span>
-                    {% elif c.type == 'secret' %}
-                        <span class="online" style="color:#4cd964">🔒 шифруется</span>
+                    if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}
+                        </span>
+                    {% elif c.type == 'secret' {% elif c.type == 'secret' %}
+                        <span class="online" style="color:#4cd %}
+                        <span class="online" style="color:#4cd964">964">🔒 шифруется</span>
                     {% else %}
+🔒 шифруется</span>
                         <span class="online">👥 группа</span>
                     {% endif %}
                 </div>
                 <div class="chat-last">
                     {% if c.last and c.last.content %}
-                        {{ c.last.content[:40]|striptags|safe }}
+                        {{                    {% else %}
+                        <span class="online">👥 группа</span>
+                    {% endif %}
+                </div>
+                <div class="chat-last">
+                    {% if c.last and c.last.content %}
+                        {{ c.last.content[:40]|st c.last.content[:40]|striptags|safe }}
+                    {% elseriptags|safe }}
                     {% else %}
+                        💬 %}
                         💬 Нет сообщений
                     {% endif %}
                 </div>
             </div>
-            <div class="chat-meta" onclick="openChat('{{ c.type }}', {{ c.id }})">
+            <div class=" Нет сообщений
+                    {% endif %}
+                </div>
+            </div>
+            <div class="chat-metachat-meta" onclick="openChat('{{ c.type }}', {{ c.id }})">
                 <div class="chat-time">
                     {% if c.last and c.last.timestamp %}
-                        {{ c.last.timestamp.strftime('%H:%M') }}
+                        {{ c" onclick="openChat('{{ c.type }}', {{ c.id }})">
+                <div class="chat-time">
+                    {% if c.last and c.last.timestamp %}
+                        {{ c.last.t.last.timestamp.strftime('%H:%M') }}
+                    {% endif %}
+                </div>
+                {% if c.unread > 0 %}<div class="badge">{{ c.unread }}</div>{% endif %}
+            </div>
+        </divimestamp.strftime('%H:%M') }}
                     {% endif %}
                 </div>
                 {% if c.unread > 0 %}<div class="badge">{{ c.unread }}</div>{% endif %}
@@ -212,15 +237,36 @@
 
 <!-- STORY VIEWER -->
 <div class="story-viewer" id="storyViewer">
+    <div class="story-progress" id="storyProgress"></>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- STORY VIEWER -->
+<div class="story-viewer" id="storyViewer">
     <div class="story-progress" id="storyProgress"></div>
+    <div classdiv>
     <div class="story-viewer-header" id="storyHeader"></div>
-    <div class="story-viewer-close" onclick="closeStoryViewer()">✕</div>
-    <div class="story-nav-left" id="storyNavLeft"></div>
+    <div class="story-viewer-close"="story-viewer-header" id="storyHeader"></div>
+    <div class="story-viewer-close" onclick="closeStory onclick="closeStoryViewer()">✕</div>
+   Viewer()">✕</div>
+    <div <div class=" class="story-nav-left" id="storyNavLeft"></div>
     <div class="story-nav-right" id="storyNavRight"></div>
-    <div class="story-viewer-content">
-        <img class="story-viewer-media" id="storyMedia" style="display:none;">
-        <video class="story-viewer-media" id="storyVideo" style="display:none;" loop></video>
-        <div class="story-viewer-caption" id="storyCaption"></div>
+    <div class="story-viewstory-nav-left" id="storyNavLeft"></div>
+    <div class="story-nav-right" id="storyNavRight"></div>
+    <div class="story-viewer-contenter-content">
+        <img class="story-viewer-media" id="storyMedia" style="">
+        <img class="story-viewer-media" id="storyMedia"display:none;">
+        <video class style="display:none;">
+        <video class="story-viewer-media" id="storyVideo" style="display:none;" loop="story-viewer-media" id="storyVideo" style="display:none;" loop></video>
+        <div class="story-viewer-caption" id="></video>
+        <div class="story-viewer-caption" id="storyCaptionstoryCaption"></div>
+    </div>
+</div>
+
+<input type="file" id="storyFileInput" style="display:none" accept="image/*,video/*" onchange="uploadStory(this.files[0])">
+
+<div class="modal" id="chatType"></div>
     </div>
 </div>
 
@@ -229,8 +275,24 @@
 <div class="modal" id="chatTypeModal">
     <div class="modal-content">
         <h3>📱 Выберите тип чата</h3>
+        <div class="modal-buttonsModal">
+    <div class="modal-content">
+        <h3>📱 Выберите тип чата</h3>
         <div class="modal-buttons">
-            <button class="regular-chat" id="regularChatBtn">💬 Обычный чат</button>
+           ">
+            <button class="regular-chat" <button class="regular-chat" id="regularChatBtn">💬 id="regularChatBtn">💬 Обычный чат</button>
+            <button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button>
+            <button class="cancel" onclick="closeChatTypeModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<div class="group-modal" id="groupModal">
+    <div class="group-modal-content">
+        <h3>✨ Новая группа</h3>
+        <input type="text" id="groupName" placeholder="Название группы">
+        <div class="group-modal-buttons">
+            Обычный чат</button>
             <button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button>
             <button class="cancel" onclick="closeChatTypeModal()">Отмена</button>
         </div>
@@ -254,7 +316,27 @@
     
     // ========== STORIES ==========
     let currentStories = [];
+ <button onclick="createGroup()">Создать</button>
+            <button onclick="closeGroupModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedUserId = null;
+    let searchTimeout = null;
+    
+    // ========== STORIES ==========
+    let currentStories = [];
     let currentStoryIndex = 0;
+    let storyTimer = null;
+    let storyInterval = null;
+    
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return    let currentStoryIndex = 0;
     let storyTimer = null;
     let storyInterval = null;
     
@@ -278,18 +360,64 @@
         const container = document.getElementById('storiesList');
         if (!container) return;
         
+ div.innerHTML;
+    }
+    
+    function loadStoriesFeed() {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                renderStoriesBar(usersStories);
+            })
+            .catch(e => console.error('Stories error:', e));
+    }
+    
+    function renderStoriesBar(usersStories) {
+        const container = document.getElementById('storiesList');
+        if (!container) return;
+        
         let html = '';
         usersStories.forEach(userStories => {
             const user = userStories.user;
             const hasUnseen = userStories.stories.some(s => !s.viewed);
+            const avatarUrl = user.avatar !== 'default.png' 
+                ? '/static/avatars/' + user.avatar 
+                : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff';
             
             html += `
-                <div class="story-item" onclick="viewUserStories(${user.id})" data-user-id="${user.id}">
-                    <div class="story-avatar ${!hasUnseen ? 'viewed' : ''}">
-                        <img src="${user.avatar !== 'default.png' ? '/static/avatars/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff'}" 
-                             onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
+                <div class="story-item" onclick="viewUserStories(${user.id})">
+                    <div class="story-avatar-wrapper ${hasUnseen ? 'unseen' : 'viewed'}">
+                        <img src="${avatarUrl}" onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
                     </div>
-                    <span class="story-username">${escapeHtml(user.username.substring(0, 10))}</span>
+                    <span class="story-username">${escapeHtml(user.username.substring(0, 8))}</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function openStoryUpload() {
+        document.getElementById('storyFileInput').click();
+    }
+    
+    function uploadStory(file) {
+        if (!file) return;
+        
+        const caption = prompt('Добавьте подпись (необ        let html = '';
+        usersStories.forEach(userStories => {
+            const user = userStories.user;
+            const hasUnseen = userStories.stories.some(s => !s.viewed);
+            const avatarUrl = user.avatar !== 'default.png' 
+                ? '/static/avatars/' + user.avatar 
+                : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff';
+            
+            html += `
+                <div class="story-item" onclick="viewUserStories(${user.id})">
+                    <div class="story-avatar-wrapper ${hasUnseen ? 'unseen' : 'viewed'}">
+                        <img src="${avatarUrl}" onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
+                    </div>
+                    <span class="story-username">${escapeHtml(user.username.substring(0, 8))}</span>
                 </div>
             `;
         });
@@ -344,8 +472,54 @@
                 
                 document.getElementById('storyViewer').classList.add('active');
                 
+                const avatarUrl = userData.user.avatar !== 'default.png' 
+                    ? '/static/avatars/' + userData.user.avatar 
+                    :язательно):', '') || '';
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('caption', caption);
+        
+        fetch('/api/stories/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                alert('История опубликована на 24 часа!');
+                loadStoriesFeed();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(e => alert('Ошибка загрузки'));
+        
+        document.getElementById('storyFileInput').value = '';
+    }
+    
+    function viewUserStories(userId) {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                const userData = usersStories.find(u => u.user.id === userId);
+                if (!userData) return;
+                
+                currentStories = userData.stories.filter(s => !s.viewed);
+                if (currentStories.length === 0) {
+                    currentStories = userData.stories;
+                }
+                
+                currentStoryIndex = 0;
+                
+                document.getElementById('storyViewer').classList.add('active');
+                
+                const avatarUrl = userData.user.avatar !== 'default.png' 
+                    ? '/static/avatars/' + userData.user.avatar 
+                    : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.user.username 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.user.username) + '&background=ff6b6b&color=fff';
+                
                 document.getElementById('storyHeader').innerHTML = `
-                    <img src="${userData.user.avatar !== 'default.png' ? '/static/avatars/' + userData.user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.user.username) + '&background=ff6b6b&color=fff'}">
+                    <img src="${avatarUrl}">
                     <span>${escapeHtml(userData.user.username)}</span>
                 `;
                 
@@ -355,7 +529,20 @@
             });
     }
     
-    function renderProgressBars(count) {
+   ) + '&background=ff6b6b&color=fff';
+                
+                document.getElementById('storyHeader').innerHTML = `
+                    <img src="${avatarUrl}">
+                    <span>${escapeHtml(userData.user.username)}</span>
+                `;
+                
+                renderProgressBars(currentStories.length);
+                showStory(0);
+                markStoryViewed(currentStories[0].id);
+            });
+    }
+    
+    function renderProgress function renderProgressBars(count) {
         const container = document.getElementById('storyProgress');
         let html = '';
         for (let i = 0; i < count; i++) {
@@ -371,7 +558,26 @@
         }
         
         currentStoryIndex = index;
-        const story = currentStories[index];
+        const storyBars(count) {
+        const container = document.getElementById('storyProgress');
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `<div class="story-progress-bar"><div class="story-progress-fill" id="progress-${i}"></div></div>`;
+        }
+        container.innerHTML = html;
+    }
+    
+    function showStory(index) {
+        if (index >= currentStories.length) {
+            closeStoryViewer();
+            return;
+        }
+        
+        currentStoryIndex = index;
+        const story = current = currentStories[index];
+        
+        const img = document.getElementById('storyMedia');
+        const video = document.getElementById('Stories[index];
         
         const img = document.getElementById('storyMedia');
         const video = document.getElementById('storyVideo');
@@ -384,9 +590,31 @@
         if (storyTimer) clearTimeout(storyTimer);
         if (storyInterval) clearInterval(storyInterval);
         
+        if (story.file_type ===storyVideo');
+        const caption = document.getElementById('storyCaption');
+        
+        img.style.display = 'none';
+        video.style.display = 'none';
+        video.pause();
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
         if (story.file_type === 'video') {
             video.src = story.file_path;
+            video 'video') {
+            video.src = story.file_path;
             video.style.display = 'block';
+            video.play();
+            
+            video.onended = () => { nextStory(); };
+            
+            video.ontimeupdate = () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+            };
+        } else.style.display = 'block';
             video.play();
             
             video.onended = () => { nextStory(); };
@@ -400,11 +628,25 @@
             img.src = story.file_path;
             img.style.display = 'block';
             
+            let progress = {
+            img.src = story.file_path;
+            img.style.display = 'block';
+            
             let progress = 0;
+            storyInterval = setInterval(() 0;
             storyInterval = setInterval(() => {
                 progress += 2;
                 const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style => {
+                progress += 2;
+                const progressBar = document.getElementById(`progress-${index}`);
                 if (progressBar) progressBar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(storyInterval);
+                }
+            }, 100);
+            
+            storyTimer = setTimeout(() => { nextStory.width = progress + '%';
                 if (progress >= 100) {
                     clearInterval(storyInterval);
                 }
@@ -422,10 +664,37 @@
     }
     
     function nextStory() {
+        if (current(); }, 5000);
+        }
+        
+        caption.textContent = story.caption || '';
+        markStoryViewed(story.id);
+    }
+    
+    function markStoryViewed(storyId) {
+        fetch('/api/stories/view/' + storyId, {method: 'POST'});
+    }
+    
+    function nextStory() {
         if (currentStoryIndex < currentStories.length - 1) {
             showStory(currentStoryIndex + 1);
         } else {
+           StoryIndex < currentStories.length - 1) {
+            showStory(currentStoryIndex + 1);
+        } else {
             closeStoryViewer();
+            loadStoriesFeed();
+        }
+    }
+    
+    function prevStory() {
+        if (currentStoryIndex > 0) {
+            showStory(currentStoryIndex - 1);
+        }
+    }
+    
+    function closeStoryViewer() {
+        closeStoryViewer();
             loadStoriesFeed();
         }
     }
@@ -451,7 +720,25 @@
     document.getElementById('storyNavLeft').onclick = prevStory;
     document.getElementById('storyNavRight').onclick = nextStory;
     
+    // ========== ОРИГИНА document.getElementById('storyViewer').classList.remove('active');
+        document.getElementById('storyVideo').pause();
+        document.getElementById('storyVideo').src = '';
+        document.getElementById('storyMedia').src = '';
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
+        loadStoriesFeed();
+    }
+    
+    document.getElementById('storyNavLeft').onclick = prevStory;
+    document.getElementById('storyNavRight').onclick = nextStory;
+    
     // ========== ОРИГИНАЛЬНЫЕ ФУНКЦИИ ==========
+    function openChat(type, id) {
+        if(type === 'private') window.location.href = '/messages/' + id;
+        else if(type === 'secret') window.location.href = '/secret_chat/' + id;
+        else window.locationЛЬНЫЕ ФУНКЦИИ ==========
     function openChat(type, id) {
         if(type === 'private') window.location.href = '/messages/' + id;
         else if(type === 'secret') window.location.href = '/secret_chat/' + id;
@@ -473,7 +760,28 @@
     };
     
     document.getElementById('secretChatBtn').onclick = function() {
+        if(.href = '/group/' + id;
+    }
+    
+    function showChatTypeModal(userId, userName) {
+        selectedUserId = userId;
+        document.getElementById('chatTypeModal').classList.add('active');
+    }
+    
+    function closeChatTypeModal() {
+        document.getElementById('chatTypeModal').classList.remove('active');
+        selectedUserId = null;
+    }
+    
+    document.getElementById('regularChatBtn').onclick = function() {
+        if(selectedUserId) window.location.href = '/messages/' + selectedUserId;
+    };
+    
+    document.getElementById('secretChatBtn').onclick = function() {
         if(selectedUserId) {
+            fetch('/create_secret_chat/' + selectedUserId, {method: 'POST', headers: {'Content-Type': 'application/json'}})
+                .then(r => r.json()).then(data => {
+                    if(dataselectedUserId) {
             fetch('/create_secret_chat/' + selectedUserId, {method: 'POST', headers: {'Content-Type': 'application/json'}})
                 .then(r => r.json()).then(data => {
                     if(data.chat_id) window.location.href = '/secret_chat/' + data.chat_id;
@@ -481,13 +789,28 @@
                     else alert('Ошибка создания секретного чата');
                 }).catch(() => {
                     let form = document.createElement('form');
+                   .chat_id) window.location.href = '/secret_chat/' + data.chat_id;
+                    else if(data.redirect) window.location.href = data.redirect;
+                    else alert('Ошибка создания секретного чата');
+                }).catch(() => {
+                    let form = document.createElement('form');
                     form.method = 'POST';
+                    form.action = '/create_secret_chat/' + selectedUserId;
+                    document.body.appendChild(form form.method = 'POST';
                     form.action = '/create_secret_chat/' + selectedUserId;
                     document.body.appendChild(form);
                     form.submit();
                 });
         }
     };
+);
+                    form.submit();
+                });
+        }
+    
+    const searchToggleBtn = document.getElementById('searchToggleBtn');
+    const searchContainer = document.getElementById('searchContainer');
+    const searchInput = document.getElementById    };
     
     const searchToggleBtn = document.getElementById('searchToggleBtn');
     const searchContainer = document.getElementById('searchContainer');
@@ -497,14 +820,33 @@
     
     searchToggleBtn.onclick = function() {
         searchContainer.classList.toggle('active');
+        if(searchContainer('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const searchCloseBtn = document.getElementById('searchCloseBtn');
+    
+    searchToggleBtn.onclick = function() {
+        searchContainer.classList.toggle('active');
         if(searchContainer.classList.contains('active')) {
             searchInput.focus();
         }
     };
+.classList.contains('active')) {
+            searchInput.focus();
+        }
+    };
     
+       
     searchCloseBtn.onclick = function() {
         searchContainer.classList.remove('active');
-        searchResults.classList.remove('active');
+        searchResults.classList.remove searchCloseBtn.onclick = function() {
+        searchContainer.classList.remove('active');
+        searchResults.classList.remove('active('active');
+        searchInput.value = '';
+    };
+    
+    function searchUsers() {
+        const query = searchInput.value.trim();
+        if(query.length < 1');
         searchInput.value = '';
     };
     
@@ -515,8 +857,16 @@
             return;
         }
         
-        fetch(`/search_users?q=${encodeURIComponent(query)}`)
-            .then(r => r.json())
+) {
+            searchResults.classList.remove('active');
+            return;
+        }
+        
+        fetch(`/search_users?q=${encodeURIComponent        fetch(`/search_users?q=${encodeURIComponent(query)}`)
+            .then(r =>(query)}`)
+            .then(r => r.json r.json())
+            .then(users => {
+                if(users.length ===())
             .then(users => {
                 if(users.length === 0) {
                     searchResults.innerHTML = '<div style="padding:12px;text-align:center;color:#888;">Пользователи не найдены</div>';
@@ -524,20 +874,48 @@
                     return;
                 }
                 
+ 0) {
+                    searchResults.innerHTML = '<div style="padding:12px;text-align:center;color:#888;">Пользователи не найдены</div>';
+                    searchResults.classList.add('active');
+                    return;
+                }
+                
                 searchResults.innerHTML = '';
+                users.forEach(user => {
+                    const div =                searchResults.innerHTML = '';
                 users.forEach(user => {
                     const div = document.createElement('div');
                     div.className = 'search-result-item';
+                    div.onclick = () => window.location.href = '/profile/' document.createElement('div');
+                    div.className = 'search-result-item';
                     div.onclick = () => window.location.href = '/profile/' + user.id;
+ + user                    div.innerHTML = `
+                        <div class="search-result-avatar">
+                            ${user.avatar != 'default.png' ? `<img src="/static/avatars/${user.avatar.id;
                     div.innerHTML = `
                         <div class="search-result-avatar">
                             ${user.avatar != 'default.png' ? `<img src="/static/avatars/${user.avatar}">` : user.username[0].toUpperCase()}
+                        </div}">` : user.username[0].toUpperCase()}
                         </div>
+                        <div class="search-result-info">
+                            <div class="search-result-name">${escapeHtml(user.username)}</div>
+                            <div class="search-result-link">${escapeHtml(user.username_link)}</div>
+                       >
                         <div class="search-result-info">
                             <div class="search-result-name">${escapeHtml(user.username)}</div>
                             <div class="search-result-link">${escapeHtml(user.username_link)}</div>
                         </div>
                         <div style="color:#ff6b6b">→</div>
+ </div>
+                        <div style="color:#ff6b6b">→</                    `;
+                    searchResults.appendChild(div);
+                });
+                searchResults.classList.add('active');
+            });
+    }
+    
+    searchInput.addEventListener('input', function() {
+        if(searchTimeout) clearTimeout(searchTimeoutdiv>
                     `;
                     searchResults.appendChild(div);
                 });
@@ -550,23 +928,45 @@
         searchTimeout = setTimeout(searchUsers, 300);
     });
     
-    document.addEventListener('click', function(e) {
+    document.addEventListener);
+        searchTimeout = setTimeout(searchUsers, 300);
+    });
+    
+    document.addEventListener('click('click', function(e) {
+        if(!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchToggleBtn) {
+            searchResults.classList.remove('active', function(e) {
         if(!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchToggleBtn) {
             searchResults.classList.remove('active');
         }
     });
     
-    function openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
-    function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById('groupName').value = ''; }
+    function openGroup');
+        }
+    });
+    
+    functionModal() { document.getElementById('groupModal').classList.add('active'); }
+    function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById(' openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
+    function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById('groupName').value = ''groupName').value = ''; }
     
     function createGroup() {
         let name = document.getElementById('groupName').value.trim();
         if(name) {
-            let form = document.createElement('form');
+            let form; }
+    
+    function createGroup() {
+        let name = document.getElementById('groupName').value.trim();
+        if(name) {
+            let form = document.createElement(' = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/form');
             form.method = 'POST';
             form.action = '/create_group';
             let inp = document.createElement('input');
+            inp.name = 'namecreate_group';
+            let inp = document.createElement('input');
             inp.name = 'name';
+           ';
+            inp.value = name;
             inp.value = name;
             form.appendChild(inp);
             document.body.appendChild(form);
@@ -574,7 +974,15 @@
         } else alert('Введите название группы');
     }
     
+    form.appendChild(inp);
+            document.body.appendChild(form);
+            form.submit();
+        } else alert('Введите название группы');
+    }
+    
     // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    loadStoriesFeed();
+ // ========== ИНИЦИАЛИЗАЦИЯ ==========
     loadStoriesFeed();
     setInterval(loadStoriesFeed, 30000);
 </script>
