@@ -15,7 +15,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret'
+app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -23,10 +23,12 @@ AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 VOICE_FOLDER = 'static/voices'
 STICKER_FOLDER = 'static/stickers'
+CUSTOM_STICKER_FOLDER = 'static/stickers/custom'
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
 os.makedirs(STICKER_FOLDER, exist_ok=True)
+os.makedirs(CUSTOM_STICKER_FOLDER, exist_ok=True)
 
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['FILE_FOLDER'] = FILE_FOLDER
@@ -296,31 +298,6 @@ class ChannelPostView(db.Model):
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
-class StickerPack(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    is_premium = db.Column(db.Boolean, default=False)
-    price_coins = db.Column(db.Integer, default=0)
-    price_diamonds = db.Column(db.Integer, default=0)
-    preview = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Sticker(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    pack_id = db.Column(db.Integer, db.ForeignKey('sticker_pack.id'), nullable=False)
-    emoji = db.Column(db.String(50), nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)
-    order_num = db.Column(db.Integer, default=0)
-    pack = db.relationship('StickerPack', backref='stickers')
-
-class UserSticker(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    pack_id = db.Column(db.Integer, db.ForeignKey('sticker_pack.id'), nullable=False)
-    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 class Gift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -387,8 +364,71 @@ class FamilyMember(db.Model):
     family = db.relationship('FamilyAccount', foreign_keys=[family_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
+# ========== СТИКЕРЫ И МОНЕТИЗАЦИЯ ==========
+class StickerPack(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_premium = db.Column(db.Boolean, default=False)
+    price_coins = db.Column(db.Integer, default=0)
+    preview = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', foreign_keys=[author_id])
+
+class Sticker(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pack_id = db.Column(db.Integer, db.ForeignKey('sticker_pack.id'), nullable=False)
+    emoji = db.Column(db.String(10), default='🐻')
+    file_path = db.Column(db.String(500), nullable=False)
+    order_num = db.Column(db.Integer, default=0)
+    pack = db.relationship('StickerPack', backref='stickers')
+
+class CustomSticker(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    emoji = db.Column(db.String(10), default='🐻')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', foreign_keys=[user_id])
+
+class UserStickerPack(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    pack_id = db.Column(db.Integer, db.ForeignKey('sticker_pack.id'), nullable=False)
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', foreign_keys=[user_id])
+    pack = db.relationship('StickerPack', foreign_keys=[pack_id])
+
+class UserCoins(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    balance = db.Column(db.Integer, default=0)
+    user = db.relationship('User', foreign_keys=[user_id])
+
+class AIGeneration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', foreign_keys=[user_id])
+
 signaling_store = {}
 voice_signals = {}
+
+def get_user_coins(user_id):
+    coins = UserCoins.query.filter_by(user_id=user_id).first()
+    if not coins:
+        coins = UserCoins(user_id=user_id, balance=100)
+        db.session.add(coins)
+        db.session.commit()
+    return coins
+
+def get_premium_status(user_id):
+    sub = Subscription.query.filter_by(user_id=user_id).first()
+    if sub and sub.plan == 'premium' and sub.expires_at and sub.expires_at > datetime.utcnow():
+        return True
+    return False
 
 @login_manager.user_loader
 def load_user(uid):
@@ -430,9 +470,13 @@ def register():
         elif ul and not re.match(r'^@[a-zA-Z0-9_]+$', ul):
             flash('@username может содержать только буквы, цифры и _', 'danger')
         else:
-            db.session.add(User(username=u, username_link=ul if ul else None, password=generate_password_hash(p)))
+            user = User(username=u, username_link=ul if ul else None, password=generate_password_hash(p))
+            db.session.add(user)
             db.session.commit()
-            flash('Регистрация успешна!', 'success')
+            coins = UserCoins(user_id=user.id, balance=100)
+            db.session.add(coins)
+            db.session.commit()
+            flash('Регистрация успешна! +100 монет в подарок 🪙', 'success')
             return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -514,12 +558,15 @@ def profile():
             ChannelSubscriber.query.filter_by(user_id=current_user.id).delete()
             Channel.query.filter_by(created_by=current_user.id).delete()
             Subscription.query.filter_by(user_id=current_user.id).delete()
-            UserSticker.query.filter_by(user_id=current_user.id).delete()
+            UserStickerPack.query.filter_by(user_id=current_user.id).delete()
             UserTheme.query.filter_by(user_id=current_user.id).delete()
             CloudStorage.query.filter_by(user_id=current_user.id).delete()
             Gift.query.filter((Gift.from_user_id == current_user.id) | (Gift.to_user_id == current_user.id)).delete()
             FamilyMember.query.filter_by(user_id=current_user.id).delete()
             FamilyAccount.query.filter_by(owner_id=current_user.id).delete()
+            CustomSticker.query.filter_by(user_id=current_user.id).delete()
+            UserCoins.query.filter_by(user_id=current_user.id).delete()
+            AIGeneration.query.filter_by(user_id=current_user.id).delete()
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
                 GroupMember.query.filter_by(group_id=group.id).delete()
@@ -531,7 +578,9 @@ def profile():
             flash('Аккаунт удалён', 'success')
             return redirect(url_for('index'))
         return redirect(url_for('profile'))
-    return render_template('profile.html', user=current_user)
+    coins = get_user_coins(current_user.id)
+    is_premium = get_premium_status(current_user.id)
+    return render_template('profile.html', user=current_user, coins=coins, is_premium=is_premium)
 
 @app.route('/profile/<int:uid>')
 @login_required
@@ -1858,72 +1907,327 @@ def create_voice_channel():
     flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
     return redirect(url_for('voice_channels_page'))
 
-# ========== СТИКЕРЫ ==========
-@app.route('/stickers')
+# ========== СИСТЕМА СТИКЕРОВ ==========
+@app.route('/api/stickers/all')
 @login_required
-def stickers_page():
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    packs = []
-    for up in user_packs:
-        pack = StickerPack.query.get(up.pack_id)
-        if pack:
-            stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
-            packs.append({'id': pack.id, 'title': pack.title, 'stickers': stickers})
-    return render_template('stickers.html', packs=packs)
+def api_stickers_all():
+    result = {'custom': [], 'packs': []}
+    
+    custom_stickers = CustomSticker.query.filter_by(user_id=current_user.id).order_by(CustomSticker.created_at.desc()).all()
+    for s in custom_stickers:
+        result['custom'].append({
+            'id': s.id,
+            'emoji': s.emoji,
+            'url': s.file_path
+        })
+    
+    is_premium = get_premium_status(current_user.id)
+    all_packs = StickerPack.query.all()
+    
+    for pack in all_packs:
+        if pack.is_premium and not is_premium:
+            purchased = UserStickerPack.query.filter_by(user_id=current_user.id, pack_id=pack.id).first()
+            if not purchased:
+                continue
+        
+        stickers = Sticker.query.filter_by(pack_id=pack.id).order_by(Sticker.order_num).all()
+        pack_data = {
+            'id': pack.id,
+            'title': pack.title,
+            'is_premium': pack.is_premium,
+            'stickers': [{'id': s.id, 'emoji': s.emoji, 'url': s.file_path} for s in stickers]
+        }
+        result['packs'].append(pack_data)
+    
+    return jsonify(result)
 
-@app.route('/stickers/send/<int:sticker_id>', methods=['POST'])
+@app.route('/stickers/custom/upload', methods=['POST'])
 @login_required
-def send_sticker(sticker_id):
-    data = request.get_json()
-    receiver_id = data.get('receiver_id')
-    sticker = Sticker.query.get(sticker_id)
-    if sticker:
-        msg = Message(
-            content=f'[СТИКЕР] {sticker.emoji}',
-            file_path=sticker.file_path,
-            file_type='sticker',
-            sender_id=current_user.id,
-            receiver_id=receiver_id
-        )
-        db.session.add(msg)
-        db.session.commit()
-        return jsonify({'success': True})
-    return jsonify({'error': 'Стикер не найден'}), 404
-
-@app.route('/stickers/api')
-@login_required
-def stickers_api():
-    user_packs = UserSticker.query.filter_by(user_id=current_user.id).all()
-    stickers_list = []
-    for up in user_packs:
-        pack = StickerPack.query.get(up.pack_id)
-        if pack:
-            for s in Sticker.query.filter_by(pack_id=pack.id).all():
-                stickers_list.append({'id': s.id, 'emoji': s.emoji, 'url': s.file_path})
-    return jsonify(stickers_list)
-
-@app.route('/upload_sticker_by_url', methods=['POST'])
-@login_required
-def upload_sticker_by_url():
-    data = request.get_json()
-    url = data.get('url')
-    receiver_id = data.get('receiver_id')
-    response = requests.get(url, timeout=10)
-    filename = f"sticker_{uuid.uuid4().hex}.png"
-    filepath = os.path.join(STICKER_FOLDER, filename)
-    with open(filepath, 'wb') as f:
-        f.write(response.content)
-    msg = Message(
-        content='',
-        file_path=f'/static/stickers/{filename}',
-        file_name='sticker.png',
-        file_type='sticker',
-        sender_id=current_user.id,
-        receiver_id=receiver_id
+def upload_custom_sticker():
+    if 'sticker' not in request.files:
+        return jsonify({'error': 'Нет файла'}), 400
+    
+    f = request.files['sticker']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    
+    is_premium = get_premium_status(current_user.id)
+    if not is_premium:
+        count = CustomSticker.query.filter_by(user_id=current_user.id).count()
+        if count >= 30:
+            return jsonify({'error': 'Лимит 30 стикеров. Купите Premium для безлимита.'}), 403
+    
+    if '.' not in f.filename:
+        return jsonify({'error': 'Неверный формат файла'}), 400
+    
+    ext = f.filename.rsplit('.', 1)[1].lower()
+    if ext not in ['png', 'jpg', 'jpeg', 'gif', 'webp']:
+        return jsonify({'error': f'Формат .{ext} не поддерживается. Только PNG, JPG, GIF, WEBP'}), 400
+    
+    filename = f"custom_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(CUSTOM_STICKER_FOLDER, filename)
+    f.save(filepath)
+    
+    emoji = request.form.get('emoji', '🐻')
+    if len(emoji) > 10:
+        emoji = emoji[:10]
+    
+    sticker = CustomSticker(
+        user_id=current_user.id,
+        file_path=f'/static/stickers/custom/{filename}',
+        emoji=emoji
     )
-    db.session.add(msg)
+    db.session.add(sticker)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'id': sticker.id, 'url': sticker.file_path, 'emoji': sticker.emoji})
+
+@app.route('/stickers/custom/delete/<int:sticker_id>', methods=['POST'])
+@login_required
+def delete_custom_sticker(sticker_id):
+    sticker = CustomSticker.query.get(sticker_id)
+    if not sticker or sticker.user_id != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    filepath = os.path.join(CUSTOM_STICKER_FOLDER, os.path.basename(sticker.file_path))
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    
+    db.session.delete(sticker)
     db.session.commit()
     return jsonify({'success': True})
+
+@app.route('/api/stickers/shop')
+@login_required
+def api_stickers_shop():
+    is_premium = get_premium_status(current_user.id)
+    if is_premium:
+        return jsonify({'packs': [], 'message': 'У вас Premium — все паки доступны!'})
+    
+    packs = StickerPack.query.filter_by(is_premium=True).all()
+    result = []
+    user_coins = get_user_coins(current_user.id)
+    
+    for pack in packs:
+        purchased = UserStickerPack.query.filter_by(user_id=current_user.id, pack_id=pack.id).first()
+        if purchased:
+            continue
+        
+        stickers_count = Sticker.query.filter_by(pack_id=pack.id).count()
+        result.append({
+            'id': pack.id,
+            'title': pack.title,
+            'price': pack.price_coins,
+            'preview': pack.preview,
+            'stickers_count': stickers_count,
+            'can_afford': user_coins.balance >= pack.price_coins
+        })
+    
+    return jsonify({'packs': result, 'balance': user_coins.balance})
+
+@app.route('/stickers/buy/<int:pack_id>', methods=['POST'])
+@login_required
+def buy_sticker_pack(pack_id):
+    pack = StickerPack.query.get(pack_id)
+    if not pack or not pack.is_premium:
+        return jsonify({'error': 'Пак не найден или бесплатный'}), 404
+    
+    purchased = UserStickerPack.query.filter_by(user_id=current_user.id, pack_id=pack_id).first()
+    if purchased:
+        return jsonify({'error': 'Уже куплен'}), 400
+    
+    user_coins = get_user_coins(current_user.id)
+    if user_coins.balance < pack.price_coins:
+        return jsonify({'error': 'Недостаточно монет'}), 403
+    
+    user_coins.balance -= pack.price_coins
+    purchase = UserStickerPack(user_id=current_user.id, pack_id=pack_id)
+    db.session.add(purchase)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'new_balance': user_coins.balance})
+
+@app.route('/api/coins/balance')
+@login_required
+def api_coins_balance():
+    coins = get_user_coins(current_user.id)
+    custom_count = CustomSticker.query.filter_by(user_id=current_user.id).count()
+    is_premium = get_premium_status(current_user.id)
+    
+    today = datetime.utcnow().date()
+    ai_used_today = AIGeneration.query.filter(
+        AIGeneration.user_id == current_user.id,
+        db.func.date(AIGeneration.created_at) == today
+    ).count()
+    
+    return jsonify({
+        'balance': coins.balance,
+        'is_premium': is_premium,
+        'custom_stickers_count': custom_count,
+        'max_custom': 30 if not is_premium else None,
+        'ai_used_today': ai_used_today,
+        'ai_limit': 3 if not is_premium else None
+    })
+
+@app.route('/stickers/send', methods=['POST'])
+@login_required
+def send_sticker_message():
+    data = request.get_json()
+    sticker_url = data.get('url')
+    chat_type = data.get('chat_type', 'private')
+    target_id = data.get('target_id')
+    
+    if not sticker_url or not target_id:
+        return jsonify({'error': 'Нет данных'}), 400
+    
+    if chat_type == 'private':
+        msg = Message(
+            content='',
+            file_path=sticker_url,
+            file_name='sticker.png',
+            file_type='sticker',
+            sender_id=current_user.id,
+            receiver_id=target_id
+        )
+    elif chat_type == 'group':
+        msg = GroupMessage(
+            content='',
+            file_path=sticker_url,
+            file_name='sticker.png',
+            file_type='sticker',
+            sender_id=current_user.id,
+            group_id=target_id
+        )
+    elif chat_type == 'secret':
+        msg = SecretMessage(
+            encrypted_content=None,
+            file_path=sticker_url,
+            file_name='sticker.png',
+            file_type='sticker',
+            sender_id=current_user.id,
+            secret_chat_id=target_id
+        )
+    else:
+        return jsonify({'error': 'Неверный тип чата'}), 400
+    
+    db.session.add(msg)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+# ========== AI ГЕНЕРАТОР СТИКЕРОВ ==========
+@app.route('/stickers/ai/generate', methods=['POST'])
+@login_required
+def ai_generate_sticker():
+    data = request.get_json()
+    prompt = data.get('prompt', '').strip()
+    
+    if not prompt:
+        return jsonify({'error': 'Введите описание стикера'}), 400
+    
+    if len(prompt) > 200:
+        return jsonify({'error': 'Описание слишком длинное (макс 200 символов)'}), 400
+    
+    is_premium = get_premium_status(current_user.id)
+    if not is_premium:
+        today = datetime.utcnow().date()
+        count_today = AIGeneration.query.filter(
+            AIGeneration.user_id == current_user.id,
+            db.func.date(AIGeneration.created_at) == today
+        ).count()
+        
+        if count_today >= 3:
+            return jsonify({
+                'error': 'Лимит 3 генерации в день. Купите Premium для безлимита!',
+                'limit_reached': True,
+                'count': count_today
+            }), 403
+    
+    try:
+        full_prompt = f"{prompt}, cute sticker style, kawaii, white background, simple clean lines, vector illustration"
+        encoded_prompt = requests.utils.quote(full_prompt)
+        
+        # Пробуем несколько зеркал Pollinations.ai
+        urls = [
+            f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true",
+            f"https://pollinations.ai/p/{encoded_prompt}?width=512&height=512&model=flux",
+        ]
+        
+        response = None
+        for url in urls:
+            try:
+                response = requests.get(url, timeout=60, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+                if response.status_code == 200 and len(response.content) > 5000:
+                    break
+            except Exception as e:
+                print(f"Failed to fetch from {url}: {e}")
+                continue
+        
+        if not response or response.status_code != 200 or len(response.content) < 5000:
+            return jsonify({'error': 'Сервис генерации временно недоступен. Попробуйте позже.'}), 500
+        
+        filename = f"ai_{current_user.id}_{uuid.uuid4().hex}.png"
+        filepath = os.path.join(CUSTOM_STICKER_FOLDER, filename)
+        
+        with open(filepath, 'wb') as f:
+            f.write(response.content)
+        
+        sticker = CustomSticker(
+            user_id=current_user.id,
+            file_path=f'/static/stickers/custom/{filename}',
+            emoji='🤖'
+        )
+        db.session.add(sticker)
+        
+        gen = AIGeneration(user_id=current_user.id, prompt=prompt)
+        db.session.add(gen)
+        db.session.commit()
+        
+        remaining = None if is_premium else (3 - AIGeneration.query.filter(
+            AIGeneration.user_id == current_user.id,
+            db.func.date(AIGeneration.created_at) == datetime.utcnow().date()
+        ).count())
+        
+        return jsonify({
+            'success': True,
+            'sticker': {
+                'id': sticker.id,
+                'url': sticker.file_path,
+                'emoji': sticker.emoji
+            },
+            'remaining': remaining
+        })
+        
+    except Exception as e:
+        print(f"AI generation error: {e}")
+        return jsonify({'error': 'Ошибка при генерации. Попробуйте другой запрос.'}), 500
+
+
+@app.route('/stickers/ai/limits')
+@login_required
+def ai_generation_limits():
+    is_premium = get_premium_status(current_user.id)
+    
+    if is_premium:
+        return jsonify({
+            'is_premium': True,
+            'limit': None,
+            'used_today': None,
+            'remaining': None
+        })
+    
+    today = datetime.utcnow().date()
+    used_today = AIGeneration.query.filter(
+        AIGeneration.user_id == current_user.id,
+        db.func.date(AIGeneration.created_at) == today
+    ).count()
+    
+    return jsonify({
+        'is_premium': False,
+        'limit': 3,
+        'used_today': used_today,
+        'remaining': 3 - used_today
+    })
 
 # ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
@@ -1976,9 +2280,9 @@ def use_gift(gift_id):
     if gift.is_used:
         return jsonify({'error': 'Подарок уже использован'}), 400
     if gift.gift_type == 'sticker_pack':
-        existing = UserSticker.query.filter_by(user_id=current_user.id, pack_id=gift.gift_id).first()
+        existing = UserStickerPack.query.filter_by(user_id=current_user.id, pack_id=gift.gift_id).first()
         if not existing:
-            user_pack = UserSticker(user_id=current_user.id, pack_id=gift.gift_id)
+            user_pack = UserStickerPack(user_id=current_user.id, pack_id=gift.gift_id)
             db.session.add(user_pack)
     elif gift.gift_type == 'premium_month':
         sub = Subscription.query.filter_by(user_id=current_user.id).first()
