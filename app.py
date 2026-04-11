@@ -280,6 +280,22 @@ class ChannelComment(db.Model):
     post = db.relationship('ChannelPost', foreign_keys=[post_id])
     user = db.relationship('User', foreign_keys=[user_id])
 
+class ChannelPostLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    post = db.relationship('ChannelPost', foreign_keys=[post_id])
+    user = db.relationship('User', foreign_keys=[user_id])
+
+class ChannelPostView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    post = db.relationship('ChannelPost', foreign_keys=[post_id])
+    user = db.relationship('User', foreign_keys=[user_id])
+
 class StickerPack(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -1386,6 +1402,7 @@ def channel_view(identifier):
     posts = ChannelPost.query.filter_by(channel_id=channel.id).order_by(ChannelPost.timestamp.desc()).all()
     for post in posts:
         post.comments = ChannelComment.query.filter_by(post_id=post.id).order_by(ChannelComment.timestamp.asc()).all()
+        post.likes_count = ChannelPostLike.query.filter_by(post_id=post.id).count()
     return render_template('channel.html', channel=channel, posts=posts, is_subscribed=is_subscribed, is_admin=is_admin)
 
 @app.route('/channel/create', methods=['GET', 'POST'])
@@ -1572,7 +1589,7 @@ def delete_channel(channel_id):
             if os.path.exists(file_path):
                 os.remove(file_path)
         db.session.delete(post)
-    ChannelComment.query.filter_by(channel_id=channel_id).delete()
+    ChannelComment.query.filter(ChannelComment.post_id.in_([p.id for p in posts])).delete(synchronize_session=False)
     ChannelSubscriber.query.filter_by(channel_id=channel_id).delete()
     db.session.delete(channel)
     db.session.commit()
@@ -1590,6 +1607,50 @@ def edit_channel(channel_id):
     channel.username = data.get('username', channel.username)
     db.session.commit()
     return jsonify({'success': True})
+
+# ========== ЛАЙКИ И ПРОСМОТРЫ ДЛЯ КАНАЛОВ (ИСПРАВЛЕННЫЕ ПУТИ) ==========
+@app.route('/channel/like_post/<int:post_id>', methods=['POST'])
+@login_required
+def channel_like_post(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post:
+        return jsonify({'error': 'Пост не найден'}), 404
+    
+    existing = ChannelPostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        like = ChannelPostLike(post_id=post_id, user_id=current_user.id)
+        db.session.add(like)
+        liked = True
+    
+    db.session.commit()
+    likes_count = ChannelPostLike.query.filter_by(post_id=post_id).count()
+    
+    return jsonify({'success': True, 'liked': liked, 'likes_count': likes_count})
+
+@app.route('/channel/view_post/<int:post_id>', methods=['POST'])
+@login_required
+def channel_view_post(post_id):
+    post = ChannelPost.query.get(post_id)
+    if not post:
+        return jsonify({'error': 'Пост не найден'}), 404
+    
+    existing = ChannelPostView.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    if not existing:
+        view = ChannelPostView(post_id=post_id, user_id=current_user.id)
+        db.session.add(view)
+        post.views += 1
+        db.session.commit()
+    
+    return jsonify({'success': True, 'views': post.views})
+
+@app.route('/channel/like_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def channel_like_comment(comment_id):
+    # Заглушка для лайков комментариев (можно расширить позже)
+    return jsonify({'success': True, 'liked': True, 'likes_count': 1})
 
 # ========== СТИКЕРЫ ==========
 @app.route('/stickers')
@@ -2123,63 +2184,7 @@ def family_members(family_id):
             'is_owner': m.user_id == family.owner_id
         })
     return jsonify(result)
-# ========== ЛАЙКИ И ПРОСМОТРЫ ДЛЯ КАНАЛОВ ==========
-class ChannelPostLike(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class ChannelPostView(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('channel_post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-@app.route('/channel/post/like/<int:post_id>', methods=['POST'])
-@login_required
-def channel_post_like(post_id):
-    post = ChannelPost.query.get(post_id)
-    if not post:
-        return jsonify({'error': 'Пост не найден'}), 404
-    
-    existing = ChannelPostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
-    if existing:
-        db.session.delete(existing)
-        liked = False
-    else:
-        like = ChannelPostLike(post_id=post_id, user_id=current_user.id)
-        db.session.add(like)
-        liked = True
-    
-    db.session.commit()
-    likes_count = ChannelPostLike.query.filter_by(post_id=post_id).count()
-    
-    return jsonify({'success': True, 'liked': liked, 'likes_count': likes_count})
-
-@app.route('/channel/post/view/<int:post_id>', methods=['POST'])
-@login_required
-def channel_post_view(post_id):
-    post = ChannelPost.query.get(post_id)
-    if not post:
-        return jsonify({'error': 'Пост не найден'}), 404
-    
-    # Проверяем, не смотрел ли уже этот пользователь
-    existing = ChannelPostView.query.filter_by(post_id=post_id, user_id=current_user.id).first()
-    if not existing:
-        view = ChannelPostView(post_id=post_id, user_id=current_user.id)
-        db.session.add(view)
-        post.views += 1
-        db.session.commit()
-    
-    return jsonify({'success': True, 'views': post.views})
-
-@app.route('/channel/post/likes/<int:post_id>')
-@login_required
-def channel_post_likes(post_id):
-    likes = ChannelPostLike.query.filter_by(post_id=post_id).all()
-    users = [{'id': like.user.id, 'username': like.user.username} for like in likes]
-    return jsonify({'likes': users, 'count': len(users)})
 # ========== ЗАПУСК ==========
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
