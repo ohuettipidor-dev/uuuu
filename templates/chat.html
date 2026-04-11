@@ -35,6 +35,33 @@
         .search-close{text-align:center;padding:10px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0}
         .search-close:hover{background:#f9f9f9}
         
+        /* STORIES BAR */
+        .stories-container{padding:12px 0;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.3)}
+        .stories-scroll{display:flex;gap:16px;overflow-x:auto;padding:4px 0;-webkit-overflow-scrolling:touch}
+        .stories-scroll::-webkit-scrollbar{display:none}
+        .story-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0}
+        .story-avatar-wrapper{width:64px;height:64px;border-radius:50%;padding:3px;background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
+        .story-avatar-wrapper.viewed{background:#ddd}
+        .story-avatar-wrapper img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
+        .story-username{font-size:11px;color:#555;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .my-story-badge{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);padding:3px;cursor:pointer;flex-shrink:0}
+        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:28px}
+        
+        /* STORY VIEWER */
+        .story-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:9999;display:none}
+        .story-viewer.active{display:flex;align-items:center;justify-content:center}
+        .story-viewer-content{max-width:100%;max-height:100%;position:relative}
+        .story-viewer-media{max-width:100vw;max-height:100vh;object-fit:contain}
+        .story-viewer-close{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.5);color:white;border:none;width:40px;height:40px;border-radius:50%;font-size:24px;cursor:pointer;z-index:10}
+        .story-viewer-caption{position:absolute;bottom:30px;left:20px;right:20px;color:white;text-shadow:0 1px 4px rgba(0,0,0,0.5);font-size:16px;z-index:10;text-align:center}
+        .story-viewer-header{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:12px;color:white;z-index:10}
+        .story-viewer-header img{width:36px;height:36px;border-radius:50%}
+        .story-progress{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:4px;z-index:10}
+        .story-progress-bar{flex:1;height:3px;background:rgba(255,255,255,0.3);border-radius:2px;overflow:hidden}
+        .story-progress-fill{height:100%;background:white;width:0%}
+        .story-nav-left{position:absolute;left:0;top:0;bottom:0;width:30%;cursor:pointer;z-index:5}
+        .story-nav-right{position:absolute;right:0;top:0;bottom:0;width:30%;cursor:pointer;z-index:5}
+        
         .create-btn{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);border:none;color:white;padding:10px;border-radius:30px;width:100%;margin-bottom:16px;cursor:pointer;font-weight:bold;transition:transform 0.2s;box-shadow:0 2px 8px rgba(255,107,107,0.3);font-size:14px}
         .create-btn:hover{transform:translateY(-1px)}
         
@@ -104,6 +131,21 @@
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
     
+    <!-- STORIES BAR -->
+    <div class="stories-container" id="storiesContainer">
+        <div class="stories-scroll" id="storiesScroll">
+            <!-- Моя история -->
+            <div class="story-item" onclick="openStoryUpload()">
+                <div class="my-story-badge">
+                    <div class="my-story-inner">➕</div>
+                </div>
+                <span class="story-username">Моя</span>
+            </div>
+            <!-- Истории друзей -->
+            <div id="storiesList" style="display:contents;"></div>
+        </div>
+    </div>
+    
     <button class="create-btn" onclick="openGroupModal()">✨ + Создать группу ✨</button>
     
     <div class="chats-list" id="chats">
@@ -160,6 +202,23 @@
     </div>
 </div>
 
+<!-- STORY VIEWER -->
+<div class="story-viewer" id="storyViewer">
+    <div class="story-progress" id="storyProgress"></div>
+    <div class="story-viewer-header" id="storyHeader"></div>
+    <div class="story-viewer-close" onclick="closeStoryViewer()">✕</div>
+    <div class="story-nav-left" id="storyNavLeft"></div>
+    <div class="story-nav-right" id="storyNavRight"></div>
+    <div class="story-viewer-content">
+        <img class="story-viewer-media" id="storyMedia" style="display:none;">
+        <video class="story-viewer-media" id="storyVideo" style="display:none;" loop></video>
+        <div class="story-viewer-caption" id="storyCaption"></div>
+    </div>
+</div>
+
+<!-- СКРЫТЫЕ INPUTЫ -->
+<input type="file" id="storyFileInput" style="display:none" accept="image/*,video/*" onchange="uploadStory(this.files[0])">
+
 <div class="modal" id="chatTypeModal">
     <div class="modal-content">
         <h3>📱 Выберите тип чата</h3>
@@ -186,6 +245,206 @@
     let selectedUserId = null;
     let searchTimeout = null;
     
+    // ========== STORIES ==========
+    let currentStories = [];
+    let currentStoryIndex = 0;
+    let storyTimer = null;
+    let storyInterval = null;
+    
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return div.innerHTML;
+    }
+    
+    function loadStoriesFeed() {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                renderStoriesBar(usersStories);
+            })
+            .catch(e => console.error('Stories error:', e));
+    }
+    
+    function renderStoriesBar(usersStories) {
+        const container = document.getElementById('storiesList');
+        if (!container) return;
+        
+        let html = '';
+        usersStories.forEach(userStories => {
+            const user = userStories.user;
+            const hasUnseen = userStories.stories.some(s => !s.viewed);
+            
+            html += `
+                <div class="story-item" onclick="viewUserStories(${user.id})" data-user-id="${user.id}">
+                    <div class="story-avatar-wrapper ${!hasUnseen ? 'viewed' : ''}">
+                        <img src="${user.avatar !== 'default.png' ? '/static/avatars/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff'}" 
+                             onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
+                    </div>
+                    <span class="story-username">${escapeHtml(user.username)}</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function openStoryUpload() {
+        document.getElementById('storyFileInput').click();
+    }
+    
+    function uploadStory(file) {
+        if (!file) return;
+        
+        const caption = prompt('Добавьте подпись (необязательно):', '') || '';
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('caption', caption);
+        
+        fetch('/api/stories/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                alert('История опубликована на 24 часа!');
+                loadStoriesFeed();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(e => alert('Ошибка загрузки'));
+        
+        document.getElementById('storyFileInput').value = '';
+    }
+    
+    function viewUserStories(userId) {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                const userData = usersStories.find(u => u.user.id === userId);
+                if (!userData) return;
+                
+                currentStories = userData.stories.filter(s => !s.viewed);
+                if (currentStories.length === 0) {
+                    currentStories = userData.stories;
+                }
+                
+                currentStoryIndex = 0;
+                
+                document.getElementById('storyViewer').classList.add('active');
+                
+                document.getElementById('storyHeader').innerHTML = `
+                    <img src="${userData.user.avatar !== 'default.png' ? '/static/avatars/' + userData.user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.user.username) + '&background=ff6b6b&color=fff'}">
+                    <span>${escapeHtml(userData.user.username)}</span>
+                `;
+                
+                renderProgressBars(currentStories.length);
+                showStory(0);
+                markStoryViewed(currentStories[0].id);
+            });
+    }
+    
+    function renderProgressBars(count) {
+        const container = document.getElementById('storyProgress');
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `<div class="story-progress-bar"><div class="story-progress-fill" id="progress-${i}"></div></div>`;
+        }
+        container.innerHTML = html;
+    }
+    
+    function showStory(index) {
+        if (index >= currentStories.length) {
+            closeStoryViewer();
+            return;
+        }
+        
+        currentStoryIndex = index;
+        const story = currentStories[index];
+        
+        const img = document.getElementById('storyMedia');
+        const video = document.getElementById('storyVideo');
+        const caption = document.getElementById('storyCaption');
+        
+        img.style.display = 'none';
+        video.style.display = 'none';
+        video.pause();
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
+        if (story.file_type === 'video') {
+            video.src = story.file_path;
+            video.style.display = 'block';
+            video.play();
+            
+            video.onended = () => { nextStory(); };
+            
+            video.ontimeupdate = () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+            };
+        } else {
+            img.src = story.file_path;
+            img.style.display = 'block';
+            
+            let progress = 0;
+            storyInterval = setInterval(() => {
+                progress += 2;
+                const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(storyInterval);
+                }
+            }, 100);
+            
+            storyTimer = setTimeout(() => { nextStory(); }, 5000);
+        }
+        
+        caption.textContent = story.caption || '';
+        markStoryViewed(story.id);
+    }
+    
+    function markStoryViewed(storyId) {
+        fetch('/api/stories/view/' + storyId, {method: 'POST'});
+    }
+    
+    function nextStory() {
+        if (currentStoryIndex < currentStories.length - 1) {
+            showStory(currentStoryIndex + 1);
+        } else {
+            closeStoryViewer();
+            loadStoriesFeed();
+        }
+    }
+    
+    function prevStory() {
+        if (currentStoryIndex > 0) {
+            showStory(currentStoryIndex - 1);
+        }
+    }
+    
+    function closeStoryViewer() {
+        document.getElementById('storyViewer').classList.remove('active');
+        document.getElementById('storyVideo').pause();
+        document.getElementById('storyVideo').src = '';
+        document.getElementById('storyMedia').src = '';
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
+        loadStoriesFeed();
+    }
+    
+    document.getElementById('storyNavLeft').onclick = prevStory;
+    document.getElementById('storyNavRight').onclick = nextStory;
+    
+    // ========== ОРИГИНАЛЬНЫЕ ФУНКЦИИ ==========
     function openChat(type, id) {
         if(type === 'private') window.location.href = '/messages/' + id;
         else if(type === 'secret') window.location.href = '/secret_chat/' + id;
@@ -279,13 +538,6 @@
             });
     }
     
-    function escapeHtml(t) {
-        if(!t) return '';
-        const div = document.createElement('div');
-        div.textContent = t;
-        return div.innerHTML;
-    }
-    
     searchInput.addEventListener('input', function() {
         if(searchTimeout) clearTimeout(searchTimeout);
         searchTimeout = setTimeout(searchUsers, 300);
@@ -314,6 +566,10 @@
             form.submit();
         } else alert('Введите название группы');
     }
+    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    loadStoriesFeed();
+    setInterval(loadStoriesFeed, 30000);
 </script>
 </body>
 </html>

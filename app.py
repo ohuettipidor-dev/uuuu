@@ -10,6 +10,7 @@ import json
 import hashlib
 import base64
 import requests
+import hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -412,6 +413,37 @@ class AIGeneration(db.Model):
     prompt = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', foreign_keys=[user_id])
+# ========== STORIES (ИСТОРИИ) ==========
+class Story(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_type = db.Column(db.String(20), default='image')
+    caption = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    views_count = db.Column(db.Integer, default=0)
+    user = db.relationship('User', foreign_keys=[user_id])
+
+class StoryView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    story = db.relationship('Story', foreign_keys=[story_id])
+    user = db.relationship('User', foreign_keys=[user_id])
+
+# ========== ПЛАТЕЖИ И ЗАКАЗЫ ==========
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_type = db.Column(db.String(50), nullable=False)  # 'premium' или 'coins'
+    amount_rub = db.Column(db.Float, nullable=False)       # Цена в рублях
+    coins_amount = db.Column(db.Integer, default=0)        # Сколько монет дать
+    status = db.Column(db.String(20), default='pending')   # pending, paid, cancelled
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    user = db.relationship('User', foreign_keys=[user_id])
 
 signaling_store = {}
 voice_signals = {}
@@ -429,6 +461,26 @@ def get_premium_status(user_id):
     if sub and sub.plan == 'premium' and sub.expires_at and sub.expires_at > datetime.utcnow():
         return True
     return False
+
+def activate_premium(user_id, months=1):
+    user = db.session.get(User, user_id)
+    if not user:
+        return False
+    
+    sub = Subscription.query.filter_by(user_id=user_id).first()
+    if not sub:
+        sub = Subscription(user_id=user_id)
+        db.session.add(sub)
+    
+    if sub.expires_at and sub.expires_at > datetime.utcnow():
+        sub.expires_at = sub.expires_at + timedelta(days=30 * months)
+    else:
+        sub.expires_at = datetime.utcnow() + timedelta(days=30 * months)
+    
+    sub.plan = 'premium'
+    sub.auto_renew = False
+    db.session.commit()
+    return True
 
 @login_manager.user_loader
 def load_user(uid):
@@ -476,7 +528,7 @@ def register():
             coins = UserCoins(user_id=user.id, balance=100)
             db.session.add(coins)
             db.session.commit()
-            flash('Регистрация успешна! +100 монет в подарок 🪙', 'success')
+            flash('Регистрация успешна! +100 монет в подарок 💰', 'success')
             return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -567,6 +619,7 @@ def profile():
             CustomSticker.query.filter_by(user_id=current_user.id).delete()
             UserCoins.query.filter_by(user_id=current_user.id).delete()
             AIGeneration.query.filter_by(user_id=current_user.id).delete()
+            Order.query.filter_by(user_id=current_user.id).delete()
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
                 GroupMember.query.filter_by(group_id=group.id).delete()
@@ -580,7 +633,9 @@ def profile():
         return redirect(url_for('profile'))
     coins = get_user_coins(current_user.id)
     is_premium = get_premium_status(current_user.id)
-    return render_template('profile.html', user=current_user, coins=coins, is_premium=is_premium)
+    sub = Subscription.query.filter_by(user_id=current_user.id).first()
+    expires_at = sub.expires_at.strftime('%d.%m.%Y') if sub and sub.expires_at else None
+    return render_template('profile.html', user=current_user, coins=coins, is_premium=is_premium, expires_at=expires_at)
 
 @app.route('/profile/<int:uid>')
 @login_required
@@ -2038,7 +2093,7 @@ def buy_sticker_pack(pack_id):
     
     user_coins = get_user_coins(current_user.id)
     if user_coins.balance < pack.price_coins:
-        return jsonify({'error': 'Недостаточно монет'}), 403
+        return jsonify({'error': 'Недостаточно монет 💰'}), 403
     
     user_coins.balance -= pack.price_coins
     purchase = UserStickerPack(user_id=current_user.id, pack_id=pack_id)
@@ -2147,7 +2202,6 @@ def ai_generate_sticker():
         full_prompt = f"{prompt}, cute sticker style, kawaii, white background, simple clean lines, vector illustration"
         encoded_prompt = requests.utils.quote(full_prompt)
         
-        # Пробуем несколько зеркал Pollinations.ai
         urls = [
             f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true",
             f"https://pollinations.ai/p/{encoded_prompt}?width=512&height=512&model=flux",
@@ -2156,11 +2210,10 @@ def ai_generate_sticker():
         response = None
         for url in urls:
             try:
-                response = requests.get(url, timeout=60, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+                response = requests.get(url, timeout=60, headers={'User-Agent': 'Mozilla/5.0'})
                 if response.status_code == 200 and len(response.content) > 5000:
                     break
-            except Exception as e:
-                print(f"Failed to fetch from {url}: {e}")
+            except:
                 continue
         
         if not response or response.status_code != 200 or len(response.content) < 5000:
@@ -2202,7 +2255,6 @@ def ai_generate_sticker():
         print(f"AI generation error: {e}")
         return jsonify({'error': 'Ошибка при генерации. Попробуйте другой запрос.'}), 500
 
-
 @app.route('/stickers/ai/limits')
 @login_required
 def ai_generation_limits():
@@ -2228,6 +2280,129 @@ def ai_generation_limits():
         'used_today': used_today,
         'remaining': 3 - used_today
     })
+
+# ========== ПЛАТЕЖИ И МОНЕТИЗАЦИЯ ==========
+WEBHOOK_SECRET = "your_super_secret_webhook_key_12345"
+
+@app.route('/api/user/premium_status')
+@login_required
+def api_premium_status():
+    is_premium = get_premium_status(current_user.id)
+    coins = get_user_coins(current_user.id)
+    sub = Subscription.query.filter_by(user_id=current_user.id).first()
+    
+    expires_at = None
+    if sub and sub.expires_at:
+        expires_at = sub.expires_at.strftime('%d.%m.%Y')
+    
+    return jsonify({
+        'is_premium': is_premium,
+        'balance': coins.balance,
+        'expires_at': expires_at,
+        'plan': sub.plan if sub else 'free'
+    })
+
+@app.route('/api/create_premium_order', methods=['POST'])
+@login_required
+def create_premium_order():
+    PRICE_RUB = 299.0
+    
+    existing = Subscription.query.filter_by(user_id=current_user.id).first()
+    if existing and existing.expires_at and existing.expires_at > datetime.utcnow():
+        return jsonify({'error': 'У вас уже активен Premium'}), 400
+    
+    order = Order(
+        user_id=current_user.id,
+        order_type='premium',
+        amount_rub=PRICE_RUB,
+        status='pending'
+    )
+    db.session.add(order)
+    db.session.commit()
+    
+    payment_url = f"https://pay.beargram.com/premium?order_id={order.id}"
+    
+    return jsonify({
+        'order_id': order.id,
+        'amount': PRICE_RUB,
+        'payment_url': payment_url
+    })
+
+@app.route('/api/shop/coins/packages')
+@login_required
+def get_coin_packages():
+    packages = [
+        {'id': 1, 'coins': 100, 'price_rub': 99, 'name': '🍯 Маленький горшочек', 'emoji': '🍯'},
+        {'id': 2, 'coins': 500, 'price_rub': 399, 'name': '🐝 Пчелиный улей', 'emoji': '🐝', 'popular': True},
+        {'id': 3, 'coins': 1200, 'price_rub': 799, 'name': '👑 Медовый король', 'emoji': '👑', 'bonus': 200}
+    ]
+    return jsonify(packages)
+
+@app.route('/api/create_coins_order', methods=['POST'])
+@login_required
+def create_coins_order():
+    data = request.get_json()
+    package_id = data.get('package_id')
+    
+    packages = {
+        1: {'coins': 100, 'price': 99},
+        2: {'coins': 500, 'price': 399},
+        3: {'coins': 1200, 'price': 799}
+    }
+    
+    if package_id not in packages:
+        return jsonify({'error': 'Пакет не найден'}), 404
+    
+    pkg = packages[package_id]
+    
+    order = Order(
+        user_id=current_user.id,
+        order_type='coins',
+        amount_rub=pkg['price'],
+        coins_amount=pkg['coins'],
+        status='pending'
+    )
+    db.session.add(order)
+    db.session.commit()
+    
+    payment_url = f"https://pay.beargram.com/coins?order_id={order.id}"
+    
+    return jsonify({
+        'order_id': order.id,
+        'amount': pkg['price'],
+        'coins': pkg['coins'],
+        'payment_url': payment_url
+    })
+
+@app.route('/api/payment_webhook', methods=['POST'])
+def payment_webhook():
+    data = request.get_json()
+    
+    order_id = data.get('order_id') or data.get('MERCHANT_ORDER_ID') or data.get('orderId')
+    status = data.get('status') or data.get('STATE') or data.get('state')
+    amount_paid = float(data.get('amount') or data.get('AMOUNT') or 0)
+    
+    if not order_id:
+        return 'No order_id', 400
+    
+    order = Order.query.get(int(order_id))
+    if not order:
+        return 'Order not found', 404
+    
+    if status in ['paid', 'success', 'COMPLETED', 'completed'] and amount_paid >= order.amount_rub:
+        if order.status == 'pending':
+            order.status = 'paid'
+            order.paid_at = datetime.utcnow()
+            
+            if order.order_type == 'premium':
+                activate_premium(order.user_id, months=1)
+            elif order.order_type == 'coins':
+                coins = get_user_coins(order.user_id)
+                coins.balance += order.coins_amount
+            
+            db.session.commit()
+    
+    return 'OK', 200
 
 # ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
@@ -2285,12 +2460,7 @@ def use_gift(gift_id):
             user_pack = UserStickerPack(user_id=current_user.id, pack_id=gift.gift_id)
             db.session.add(user_pack)
     elif gift.gift_type == 'premium_month':
-        sub = Subscription.query.filter_by(user_id=current_user.id).first()
-        if not sub:
-            sub = Subscription(user_id=current_user.id)
-            db.session.add(sub)
-        sub.plan = 'premium'
-        sub.expires_at = datetime.utcnow() + timedelta(days=30)
+        activate_premium(current_user.id, months=1)
     gift.is_used = True
     db.session.commit()
     return jsonify({'success': True})
@@ -2503,7 +2673,164 @@ def family_members(family_id):
             'is_owner': m.user_id == family.owner_id
         })
     return jsonify(result)
+# ========== STORIES API ==========
+import os
+from werkzeug.utils import secure_filename
 
+@app.route('/api/stories/upload', methods=['POST'])
+@login_required
+def upload_story():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Нет файла'}), 400
+    
+    f = request.files['file']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+    
+    ext = f.filename.rsplit('.', 1)[1].lower() if '.' in f.filename else 'jpg'
+    if ext not in ['png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'avi', 'webm']:
+        return jsonify({'error': 'Только изображения и видео'}), 400
+    
+    file_type = 'video' if ext in ['mp4', 'mov', 'avi', 'webm'] else 'image'
+    filename = f"story_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(FILE_FOLDER, filename)
+    f.save(filepath)
+    
+    caption = request.form.get('caption', '')
+    
+    story = Story(
+        user_id=current_user.id,
+        file_path=f'/static/uploads/{filename}',
+        file_type=file_type,
+        caption=caption,
+        expires_at=datetime.utcnow() + timedelta(hours=24)
+    )
+    db.session.add(story)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'story_id': story.id})
+
+@app.route('/api/stories/my')
+@login_required
+def api_my_stories():
+    stories = Story.query.filter(
+        Story.user_id == current_user.id,
+        Story.expires_at > datetime.utcnow()
+    ).order_by(Story.created_at.desc()).all()
+    
+    result = []
+    for s in stories:
+        result.append({
+            'id': s.id,
+            'file_path': s.file_path,
+            'file_type': s.file_type,
+            'caption': s.caption,
+            'views': s.views_count,
+            'created_at': s.created_at.isoformat(),
+            'expires_in': int((s.expires_at - datetime.utcnow()).total_seconds())
+        })
+    return jsonify(result)
+
+@app.route('/api/stories/feed')
+@login_required
+def api_stories_feed():
+    # Получаем пользователей, с которыми есть переписка
+    chat_users = db.session.query(User).join(
+        Message,
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == User.id)) |
+        ((Message.sender_id == User.id) & (Message.receiver_id == current_user.id))
+    ).distinct().all()
+    
+    user_ids = [u.id for u in chat_users] + [current_user.id]
+    
+    stories = Story.query.filter(
+        Story.user_id.in_(user_ids),
+        Story.expires_at > datetime.utcnow()
+    ).order_by(Story.user_id, Story.created_at.desc()).all()
+    
+    users_stories = {}
+    for s in stories:
+        if s.user_id not in users_stories:
+            user = User.query.get(s.user_id)
+            users_stories[s.user_id] = {
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar
+                },
+                'stories': []
+            }
+        
+        viewed = StoryView.query.filter_by(story_id=s.id, user_id=current_user.id).first()
+        users_stories[s.user_id]['stories'].append({
+            'id': s.id,
+            'file_path': s.file_path,
+            'file_type': s.file_type,
+            'caption': s.caption,
+            'views': s.views_count,
+            'viewed': viewed is not None,
+            'created_at': s.created_at.isoformat()
+        })
+    
+    return jsonify(list(users_stories.values()))
+
+@app.route('/api/stories/view/<int:story_id>', methods=['POST'])
+@login_required
+def view_story(story_id):
+    story = Story.query.get(story_id)
+    if not story or story.expires_at <= datetime.utcnow():
+        return jsonify({'error': 'История не найдена'}), 404
+    
+    existing = StoryView.query.filter_by(story_id=story_id, user_id=current_user.id).first()
+    if not existing:
+        view = StoryView(story_id=story_id, user_id=current_user.id)
+        db.session.add(view)
+        story.views_count += 1
+        db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/stories/delete/<int:story_id>', methods=['POST'])
+@login_required
+def delete_story(story_id):
+    story = Story.query.get(story_id)
+    if not story or story.user_id != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    filepath = os.path.join(FILE_FOLDER, os.path.basename(story.file_path))
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    
+    StoryView.query.filter_by(story_id=story_id).delete()
+    db.session.delete(story)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/stories/has_unseen')
+@login_required
+def api_has_unseen_stories():
+    chat_users = db.session.query(User).join(
+        Message,
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == User.id)) |
+        ((Message.sender_id == User.id) & (Message.receiver_id == current_user.id))
+    ).distinct().all()
+    
+    user_ids = [u.id for u in chat_users]
+    
+    stories = Story.query.filter(
+        Story.user_id.in_(user_ids),
+        Story.user_id != current_user.id,
+        Story.expires_at > datetime.utcnow()
+    ).all()
+    
+    unseen_count = 0
+    for s in stories:
+        viewed = StoryView.query.filter_by(story_id=s.id, user_id=current_user.id).first()
+        if not viewed:
+            unseen_count += 1
+    
+    return jsonify({'has_unseen': unseen_count > 0, 'count': unseen_count})
 # ========== ЗАПУСК ==========
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
