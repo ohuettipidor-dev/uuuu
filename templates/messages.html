@@ -18,6 +18,7 @@
         .user-status{font-size:10px}
         .user-status.online{color:#4cd964}
         .user-status.offline{color:#3a86ff}
+        .user-status.typing{color:#ff6b6b;font-style:italic}
         .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
         .call-btn{background:#ff6b6b;color:white;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;margin-right:4px;flex-shrink:0}
         
@@ -37,8 +38,20 @@
         .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:6px}to{height:12px}}
         
+        .message-actions{position:absolute;top:-28px;right:0;background:white;border-radius:20px;display:none;gap:3px;padding:4px 8px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        .message:hover .message-actions{display:flex}
+        .action-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:3px 5px;border-radius:12px;color:#888}
+        .action-btn:hover{background:#f0f0f0;color:#ff6b6b}
+        .reply-preview{background:rgba(0,0,0,0.04);border-left:2px solid #ff6b6b;padding:4px 6px;margin-bottom:4px;border-radius:6px;font-size:10px;color:#888}
+        .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
+        .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
+        .edited-badge{font-size:8px;color:#aaa;margin-left:4px}
+        .forward-badge{font-size:9px;color:#aaa;margin-bottom:2px}
+        .favorite-star{color:gold;font-size:12px}
+        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
+        
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
@@ -52,6 +65,15 @@
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
+        
+        .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
+        .mention-suggestions.active{display:block}
+        .mention-suggestion-item{padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+        .mention-suggestion-item:hover{background:#f9f9f9}
+        .mention-suggestion-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px}
+        .mention-suggestion-avatar img{width:100%;height:100%;object-fit:cover}
+        .mention-suggestion-name{font-size:13px;font-weight:500;color:#333}
+        .mention-suggestion-link{font-size:10px;color:#999}
         
         .messages::-webkit-scrollbar{width:3px}
         .messages::-webkit-scrollbar-track{background:transparent}
@@ -85,8 +107,12 @@
         </div>
         <div class="user-info" onclick="location.href='/profile/{{ other.id }}'">
             <div class="user-name">{{ other.username }}</div>
-            <div class="user-status {% if other.status == 'online' %}online{% endif %}">
-                {% if other.status == 'online' %}🟢 Онлайн{% else %}🔵 Офлайн{% endif %}
+            <div class="user-status" id="typingStatus">
+                {% if other.status == 'online' %}
+                    🟢 Онлайн
+                {% else %}
+                    🔵 Офлайн
+                {% endif %}
             </div>
         </div>
         <button class="call-btn" onclick="startVideoCall()">📹</button>
@@ -94,9 +120,27 @@
     </div>
     
     <div class="messages" id="messages">
+        <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
+            <span>📌 Закреплено: </span>
+            <span id="pinnedMessageContent"></span>
+            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+        </div>
+        
         {% for m in msgs %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
+                {% if m.is_pinned %}
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
+                {% endif %}
+                {% if m.forwarded_from_id %}
+                <div class="forward-badge">📎 Переслано</div>
+                {% endif %}
+                {% if m.reply_to_id %}
+                <div class="reply-preview">
+                    <span>📩 Ответ:</span><br>
+                    <span id="reply-preview-{{ m.id }}">...</span>
+                </div>
+                {% endif %}
                 {% if m.file_type == 'sticker' %}
                     <img src="{{ m.file_path }}" class="sticker-img">
                 {% elif m.file_path %}
@@ -120,20 +164,51 @@
                         <span>{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
-                <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
+                <div class="time">
+                    <span>{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
+                    {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
+                    {% if m.sender_id == current_user.id %}
+                        {% if m.is_read %}
+                            <span style="color:#4cd964">✓✓</span>
+                        {% else %}
+                            <span>✓✓</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
+                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
+                {% if m.sender_id == current_user.id %}
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️</button>
+                {% else %}
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🙈</button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     
+    <div class="reply-bar" id="replyBar">
+        <span>💬 Ответ:</span>
+        <span id="replyText" style="flex:1;color:#888;font-size:11px"></span>
+        <button class="cancel-reply" onclick="cancelReply()">✖</button>
+    </div>
+    
     <div class="input-area">
-        <div class="input-wrapper">
+        <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение...">
+            <div class="mention-suggestions" id="mentionSuggestions"></div>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
             <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
-        <button class="send-btn" onclick="sendMsg()">🐻</button>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
     </div>
     <div class="emoji-picker" id="emojiPicker">
@@ -152,19 +227,216 @@
     let isAudioRecording = false;
     let startTime = null;
     let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
+    let currentReplyToId = null;
+    let typingTimeout = null;
     let isSending = false;
+    let processedIds = new Set();
     
+    function playVoice(el) {
+        const audio = el.closest('.bubble').querySelector('audio');
+        if(audio) audio.play();
+    }
+    
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return div.innerHTML;
+    }
+    
+    function startVideoCall() {
+        fetch('/start_call/' + receiver_id, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
+    }
+    
+    // ========== ТАЙПИНГ ==========
+    msgInput.addEventListener('input', function() {
+        fetch('/typing', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({receiver_id: receiver_id, is_typing: true})
+        });
+        if(typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            fetch('/typing', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({receiver_id: receiver_id, is_typing: false})
+            });
+        }, 1000);
+    });
+    
+    function checkTyping() {
+        fetch(`/get_typing/${receiver_id}`)
+            .then(r => r.json())
+            .then(data => {
+                const statusDiv = document.getElementById('typingStatus');
+                if(data.is_typing) {
+                    statusDiv.innerHTML = '✏️ Печатает...';
+                    statusDiv.className = 'user-status typing';
+                } else {
+                    const isOnline = '{{ other.status }}' === 'online';
+                    statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
+                    statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
+                }
+            });
+    }
+    setInterval(checkTyping, 2000);
+    
+    // ========== ЗАКРЕПЛЕНИЕ ==========
+    function loadPinnedMessage() {
+        fetch(`/get_pinned_message/${receiver_id}/private`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.id) {
+                    document.getElementById('pinnedMessageBar').style.display = 'flex';
+                    document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
+                    window.pinnedMsgId = data.id;
+                } else {
+                    document.getElementById('pinnedMessageBar').style.display = 'none';
+                    window.pinnedMsgId = null;
+                }
+            });
+    }
+    
+    function scrollToPinned() {
+        if(window.pinnedMsgId) {
+            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
+            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    function pinMessage(msgId, type) {
+        fetch('/pin_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: msgId, type: type})
+        }).then(() => {
+            setTimeout(() => {
+                checkNewMessages();
+                loadPinnedMessage();
+            }, 300);
+        });
+    }
+    
+    function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
+    
+    // ========== УПОМИНАНИЯ ==========
+    function searchUsers(query) {
+        if(!query) { hideSuggestions(); return; }
+        fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); });
+    }
+    
+    function showSuggestions(users) {
+        const div = document.getElementById('mentionSuggestions');
+        div.innerHTML = '';
+        users.forEach(u => {
+            const item = document.createElement('div');
+            item.className = 'mention-suggestion-item';
+            item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`;
+            item.onclick = () => insertMention(u.username);
+            div.appendChild(item);
+        });
+        div.classList.add('active');
+    }
+    
+    function insertMention(username) {
+        const val = msgInput.value, cursor = msgInput.selectionStart;
+        const before = val.substring(0, currentMentionStart), after = val.substring(cursor);
+        msgInput.value = before + '@' + username + ' ' + after;
+        msgInput.focus();
+        msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2;
+        hideSuggestions();
+        currentMentionStart = -1;
+    }
+    
+    function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
+    
+    let currentMentionStart = -1;
+    let mentionSearchTimeout = null;
+    
+    msgInput.addEventListener('input', function() {
+        const val = this.value, cursor = this.selectionStart;
+        let lastAt = -1;
+        for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
+        if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
+    });
+    
+    function addNewMessage(msg) {
+        if(processedIds.has(msg.id)) return;
+        processedIds.add(msg.id);
+        
+        const messagesDiv = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
+        div.setAttribute('data-id', msg.id);
+        
+        let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
+        let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
+        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
+        
+        let fileHtml = '';
+        if(msg.file_path) {
+            if(msg.file_type == 'sticker') {
+                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+            } else if(msg.file_type == 'image') {
+                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
+            } else if(msg.file_type == 'audio') {
+                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+            } else if(msg.file_type == 'video') {
+                fileHtml = `<video controls src="${msg.file_path}"></video>`;
+            } else {
+                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            }
+        }
+        
+        let contentHtml = '';
+        if(msg.content && msg.file_type !== 'sticker') {
+            contentHtml = `<div>${escapeHtml(msg.content)}</div>`;
+        }
+        
+        let voiceHtml = '';
+        if(msg.voice_duration) {
+            voiceHtml = `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+        }
+        
+        let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
+        let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
+        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
+        
+        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+        messagesDiv.appendChild(div);
+        
+        if(msg.reply_to_id) {
+            fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => {
+                const p = div.querySelector('.reply-preview span:last-child');
+                if(p) p.textContent = data.content;
+            });
+        }
+        
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        lastMsgId = msg.id;
+        if(msg.is_pinned) loadPinnedMessage();
+    }
+    
+    // ========== ОТПРАВКА СООБЩЕНИЯ (1 РАЗ) ==========
     function sendMsg() {
         if(isSending) return;
         
         const content = msgInput.value.trim();
-        if(!content) return;
+        if(!content && !currentReplyToId) return;
         
         isSending = true;
         
         const formData = new FormData();
         formData.append('receiver_id', receiver_id);
-        formData.append('content', content);
+        if(content) formData.append('content', content);
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
+        const savedReplyId = currentReplyToId;
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
         
         fetch('/send', {method: 'POST', body: formData})
             .then(() => {
@@ -172,7 +444,7 @@
                 setTimeout(() => {
                     checkNewMessages();
                     isSending = false;
-                }, 200);
+                }, 300);
             })
             .catch(() => {
                 isSending = false;
@@ -195,25 +467,85 @@
                     formData2.append('file_path', data.path);
                     formData2.append('file_name', data.name);
                     formData2.append('file_type', data.type);
+                    if(currentReplyToId) formData2.append('reply_to_id', currentReplyToId);
                     fetch('/send', {method: 'POST', body: formData2})
-                        .then(() => setTimeout(checkNewMessages, 200));
+                        .then(() => {
+                            currentReplyToId = null;
+                            document.getElementById('replyBar').style.display = 'none';
+                            setTimeout(checkNewMessages, 200);
+                        });
                 }
             });
     }
     
-    function playVoice(el) {
-        const audio = el.closest('.bubble').querySelector('audio');
-        if(audio) audio.play();
-    }
-    
-    function startVideoCall() {
-        fetch('/start_call/' + receiver_id, {method: 'POST'})
+    function checkNewMessages() {
+        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
             .then(r => r.json())
-            .then(data => {
-                window.open('/call/' + data.room_id, '_blank', 'width=800,height=600');
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    msgs.forEach(m => addNewMessage(m));
+                }
             });
     }
     
+    // ========== ДЕЙСТВИЯ С СООБЩЕНИЯМИ ==========
+    function editMessage(id, type) {
+        let newText = prompt('Новый текст:');
+        if(newText && newText.trim()) {
+            fetch('/edit_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, new_content: newText, type: type})
+            }).then(() => setTimeout(checkNewMessages, 300));
+        }
+    }
+    
+    function deleteMessage(id, type, all) {
+        if(confirm('Удалить сообщение?')) {
+            fetch('/delete_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})
+            }).then(() => {
+                document.querySelector(`.message[data-id="${id}"]`)?.remove();
+                if(window.pinnedMsgId == id) loadPinnedMessage();
+            });
+        }
+    }
+    
+    function toggleFavorite(id, type) {
+        fetch('/toggle_favorite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: id, type: type})
+        }).then(() => setTimeout(checkNewMessages, 300));
+    }
+    
+    function forwardMessage(id, type) {
+        let target = prompt('ID пользователя для пересылки:');
+        if(target) {
+            fetch('/forward_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})
+            }).then(() => alert('Переслано!'));
+        }
+    }
+    
+    function replyToMessage(id, content) {
+        currentReplyToId = id;
+        const bar = document.getElementById('replyBar');
+        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+        bar.style.display = 'flex';
+        msgInput.focus();
+    }
+    
+    function cancelReply() {
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+    }
+    
+    // ========== ГОЛОСОВЫЕ ==========
     async function startVoiceRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -239,8 +571,13 @@
                             fd2.append('file_name', 'Голосовое');
                             fd2.append('file_type', 'audio');
                             fd2.append('voice_duration', duration);
+                            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
                             fetch('/send', {method: 'POST', body: fd2})
-                                .then(() => setTimeout(checkNewMessages, 200));
+                                .then(() => {
+                                    currentReplyToId = null;
+                                    document.getElementById('replyBar').style.display = 'none';
+                                    setTimeout(checkNewMessages, 200);
+                                });
                         }
                     });
                 
@@ -264,53 +601,12 @@
     }
     
     function stopVoiceRecording() {
-        if(mediaRecorder && isAudioRecording) {
-            mediaRecorder.stop();
-        }
+        if(mediaRecorder && isAudioRecording) mediaRecorder.stop();
     }
     
     function toggleVoiceRecording() {
-        if(isAudioRecording) {
-            stopVoiceRecording();
-        } else {
-            startVoiceRecording();
-        }
-    }
-    
-    function checkNewMessages() {
-        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
-            .then(r => r.json())
-            .then(msgs => {
-                if(msgs && msgs.length) {
-                    const messagesDiv = document.getElementById('messages');
-                    msgs.forEach(msg => {
-                        const div = document.createElement('div');
-                        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
-                        let contentHtml = '';
-                        if(msg.file_type === 'sticker') {
-                            contentHtml = `<img src="${msg.file_path}" class="sticker-img">`;
-                        } else if(msg.file_path) {
-                            if(msg.file_type === 'image') {
-                                contentHtml = `<img src="${msg.file_path}" style="max-width:200px;border-radius:12px;cursor:pointer" onclick="window.open(this.src)">`;
-                            } else if(msg.file_type === 'audio') {
-                                contentHtml = `<audio controls src="${msg.file_path}"></audio>`;
-                            } else if(msg.file_type === 'video') {
-                                contentHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
-                            } else {
-                                contentHtml = `<a href="${msg.file_path}" download="${msg.file_name}" style="color:#ff6b6b">📎 ${msg.file_name}</a>`;
-                            }
-                        }
-                        if(msg.content) contentHtml += `<div>${msg.content}</div>`;
-                        if(msg.voice_duration) {
-                            contentHtml += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
-                        }
-                        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time">${msg.timestamp}</div></div>`;
-                        messagesDiv.appendChild(div);
-                        lastMsgId = msg.id;
-                    });
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                }
-            });
+        if(isAudioRecording) stopVoiceRecording();
+        else startVoiceRecording();
     }
     
     document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
@@ -326,6 +622,23 @@
     });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     
+    document.addEventListener('click', (e) => {
+        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions();
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker').classList.remove('active');
+        }
+    });
+    
+    document.querySelectorAll('.reply-preview').forEach(el => {
+        const msgId = el.closest('.message')?.getAttribute('data-id');
+        if(msgId) {
+            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
+                if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`;
+            });
+        }
+    });
+    
+    loadPinnedMessage();
     setInterval(checkNewMessages, 200);
     document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
 </script>
