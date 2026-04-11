@@ -1,72 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>💬 {{ other.username }} | BearGram</title>
+    <title>🐻 Чат с {{ other.username }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
-        .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94);backdrop-filter:blur(10px)}
+        .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         
-        .header{padding:12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .back-btn{background:#ff6b6b;padding:6px 14px;border-radius:25px;color:white;text-decoration:none;font-size:14px}
-        .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .header{padding:8px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .back{background:#ff6b6b;padding:5px 12px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none;font-size:13px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0}
         .avatar img{width:100%;height:100%;object-fit:cover}
-        .user-info{flex:1}
-        .user-name{font-weight:600;color:#333}
-        .user-status{font-size:11px;color:#4cd964}
-        .user-status.offline{color:#888}
+        .user-info{flex:1;cursor:pointer;min-width:0}
+        .user-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-status{font-size:10px}
+        .user-status.online{color:#4cd964}
+        .user-status.offline{color:#3a86ff}
+        .user-status.typing{color:#ff6b6b;font-style:italic}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
+        .call-btn{background:#ff6b6b;color:white;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;margin-right:4px;flex-shrink:0}
         
-        .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
-        .message{display:flex;animation:fadeIn 0.2s ease}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
+        .message{display:flex;animation:fadeInUp 0.2s ease;position:relative}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .message.sent{justify-content:flex-end}
         .message.received{justify-content:flex-start}
-        .bubble{max-width:70%;padding:10px 14px;border-radius:20px;font-size:14px;word-wrap:break-word;position:relative}
-        .sent .bubble{background:#ff6b6b;color:white;border-bottom-right-radius:4px}
-        .received .bubble{background:#f0f0f0;color:#333;border-bottom-left-radius:4px}
-        .time{font-size:10px;margin-top:4px;opacity:0.7}
-        .sent .time{text-align:right}
+        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:14px;word-wrap:break-word;position:relative}
+        .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
+        .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+        .sent .time{justify-content:flex-end}
+        .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
+        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0}
+        .voice-wave{display:flex;align-items:center;gap:2px}
+        .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
+        @keyframes wave{from{height:6px}to{height:12px}}
         
-        .sticker-msg{max-width:120px;max-height:120px;cursor:pointer}
-        .sticker-msg img{width:100%;height:100%;object-fit:contain}
-        .file-attachment{margin-top:5px}
-        .file-attachment img{max-width:200px;border-radius:12px;cursor:pointer}
-        .file-attachment video{max-width:200px;border-radius:12px}
-        .file-attachment audio{max-width:200px}
+        .message-actions{position:absolute;top:-28px;right:0;background:white;border-radius:20px;display:none;gap:3px;padding:4px 8px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        .message:hover .message-actions{display:flex}
+        .action-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:3px 5px;border-radius:12px;color:#888}
+        .action-btn:hover{background:#f0f0f0;color:#ff6b6b}
+        .reply-preview{background:rgba(0,0,0,0.04);border-left:2px solid #ff6b6b;padding:4px 6px;margin-bottom:4px;border-radius:6px;font-size:10px;color:#888}
+        .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
+        .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
+        .edited-badge{font-size:8px;color:#aaa;margin-left:4px}
+        .forward-badge{font-size:9px;color:#aaa;margin-bottom:2px}
+        .favorite-star{color:gold;font-size:12px}
+        .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         
-        .input-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:30px;padding:4px 8px}
-        .input-wrapper input{flex:1;background:none;border:none;padding:10px;outline:none;font-size:14px}
-        .input-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:6px;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#888;transition:0.2s}
-        .input-btn:hover{background:rgba(255,107,107,0.1);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;color:white;font-size:18px}
+        .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none}
+        .input-wrapper input::placeholder{color:#aaa;font-size:13px}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
+        .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer}
+        .send-btn:hover{background:#ff5252;transform:scale(1.02)}
+        .recording{background:#ff4444 !important;animation:pulse 1s infinite}
+        @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-        /* ПАНЕЛЬ СТИКЕРОВ И ЭМОДЗИ */
-        .sticker-panel{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;max-width:400px;background:white;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:1000;display:none;max-height:400px;overflow:hidden}
+        .emoji-picker{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        .emoji-picker.active{display:grid}
+        .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
+        .emoji-picker span:hover{background:#f0f0f0}
+        
+        /* СТИКЕРЫ И AI ПАНЕЛЬ */
+        .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
         .sticker-panel.active{display:block}
         .panel-tabs{display:flex;border-bottom:1px solid #eee}
-        .panel-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:none;font-size:16px}
+        .panel-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:none;font-size:14px}
         .panel-tab.active{color:#ff6b6b;border-bottom:2px solid #ff6b6b}
         .panel-content{padding:12px;max-height:340px;overflow-y:auto}
-        
-        .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
-        .emoji-item{font-size:28px;cursor:pointer;padding:5px;text-align:center;border-radius:8px;transition:0.2s}
-        .emoji-item:hover{background:#f0f0f0}
-        
         .sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-        .sticker-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;text-align:center;transition:0.2s}
-        .sticker-item:hover{background:#e8e8e8}
-        .sticker-item img{width:80px;height:80px;object-fit:contain}
-        .sticker-item span{font-size:12px;color:#888;display:block;margin-top:4px}
-        
-        /* AI ГЕНЕРАТОР */
-        .ai-generator{padding:8px 0}
+        .sticker-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;text-align:center}
+        .sticker-item img{width:70px;height:70px;object-fit:contain}
+        .sticker-item span{font-size:11px;color:#888;display:block;margin-top:4px}
         .ai-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:25px;margin-bottom:10px;outline:none;font-size:14px}
-        .ai-input:focus{border-color:#ff6b6b}
-        .ai-btn{width:100%;padding:12px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;margin-bottom:10px}
-        .ai-btn:disabled{opacity:0.5;cursor:not-allowed}
+        .ai-btn{width:100%;padding:12px;background:#ff6b6b;color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;margin-bottom:10px}
+        .ai-btn:disabled{opacity:0.5}
         .ai-info{font-size:12px;color:#888;text-align:center;margin-bottom:10px}
         .ai-preview{text-align:center;margin-top:10px}
         .ai-preview img{max-width:150px;max-height:150px;border-radius:12px}
@@ -75,106 +88,182 @@
         .ai-save-btn{background:#4cd964;color:white}
         .ai-cancel-btn{background:#f0f0f0;color:#888}
         .ai-loading{text-align:center;padding:20px;color:#888}
-        .ai-loading span{animation:spin 1s infinite}
-        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        
+        .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;margin-bottom:10px}
         .sticker-actions{display:flex;justify-content:space-between;margin-bottom:10px}
-        .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px}
         
-        .typing-indicator{font-size:12px;color:#aaa;padding:4px 16px;display:none}
-        .typing-indicator.active{display:block}
+        .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
+        .mention-suggestions.active{display:block}
+        .mention-suggestion-item{padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+        .mention-suggestion-item:hover{background:#f9f9f9}
+        .mention-suggestion-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px}
+        .mention-suggestion-avatar img{width:100%;height:100%;object-fit:cover}
+        .mention-suggestion-name{font-size:13px;font-weight:500;color:#333}
+        .mention-suggestion-link{font-size:10px;color:#999}
+        
+        .messages::-webkit-scrollbar{width:3px}
+        .messages::-webkit-scrollbar-track{background:transparent}
+        .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
+        
+        @media (max-width:480px){
+            .bubble{max-width:85%;padding:5px 10px;font-size:13px}
+            .input-icon{width:28px;height:28px;font-size:15px;padding:4px}
+            .send-btn{width:34px;height:34px;font-size:16px}
+            .input-wrapper{padding:2px 6px}
+            .input-wrapper input{font-size:13px;padding:6px 2px}
+            .header{padding:6px 10px}
+            .avatar{width:30px;height:30px}
+            .back{padding:4px 8px;font-size:11px}
+            .profile-btn{padding:4px 8px;font-size:11px}
+            .call-btn{padding:4px 8px;font-size:11px}
+            .user-name{font-size:12px}
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <a href="/chat" class="back-btn">← Назад</a>
-        <div class="avatar">
+        <a href="/chat" class="back">←</a>
+        <div class="avatar" onclick="location.href='/profile/{{ other.id }}'">
             {% if other.avatar != 'default.png' %}
                 <img src="/static/avatars/{{ other.avatar }}">
             {% else %}
-                🐻
+                🐼
             {% endif %}
         </div>
-        <div class="user-info">
+        <div class="user-info" onclick="location.href='/profile/{{ other.id }}'">
             <div class="user-name">{{ other.username }}</div>
-            <div class="user-status {{ other.status }}">{{ 'Онлайн' if other.status == 'online' else 'Был(а) недавно' }}</div>
+            <div class="user-status" id="typingStatus">
+                {% if other.status == 'online' %}
+                    🟢 Онлайн
+                {% else %}
+                    🔵 Офлайн
+                {% endif %}
+            </div>
         </div>
+        <button class="call-btn" onclick="startVideoCall()">📹</button>
+        <a href="/profile" class="profile-btn">🧸</a>
     </div>
     
-    <div class="typing-indicator" id="typingIndicator">{{ other.username }} печатает...</div>
-    
     <div class="messages" id="messages">
-        {% for msg in msgs %}
-        <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ msg.id }}">
+        <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
+            <span>📌 Закреплено: </span>
+            <span id="pinnedMessageContent"></span>
+            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+        </div>
+        
+        {% for m in msgs %}
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
-                {% if msg.file_type == 'sticker' %}
-                    <div class="sticker-msg">
-                        <img src="{{ msg.file_path }}" onclick="window.open(this.src)">
-                    </div>
-                {% elif msg.file_path %}
-                    <div class="file-attachment">
-                        {% if msg.file_type == 'image' %}
-                            <img src="{{ msg.file_path }}" onclick="window.open(this.src)">
-                        {% elif msg.file_type == 'video' %}
-                            <video controls src="{{ msg.file_path }}"></video>
-                        {% elif msg.file_type == 'audio' %}
-                            <audio controls src="{{ msg.file_path }}"></audio>
-                        {% else %}
-                            <a href="{{ msg.file_path }}" download="{{ msg.file_name }}">📎 {{ msg.file_name }}</a>
-                        {% endif %}
+                {% if m.is_pinned %}
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
+                {% endif %}
+                {% if m.forwarded_from_id %}
+                <div class="forward-badge">📎 Переслано</div>
+                {% endif %}
+                {% if m.reply_to_id %}
+                <div class="reply-preview">
+                    <span>📩 Ответ:</span><br>
+                    <span id="reply-preview-{{ m.id }}">...</span>
+                </div>
+                {% endif %}
+                {% if m.file_type == 'sticker' %}
+                    <img src="{{ m.file_path }}" class="sticker-img">
+                {% elif m.file_path %}
+                    {% if m.file_type == 'image' %}
+                        <img src="{{ m.file_path }}" style="max-width:200px;border-radius:12px;cursor:pointer" onclick="window.open(this.src)">
+                    {% elif m.file_type == 'audio' %}
+                        <audio controls src="{{ m.file_path }}"></audio>
+                    {% elif m.file_type == 'video' %}
+                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
+                    {% else %}
+                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#ff6b6b">📎 {{ m.file_name }}</a>
+                    {% endif %}
+                {% endif %}
+                {% if m.content %}
+                    <div>{{ m.content }}</div>
+                {% endif %}
+                {% if m.voice_duration and m.voice_duration > 0 %}
+                    <div class="voice-msg" onclick="playVoice(this)">
+                        <span>🎤</span>
+                        <div class="voice-wave"><div></div><div></div><div></div><div></div></div>
+                        <span>{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
-                {% if msg.content %}<div>{{ msg.content|safe }}</div>{% endif %}
-                <div class="time">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                <div class="time">
+                    <span>{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
+                    {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
+                    {% if m.sender_id == current_user.id %}
+                        {% if m.is_read %}
+                            <span style="color:#4cd964">✓✓</span>
+                        {% else %}
+                            <span>✓✓</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
+                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
+                {% if m.sender_id == current_user.id %}
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️</button>
+                {% else %}
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🙈</button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     
-    <div class="input-area">
-        <div class="input-wrapper">
-            <input type="text" id="msgInput" placeholder="Сообщение..." autocomplete="off">
-            <button class="input-btn" id="emojiBtn">😊</button>
-            <button class="input-btn" id="stickerBtn">🎨</button>
-            <button class="input-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-            <button class="input-btn" id="voiceBtn">🎤</button>
-            <button class="send-btn" onclick="sendMessage()">→</button>
-        </div>
-        <input type="file" id="fileInput" style="display:none" accept="image/*,video/*,audio/*" onchange="sendFile(this.files[0])">
-    </div>
-</div>
-
-<!-- ПАНЕЛЬ СТИКЕРОВ И ЭМОДЗИ -->
-<div class="sticker-panel" id="stickerPanel">
-    <div class="panel-tabs">
-        <button class="panel-tab active" onclick="switchTab('emoji')">😊 Эмодзи</button>
-        <button class="panel-tab" onclick="switchTab('stickers')">🎨 Стикеры</button>
-        <button class="panel-tab" onclick="switchTab('ai')">🤖 AI</button>
+    <div class="reply-bar" id="replyBar">
+        <span>💬 Ответ:</span>
+        <span id="replyText" style="flex:1;color:#888;font-size:11px"></span>
+        <button class="cancel-reply" onclick="cancelReply()">✖</button>
     </div>
     
-    <div class="panel-content">
-        <!-- ЭМОДЗИ -->
-        <div id="emojiTab">
-            <div class="emoji-grid" id="emojiGrid"></div>
+    <div class="input-area">
+        <div class="input-wrapper" style="position:relative">
+            <input type="text" id="msgInput" placeholder="Сообщение...">
+            <div class="mention-suggestions" id="mentionSuggestions"></div>
+            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
+            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
+            <button class="input-icon" id="stickerPanelBtn" style="font-size:18px">🎨</button>
+            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
-        
-        <!-- СТИКЕРЫ -->
-        <div id="stickersTab" style="display:none;">
-            <div class="sticker-actions">
-                <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить стикер</button>
-                <span id="stickerCount">0/30</span>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
+        <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
+        <input type="file" id="customStickerInput" style="display:none" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadCustomSticker(this.files[0])">
+    </div>
+    
+    <div class="emoji-picker" id="emojiPicker">
+        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>❤️</span><span>💕</span><span>💖</span>
+        <span>😂</span><span>🤣</span><span>😭</span><span>😢</span><span>😡</span><span>🤔</span><span>👍</span>
+        <span>👎</span><span>🙏</span><span>🎉</span><span>✨</span><span>🔥</span><span>💯</span><span>🐻</span>
+        <span>🐼</span><span>🦊</span><span>🐱</span><span>🐶</span><span>🦝</span><span>🧸</span><span>🎈</span>
+    </div>
+    
+    <!-- ПАНЕЛЬ СТИКЕРОВ И AI -->
+    <div class="sticker-panel" id="stickerPanel">
+        <div class="panel-tabs">
+            <button class="panel-tab active" onclick="switchStickerTab('my')">🐻 Мои</button>
+            <button class="panel-tab" onclick="switchStickerTab('ai')">🤖 AI</button>
+        </div>
+        <div class="panel-content">
+            <div id="myStickersTab">
+                <div class="sticker-actions">
+                    <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить стикер</button>
+                    <span id="stickerCount">0/30</span>
+                </div>
+                <div id="myStickers"><div style="text-align:center;color:#888;padding:20px">Загрузка...</div></div>
             </div>
-            <input type="file" id="customStickerInput" style="display:none" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadCustomSticker(this.files[0])">
-            <div id="myStickers"><div style="text-align:center;color:#888;padding:20px">Загрузка...</div></div>
-        </div>
-        
-        <!-- AI ГЕНЕРАТОР -->
-        <div id="aiTab" style="display:none;">
-            <div class="ai-generator">
+            <div id="aiStickersTab" style="display:none;">
                 <div id="aiInfo" class="ai-info">Загрузка...</div>
-                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер... (например: милый медведь с сердцем)">
-                <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать стикер</button>
+                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер... (например: милый медведь)">
+                <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать</button>
                 <div id="aiResult"></div>
             </div>
         </div>
@@ -182,107 +271,460 @@
 </div>
 
 <script>
-    const receiverId = {{ other.id }};
+    const receiver_id = {{ other.id }};
     const msgInput = document.getElementById('msgInput');
-    let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
-    let processedIds = new Set(Array.from(document.querySelectorAll('.message')).map(el => parseInt(el.dataset.id)));
     let mediaRecorder = null;
     let audioChunks = [];
-    let isRecording = false;
+    let isAudioRecording = false;
     let startTime = null;
-    let recordingTimer = null;
-    let aiLimits = {is_premium: false, ai_used_today: 0, ai_limit: 3, remaining: 3};
+    let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
+    let currentReplyToId = null;
+    let typingTimeout = null;
+    let isSending = false;
+    let processedIds = new Set();
+    let aiLimits = {is_premium: false, remaining: 3, limit: 3};
     
-    // ========== ЭМОДЗИ ==========
-    const emojis = ['😊','😂','🥰','😍','😎','😭','😡','👍','👎','❤️','🔥','✨','🎉','💯','🙏','👀','💪','🤝','🐻','🦊','🐼','🐧','🍕','🍔','🎂','☕','🎮','📱','💻','🎧','📷','🎬','🔒','✅','❌','⭐','☀️','🌙'];
-    
-    function initEmojiGrid() {
-        const grid = document.getElementById('emojiGrid');
-        grid.innerHTML = emojis.map(e => `<div class="emoji-item" onclick="insertEmoji('${e}')">${e}</div>`).join('');
+    function playVoice(el) {
+        const audio = el.closest('.bubble').querySelector('audio');
+        if(audio) audio.play();
     }
     
-    function insertEmoji(emoji) {
-        msgInput.value += emoji;
+    function escapeHtml(t) {
+        if(!t) return '';
+        const div = document.createElement('div');
+        div.textContent = t;
+        return div.innerHTML;
+    }
+    
+    function startVideoCall() {
+        fetch('/start_call/' + receiver_id, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
+    }
+    
+    // ========== ТАЙПИНГ ==========
+    msgInput.addEventListener('input', function() {
+        fetch('/typing', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({receiver_id: receiver_id, is_typing: true})
+        });
+        if(typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            fetch('/typing', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({receiver_id: receiver_id, is_typing: false})
+            });
+        }, 1000);
+    });
+    
+    function checkTyping() {
+        fetch(`/get_typing/${receiver_id}`)
+            .then(r => r.json())
+            .then(data => {
+                const statusDiv = document.getElementById('typingStatus');
+                if(data.is_typing) {
+                    statusDiv.innerHTML = '✏️ Печатает...';
+                    statusDiv.className = 'user-status typing';
+                } else {
+                    const isOnline = '{{ other.status }}' === 'online';
+                    statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
+                    statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
+                }
+            });
+    }
+    setInterval(checkTyping, 2000);
+    
+    // ========== ЗАКРЕПЛЕНИЕ ==========
+    function loadPinnedMessage() {
+        fetch(`/get_pinned_message/${receiver_id}/private`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.id) {
+                    document.getElementById('pinnedMessageBar').style.display = 'flex';
+                    document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
+                    window.pinnedMsgId = data.id;
+                } else {
+                    document.getElementById('pinnedMessageBar').style.display = 'none';
+                    window.pinnedMsgId = null;
+                }
+            });
+    }
+    
+    function scrollToPinned() {
+        if(window.pinnedMsgId) {
+            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
+            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    function pinMessage(msgId, type) {
+        fetch('/pin_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: msgId, type: type})
+        }).then(() => {
+            setTimeout(() => {
+                checkNewMessages();
+                loadPinnedMessage();
+            }, 300);
+        });
+    }
+    
+    function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
+    
+    // ========== УПОМИНАНИЯ ==========
+    function searchUsers(query) {
+        if(!query) { hideSuggestions(); return; }
+        fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); });
+    }
+    
+    function showSuggestions(users) {
+        const div = document.getElementById('mentionSuggestions');
+        div.innerHTML = '';
+        users.forEach(u => {
+            const item = document.createElement('div');
+            item.className = 'mention-suggestion-item';
+            item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`;
+            item.onclick = () => insertMention(u.username);
+            div.appendChild(item);
+        });
+        div.classList.add('active');
+    }
+    
+    function insertMention(username) {
+        const val = msgInput.value, cursor = msgInput.selectionStart;
+        const before = val.substring(0, currentMentionStart), after = val.substring(cursor);
+        msgInput.value = before + '@' + username + ' ' + after;
+        msgInput.focus();
+        msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2;
+        hideSuggestions();
+        currentMentionStart = -1;
+    }
+    
+    function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
+    
+    let currentMentionStart = -1;
+    let mentionSearchTimeout = null;
+    
+    msgInput.addEventListener('input', function() {
+        const val = this.value, cursor = this.selectionStart;
+        let lastAt = -1;
+        for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
+        if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
+    });
+    
+    function addNewMessage(msg) {
+        if(processedIds.has(msg.id)) return;
+        processedIds.add(msg.id);
+        
+        const messagesDiv = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
+        div.setAttribute('data-id', msg.id);
+        
+        let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
+        let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
+        let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
+        
+        let fileHtml = '';
+        if(msg.file_path) {
+            if(msg.file_type == 'sticker') {
+                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+            } else if(msg.file_type == 'image') {
+                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
+            } else if(msg.file_type == 'audio') {
+                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+            } else if(msg.file_type == 'video') {
+                fileHtml = `<video controls src="${msg.file_path}"></video>`;
+            } else {
+                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+            }
+        }
+        
+        let contentHtml = '';
+        if(msg.content && msg.file_type !== 'sticker') {
+            contentHtml = `<div>${escapeHtml(msg.content)}</div>`;
+        }
+        
+        let voiceHtml = '';
+        if(msg.voice_duration) {
+            voiceHtml = `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+        }
+        
+        let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
+        let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
+        let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
+        
+        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+        messagesDiv.appendChild(div);
+        
+        if(msg.reply_to_id) {
+            fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => {
+                const p = div.querySelector('.reply-preview span:last-child');
+                if(p) p.textContent = data.content;
+            });
+        }
+        
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        lastMsgId = msg.id;
+        if(msg.is_pinned) loadPinnedMessage();
+    }
+    
+    // ========== ОТПРАВКА СООБЩЕНИЯ ==========
+    function sendMsg() {
+        if(isSending) return;
+        
+        const content = msgInput.value.trim();
+        if(!content && !currentReplyToId) return;
+        
+        isSending = true;
+        
+        const formData = new FormData();
+        formData.append('receiver_id', receiver_id);
+        if(content) formData.append('content', content);
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
+        const savedReplyId = currentReplyToId;
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+        
+        fetch('/send', {method: 'POST', body: formData})
+            .then(() => {
+                msgInput.value = '';
+                setTimeout(() => {
+                    checkNewMessages();
+                    isSending = false;
+                }, 300);
+            })
+            .catch(() => {
+                isSending = false;
+                alert('Ошибка отправки');
+            });
+    }
+    
+    function sendFile(file) {
+        if(!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/upload', {method: 'POST', body: formData})
+            .then(r => r.json())
+            .then(data => {
+                if(data.path) {
+                    const formData2 = new FormData();
+                    formData2.append('receiver_id', receiver_id);
+                    formData2.append('file_path', data.path);
+                    formData2.append('file_name', data.name);
+                    formData2.append('file_type', data.type);
+                    if(currentReplyToId) formData2.append('reply_to_id', currentReplyToId);
+                    fetch('/send', {method: 'POST', body: formData2})
+                        .then(() => {
+                            currentReplyToId = null;
+                            document.getElementById('replyBar').style.display = 'none';
+                            setTimeout(checkNewMessages, 200);
+                        });
+                }
+            });
+    }
+    
+    function checkNewMessages() {
+        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
+            .then(r => r.json())
+            .then(msgs => {
+                if(msgs && msgs.length) {
+                    msgs.forEach(m => addNewMessage(m));
+                }
+            });
+    }
+    
+    // ========== ДЕЙСТВИЯ С СООБЩЕНИЯМИ ==========
+    function editMessage(id, type) {
+        let newText = prompt('Новый текст:');
+        if(newText && newText.trim()) {
+            fetch('/edit_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, new_content: newText, type: type})
+            }).then(() => setTimeout(checkNewMessages, 300));
+        }
+    }
+    
+    function deleteMessage(id, type, all) {
+        if(confirm('Удалить сообщение?')) {
+            fetch('/delete_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})
+            }).then(() => {
+                document.querySelector(`.message[data-id="${id}"]`)?.remove();
+                if(window.pinnedMsgId == id) loadPinnedMessage();
+            });
+        }
+    }
+    
+    function toggleFavorite(id, type) {
+        fetch('/toggle_favorite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({msg_id: id, type: type})
+        }).then(() => setTimeout(checkNewMessages, 300));
+    }
+    
+    function forwardMessage(id, type) {
+        let target = prompt('ID пользователя для пересылки:');
+        if(target) {
+            fetch('/forward_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})
+            }).then(() => alert('Переслано!'));
+        }
+    }
+    
+    function replyToMessage(id, content) {
+        currentReplyToId = id;
+        const bar = document.getElementById('replyBar');
+        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+        bar.style.display = 'flex';
         msgInput.focus();
     }
     
-    // ========== ПАНЕЛЬ ==========
-    const panel = document.getElementById('stickerPanel');
-    const emojiBtn = document.getElementById('emojiBtn');
-    const stickerBtn = document.getElementById('stickerBtn');
+    function cancelReply() {
+        currentReplyToId = null;
+        document.getElementById('replyBar').style.display = 'none';
+    }
     
-    emojiBtn.onclick = () => {
-        panel.classList.toggle('active');
-        if(panel.classList.contains('active')) {
-            switchTab('emoji');
+    // ========== ГОЛОСОВЫЕ ==========
+    async function startVoiceRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            startTime = Date.now();
+            
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const duration = Math.round((Date.now() - startTime) / 1000);
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const fd = new FormData();
+                fd.append('audio', blob);
+                fd.append('duration', duration);
+                
+                fetch('/upload_voice', {method: 'POST', body: fd})
+                    .then(r => r.json())
+                    .then(d => {
+                        if(d.path) {
+                            const fd2 = new FormData();
+                            fd2.append('receiver_id', receiver_id);
+                            fd2.append('file_path', d.path);
+                            fd2.append('file_name', 'Голосовое');
+                            fd2.append('file_type', 'audio');
+                            fd2.append('voice_duration', duration);
+                            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                            fetch('/send', {method: 'POST', body: fd2})
+                                .then(() => {
+                                    currentReplyToId = null;
+                                    document.getElementById('replyBar').style.display = 'none';
+                                    setTimeout(checkNewMessages, 200);
+                                });
+                        }
+                    });
+                
+                stream.getTracks().forEach(t => t.stop());
+                document.getElementById('voiceBtn').classList.remove('recording');
+                document.getElementById('voiceBtn').textContent = '🎤';
+                isAudioRecording = false;
+            };
+            
+            mediaRecorder.start();
+            isAudioRecording = true;
+            document.getElementById('voiceBtn').classList.add('recording');
+            document.getElementById('voiceBtn').textContent = '⏹️';
+            
+            setTimeout(() => {
+                if(isAudioRecording) stopVoiceRecording();
+            }, 30000);
+        } catch(e) {
+            alert('Микрофон не доступен');
         }
+    }
+    
+    function stopVoiceRecording() {
+        if(mediaRecorder && isAudioRecording) mediaRecorder.stop();
+    }
+    
+    function toggleVoiceRecording() {
+        if(isAudioRecording) stopVoiceRecording();
+        else startVoiceRecording();
+    }
+    
+    document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
+    
+    // ========== ЭМОДЗИ ==========
+    document.getElementById('emojiBtn').onclick = () => {
+        document.getElementById('emojiPicker').classList.toggle('active');
+        document.getElementById('stickerPanel').classList.remove('active');
     };
+    document.querySelectorAll('.emoji-picker span').forEach(e => {
+        e.onclick = () => {
+            msgInput.value += e.textContent;
+            document.getElementById('emojiPicker').classList.remove('active');
+            msgInput.focus();
+        };
+    });
+    
+    // ========== СТИКЕРЫ И AI ==========
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerBtn = document.getElementById('stickerPanelBtn');
     
     stickerBtn.onclick = () => {
-        panel.classList.toggle('active');
-        if(panel.classList.contains('active')) {
-            switchTab('stickers');
+        stickerPanel.classList.toggle('active');
+        document.getElementById('emojiPicker').classList.remove('active');
+        if(stickerPanel.classList.contains('active')) {
             loadMyStickers();
+            loadAILimits();
         }
     };
     
-    function switchTab(tab) {
+    function switchStickerTab(tab) {
         document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
         event.target.classList.add('active');
-        
-        document.getElementById('emojiTab').style.display = tab === 'emoji' ? 'block' : 'none';
-        document.getElementById('stickersTab').style.display = tab === 'stickers' ? 'block' : 'none';
-        document.getElementById('aiTab').style.display = tab === 'ai' ? 'block' : 'none';
-        
-        if(tab === 'stickers') loadMyStickers();
+        document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
+        document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none';
+        if(tab === 'my') loadMyStickers();
         if(tab === 'ai') loadAILimits();
     }
     
-    document.addEventListener('click', (e) => {
-        if(!panel.contains(e.target) && e.target !== emojiBtn && e.target !== stickerBtn) {
-            panel.classList.remove('active');
-        }
-    });
-    
-    // ========== СТИКЕРЫ ==========
     function loadMyStickers() {
         fetch('/api/stickers/all')
             .then(r => r.json())
             .then(data => {
                 const container = document.getElementById('myStickers');
                 let html = '';
-                
-                // Пользовательские стикеры
                 if(data.custom && data.custom.length > 0) {
-                    html += '<div style="margin-bottom:16px"><strong>🐻 Мои стикеры</strong></div>';
                     html += '<div class="sticker-grid">';
                     data.custom.forEach(s => {
-                        html += `<div class="sticker-item" onclick="sendSticker('${s.url}')">
-                            <img src="${s.url}"><span>${s.emoji}</span>
-                        </div>`;
+                        html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
                     });
                     html += '</div>';
                 } else {
-                    html += '<div style="text-align:center;color:#888;padding:10px">У вас пока нет своих стикеров</div>';
+                    html += '<div style="text-align:center;color:#888;padding:20px">Нет своих стикеров</div>';
                 }
-                
-                // Стикерпаки
                 if(data.packs && data.packs.length > 0) {
                     data.packs.forEach(pack => {
                         html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div>`;
                         html += '<div class="sticker-grid">';
                         pack.stickers.forEach(s => {
-                            html += `<div class="sticker-item" onclick="sendSticker('${s.url}')">
-                                <img src="${s.url}"><span>${s.emoji}</span>
-                            </div>`;
+                            html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
                         });
                         html += '</div>';
                     });
                 }
+                container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
                 
-                container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Стикеры не найдены</div>';
-                
-                // Обновляем счётчик
                 fetch('/api/coins/balance')
                     .then(r => r.json())
                     .then(d => {
@@ -293,25 +735,16 @@
     
     function uploadCustomSticker(file) {
         if(!file) return;
-        
-        const emoji = prompt('Введите эмодзи для стикера (например 🐻):', '🐻');
-        if(!emoji) return;
-        
-        const formData = new FormData();
-        formData.append('sticker', file);
-        formData.append('emoji', emoji);
-        
-        fetch('/stickers/custom/upload', {method: 'POST', body: formData})
+        const emoji = prompt('Эмодзи для стикера (например 🐻):', '🐻') || '🐻';
+        const fd = new FormData();
+        fd.append('sticker', file);
+        fd.append('emoji', emoji);
+        fetch('/stickers/custom/upload', {method: 'POST', body: fd})
             .then(r => r.json())
             .then(data => {
-                if(data.success) {
-                    loadMyStickers();
-                } else {
-                    alert(data.error);
-                }
-            })
-            .catch(e => alert('Ошибка загрузки'));
-        
+                if(data.success) { loadMyStickers(); }
+                else { alert(data.error); }
+            });
         document.getElementById('customStickerInput').value = '';
     }
     
@@ -319,50 +752,40 @@
         fetch('/stickers/send', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                url: url,
-                chat_type: 'private',
-                target_id: receiverId
-            })
+            body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})
         }).then(() => {
-            panel.classList.remove('active');
+            stickerPanel.classList.remove('active');
             setTimeout(checkNewMessages, 300);
         });
     }
     
-    // ========== AI ГЕНЕРАТОР ==========
     function loadAILimits() {
         fetch('/stickers/ai/limits')
             .then(r => r.json())
             .then(data => {
                 aiLimits = data;
-                const infoDiv = document.getElementById('aiInfo');
+                const info = document.getElementById('aiInfo');
                 const btn = document.getElementById('aiGenerateBtn');
-                
                 if(data.is_premium) {
-                    infoDiv.innerHTML = '⭐ <strong>Premium</strong> — безлимитная генерация!';
+                    info.innerHTML = '⭐ Premium — безлимит!';
                     btn.disabled = false;
+                    btn.textContent = '✨ Сгенерировать';
                 } else {
-                    infoDiv.innerHTML = `🤖 Осталось генераций сегодня: <strong>${data.remaining}/${data.limit}</strong>`;
+                    info.innerHTML = `🤖 Осталось генераций: ${data.remaining}/${data.limit}`;
                     btn.disabled = data.remaining <= 0;
-                    if(data.remaining <= 0) {
-                        btn.textContent = '🔒 Лимит исчерпан (купите Premium)';
-                    }
+                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит исчерпан' : '✨ Сгенерировать';
                 }
             });
     }
     
     function generateAISticker() {
         const prompt = document.getElementById('aiPrompt').value.trim();
-        if(!prompt) {
-            alert('Введите описание стикера');
-            return;
-        }
+        if(!prompt) { alert('Введите описание стикера'); return; }
         
         const resultDiv = document.getElementById('aiResult');
         const btn = document.getElementById('aiGenerateBtn');
         
-        resultDiv.innerHTML = '<div class="ai-loading"><span>⏳</span> Генерация... (до 30 сек)</div>';
+        resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация... (до 60 сек)</div>';
         btn.disabled = true;
         btn.textContent = '⏳ Генерируется...';
         
@@ -378,7 +801,7 @@
                     <div class="ai-preview">
                         <img src="${data.sticker.url}" id="aiGeneratedImg">
                         <div class="ai-preview-actions">
-                            <button class="ai-save-btn" onclick="saveAIGeneratedSticker('${data.sticker.url}')">💾 Сохранить</button>
+                            <button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button>
                             <button class="ai-cancel-btn" onclick="clearAIResult()">✖ Отмена</button>
                         </div>
                     </div>
@@ -389,34 +812,29 @@
                 resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center;padding:10px">❌ ${data.error}</div>`;
                 loadAILimits();
             }
-            btn.disabled = aiLimits.is_premium ? false : aiLimits.remaining <= 0;
-            btn.textContent = btn.disabled ? '🔒 Лимит исчерпан' : '✨ Сгенерировать стикер';
         })
         .catch(e => {
-            resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:10px">❌ Ошибка генерации</div>';
+            resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:10px">❌ Ошибка соединения</div>';
             btn.disabled = false;
-            btn.textContent = '✨ Сгенерировать стикер';
+            btn.textContent = '✨ Сгенерировать';
         });
     }
     
-    function saveAIGeneratedSticker(url) {
-        const emoji = prompt('Введите эмодзи для стикера:', '🤖') || '🤖';
-        
-        // Скачиваем и сохраняем как свой стикер
+    function saveAISticker(url) {
+        const emoji = prompt('Эмодзи для стикера:', '🤖') || '🤖';
         fetch(url)
             .then(r => r.blob())
             .then(blob => {
-                const formData = new FormData();
-                formData.append('sticker', blob, 'ai_sticker.png');
-                formData.append('emoji', emoji);
-                
-                return fetch('/stickers/custom/upload', {method: 'POST', body: formData});
+                const fd = new FormData();
+                fd.append('sticker', blob, 'ai_sticker.png');
+                fd.append('emoji', emoji);
+                return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
             })
             .then(r => r.json())
             .then(data => {
                 if(data.success) {
                     clearAIResult();
-                    switchTab('stickers');
+                    switchStickerTab('my');
                     loadMyStickers();
                 } else {
                     alert(data.error);
@@ -429,181 +847,28 @@
         document.getElementById('aiResult').innerHTML = '';
     }
     
-    // ========== СООБЩЕНИЯ ==========
-    function escapeHtml(text) {
-        if(!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     
-    function sendMessage() {
-        const content = msgInput.value.trim();
-        if(!content) return;
-        
-        const formData = new FormData();
-        formData.append('receiver_id', receiverId);
-        formData.append('content', content);
-        
-        fetch('/send', {method: 'POST', body: formData})
-            .then(() => {
-                msgInput.value = '';
-                setTimeout(checkNewMessages, 200);
-            });
-    }
-    
-    function sendFile(file) {
-        if(!file) return;
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        fetch('/upload', {method: 'POST', body: formData})
-            .then(r => r.json())
-            .then(data => {
-                if(data.path) {
-                    const formData2 = new FormData();
-                    formData2.append('receiver_id', receiverId);
-                    formData2.append('file_path', data.path);
-                    formData2.append('file_name', data.name);
-                    formData2.append('file_type', data.type);
-                    
-                    fetch('/send', {method: 'POST', body: formData2})
-                        .then(() => {
-                            document.getElementById('fileInput').value = '';
-                            setTimeout(checkNewMessages, 200);
-                        });
-                }
-            });
-    }
-    
-    // ========== ГОЛОСОВЫЕ ==========
-    async function toggleVoiceRecording() {
-        if(isRecording) {
-            stopVoiceRecording();
-            return;
+    document.addEventListener('click', (e) => {
+        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions();
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker').classList.remove('active');
         }
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            startTime = Date.now();
-            
-            mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
-            
-            mediaRecorder.onstop = () => {
-                const duration = Math.round((Date.now() - startTime) / 1000);
-                const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                const fd = new FormData();
-                fd.append('audio', blob);
-                fd.append('duration', duration);
-                
-                fetch('/upload_voice', {method: 'POST', body: fd})
-                    .then(r => r.json())
-                    .then(data => {
-                        if(data.path) {
-                            const formData = new FormData();
-                            formData.append('receiver_id', receiverId);
-                            formData.append('file_path', data.path);
-                            formData.append('file_name', 'Голосовое');
-                            formData.append('file_type', 'audio');
-                            formData.append('voice_duration', duration);
-                            
-                            fetch('/send', {method: 'POST', body: formData})
-                                .then(() => setTimeout(checkNewMessages, 200));
-                        }
-                    });
-                
-                stream.getTracks().forEach(t => t.stop());
-                document.getElementById('voiceBtn').textContent = '🎤';
-                document.getElementById('voiceBtn').style.color = '#888';
-                isRecording = false;
-                if(recordingTimer) clearInterval(recordingTimer);
-            };
-            
-            mediaRecorder.start(100);
-            isRecording = true;
-            document.getElementById('voiceBtn').textContent = '⏹️';
-            document.getElementById('voiceBtn').style.color = '#ff6b6b';
-            
-        } catch(e) {
-            alert('Микрофон недоступен');
+        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
+            stickerPanel.classList.remove('active');
         }
-    }
-    
-    function stopVoiceRecording() {
-        if(mediaRecorder && isRecording) mediaRecorder.stop();
-    }
-    
-    document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
-    
-    // ========== ПОЛУЧЕНИЕ СООБЩЕНИЙ ==========
-    function addNewMessage(msg) {
-        if(processedIds.has(msg.id)) return;
-        processedIds.add(msg.id);
-        
-        const messagesDiv = document.getElementById('messages');
-        const div = document.createElement('div');
-        div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
-        div.dataset.id = msg.id;
-        
-        let contentHtml = '';
-        if(msg.file_type === 'sticker' && msg.file_path) {
-            contentHtml = `<div class="sticker-msg"><img src="${msg.file_path}"></div>`;
-        } else if(msg.file_path) {
-            contentHtml = '<div class="file-attachment">';
-            if(msg.file_type === 'image') contentHtml += `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
-            else if(msg.file_type === 'video') contentHtml += `<video controls src="${msg.file_path}"></video>`;
-            else if(msg.file_type === 'audio') contentHtml += `<audio controls src="${msg.file_path}"></audio>`;
-            else contentHtml += `<a href="${msg.file_path}" download="${msg.file_name}">📎 ${escapeHtml(msg.file_name)}</a>`;
-            contentHtml += '</div>';
-        }
-        if(msg.content) contentHtml += `<div>${msg.content}</div>`;
-        
-        div.innerHTML = `<div class="bubble">${contentHtml}<div class="time">${msg.timestamp}</div></div>`;
-        messagesDiv.appendChild(div);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        lastMsgId = msg.id;
-    }
-    
-    function checkNewMessages() {
-        fetch(`/get_new_messages/${lastMsgId}/${receiverId}`)
-            .then(r => r.json())
-            .then(msgs => msgs.forEach(m => addNewMessage(m)));
-    }
-    
-    // ========== ИНДИКАТОР ПЕЧАТАНИЯ ==========
-    let typingTimeout = null;
-    msgInput.addEventListener('input', () => {
-        fetch('/typing', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({receiver_id: receiverId, is_typing: true})
-        });
-        
-        if(typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            fetch('/typing', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({receiver_id: receiverId, is_typing: false})
-            });
-        }, 1000);
     });
     
-    setInterval(() => {
-        fetch(`/get_typing/${receiverId}`)
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('typingIndicator').classList.toggle('active', data.is_typing);
+    document.querySelectorAll('.reply-preview').forEach(el => {
+        const msgId = el.closest('.message')?.getAttribute('data-id');
+        if(msgId) {
+            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
+                if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`;
             });
-    }, 1000);
+        }
+    });
     
-    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
-    
-    // Инициализация
-    initEmojiGrid();
+    loadPinnedMessage();
     setInterval(checkNewMessages, 1000);
     document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
 </script>
