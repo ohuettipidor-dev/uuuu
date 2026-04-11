@@ -35,18 +35,18 @@
         .search-close{text-align:center;padding:8px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
         .search-close:hover{background:#f9f9f9}
         
-        /* STORIES - КОМПАКТНЫЕ КРУЖКИ */
-        .stories-container{padding:4px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
-        .stories-scroll{display:flex;gap:12px;overflow-x:auto;padding:2px 0;-webkit-overflow-scrolling:touch}
-        .stories-scroll::-webkit-scrollbar{display:none}
-        .story-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0}
-        .story-avatar-wrapper{width:48px;height:48px;border-radius:50%;padding:2px}
-        .story-avatar-wrapper.unseen{background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
-        .story-avatar-wrapper.viewed{background:#ccc}
-        .story-avatar-wrapper img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
-        .story-username{font-size:9px;color:#666;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .my-story-wrapper{width:48px;height:48px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
-        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:20px;color:#ff6b6b}
+        /* STORIES V2 - КОМПАКТНЫЕ КРУЖКИ */
+        .stories-container-v2{padding:4px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
+        .stories-scroll-v2{display:flex;gap:12px;overflow-x:auto;padding:2px 0;-webkit-overflow-scrolling:touch}
+        .stories-scroll-v2::-webkit-scrollbar{display:none}
+        .story-item-v2{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0}
+        .story-avatar-v2{width:48px;height:48px;border-radius:50%;padding:2px}
+        .story-avatar-v2.unseen{background:linear-gradient(45deg,#ff6b6b,#ff8e8e,#fecfef)}
+        .story-avatar-v2.viewed{background:#ccc}
+        .story-avatar-v2 img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
+        .story-username-v2{font-size:9px;color:#666;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .my-story-v2{width:48px;height:48px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
+        .my-story-inner-v2{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:20px;color:#ff6b6b}
         
         /* STORY VIEWER */
         .story-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:9999;display:none}
@@ -104,10 +104,10 @@
             .chat-avatar{width:40px;height:40px;font-size:16px}
             .chat-item{padding:8px}
             .chat-name{font-size:13px}
-            .story-avatar-wrapper{width:44px;height:44px}
-            .my-story-wrapper{width:44px;height:44px}
-            .my-story-inner{font-size:18px}
-            .story-username{font-size:8px;max-width:44px}
+            .story-avatar-v2{width:44px;height:44px}
+            .my-story-v2{width:44px;height:44px}
+            .my-story-inner-v2{font-size:18px}
+            .story-username-v2{font-size:8px;max-width:44px}
         }
     </style>
 </head>
@@ -140,14 +140,14 @@
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
     
-    <!-- STORIES BAR - КОМПАКТНЫЕ КРУЖКИ КАК В TELEGRAM -->
-    <div class="stories-container" id="storiesContainer">
-        <div class="stories-scroll" id="storiesScroll">
-            <div class="story-item" onclick="openStoryUpload()">
-                <div class="my-story-wrapper">
-                    <div class="my-story-inner">➕</div>
+    <!-- STORIES V2 - КОМПАКТНЫЕ КРУЖКИ -->
+    <div class="stories-container-v2" id="storiesContainer">
+        <div class="stories-scroll-v2" id="storiesScroll">
+            <div class="story-item-v2" onclick="openStoryUpload()">
+                <div class="my-story-v2">
+                    <div class="my-story-inner-v2">➕</div>
                 </div>
-                <span class="story-username">Моя</span>
+                <span class="story-username-v2">Моя</span>
             </div>
             <div id="storiesList" style="display:contents;"></div>
         </div>
@@ -286,11 +286,11 @@
                 : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff';
             
             html += `
-                <div class="story-item" onclick="viewUserStories(${user.id})">
-                    <div class="story-avatar-wrapper ${hasUnseen ? 'unseen' : 'viewed'}">
+                <div class="story-item-v2" onclick="viewUserStories(${user.id})">
+                    <div class="story-avatar-v2 ${hasUnseen ? 'unseen' : 'viewed'}">
                         <img src="${avatarUrl}" onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
                     </div>
-                    <span class="story-username">${escapeHtml(user.username.substring(0, 8))}</span>
+                    <span class="story-username-v2">${escapeHtml(user.username.substring(0, 8))}</span>
                 </div>
             `;
         });
