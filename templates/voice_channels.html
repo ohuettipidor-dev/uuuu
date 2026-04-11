@@ -141,12 +141,13 @@
     let currentChannelId = null;
     let localStream = null;
     let peerConnections = {};
-    let channelSocket = null;
     let currentChannelMembers = {};
     let isMuted = false;
     let isVideoEnabled = true;
     let youtubeSyncInterval = null;
     let currentVideoId = null;
+    let signalPollingInterval = null;
+    let membersPollingInterval = null;
     
     // ========== ЗАГРУЗКА КАНАЛОВ ==========
     function loadChannels() {
@@ -198,14 +199,11 @@
             .then(() => { closeCreateModal(); loadChannels(); });
     }
     
-    // ========== WEBRTC ДЛЯ ГОЛОСОВЫХ КАНАЛОВ (РАБОТАЕТ НА ТЕЛЕФОНАХ) ==========
+    // ========== WEBRTC ДЛЯ ГОЛОСОВЫХ КАНАЛОВ ==========
     const configuration = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' }
         ]
     };
     
@@ -218,77 +216,120 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
             document.getElementById('localVideo').srcObject = localStream;
         } catch(e) {
-            // Если камера не разрешена, пробуем только аудио
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            document.getElementById('localVideo').style.display = 'none';
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                document.getElementById('localVideo').style.display = 'none';
+            } catch(e2) {
+                alert('Не удалось получить доступ к микрофону');
+                return;
+            }
         }
         
         // Отправляем запрос на вход
         const res = await fetch('/voice/join/' + channelId, {method: 'POST'});
         if(!res.ok) { alert('Не удалось войти в канал'); return; }
         
-        // Открываем WebSocket для сигналинга
-        initWebSocket();
-        
         document.getElementById('channelModal').classList.add('active');
+        
+        // Запускаем опрос сигналов и участников
+        startSignalPolling();
+        startMembersPolling();
+        
+        // Создаём офферы для существующих участников
+        setTimeout(() => createOffersForExistingMembers(), 500);
+        
         loadChannels();
     }
     
-    function initWebSocket() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        channelSocket = new WebSocket(`${protocol}//${window.location.host}/ws/voice/${currentChannelId}`);
+    function startSignalPolling() {
+        if(signalPollingInterval) clearInterval(signalPollingInterval);
         
-        channelSocket.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
+        signalPollingInterval = setInterval(async () => {
+            if(!currentChannelId) return;
             
-            switch(data.type) {
-                case 'user_joined':
-                    addRemoteUser(data.user_id, data.username);
-                    createOffer(data.user_id);
-                    break;
+            try {
+                // Получаем сигналы от всех участников
+                for(const userId of Object.keys(currentChannelMembers)) {
+                    const res = await fetch(`/voice/get_signals/${currentChannelId}/${userId}`);
+                    const signals = await res.json();
                     
-                case 'user_left':
-                    removeRemoteUser(data.user_id);
-                    break;
-                    
-                case 'offer':
-                    await handleOffer(data.user_id, data.offer);
-                    break;
-                    
-                case 'answer':
-                    await handleAnswer(data.user_id, data.answer);
-                    break;
-                    
-                case 'ice_candidate':
-                    await handleIceCandidate(data.user_id, data.candidate);
-                    break;
-                    
-                case 'chat_message':
-                    addChatMessage(data.username, data.message);
-                    break;
-                    
-                case 'youtube_sync':
-                    syncYouTubeVideo(data.video_id, data.currentTime, data.isPlaying);
-                    break;
-                    
-                case 'youtube_chat':
-                    addYouTubeChatMessage(data.username, data.message);
-                    break;
+                    if(signals.offer) {
+                        await handleOffer(userId, signals.offer);
+                    }
+                    if(signals.answer) {
+                        await handleAnswer(userId, signals.answer);
+                    }
+                    if(signals.ice) {
+                        await handleIceCandidate(userId, signals.ice);
+                    }
+                }
+            } catch(e) {
+                console.error('Polling error:', e);
             }
-        };
+        }, 2000);
+    }
+    
+    function startMembersPolling() {
+        if(membersPollingInterval) clearInterval(membersPollingInterval);
+        
+        membersPollingInterval = setInterval(async () => {
+            if(!currentChannelId) return;
+            
+            try {
+                const res = await fetch(`/voice/members/${currentChannelId}`);
+                const members = await res.json();
+                
+                // Добавляем новых участников
+                for(const member of members) {
+                    if(member.id !== {{ current_user.id }} && !currentChannelMembers[member.id]) {
+                        addRemoteUser(member.id, member.username);
+                        await createOffer(member.id);
+                    }
+                }
+                
+                // Удаляем ушедших
+                const currentIds = members.map(m => m.id);
+                for(const userId of Object.keys(currentChannelMembers)) {
+                    if(!currentIds.includes(parseInt(userId))) {
+                        removeRemoteUser(userId);
+                    }
+                }
+            } catch(e) {
+                console.error('Members polling error:', e);
+            }
+        }, 3000);
+    }
+    
+    async function createOffersForExistingMembers() {
+        try {
+            const res = await fetch(`/voice/members/${currentChannelId}`);
+            const members = await res.json();
+            
+            for(const member of members) {
+                if(member.id !== {{ current_user.id }}) {
+                    addRemoteUser(member.id, member.username);
+                    await createOffer(member.id);
+                }
+            }
+        } catch(e) {
+            console.error('Error creating offers:', e);
+        }
     }
     
     function addRemoteUser(userId, username) {
         if(peerConnections[userId]) return;
         
         const container = document.getElementById('remoteVideos');
+        // Убираем плейсхолдер если есть
+        const placeholder = container.querySelector('div[style*="text-align:center"]');
+        if(placeholder) placeholder.remove();
+        
         const videoDiv = document.createElement('div');
         videoDiv.id = `remote-${userId}`;
         videoDiv.style.cssText = 'position:relative;width:200px;height:150px;background:#000;border-radius:16px;overflow:hidden';
         videoDiv.innerHTML = `
             <video id="video-${userId}" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
             <div style="position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px">${escapeHtml(username)}</div>
-            <div id="audio-indicator-${userId}" style="position:absolute;bottom:5px;right:5px;width:20px;height:20px;border-radius:50%;background:#4cd964;display:none"></div>
         `;
         container.appendChild(videoDiv);
         
@@ -303,6 +344,12 @@
             delete peerConnections[userId];
         }
         delete currentChannelMembers[userId];
+        
+        // Возвращаем плейсхолдер если никого нет
+        const container = document.getElementById('remoteVideos');
+        if(Object.keys(currentChannelMembers).length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:#aaa">Участники появятся здесь...</div>';
+        }
     }
     
     async function createOffer(userId) {
@@ -317,70 +364,66 @@
             const video = document.getElementById(`video-${userId}`);
             if(video && event.streams[0]) {
                 video.srcObject = event.streams[0];
-                video.play();
+                video.play().catch(e => console.log('Play error:', e));
             }
         };
         
         pc.onicecandidate = (event) => {
             if(event.candidate) {
-                channelSocket.send(JSON.stringify({
-                    type: 'ice_candidate',
-                    user_id: userId,
-                    candidate: event.candidate
-                }));
+                sendSignal(userId, { ice: event.candidate });
             }
         };
         
+        pc.onnegotiationneeded = async () => {
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                sendSignal(userId, { sdp: pc.localDescription, type: 'offer' });
+            } catch(e) {
+                console.error('Negotiation error:', e);
+            }
+        };
+        
+        // Принудительно создаём оффер
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        
-        channelSocket.send(JSON.stringify({
-            type: 'offer',
-            user_id: userId,
-            offer: offer
-        }));
+        sendSignal(userId, { sdp: offer, type: 'offer' });
     }
     
     async function handleOffer(userId, offer) {
-        const pc = new RTCPeerConnection(configuration);
-        peerConnections[userId] = pc;
-        
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-        });
-        
-        pc.ontrack = (event) => {
-            const video = document.getElementById(`video-${userId}`);
-            if(video && event.streams[0]) {
-                video.srcObject = event.streams[0];
-                video.play();
-            }
-        };
-        
-        pc.onicecandidate = (event) => {
-            if(event.candidate) {
-                channelSocket.send(JSON.stringify({
-                    type: 'ice_candidate',
-                    user_id: userId,
-                    candidate: event.candidate
-                }));
-            }
-        };
+        let pc = peerConnections[userId];
+        if(!pc) {
+            pc = new RTCPeerConnection(configuration);
+            peerConnections[userId] = pc;
+            
+            localStream.getTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+            });
+            
+            pc.ontrack = (event) => {
+                const video = document.getElementById(`video-${userId}`);
+                if(video && event.streams[0]) {
+                    video.srcObject = event.streams[0];
+                    video.play().catch(e => console.log('Play error:', e));
+                }
+            };
+            
+            pc.onicecandidate = (event) => {
+                if(event.candidate) {
+                    sendSignal(userId, { ice: event.candidate });
+                }
+            };
+        }
         
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        
-        channelSocket.send(JSON.stringify({
-            type: 'answer',
-            user_id: userId,
-            answer: answer
-        }));
+        sendSignal(userId, { sdp: answer, type: 'answer' });
     }
     
     async function handleAnswer(userId, answer) {
         const pc = peerConnections[userId];
-        if(pc) {
+        if(pc && pc.signalingState !== 'stable') {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
         }
     }
@@ -388,8 +431,24 @@
     async function handleIceCandidate(userId, candidate) {
         const pc = peerConnections[userId];
         if(pc) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch(e) {
+                console.error('ICE candidate error:', e);
+            }
         }
+    }
+    
+    function sendSignal(toUserId, signal) {
+        fetch('/voice/signal', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                channel_id: currentChannelId,
+                to_user_id: toUserId,
+                ...signal
+            })
+        }).catch(e => console.error('Signal send error:', e));
     }
     
     function toggleMute() {
@@ -400,6 +459,9 @@
                 isMuted = !audioTrack.enabled;
                 document.getElementById('muteBtn').innerHTML = isMuted ? '🔇' : '🎤';
                 document.getElementById('muteBtn').style.background = isMuted ? '#888' : '#ff6b6b';
+                
+                // Отправляем статус
+                fetch(`/voice/mute/${currentChannelId}`, {method: 'POST'});
             }
         }
     }
@@ -421,14 +483,12 @@
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const videoTrack = screenStream.getVideoTracks()[0];
             
-            // Заменяем видео-трек на всех пирах
             Object.values(peerConnections).forEach(pc => {
                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
                 if(sender) sender.replaceTrack(videoTrack);
             });
             
             videoTrack.onended = () => {
-                // Возвращаем камеру
                 const cameraTrack = localStream.getVideoTracks()[0];
                 Object.values(peerConnections).forEach(pc => {
                     const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -443,11 +503,7 @@
         const message = input.value.trim();
         if(!message) return;
         
-        channelSocket.send(JSON.stringify({
-            type: 'chat_message',
-            message: message
-        }));
-        
+        // Отправляем через HTTP (можно добавить эндпоинт позже)
         addChatMessage('Вы', message);
         input.value = '';
     }
@@ -461,7 +517,8 @@
     }
     
     async function leaveChannel() {
-        if(channelSocket) channelSocket.close();
+        if(signalPollingInterval) clearInterval(signalPollingInterval);
+        if(membersPollingInterval) clearInterval(membersPollingInterval);
         
         Object.values(peerConnections).forEach(pc => pc.close());
         peerConnections = {};
@@ -470,14 +527,20 @@
             localStream.getTracks().forEach(track => track.stop());
         }
         
-        await fetch('/voice/leave/' + currentChannelId, {method: 'POST'});
+        if(currentChannelId) {
+            await fetch('/voice/leave/' + currentChannelId, {method: 'POST'});
+        }
         
         document.getElementById('channelModal').classList.remove('active');
+        document.getElementById('remoteVideos').innerHTML = '<div style="text-align:center;color:#aaa">Участники появятся здесь...</div>';
+        document.getElementById('chatMessages').innerHTML = '';
         currentChannelId = null;
+        currentChannelMembers = {};
+        
         loadChannels();
     }
     
-    // ========== YOUTUBE TOGETHER (БЕЗ VPN) ==========
+    // ========== YOUTUBE TOGETHER ==========
     function startYouTubeTogether() {
         document.getElementById('youtubeModal').classList.add('active');
         document.getElementById('youtubePlayer').src = 'https://www.youtube.com/embed/';
@@ -498,16 +561,6 @@
         currentVideoId = videoId;
         const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
         document.getElementById('youtubePlayer').src = embedUrl;
-        
-        // Отправляем сигнал всем в канале
-        if(channelSocket) {
-            channelSocket.send(JSON.stringify({
-                type: 'youtube_sync',
-                video_id: videoId,
-                currentTime: 0,
-                isPlaying: true
-            }));
-        }
     }
     
     function extractYouTubeId(url) {
@@ -524,37 +577,7 @@
         return null;
     }
     
-    function syncYouTubeVideo(videoId, currentTime, isPlaying) {
-        if(videoId && videoId !== currentVideoId) {
-            currentVideoId = videoId;
-            document.getElementById('youtubePlayer').src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-        }
-        // Синхронизация времени через iframe API
-        const iframe = document.getElementById('youtubePlayer');
-        if(iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: 'seekTo',
-                args: [currentTime, true]
-            }), '*');
-            if(isPlaying) {
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    event: 'command',
-                    func: 'playVideo',
-                    args: []
-                }), '*');
-            } else {
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    event: 'command',
-                    func: 'pauseVideo',
-                    args: []
-                }), '*');
-            }
-        }
-    }
-    
     function syncYouTube() {
-        // Получаем текущее время из iframe
         const iframe = document.getElementById('youtubePlayer');
         if(iframe && iframe.contentWindow) {
             iframe.contentWindow.postMessage(JSON.stringify({
@@ -568,12 +591,7 @@
     function sendYouTubeChat() {
         const input = document.getElementById('youtubeChatInput');
         const message = input.value.trim();
-        if(!message || !channelSocket) return;
-        
-        channelSocket.send(JSON.stringify({
-            type: 'youtube_chat',
-            message: message
-        }));
+        if(!message) return;
         
         addYouTubeChatMessage('Вы', message);
         input.value = '';
@@ -590,9 +608,8 @@
     }
     
     function syncYouTubeStatus() {
-        // Запрос текущего времени у iframe
         const iframe = document.getElementById('youtubePlayer');
-        if(iframe && iframe.contentWindow && currentVideoId && channelSocket) {
+        if(iframe && iframe.contentWindow && currentVideoId) {
             iframe.contentWindow.postMessage(JSON.stringify({
                 event: 'listening',
                 id: 'youtube-player'
@@ -607,20 +624,12 @@
         currentVideoId = null;
     }
     
-    // Обработка сообщений от YouTube iframe
     window.addEventListener('message', (event) => {
         if(event.data && typeof event.data === 'string') {
             try {
                 const data = JSON.parse(event.data);
                 if(data.event === 'infoDelivery' && data.info && data.info.currentTime !== undefined) {
-                    if(channelSocket && currentVideoId) {
-                        channelSocket.send(JSON.stringify({
-                            type: 'youtube_sync',
-                            video_id: currentVideoId,
-                            currentTime: data.info.currentTime,
-                            isPlaying: !data.info.isPaused
-                        }));
-                    }
+                    // Можно синхронизировать с другими
                 }
             } catch(e) {}
         }

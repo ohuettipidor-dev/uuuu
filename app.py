@@ -1909,6 +1909,28 @@ def create_voice_channel():
     db.session.commit()
     flash(f'🎤 Голосовой канал "{name}" создан!', 'success')
     return redirect(url_for('voice_channels_page'))
+@app.route('/voice/channels/list')
+@login_required
+def voice_channels_list_api():
+    channels = VoiceChannel.query.filter_by(is_active=True).all()
+    result = []
+    for ch in channels:
+        members = VoiceChannelMember.query.filter_by(channel_id=ch.id).all()
+        member_count = len(members)
+        is_joined = VoiceChannelMember.query.filter_by(channel_id=ch.id, user_id=current_user.id).first() is not None
+        members_data = []
+        for m in members[:10]:
+            user = User.query.get(m.user_id)
+            members_data.append({'id': user.id, 'username': user.username})
+        result.append({
+            'id': ch.id,
+            'name': ch.name,
+            'member_count': member_count,
+            'max_users': ch.max_users,
+            'is_joined': is_joined,
+            'members': members_data
+        })
+    return jsonify(result)
 
 # ========== ПОДАРКИ ==========
 @app.route('/gifts/send', methods=['POST'])
