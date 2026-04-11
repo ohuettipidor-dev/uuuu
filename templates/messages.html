@@ -3,7 +3,7 @@
 <head>
     <title>🐻 Чат с {{ other.username }} | BearGram</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
@@ -51,10 +51,10 @@
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:2px;padding:2px 6px;position:relative}
+        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 2px;outline:none}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:16px;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:28px;height:28px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
         .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
@@ -66,7 +66,6 @@
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
         
-        /* СТИКЕРЫ И AI ПАНЕЛЬ */
         .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
         .sticker-panel.active{display:block}
         .panel-tabs{display:flex;border-bottom:1px solid #eee}
@@ -106,9 +105,9 @@
         
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:28px;height:28px;font-size:15px;padding:4px}
+            .input-icon{width:24px;height:24px;font-size:14px;padding:3px}
             .send-btn{width:34px;height:34px;font-size:16px}
-            .input-wrapper{padding:2px 6px}
+            .input-wrapper{padding:2px 4px}
             .input-wrapper input{font-size:13px;padding:6px 2px}
             .header{padding:6px 10px}
             .avatar{width:30px;height:30px}
@@ -229,10 +228,10 @@
         <div class="input-wrapper" style="position:relative">
             <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
-            <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
-            <button class="input-icon" id="stickerPanelBtn" style="font-size:18px">🎨</button>
-            <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
+            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+            <button class="input-icon" id="emojiBtn">😊</button>
+            <button class="input-icon" id="stickerPanelBtn">🎨</button>
+            <button class="input-icon voice-btn" id="voiceBtn">🎤</button>
         </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
@@ -246,7 +245,6 @@
         <span>🐼</span><span>🦊</span><span>🐱</span><span>🐶</span><span>🦝</span><span>🧸</span><span>🎈</span>
     </div>
     
-    <!-- ПАНЕЛЬ СТИКЕРОВ И AI -->
     <div class="sticker-panel" id="stickerPanel">
         <div class="panel-tabs">
             <button class="panel-tab active" onclick="switchStickerTab('my')">🐻 Мои</button>
@@ -255,14 +253,14 @@
         <div class="panel-content">
             <div id="myStickersTab">
                 <div class="sticker-actions">
-                    <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить стикер</button>
+                    <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить</button>
                     <span id="stickerCount">0/30</span>
                 </div>
                 <div id="myStickers"><div style="text-align:center;color:#888;padding:20px">Загрузка...</div></div>
             </div>
             <div id="aiStickersTab" style="display:none;">
                 <div id="aiInfo" class="ai-info">Загрузка...</div>
-                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер... (например: милый медведь)">
+                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер...">
                 <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать</button>
                 <div id="aiResult"></div>
             </div>
@@ -302,7 +300,6 @@
             .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
     }
     
-    // ========== ТАЙПИНГ ==========
     msgInput.addEventListener('input', function() {
         fetch('/typing', {
             method: 'POST',
@@ -336,7 +333,6 @@
     }
     setInterval(checkTyping, 2000);
     
-    // ========== ЗАКРЕПЛЕНИЕ ==========
     function loadPinnedMessage() {
         fetch(`/get_pinned_message/${receiver_id}/private`)
             .then(r => r.json())
@@ -374,7 +370,6 @@
     
     function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
     
-    // ========== УПОМИНАНИЯ ==========
     function searchUsers(query) {
         if(!query) { hideSuggestions(); return; }
         fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); });
@@ -472,7 +467,6 @@
         if(msg.is_pinned) loadPinnedMessage();
     }
     
-    // ========== ОТПРАВКА СООБЩЕНИЯ ==========
     function sendMsg() {
         if(isSending) return;
         
@@ -540,7 +534,6 @@
             });
     }
     
-    // ========== ДЕЙСТВИЯ С СООБЩЕНИЯМИ ==========
     function editMessage(id, type) {
         let newText = prompt('Новый текст:');
         if(newText && newText.trim()) {
@@ -597,7 +590,6 @@
         document.getElementById('replyBar').style.display = 'none';
     }
     
-    // ========== ГОЛОСОВЫЕ ==========
     async function startVoiceRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -644,26 +636,14 @@
             document.getElementById('voiceBtn').classList.add('recording');
             document.getElementById('voiceBtn').textContent = '⏹️';
             
-            setTimeout(() => {
-                if(isAudioRecording) stopVoiceRecording();
-            }, 30000);
-        } catch(e) {
-            alert('Микрофон не доступен');
-        }
+            setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
+        } catch(e) { alert('Микрофон не доступен'); }
     }
     
-    function stopVoiceRecording() {
-        if(mediaRecorder && isAudioRecording) mediaRecorder.stop();
-    }
-    
-    function toggleVoiceRecording() {
-        if(isAudioRecording) stopVoiceRecording();
-        else startVoiceRecording();
-    }
-    
+    function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
+    function toggleVoiceRecording() { if(isAudioRecording) stopVoiceRecording(); else startVoiceRecording(); }
     document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
     
-    // ========== ЭМОДЗИ ==========
     document.getElementById('emojiBtn').onclick = () => {
         document.getElementById('emojiPicker').classList.toggle('active');
         document.getElementById('stickerPanel').classList.remove('active');
@@ -676,7 +656,6 @@
         };
     });
     
-    // ========== СТИКЕРЫ И AI ==========
     const stickerPanel = document.getElementById('stickerPanel');
     const stickerBtn = document.getElementById('stickerPanelBtn');
     
@@ -735,16 +714,13 @@
     
     function uploadCustomSticker(file) {
         if(!file) return;
-        const emoji = prompt('Эмодзи для стикера (например 🐻):', '🐻') || '🐻';
+        const emoji = prompt('Эмодзи для стикера:', '🐻') || '🐻';
         const fd = new FormData();
         fd.append('sticker', file);
         fd.append('emoji', emoji);
         fetch('/stickers/custom/upload', {method: 'POST', body: fd})
             .then(r => r.json())
-            .then(data => {
-                if(data.success) { loadMyStickers(); }
-                else { alert(data.error); }
-            });
+            .then(data => { if(data.success) loadMyStickers(); else alert(data.error); });
         document.getElementById('customStickerInput').value = '';
     }
     
@@ -753,10 +729,7 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})
-        }).then(() => {
-            stickerPanel.classList.remove('active');
-            setTimeout(checkNewMessages, 300);
-        });
+        }).then(() => { stickerPanel.classList.remove('active'); setTimeout(checkNewMessages, 300); });
     }
     
     function loadAILimits() {
@@ -771,23 +744,22 @@
                     btn.disabled = false;
                     btn.textContent = '✨ Сгенерировать';
                 } else {
-                    info.innerHTML = `🤖 Осталось генераций: ${data.remaining}/${data.limit}`;
+                    info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
                     btn.disabled = data.remaining <= 0;
-                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит исчерпан' : '✨ Сгенерировать';
+                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать';
                 }
             });
     }
     
     function generateAISticker() {
         const prompt = document.getElementById('aiPrompt').value.trim();
-        if(!prompt) { alert('Введите описание стикера'); return; }
-        
+        if(!prompt) { alert('Введите описание'); return; }
         const resultDiv = document.getElementById('aiResult');
         const btn = document.getElementById('aiGenerateBtn');
         
-        resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация... (до 60 сек)</div>';
+        resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>';
         btn.disabled = true;
-        btn.textContent = '⏳ Генерируется...';
+        btn.textContent = '⏳ Ждите...';
         
         fetch('/stickers/ai/generate', {
             method: 'POST',
@@ -797,55 +769,30 @@
         .then(r => r.json())
         .then(data => {
             if(data.success) {
-                resultDiv.innerHTML = `
-                    <div class="ai-preview">
-                        <img src="${data.sticker.url}" id="aiGeneratedImg">
-                        <div class="ai-preview-actions">
-                            <button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button>
-                            <button class="ai-cancel-btn" onclick="clearAIResult()">✖ Отмена</button>
-                        </div>
-                    </div>
-                `;
+                resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
                 document.getElementById('aiPrompt').value = '';
                 loadAILimits();
             } else {
-                resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center;padding:10px">❌ ${data.error}</div>`;
+                resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`;
                 loadAILimits();
             }
         })
-        .catch(e => {
-            resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:10px">❌ Ошибка соединения</div>';
-            btn.disabled = false;
-            btn.textContent = '✨ Сгенерировать';
-        });
+        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; });
     }
     
     function saveAISticker(url) {
-        const emoji = prompt('Эмодзи для стикера:', '🤖') || '🤖';
-        fetch(url)
-            .then(r => r.blob())
-            .then(blob => {
-                const fd = new FormData();
-                fd.append('sticker', blob, 'ai_sticker.png');
-                fd.append('emoji', emoji);
-                return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
-            })
-            .then(r => r.json())
-            .then(data => {
-                if(data.success) {
-                    clearAIResult();
-                    switchStickerTab('my');
-                    loadMyStickers();
-                } else {
-                    alert(data.error);
-                }
-            })
-            .catch(e => alert('Ошибка сохранения'));
+        const emoji = prompt('Эмодзи:', '🤖') || '🤖';
+        fetch(url).then(r => r.blob()).then(blob => {
+            const fd = new FormData();
+            fd.append('sticker', blob, 'ai_sticker.png');
+            fd.append('emoji', emoji);
+            return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
+        })
+        .then(r => r.json())
+        .then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); });
     }
     
-    function clearAIResult() {
-        document.getElementById('aiResult').innerHTML = '';
-    }
+    function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
     
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     
