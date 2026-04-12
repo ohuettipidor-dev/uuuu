@@ -981,6 +981,176 @@ def secret_chats_list():
 
 # ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
+@app.route('/group/<int:gid>/info')
+@login_required
+def group_info(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    members_list = []
+    for m in members:
+        user = db.session.get(User, m.user_id)
+        members_list.append({
+            'user': user,
+            'is_admin': m.is_admin or group.created_by == user.id
+        })
+    
+    is_admin = member.is_admin or group.created_by == current_user.id
+    
+    return render_template('group_info.html', 
+                         group=group, 
+                         members=members_list, 
+                         is_admin=is_admin,
+                         current_user=current_user)
+
+@app.route('/group/<int:gid>/upload_avatar', methods=['POST'])
+@login_required
+def upload_group_avatar(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Нет прав для изменения аватара', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if 'avatar' in request.files:
+        f = request.files['avatar']
+        if f and allowed_file(f.filename):
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            name = f"group_avatar_{gid}_{uuid.uuid4().hex}.{ext}"
+            f.save(os.path.join(AVATAR_FOLDER, name))
+            if group.avatar != 'group_default.png':
+                old = os.path.join(AVATAR_FOLDER, group.avatar)
+                if os.path.exists(old):
+                    os.remove(old)
+            group.avatar = name
+            db.session.commit()
+            flash('Аватар группы обновлён!', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>/edit', methods=['POST'])
+@login_required
+def edit_group(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    data = request.get_json()
+    if data.get('name'):
+        group.name = data['name']
+    if data.get('description') is not None:
+        group.description = data['description']
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/group/<int:gid>/delete', methods=['POST'])
+@login_required
+def delete_group(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+    
+    if group.created_by != current_user.id:
+        return jsonify({'error': 'Только создатель может удалить группу'}), 403
+    
+    GroupMessage.query.filter_by(group_id=gid).delete()
+    GroupMember.query.filter_by(group_id=gid).delete()
+    db.session.delete(group)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'redirect': '/chat'})
+
+@app.route('/group/<int:gid>/add_member', methods=['POST'])
+@login_required
+def add_member_to_group(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        return jsonify({'error': 'Нет прав'}), 403
+    
+    username = request.form.get('username', '').strip()
+    if not username:
+        flash('Введите имя пользователя', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    existing = GroupMember.query.filter_by(user_id=user.id, group_id=gid).first()
+    if existing:
+        flash('Пользователь уже в группе', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    new_member = GroupMember(user_id=user.id, group_id=gid, is_admin=False)
+    db.session.add(new_member)
+    db.session.commit()
+    
+    flash(f'{user.username} добавлен в группу!', 'success')
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>/remove_member/<int:uid>', methods=['POST'])
+@login_required
+def remove_member_from_group(gid, uid):
+    group = db.session.get(Group, gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member or not member.is_admin:
+        flash('Нет прав', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    if uid == group.created_by:
+        flash('Нельзя удалить создателя группы', 'danger')
+        return redirect(url_for('group_info', gid=gid))
+    
+    target = GroupMember.query.filter_by(user_id=uid, group_id=gid).first()
+    if target:
+        db.session.delete(target)
+        db.session.commit()
+        flash('Участник удалён', 'success')
+    
+    return redirect(url_for('group_info', gid=gid))
+
+@app.route('/group/<int:gid>/leave', methods=['POST'])
+@login_required
+def leave_group(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+    
+    if group.created_by == current_user.id:
+        return jsonify({'error': 'Создатель не может покинуть группу. Удалите группу.'}), 400
+    
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if member:
+        db.session.delete(member)
+        db.session.commit()
+    
+    return jsonify({'success': True, 'redirect': '/chat'})
 @login_required
 def create_group():
     name = request.form.get('name')
