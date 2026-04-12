@@ -981,6 +981,62 @@ def secret_chats_list():
 
 # ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
+@login_required
+def create_group():
+    name = request.form.get('name')
+    if not name:
+        flash('Название группы обязательно', 'danger')
+        return redirect(url_for('chat'))
+    group = Group(name=name, created_by=current_user.id)
+    db.session.add(group)
+    db.session.commit()
+    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id, is_admin=True))
+    db.session.commit()
+    flash(f'Группа "{name}" создана!', 'success')
+    return redirect(url_for('chat'))
+
+@app.route('/group/<int:gid>')
+@login_required
+def group_chat(gid):
+    group = db.session.get(Group, gid)
+    if not group:
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
+    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
+    if not member:
+        flash('Вы не участник этой группы', 'danger')
+        return redirect(url_for('chat'))
+    messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    members_list = []
+    for m in members:
+        user = db.session.get(User, m.user_id)
+        members_list.append(user)
+    return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
+
+@app.route('/send_group', methods=['POST'])
+@login_required
+def send_group():
+    content = request.form.get('content', '')
+    reply_to_id = request.form.get('reply_to_id', type=int)
+    content, mentioned_ids = render_mentions(content, current_user.id)
+    if not content and request.form.get('file_path'):
+        content = '📎 Файл'
+    msg = GroupMessage(
+        content=content,
+        file_path=request.form.get('file_path'),
+        file_name=request.form.get('file_name'),
+        file_type=request.form.get('file_type'),
+        sender_id=current_user.id,
+        group_id=request.form['group_id'],
+        voice_duration=request.form.get('voice_duration', 0),
+        reply_to_id=reply_to_id,
+        mentions=json.dumps(mentioned_ids)
+    )
+    db.session.add(msg)
+    db.session.commit()
+    return redirect(url_for('group_chat', gid=request.form['group_id']))
+
 @app.route('/group/<int:gid>/info')
 @login_required
 def group_info(gid):
@@ -1151,61 +1207,6 @@ def leave_group(gid):
         db.session.commit()
     
     return jsonify({'success': True, 'redirect': '/chat'})
-@login_required
-def create_group():
-    name = request.form.get('name')
-    if not name:
-        flash('Название группы обязательно', 'danger')
-        return redirect(url_for('chat'))
-    group = Group(name=name, created_by=current_user.id)
-    db.session.add(group)
-    db.session.commit()
-    db.session.add(GroupMember(user_id=current_user.id, group_id=group.id, is_admin=True))
-    db.session.commit()
-    flash(f'Группа "{name}" создана!', 'success')
-    return redirect(url_for('chat'))
-
-@app.route('/group/<int:gid>')
-@login_required
-def group_chat(gid):
-    group = db.session.get(Group, gid)
-    if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
-    member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
-    if not member:
-        flash('Вы не участник этой группы', 'danger')
-        return redirect(url_for('chat'))
-    messages = GroupMessage.query.filter_by(group_id=gid).order_by(GroupMessage.timestamp).all()
-    members = GroupMember.query.filter_by(group_id=gid).all()
-    members_list = []
-    for m in members:
-        user = db.session.get(User, m.user_id)
-        members_list.append(user)
-    return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
-
-@app.route('/send_group', methods=['POST'])
-@login_required
-def send_group():
-    content = request.form.get('content', '')
-    reply_to_id = request.form.get('reply_to_id', type=int)
-    content, mentioned_ids = render_mentions(content, current_user.id)
-    if not content and request.form.get('file_path'):
-        content = '📎 Файл'
-    msg = GroupMessage(
-        content=content,
-        file_path=request.form.get('file_path'),
-        file_name=request.form.get('file_name'),
-        file_type=request.form.get('file_type'),
-        sender_id=current_user.id,
-        group_id=request.form['group_id'],
-        voice_duration=request.form.get('voice_duration', 0),
-        reply_to_id=reply_to_id,
-        mentions=json.dumps(mentioned_ids)
-    )
-    db.session.add(msg)
-    db.session.commit()
-    return redirect(url_for('group_chat', gid=request.form['group_id']))
 
 # ========== ЧАТ ==========
 @app.route('/chat')
