@@ -447,7 +447,7 @@
                     alert(data.error || 'Ошибка отправки стикера');
                 }
             })
-            .catch(() => alert('Ошибка соединения'));
+            .catch(e => { console.error('Sticker send error:', e); });
     }
     
     // ========== AI ==========
@@ -496,7 +496,7 @@
                 loadAILimits();
             }
         })
-        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; });
+        .catch(e => { console.error('AI error:', e); resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; });
     }
     
     function saveAISticker(url) {
@@ -603,7 +603,7 @@
                                 alert(data.error || 'Ошибка отправки видео');
                             }
                         })
-                        .catch(() => alert('Ошибка соединения'));
+                        .catch(e => { console.error('Video send error:', e); });
                 }
             });
     }
@@ -761,7 +761,7 @@
                     isSending = false;
                 }
             })
-            .catch(() => { isSending = false; alert('Ошибка соединения'); });
+            .catch(e => { console.error('Send error:', e); isSending = false; });
     }
     
     function sendFile(file) {
@@ -789,7 +789,7 @@
                                 alert(data.error || 'Ошибка отправки файла');
                             }
                         })
-                        .catch(() => alert('Ошибка соединения'));
+                        .catch(e => { console.error('File send error:', e); });
                 }
             });
         document.getElementById('fileInput').value = '';
@@ -804,7 +804,7 @@
                 }
                 isSending = false;
             })
-            .catch(() => { isSending = false; });
+            .catch(e => { console.error('Polling error:', e); isSending = false; });
     }
     
     function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText) { fetch('/edit_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type}) }).then(() => setTimeout(checkNewMessages, 300)); } }
@@ -851,7 +851,7 @@
                                         alert(data.error || 'Ошибка отправки голосового');
                                     }
                                 })
-                                .catch(() => alert('Ошибка соединения'));
+                                .catch(e => { console.error('Voice send error:', e); });
                         }
                     });
                 stream.getTracks().forEach(t => t.stop());

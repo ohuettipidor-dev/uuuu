@@ -898,7 +898,7 @@ def send_secret():
     db.session.add(msg)
     db.session.commit()
     
-    if request.form.get('_from_ajax'):
+    if request.form.get('_from_ajax') == 'true':
         return jsonify({'success': True, 'msg_id': msg.id})
     return redirect(url_for('secret_chat', chat_id=chat_id))
 
@@ -1056,6 +1056,9 @@ def send_group():
     )
     db.session.add(msg)
     db.session.commit()
+    
+    if request.form.get('_from_ajax') == 'true':
+        return jsonify({'success': True, 'msg_id': msg.id})
     return redirect(url_for('group_chat', gid=request.form['group_id']))
 
 @app.route('/group/<int:gid>/info')
@@ -1292,11 +1295,9 @@ def messages(uid):
 def send():
     receiver_id = int(request.form['receiver_id'])
     if Blacklist.query.filter_by(user_id=current_user.id, blocked_user_id=receiver_id).first():
-        flash('Вы не можете отправлять сообщения заблокированному пользователю', 'danger')
-        return redirect(url_for('chat'))
+        return jsonify({'error': 'Вы заблокировали этого пользователя'}), 403
     if Blacklist.query.filter_by(user_id=receiver_id, blocked_user_id=current_user.id).first():
-        flash('Этот пользователь заблокировал вас', 'danger')
-        return redirect(url_for('chat'))
+        return jsonify({'error': 'Этот пользователь заблокировал вас'}), 403
     content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     content, mentioned_ids = render_mentions(content, current_user.id)
@@ -1315,6 +1316,9 @@ def send():
     )
     db.session.add(msg)
     db.session.commit()
+    
+    if request.form.get('_from_ajax') == 'true':
+        return jsonify({'success': True, 'msg_id': msg.id})
     return redirect(url_for('messages', uid=receiver_id))
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ МАРШРУТЫ ==========
