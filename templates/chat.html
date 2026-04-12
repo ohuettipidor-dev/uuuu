@@ -8,7 +8,7 @@
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;padding:12px;height:100vh;display:flex;flex-direction:column}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid rgba(255,255,255,0.3);flex-wrap:wrap;gap:6px;flex-shrink:0}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid rgba(255,255,255,0.3);flex-wrap:wrap;gap:6px;flex-shrink:0}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .logo-text{font-weight:bold;font-size:16px}
@@ -18,7 +18,7 @@
         .icon-btn{background:rgba(255,255,255,0.9);padding:6px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none;flex-shrink:0}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
         
-        .search-container{display:none;margin-bottom:10px;animation:slideDown 0.3s ease;flex-shrink:0}
+        .search-container{display:none;margin-bottom:8px;animation:slideDown 0.3s ease;flex-shrink:0}
         .search-container.active{display:block}
         @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
         .search-input{width:100%;padding:10px 14px;border-radius:30px;border:1px solid rgba(255,107,107,0.3);background:rgba(255,255,255,0.9);font-size:14px;outline:none;transition:all 0.2s}
@@ -34,6 +34,19 @@
         .search-result-link{font-size:10px;color:#888}
         .search-close{text-align:center;padding:8px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
         .search-close:hover{background:#f9f9f9}
+        
+        /* STORIES - КОМПАКТНАЯ ЛЕНТА */
+        .stories-container{padding:4px 0;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0}
+        .stories-scroll{display:flex;gap:12px;overflow-x:auto;padding:4px 2px;-webkit-overflow-scrolling:touch}
+        .stories-scroll::-webkit-scrollbar{display:none}
+        .story-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0}
+        .story-avatar-wrapper{width:52px;height:52px;border-radius:50%;padding:2px}
+        .story-avatar-wrapper.unseen{background:linear-gradient(45deg, #ff6b6b, #ff8e8e, #fecfef)}
+        .story-avatar-wrapper.viewed{background:#ccc}
+        .story-avatar-wrapper img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white}
+        .story-username{font-size:9px;color:#555;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .my-story-wrapper{width:52px;height:52px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);cursor:pointer;flex-shrink:0}
+        .my-story-inner{width:100%;height:100%;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:22px;color:#ff6b6b}
         
         /* STORY VIEWER */
         .story-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:9999;display:none}
@@ -91,6 +104,10 @@
             .chat-avatar{width:40px;height:40px;font-size:16px}
             .chat-item{padding:8px}
             .chat-name{font-size:13px}
+            .story-avatar-wrapper{width:48px;height:48px}
+            .my-story-wrapper{width:48px;height:48px}
+            .my-story-inner{font-size:20px}
+            .story-username{font-size:8px;max-width:48px}
         }
     </style>
 </head>
@@ -108,7 +125,6 @@
             <span>🐻 Bear</span><span>Gram</span>
         </div>
         <div class="header-actions">
-            <button class="icon-btn" onclick="openStoryUpload()" style="background:#ff6b6b; color:white;">➕</button>
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
             <a href="/channels" class="icon-btn">📢</a>
             <a href="/voice_channels" class="icon-btn">🎤</a>
@@ -122,6 +138,19 @@
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
+    </div>
+    
+    <!-- STORIES BAR - КОМПАКТНАЯ ЛЕНТА -->
+    <div class="stories-container" id="storiesContainer">
+        <div class="stories-scroll" id="storiesScroll">
+            <div class="story-item" onclick="openStoryUpload()">
+                <div class="my-story-wrapper">
+                    <div class="my-story-inner">➕</div>
+                </div>
+                <span class="story-username">Моя</span>
+            </div>
+            <div id="storiesList" style="display:contents;"></div>
+        </div>
     </div>
     
     <button class="create-btn" onclick="openGroupModal()">✨ + Создать группу ✨</button>
@@ -222,11 +251,51 @@
     let selectedUserId = null;
     let searchTimeout = null;
     
+    // ========== STORIES ==========
+    let currentStories = [];
+    let currentStoryIndex = 0;
+    let storyTimer = null;
+    let storyInterval = null;
+    
     function escapeHtml(t) {
         if(!t) return '';
         const div = document.createElement('div');
         div.textContent = t;
         return div.innerHTML;
+    }
+    
+    function loadStoriesFeed() {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                renderStoriesBar(usersStories);
+            })
+            .catch(e => console.error('Stories error:', e));
+    }
+    
+    function renderStoriesBar(usersStories) {
+        const container = document.getElementById('storiesList');
+        if (!container) return;
+        
+        let html = '';
+        usersStories.forEach(userStories => {
+            const user = userStories.user;
+            const hasUnseen = userStories.stories.some(s => !s.viewed);
+            const avatarUrl = user.avatar !== 'default.png' 
+                ? '/static/avatars/' + user.avatar 
+                : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=ff6b6b&color=fff';
+            
+            html += `
+                <div class="story-item" onclick="viewUserStories(${user.id})">
+                    <div class="story-avatar-wrapper ${hasUnseen ? 'unseen' : 'viewed'}">
+                        <img src="${avatarUrl}" onerror="this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent('${user.username}') + '&background=ff6b6b&color=fff'">
+                    </div>
+                    <span class="story-username">${escapeHtml(user.username.substring(0, 8))}</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
     }
     
     function openStoryUpload() {
@@ -250,6 +319,7 @@
         .then(data => {
             if(data.success) {
                 alert('История опубликована на 24 часа!');
+                loadStoriesFeed();
             } else {
                 alert(data.error);
             }
@@ -258,6 +328,133 @@
         
         document.getElementById('storyFileInput').value = '';
     }
+    
+    function viewUserStories(userId) {
+        fetch('/api/stories/feed')
+            .then(r => r.json())
+            .then(usersStories => {
+                const userData = usersStories.find(u => u.user.id === userId);
+                if (!userData) return;
+                
+                currentStories = userData.stories.filter(s => !s.viewed);
+                if (currentStories.length === 0) {
+                    currentStories = userData.stories;
+                }
+                
+                currentStoryIndex = 0;
+                
+                document.getElementById('storyViewer').classList.add('active');
+                
+                const avatarUrl = userData.user.avatar !== 'default.png' 
+                    ? '/static/avatars/' + userData.user.avatar 
+                    : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.user.username) + '&background=ff6b6b&color=fff';
+                
+                document.getElementById('storyHeader').innerHTML = `
+                    <img src="${avatarUrl}">
+                    <span>${escapeHtml(userData.user.username)}</span>
+                `;
+                
+                renderProgressBars(currentStories.length);
+                showStory(0);
+                markStoryViewed(currentStories[0].id);
+            });
+    }
+    
+    function renderProgressBars(count) {
+        const container = document.getElementById('storyProgress');
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `<div class="story-progress-bar"><div class="story-progress-fill" id="progress-${i}"></div></div>`;
+        }
+        container.innerHTML = html;
+    }
+    
+    function showStory(index) {
+        if (index >= currentStories.length) {
+            closeStoryViewer();
+            return;
+        }
+        
+        currentStoryIndex = index;
+        const story = currentStories[index];
+        
+        const img = document.getElementById('storyMedia');
+        const video = document.getElementById('storyVideo');
+        const caption = document.getElementById('storyCaption');
+        
+        img.style.display = 'none';
+        video.style.display = 'none';
+        video.pause();
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
+        if (story.file_type === 'video') {
+            video.src = story.file_path;
+            video.style.display = 'block';
+            video.play();
+            
+            video.onended = () => { nextStory(); };
+            
+            video.ontimeupdate = () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+            };
+        } else {
+            img.src = story.file_path;
+            img.style.display = 'block';
+            
+            let progress = 0;
+            storyInterval = setInterval(() => {
+                progress += 2;
+                const progressBar = document.getElementById(`progress-${index}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(storyInterval);
+                }
+            }, 100);
+            
+            storyTimer = setTimeout(() => { nextStory(); }, 5000);
+        }
+        
+        caption.textContent = story.caption || '';
+        markStoryViewed(story.id);
+    }
+    
+    function markStoryViewed(storyId) {
+        fetch('/api/stories/view/' + storyId, {method: 'POST'});
+    }
+    
+    function nextStory() {
+        if (currentStoryIndex < currentStories.length - 1) {
+            showStory(currentStoryIndex + 1);
+        } else {
+            closeStoryViewer();
+            loadStoriesFeed();
+        }
+    }
+    
+    function prevStory() {
+        if (currentStoryIndex > 0) {
+            showStory(currentStoryIndex - 1);
+        }
+    }
+    
+    function closeStoryViewer() {
+        document.getElementById('storyViewer').classList.remove('active');
+        document.getElementById('storyVideo').pause();
+        document.getElementById('storyVideo').src = '';
+        document.getElementById('storyMedia').src = '';
+        
+        if (storyTimer) clearTimeout(storyTimer);
+        if (storyInterval) clearInterval(storyInterval);
+        
+        loadStoriesFeed();
+    }
+    
+    document.getElementById('storyNavLeft').onclick = prevStory;
+    document.getElementById('storyNavRight').onclick = nextStory;
     
     // ========== ОРИГИНАЛЬНЫЕ ФУНКЦИИ ==========
     function openChat(type, id) {
@@ -381,6 +578,10 @@
             form.submit();
         } else alert('Введите название группы');
     }
+    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    loadStoriesFeed();
+    setInterval(loadStoriesFeed, 30000);
 </script>
 </body>
 </html>
