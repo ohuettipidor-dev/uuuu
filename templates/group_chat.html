@@ -33,6 +33,7 @@
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .file-link{color:#ff6b6b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px}
+        .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
         .video-circle{width:180px;height:180px;border-radius:50%;object-fit:cover;margin-top:5px;cursor:pointer;border:2px solid #ff6b6b}
         .video-circle video{width:100%;height:100%;border-radius:50%;object-fit:cover}
         img,audio,video{max-width:160px;border-radius:10px;margin-top:3px}
@@ -56,15 +57,39 @@
         .pinned-badge:hover{background:#ff6b6b40}
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:4px;padding:4px 8px;position:relative}
         .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 4px;outline:none;min-width:0}
         .input-wrapper input::placeholder{color:#aaa;font-size:13px}
         .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+        
+        /* СТИКЕР ПАНЕЛЬ */
+        .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
+        .sticker-panel.active{display:block}
+        .panel-tabs{display:flex;border-bottom:1px solid #eee}
+        .panel-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:none;font-size:14px}
+        .panel-tab.active{color:#ff6b6b;border-bottom:2px solid #ff6b6b}
+        .panel-content{padding:12px;max-height:340px;overflow-y:auto}
+        .sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .sticker-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;text-align:center}
+        .sticker-item img{width:70px;height:70px;object-fit:contain}
+        .sticker-item span{font-size:11px;color:#888;display:block;margin-top:4px}
+        .ai-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:25px;margin-bottom:10px;outline:none;font-size:14px}
+        .ai-btn{width:100%;padding:12px;background:#ff6b6b;color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;margin-bottom:10px}
+        .ai-btn:disabled{opacity:0.5}
+        .ai-info{font-size:12px;color:#888;text-align:center;margin-bottom:10px}
+        .ai-preview{text-align:center;margin-top:10px}
+        .ai-preview img{max-width:150px;max-height:150px;border-radius:12px}
+        .ai-preview-actions{display:flex;gap:8px;margin-top:8px}
+        .ai-preview-actions button{flex:1;padding:8px;border:none;border-radius:20px;cursor:pointer;font-size:12px}
+        .ai-save-btn{background:#4cd964;color:white}
+        .ai-cancel-btn{background:#f0f0f0;color:#888}
+        .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;margin-bottom:10px}
+        .sticker-actions{display:flex;justify-content:space-between;margin-bottom:10px}
         
         .video-preview{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);width:100px;height:100px;border-radius:50%;background:#1a1a2e;border:3px solid #ff6b6b;z-index:1000;overflow:hidden;display:none}
         .video-preview video{width:100%;height:100%;object-fit:cover}
@@ -158,6 +183,8 @@
                 <div class="message-content">
                     {% if m.content %}
                         {{ m.content|safe }}
+                    {% elif m.file_path and m.file_type == 'sticker' %}
+                        <img src="{{ m.file_path }}" class="sticker-img">
                     {% elif m.file_path and m.file_type == 'video' %}
                         📹 Видеосообщение
                     {% elif m.file_path %}
@@ -166,7 +193,9 @@
                         💬 Сообщение
                     {% endif %}
                 </div>
-                {% if m.file_path and m.file_type == 'video' %}
+                {% if m.file_path and m.file_type == 'sticker' %}
+                    <!-- Уже отображено выше -->
+                {% elif m.file_path and m.file_type == 'video' %}
                     <div class="video-circle" onclick="playVideoMessage(this)">
                         <video src="{{ m.file_path }}" preload="metadata"></video>
                     </div>
@@ -229,11 +258,36 @@
             <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
             <button class="input-icon" id="emojiBtn" style="font-size:18px">😊</button>
+            <button class="input-icon" id="stickerPanelBtn" style="font-size:18px">🎨</button>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()" style="font-size:16px">📎</button>
             <button class="input-icon voice-btn" id="voiceBtn" style="font-size:16px">🎤</button>
         </div>
         <button class="input-icon send-btn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
+        <input type="file" id="customStickerInput" style="display:none" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadCustomSticker(this.files[0])">
+    </div>
+    
+    <!-- СТИКЕР ПАНЕЛЬ -->
+    <div class="sticker-panel" id="stickerPanel">
+        <div class="panel-tabs">
+            <button class="panel-tab active" onclick="switchStickerTab('my')">🐻 Мои</button>
+            <button class="panel-tab" onclick="switchStickerTab('ai')">🤖 AI</button>
+        </div>
+        <div class="panel-content">
+            <div id="myStickersTab">
+                <div class="sticker-actions">
+                    <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить</button>
+                    <span id="stickerCount">0/30</span>
+                </div>
+                <div id="myStickers"><div style="text-align:center;color:#888;padding:20px">Загрузка...</div></div>
+            </div>
+            <div id="aiStickersTab" style="display:none;">
+                <div id="aiInfo" class="ai-info">Загрузка...</div>
+                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер...">
+                <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать</button>
+                <div id="aiResult"></div>
+            </div>
+        </div>
     </div>
     
     <div class="video-preview" id="videoPreview">
@@ -264,6 +318,7 @@
     let currentMentionStart = -1;
     let isSending = false;
     let processedIds = new Set();
+    let aiLimits = {is_premium: false, remaining: 3, limit: 3};
     
     // ВИДЕОСООБЩЕНИЯ
     let videoRecorder = null;
@@ -282,6 +337,154 @@
     function playVideoMessage(el) { const video = el.querySelector('video'); if(video) { video.play(); } }
     function showNotification(msg) { const toast = document.createElement('div'); toast.className = 'notification-toast'; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
+    
+    // ========== СТИКЕРЫ ==========
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerBtn = document.getElementById('stickerPanelBtn');
+    
+    stickerBtn.onclick = () => {
+        stickerPanel.classList.toggle('active');
+        document.getElementById('emojiPicker').classList.remove('active');
+        if(stickerPanel.classList.contains('active')) {
+            loadMyStickers();
+            loadAILimits();
+        }
+    };
+    
+    function switchStickerTab(tab) {
+        document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
+        document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none';
+        if(tab === 'my') loadMyStickers();
+        if(tab === 'ai') loadAILimits();
+    }
+    
+    function loadMyStickers() {
+        fetch('/api/stickers/all')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('myStickers');
+                let html = '';
+                if(data.custom && data.custom.length > 0) {
+                    html += '<div class="sticker-grid">';
+                    data.custom.forEach(s => {
+                        html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div style="text-align:center;color:#888;padding:20px">Нет своих стикеров</div>';
+                }
+                if(data.packs && data.packs.length > 0) {
+                    data.packs.forEach(pack => {
+                        html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div>`;
+                        html += '<div class="sticker-grid">';
+                        pack.stickers.forEach(s => {
+                            html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
+                        });
+                        html += '</div>';
+                    });
+                }
+                container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
+                
+                fetch('/api/coins/balance')
+                    .then(r => r.json())
+                    .then(d => {
+                        document.getElementById('stickerCount').textContent = `${d.custom_stickers_count}/${d.max_custom || '∞'}`;
+                    });
+            });
+    }
+    
+    function uploadCustomSticker(file) {
+        if(!file) return;
+        const emoji = prompt('Эмодзи для стикера:', '🐻') || '🐻';
+        const fd = new FormData();
+        fd.append('sticker', file);
+        fd.append('emoji', emoji);
+        fetch('/stickers/custom/upload', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(data => { if(data.success) loadMyStickers(); else alert(data.error); });
+        document.getElementById('customStickerInput').value = '';
+    }
+    
+    function sendSticker(url) {
+        let formData = new FormData();
+        formData.append('group_id', group_id);
+        formData.append('file_path', url);
+        formData.append('file_name', 'sticker.png');
+        formData.append('file_type', 'sticker');
+        if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        
+        fetch('/send_group', {method: 'POST', body: formData}).then(() => {
+            currentReplyToId = null;
+            document.getElementById('replyBar').style.display = 'none';
+            stickerPanel.classList.remove('active');
+            setTimeout(checkNewMessages, 300);
+        });
+    }
+    
+    // ========== AI ==========
+    function loadAILimits() {
+        fetch('/stickers/ai/limits')
+            .then(r => r.json())
+            .then(data => {
+                aiLimits = data;
+                const info = document.getElementById('aiInfo');
+                const btn = document.getElementById('aiGenerateBtn');
+                if(data.is_premium) {
+                    info.innerHTML = '⭐ Premium — безлимит!';
+                    btn.disabled = false;
+                    btn.textContent = '✨ Сгенерировать';
+                } else {
+                    info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
+                    btn.disabled = data.remaining <= 0;
+                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать';
+                }
+            });
+    }
+    
+    function generateAISticker() {
+        const prompt = document.getElementById('aiPrompt').value.trim();
+        if(!prompt) { alert('Введите описание'); return; }
+        const resultDiv = document.getElementById('aiResult');
+        const btn = document.getElementById('aiGenerateBtn');
+        
+        resultDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#888">⏳ Генерация...</div>';
+        btn.disabled = true;
+        btn.textContent = '⏳ Ждите...';
+        
+        fetch('/stickers/ai/generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt: prompt})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
+                document.getElementById('aiPrompt').value = '';
+                loadAILimits();
+            } else {
+                resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`;
+                loadAILimits();
+            }
+        })
+        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; });
+    }
+    
+    function saveAISticker(url) {
+        const emoji = prompt('Эмодзи:', '🤖') || '🤖';
+        fetch(url).then(r => r.blob()).then(blob => {
+            const fd = new FormData();
+            fd.append('sticker', blob, 'ai_sticker.png');
+            fd.append('emoji', emoji);
+            return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
+        })
+        .then(r => r.json())
+        .then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); });
+    }
+    
+    function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
     
     // ДОЛГОЕ НАЖАТИЕ ДЛЯ ВИДЕО
     voiceBtn.addEventListener('mousedown', startVideoRecording);
@@ -463,7 +666,9 @@
         
         let fileHtml = '';
         if(msg.file_path) {
-            if(msg.file_type == 'video') {
+            if(msg.file_type == 'sticker') {
+                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+            } else if(msg.file_type == 'video') {
                 fileHtml = `<div class="video-circle" onclick="playVideoMessage(this)"><video src="${msg.file_path}" preload="metadata"></video></div>`;
             } else if(msg.file_type == 'image') {
                 fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
@@ -474,8 +679,9 @@
             }
         }
         
-        if(!content && msg.file_path && msg.file_type != 'video') content = '📎 Файл';
+        if(!content && msg.file_path && msg.file_type != 'video' && msg.file_type != 'sticker') content = '📎 Файл';
         if(!content && msg.file_path && msg.file_type == 'video') content = '📹 Видеосообщение';
+        if(!content && msg.file_path && msg.file_type == 'sticker') content = '';
         
         if(msg.voice_duration) content += `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
@@ -606,7 +812,10 @@
         isVoiceLongPress = false;
     });
     
-    document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); };
+    document.getElementById('emojiBtn').onclick = () => { 
+        document.getElementById('emojiPicker').classList.toggle('active'); 
+        stickerPanel.classList.remove('active');
+    };
     document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     msgInput.value = localStorage.getItem('group_msg_' + group_id) || '';
@@ -619,7 +828,15 @@
         if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
     });
     
-    document.addEventListener('click', (e) => { if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) { document.getElementById('emojiPicker').classList.remove('active'); } });
+    document.addEventListener('click', (e) => {
+        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions();
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPicker').classList.remove('active');
+        }
+        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
+            stickerPanel.classList.remove('active');
+        }
+    });
     
     document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) { fetch(`/get_reply_preview/${msgId}/group`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); } });
     
