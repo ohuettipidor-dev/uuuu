@@ -1329,13 +1329,18 @@ def search_users():
     query = request.args.get('q', '').lower().strip()
     if not query:
         return jsonify([])
-    if query.startswith('@'):
-        query = query[1:]
+    
+    # Убираем @ из начала запроса, если есть
+    clean_query = query[1:] if query.startswith('@') else query
+    
     users = User.query.filter(
         User.id != current_user.id,
-        (User.username.ilike(f'%{query}%')) | 
-        (User.username_link.ilike(f'%@{query}%'))
+        db.or_(
+            User.username.ilike(f'%{clean_query}%'),
+            User.username_link.ilike(f'%@{clean_query}%')
+        )
     ).limit(10).all()
+    
     result = []
     for user in users:
         result.append({
