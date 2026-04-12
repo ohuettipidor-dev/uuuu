@@ -1041,13 +1041,21 @@ def send_group():
     content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     content, mentioned_ids = render_mentions(content, current_user.id)
-    if not content and request.form.get('file_path'):
+    file_path = request.form.get('file_path')
+    file_name = request.form.get('file_name')
+    file_type = request.form.get('file_type')
+    
+    # 🔥 ВОТ ЭТА ПРАВКА — принудительно ставим 'sticker' для всех стикеров
+    if file_path and ('sticker' in file_path.lower() or file_path.endswith('.png') or file_path.endswith('.webp')):
+        file_type = 'sticker'
+    
+    if not content and file_path:
         content = '📎 Файл'
     msg = GroupMessage(
         content=content,
-        file_path=request.form.get('file_path'),
-        file_name=request.form.get('file_name'),
-        file_type=request.form.get('file_type'),
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
         sender_id=current_user.id,
         group_id=request.form['group_id'],
         voice_duration=request.form.get('voice_duration', 0),
