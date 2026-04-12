@@ -978,6 +978,27 @@ def secret_chats_list():
         last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
         chats_data.append({'id': sc.id, 'other_user': other_user, 'last_msg': last_msg})
     return render_template('secret_chats.html', secret_chats=chats_data)
+@app.route('/api/secret/burn_message/<int:msg_id>', methods=['POST'])
+@login_required
+def burn_secret_message(msg_id):
+    msg = SecretMessage.query.get(msg_id)
+    if not msg:
+        return jsonify({'error': 'Сообщение не найдено'}), 404
+    
+    secret_chat = msg.secret_chat
+    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
+        return jsonify({'error': 'Нет доступа'}), 403
+    
+    # Удаляем файл, если есть
+    if msg.file_path:
+        filepath = os.path.join(FILE_FOLDER, os.path.basename(msg.file_path))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    
+    db.session.delete(msg)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 # ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
