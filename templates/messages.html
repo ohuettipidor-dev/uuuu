@@ -61,7 +61,23 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-        .emoji-picker{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        .emoji-picker{
+            position:fixed;
+            bottom:80px;
+            left:8px;
+            right:auto;
+            max-width:calc(100vw - 16px);
+            width:auto;
+            min-width:280px;
+            background:white;
+            border-radius:24px;
+            padding:10px;
+            display:none;
+            grid-template-columns:repeat(7,1fr);
+            gap:6px;
+            z-index:100;
+            box-shadow:0 4px 20px rgba(0,0,0,0.15);
+        }
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
@@ -239,10 +255,14 @@
     </div>
     
     <div class="emoji-picker" id="emojiPicker">
-        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>❤️</span><span>💕</span><span>💖</span>
-        <span>😂</span><span>🤣</span><span>😭</span><span>😢</span><span>😡</span><span>🤔</span><span>👍</span>
-        <span>👎</span><span>🙏</span><span>🎉</span><span>✨</span><span>🔥</span><span>💯</span><span>🐻</span>
-        <span>🐼</span><span>🦊</span><span>🐱</span><span>🐶</span><span>🦝</span><span>🧸</span><span>🎈</span>
+        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span>
+        <span>💗</span><span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span>
+        <span>😡</span><span>🤔</span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
+        <span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span>
+        <span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span><span>🧸</span><span>🎈</span><span>🎀</span>
+        <span>😎</span><span>🥺</span><span>😈</span><span>💀</span><span>🎂</span><span>🍕</span><span>☕</span>
+        <span>🚀</span><span>🌈</span><span>🍀</span><span>🐝</span><span>🦋</span><span>🐞</span><span>🐙</span>
+        <span>👑</span><span>💍</span><span>🎁</span><span>🏆</span><span>⚽</span><span>🎮</span><span>📱</span>
     </div>
     
     <div class="sticker-panel" id="stickerPanel">
@@ -742,7 +762,13 @@
                 if(data.is_premium) {
                     info.innerHTML = '⭐ Premium — безлимит!';
                     btn.disabled = false;
+                    btn.textContent = '⭐ Premium — безлимит!';
+                    btn.disabled = false;
                     btn.textContent = '✨ Сгенерировать';
+                } else {
+                    info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
+                    btn.disabled = data.remaining <= 0;
+                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит' :✨ Сгенерировать';
                 } else {
                     info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
                     btn.disabled = data.remaining <= 0;
@@ -751,17 +777,39 @@
             });
     }
     
+    function generateAISticker() '✨ Сгенерировать';
+                }
+            });
+    }
+    
     function generateAISticker() {
         const prompt = document.getElementById('aiPrompt').value.trim();
-        if(!prompt) { alert('Введите описание'); return; }
+        if(!prompt) {
+        const prompt = document.getElementById('aiPrompt').value.trim();
+        if(!prompt) { alert('Введите оп { alert('Введите описание'); return; }
+        const resultDiv = document.getElementById('aiResult');
+        const btn = document.getElementById('aiGenerateBtn');
+        
+        resultисание'); return; }
         const resultDiv = document.getElementById('aiResult');
         const btn = document.getElementById('aiGenerateBtn');
         
         resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>';
         btn.disabled = true;
-        btn.textContent = '⏳ Ждите...';
+        btn.textContentDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>';
+        btn.disabled = true;
+        btn.textContent = ' = '⏳ Ждите...';
         
         fetch('/stickers/ai/generate', {
+           ⏳ Ждите...';
+        
+        fetch('/stickers/ai/generate', method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt: prompt})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({prompt: prompt})
@@ -769,27 +817,53 @@
         .then(r => r.json())
         .then(data => {
             if(data.success) {
-                resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
+                resultDiv.innerHTML = `<div.success) {
+                resultDiv.innerHTML = `<div class="ai-preview"><img src class="ai-preview"><img src="${data.sticker.url}"><div class="ai-p="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.urlreview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
+                document.getElementById('aiPrompt').value = '';
+                loadAILimits}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
                 document.getElementById('aiPrompt').value = '';
                 loadAILimits();
+            } else {
+                resultDiv.innerHTML = `<div style="color:#ff6b6b;();
             } else {
                 resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`;
                 loadAILimits();
             }
         })
-        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; });
+        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>text-align:center">❌ ${data.error}</div>`;
+                loadAILimits();
+            }
+        })
+        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent'; btn.disabled = false; btn.textContent = '✨ Сгене = '✨ Сгенерировать'; });
+   рировать'; });
     }
+    
+    function saveAISticker(url) {
+        const emoji = prompt('Эмодзи:', '🤖') || '🤖';
+        fetch(url).then(r => r.blob()).then( }
     
     function saveAISticker(url) {
         const emoji = prompt('Эмодзи:', '🤖') || '🤖';
         fetch(url).then(r => r.blob()).then(blob => {
             const fd = new FormData();
             fd.append('sticker', blob, 'ai_sticker.png');
+           blob => {
+            const fd = new FormData();
+            fd.append('sticker', blob, 'ai_sticker.png');
             fd.append('emoji', emoji);
             return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
         })
         .then(r => r.json())
-        .then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); });
+        .then(data => { if(data fd.append('emoji', emoji);
+            return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
+        })
+        .then(r => r.json())
+        .then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error);.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); });
+    }
+    
+    function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
+    
+    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); send });
     }
     
     function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
@@ -797,9 +871,16 @@
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
     
     document.addEventListener('click', (e) => {
-        if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions();
+        if(!documentMsg(); } });
+    
+    document.addEventListener('click', (e) => {
+        if(!document.getElementById('mentionSuggestions')..getElementById('mentionSuggestions').contains(econtains(e.target) && e.target) && e.target !== msgInput) hideSuggestions();
         if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
-            document.getElementById('emojiPicker').classList.remove('active');
+            document.getElementById('emo.target !== msgInput) hideSuggestions();
+        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+            document.getElementById('emojiPickerjiPicker').classList.remove('active');
+        }
+        if(!stickerPanel.contains(e.target) && e.target').classList.remove('active');
         }
         if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
             stickerPanel.classList.remove('active');
@@ -808,9 +889,25 @@
     
     document.querySelectorAll('.reply-preview').forEach(el => {
         const msgId = el.closest('.message')?.getAttribute('data-id');
+        !== stickerBtn) {
+            stickerPanel.classList.remove('active');
+        }
+    });
+    
+    document.querySelectorAll('.reply-preview').forEach(el => {
+        const msgId = el.closest('.message')?.getAttribute('data-id');
         if(msgId) {
             fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
+                if(el) el.innerHTML = `<span>📩 Ответ:</span><br if(msgId) {
+            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
                 if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`;
+            });
+        }
+    });
+    
+    loadPinnedMessage();
+    setInterval(checkNewMessages, 1000);
+    document.getElementById('messages').scrollTop =><span>${escapeHtml(data.content)}</span>`;
             });
         }
     });

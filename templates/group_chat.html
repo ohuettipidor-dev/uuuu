@@ -104,7 +104,23 @@
         .mention-suggestion-name{font-size:13px;font-weight:500;color:#333}
         .mention-suggestion-link{font-size:10px;color:#999}
         
-        .emoji-picker{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        .emoji-picker{
+            position:fixed;
+            bottom:80px;
+            left:8px;
+            right:auto;
+            max-width:calc(100vw - 16px);
+            width:auto;
+            min-width:280px;
+            background:white;
+            border-radius:24px;
+            padding:10px;
+            display:none;
+            grid-template-columns:repeat(7,1fr);
+            gap:6px;
+            z-index:100;
+            box-shadow:0 4px 20px rgba(0,0,0,0.15);
+        }
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
@@ -301,6 +317,9 @@
         <span>😡</span><span>🤔</span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
         <span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span>
         <span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span><span>🧸</span><span>🎈</span><span>🎀</span>
+        <span>😎</span><span>🥺</span><span>😈</span><span>💀</span><span>🎂</span><span>🍕</span><span>☕</span>
+        <span>🚀</span><span>🌈</span><span>🍀</span><span>🐝</span><span>🦋</span><span>🐞</span><span>🐙</span>
+        <span>👑</span><span>💍</span><span>🎁</span><span>🏆</span><span>⚽</span><span>🎮</span><span>📱</span>
     </div>
 </div>
 
