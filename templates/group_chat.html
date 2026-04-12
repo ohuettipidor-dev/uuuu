@@ -433,13 +433,21 @@
         formData.append('file_name', 'sticker.png');
         formData.append('file_type', 'sticker');
         if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
+        formData.append('_from_ajax', 'true');
         
-        fetch('/send_group', {method: 'POST', body: formData}).then(() => {
-            currentReplyToId = null;
-            document.getElementById('replyBar').style.display = 'none';
-            stickerPanel.classList.remove('active');
-            setTimeout(checkNewMessages, 300);
-        });
+        fetch('/send_group', {method: 'POST', body: formData})
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    currentReplyToId = null;
+                    document.getElementById('replyBar').style.display = 'none';
+                    stickerPanel.classList.remove('active');
+                    setTimeout(checkNewMessages, 300);
+                } else {
+                    alert(data.error || 'Ошибка отправки стикера');
+                }
+            })
+            .catch(() => alert('Ошибка соединения'));
     }
     
     // ========== AI ==========
@@ -583,11 +591,19 @@
                     fd2.append('file_name', 'Видеосообщение');
                     fd2.append('file_type', 'video');
                     if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
-                    fetch('/send_group', { method: 'POST', body: fd2 }).then(() => {
-                        currentReplyToId = null;
-                        document.getElementById('replyBar').style.display = 'none';
-                        setTimeout(() => checkNewMessages(), 100);
-                    });
+                    fd2.append('_from_ajax', 'true');
+                    fetch('/send_group', { method: 'POST', body: fd2 })
+                        .then(r => r.json())
+                        .then(data => {
+                            if(data.success) {
+                                currentReplyToId = null;
+                                document.getElementById('replyBar').style.display = 'none';
+                                setTimeout(() => checkNewMessages(), 100);
+                            } else {
+                                alert(data.error || 'Ошибка отправки видео');
+                            }
+                        })
+                        .catch(() => alert('Ошибка соединения'));
                 }
             });
     }
@@ -727,6 +743,7 @@
         fd.append('group_id', group_id);
         if(content) fd.append('content', content);
         if(currentReplyToId) fd.append('reply_to_id', currentReplyToId);
+        fd.append('_from_ajax', 'true');
         
         let savedReplyId = currentReplyToId;
         currentReplyToId = null;
@@ -734,32 +751,48 @@
         localStorage.setItem('group_msg_' + group_id, '');
         
         fetch('/send_group', {method: 'POST', body: fd})
-            .then(() => {
-                setTimeout(() => checkNewMessages(), 100);
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    msgInput.value = '';
+                    setTimeout(() => { checkNewMessages(); isSending = false; }, 100);
+                } else {
+                    alert(data.error || 'Ошибка отправки');
+                    isSending = false;
+                }
             })
-            .catch(() => { 
-                isSending = false;
-                alert('Ошибка отправки');
-            });
-        
-        msgInput.value = '';
+            .catch(() => { isSending = false; alert('Ошибка соединения'); });
     }
     
     function sendFile(file) {
+        if(!file) return;
         let fd = new FormData(); fd.append('file', file);
-        fetch('/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { 
-            let fd2 = new FormData(); 
-            fd2.append('group_id', group_id); 
-            fd2.append('file_path', d.path); 
-            fd2.append('file_name', d.name); 
-            fd2.append('file_type', d.type); 
-            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); 
-            fetch('/send_group', {method: 'POST', body: fd2}).then(() => { 
-                currentReplyToId = null; 
-                document.getElementById('replyBar').style.display = 'none'; 
-                setTimeout(() => checkNewMessages(), 100); 
-            }); 
-        } });
+        fetch('/upload', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if(d.path) {
+                    let fd2 = new FormData();
+                    fd2.append('group_id', group_id);
+                    fd2.append('file_path', d.path);
+                    fd2.append('file_name', d.name);
+                    fd2.append('file_type', d.type);
+                    if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                    fd2.append('_from_ajax', 'true');
+                    fetch('/send_group', {method: 'POST', body: fd2})
+                        .then(r => r.json())
+                        .then(data => {
+                            if(data.success) {
+                                currentReplyToId = null;
+                                document.getElementById('replyBar').style.display = 'none';
+                                setTimeout(() => checkNewMessages(), 100);
+                            } else {
+                                alert(data.error || 'Ошибка отправки файла');
+                            }
+                        })
+                        .catch(() => alert('Ошибка соединения'));
+                }
+            });
+        document.getElementById('fileInput').value = '';
     }
     
     function checkNewMessages() { 
@@ -768,10 +801,8 @@
             .then(msgs => {
                 if(msgs && msgs.length) {
                     msgs.forEach(m => addNewMessage(m));
-                    isSending = false;
-                } else {
-                    isSending = false;
                 }
+                isSending = false;
             })
             .catch(() => { isSending = false; });
     }
@@ -797,7 +828,32 @@
                 const fd = new FormData();
                 fd.append('audio', blob);
                 fd.append('duration', duration);
-                fetch('/upload_voice', {method: 'POST', body: fd}).then(r=>r.json()).then(d => { if(d.path) { let fd2 = new FormData(); fd2.append('group_id', group_id); fd2.append('file_path', d.path); fd2.append('file_name', 'Голосовое'); fd2.append('file_type', 'audio'); fd2.append('voice_duration', duration); if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId); fetch('/send_group', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(() => checkNewMessages(), 100); }); } });
+                fetch('/upload_voice', {method: 'POST', body: fd})
+                    .then(r => r.json())
+                    .then(d => {
+                        if(d.path) {
+                            let fd2 = new FormData();
+                            fd2.append('group_id', group_id);
+                            fd2.append('file_path', d.path);
+                            fd2.append('file_name', 'Голосовое');
+                            fd2.append('file_type', 'audio');
+                            fd2.append('voice_duration', duration);
+                            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                            fd2.append('_from_ajax', 'true');
+                            fetch('/send_group', {method: 'POST', body: fd2})
+                                .then(r => r.json())
+                                .then(data => {
+                                    if(data.success) {
+                                        currentReplyToId = null;
+                                        document.getElementById('replyBar').style.display = 'none';
+                                        setTimeout(() => checkNewMessages(), 100);
+                                    } else {
+                                        alert(data.error || 'Ошибка отправки голосового');
+                                    }
+                                })
+                                .catch(() => alert('Ошибка соединения'));
+                        }
+                    });
                 stream.getTracks().forEach(t => t.stop());
                 voiceBtn.classList.remove('recording');
                 voiceBtn.textContent = '🎤';

@@ -61,23 +61,7 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-        .emoji-picker{
-            position:fixed;
-            bottom:80px;
-            left:8px;
-            right:auto;
-            max-width:calc(100vw - 16px);
-            width:auto;
-            min-width:280px;
-            background:white;
-            border-radius:24px;
-            padding:10px;
-            display:none;
-            grid-template-columns:repeat(7,1fr);
-            gap:6px;
-            z-index:100;
-            box-shadow:0 4px 20px rgba(0,0,0,0.15);
-        }
+        .emoji-picker{position:fixed;bottom:80px;left:8px;right:auto;max-width:calc(100vw - 16px);width:auto;min-width:280px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
@@ -302,17 +286,8 @@
     let processedIds = new Set();
     let aiLimits = {is_premium: false, remaining: 3, limit: 3};
     
-    function playVoice(el) {
-        const audio = el.closest('.bubble').querySelector('audio');
-        if(audio) audio.play();
-    }
-    
-    function escapeHtml(t) {
-        if(!t) return '';
-        const div = document.createElement('div');
-        div.textContent = t;
-        return div.innerHTML;
-    }
+    function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
+    function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
     
     function startVideoCall() {
         fetch('/start_call/' + receiver_id, {method: 'POST'})
@@ -321,167 +296,66 @@
     }
     
     msgInput.addEventListener('input', function() {
-        fetch('/typing', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({receiver_id: receiver_id, is_typing: true})
-        });
+        fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
         if(typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            fetch('/typing', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({receiver_id: receiver_id, is_typing: false})
-            });
-        }, 1000);
+        typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})}), 1000);
     });
     
     function checkTyping() {
-        fetch(`/get_typing/${receiver_id}`)
-            .then(r => r.json())
-            .then(data => {
-                const statusDiv = document.getElementById('typingStatus');
-                if(data.is_typing) {
-                    statusDiv.innerHTML = '✏️ Печатает...';
-                    statusDiv.className = 'user-status typing';
-                } else {
-                    const isOnline = '{{ other.status }}' === 'online';
-                    statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн';
-                    statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;
-                }
-            });
+        fetch(`/get_typing/${receiver_id}`).then(r=>r.json()).then(data => {
+            const statusDiv = document.getElementById('typingStatus');
+            if(data.is_typing) { statusDiv.innerHTML = '✏️ Печатает...'; statusDiv.className = 'user-status typing'; }
+            else { const isOnline = '{{ other.status }}' === 'online'; statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн'; statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`; }
+        });
     }
     setInterval(checkTyping, 2000);
     
     function loadPinnedMessage() {
-        fetch(`/get_pinned_message/${receiver_id}/private`)
-            .then(r => r.json())
-            .then(data => {
-                if(data.id) {
-                    document.getElementById('pinnedMessageBar').style.display = 'flex';
-                    document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`;
-                    window.pinnedMsgId = data.id;
-                } else {
-                    document.getElementById('pinnedMessageBar').style.display = 'none';
-                    window.pinnedMsgId = null;
-                }
-            });
-    }
-    
-    function scrollToPinned() {
-        if(window.pinnedMsgId) {
-            const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`);
-            if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-    
-    function pinMessage(msgId, type) {
-        fetch('/pin_message', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({msg_id: msgId, type: type})
-        }).then(() => {
-            setTimeout(() => {
-                checkNewMessages();
-                loadPinnedMessage();
-            }, 300);
+        fetch(`/get_pinned_message/${receiver_id}/private`).then(r=>r.json()).then(data => {
+            if(data.id) { document.getElementById('pinnedMessageBar').style.display = 'flex'; document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`; window.pinnedMsgId = data.id; }
+            else { document.getElementById('pinnedMessageBar').style.display = 'none'; window.pinnedMsgId = null; }
         });
     }
     
+    function scrollToPinned() { if(window.pinnedMsgId) { const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+    function pinMessage(msgId, type) { fetch('/pin_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: msgId, type: type})}).then(() => { setTimeout(() => { checkNewMessages(); loadPinnedMessage(); }, 300); }); }
     function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
     
-    function searchUsers(query) {
-        if(!query) { hideSuggestions(); return; }
-        fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); });
-    }
-    
-    function showSuggestions(users) {
-        const div = document.getElementById('mentionSuggestions');
-        div.innerHTML = '';
-        users.forEach(u => {
-            const item = document.createElement('div');
-            item.className = 'mention-suggestion-item';
-            item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`;
-            item.onclick = () => insertMention(u.username);
-            div.appendChild(item);
-        });
-        div.classList.add('active');
-    }
-    
-    function insertMention(username) {
-        const val = msgInput.value, cursor = msgInput.selectionStart;
-        const before = val.substring(0, currentMentionStart), after = val.substring(cursor);
-        msgInput.value = before + '@' + username + ' ' + after;
-        msgInput.focus();
-        msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2;
-        hideSuggestions();
-        currentMentionStart = -1;
-    }
-    
+    function searchUsers(query) { if(!query) { hideSuggestions(); return; } fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); }); }
+    function showSuggestions(users) { const div = document.getElementById('mentionSuggestions'); div.innerHTML = ''; users.forEach(u => { const item = document.createElement('div'); item.className = 'mention-suggestion-item'; item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`; item.onclick = () => insertMention(u.username); div.appendChild(item); }); div.classList.add('active'); }
+    function insertMention(username) { const val = msgInput.value, cursor = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); currentMentionStart = -1; }
     function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
     
     let currentMentionStart = -1;
     let mentionSearchTimeout = null;
-    
-    msgInput.addEventListener('input', function() {
-        const val = this.value, cursor = this.selectionStart;
-        let lastAt = -1;
-        for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
-        if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; }
-    });
+    msgInput.addEventListener('input', function() { const val = this.value, cursor = this.selectionStart; let lastAt = -1; for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; } if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; } });
     
     function addNewMessage(msg) {
         if(processedIds.has(msg.id)) return;
         processedIds.add(msg.id);
-        
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
         div.setAttribute('data-id', msg.id);
-        
         let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
         let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
         let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
-        
         let fileHtml = '';
         if(msg.file_path) {
-            if(msg.file_type == 'sticker') {
-                fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
-            } else if(msg.file_type == 'image') {
-                fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
-            } else if(msg.file_type == 'audio') {
-                fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-            } else if(msg.file_type == 'video') {
-                fileHtml = `<video controls src="${msg.file_path}"></video>`;
-            } else {
-                fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
-            }
+            if(msg.file_type == 'sticker') fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+            else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
+            else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+            else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}"></video>`;
+            else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
         }
-        
-        let contentHtml = '';
-        if(msg.content && msg.file_type !== 'sticker') {
-            contentHtml = `<div>${escapeHtml(msg.content)}</div>`;
-        }
-        
-        let voiceHtml = '';
-        if(msg.voice_duration) {
-            voiceHtml = `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
-        }
-        
+        let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
+        let voiceHtml = msg.voice_duration ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
         let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
-        
         div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
         messagesDiv.appendChild(div);
-        
-        if(msg.reply_to_id) {
-            fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => {
-                const p = div.querySelector('.reply-preview span:last-child');
-                if(p) p.textContent = data.content;
-            });
-        }
-        
+        if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         lastMsgId = msg.id;
         if(msg.is_pinned) loadPinnedMessage();
@@ -489,41 +363,34 @@
     
     function sendMsg() {
         if(isSending) return;
-        
         const content = msgInput.value.trim();
         if(!content && !currentReplyToId) return;
-        
         isSending = true;
-        
         const formData = new FormData();
         formData.append('receiver_id', receiver_id);
         if(content) formData.append('content', content);
         if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
-        
-        const savedReplyId = currentReplyToId;
+        formData.append('_from_ajax', 'true');
         currentReplyToId = null;
         document.getElementById('replyBar').style.display = 'none';
-        
         fetch('/send', {method: 'POST', body: formData})
-            .then(() => {
-                msgInput.value = '';
-                setTimeout(() => {
-                    checkNewMessages();
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    msgInput.value = '';
+                    setTimeout(() => { checkNewMessages(); isSending = false; }, 300);
+                } else {
+                    alert(data.error || 'Ошибка отправки');
                     isSending = false;
-                }, 300);
+                }
             })
-            .catch(() => {
-                isSending = false;
-                alert('Ошибка отправки');
-            });
+            .catch(() => { isSending = false; alert('Ошибка соединения'); });
     }
     
     function sendFile(file) {
         if(!file) return;
-        
         const formData = new FormData();
         formData.append('file', file);
-        
         fetch('/upload', {method: 'POST', body: formData})
             .then(r => r.json())
             .then(data => {
@@ -534,81 +401,24 @@
                     formData2.append('file_name', data.name);
                     formData2.append('file_type', data.type);
                     if(currentReplyToId) formData2.append('reply_to_id', currentReplyToId);
+                    formData2.append('_from_ajax', 'true');
                     fetch('/send', {method: 'POST', body: formData2})
-                        .then(() => {
-                            currentReplyToId = null;
-                            document.getElementById('replyBar').style.display = 'none';
-                            setTimeout(checkNewMessages, 200);
-                        });
+                        .then(r => r.json())
+                        .then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
                 }
             });
     }
     
     function checkNewMessages() {
-        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`)
-            .then(r => r.json())
-            .then(msgs => {
-                if(msgs && msgs.length) {
-                    msgs.forEach(m => addNewMessage(m));
-                }
-            });
+        fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => { if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m)); });
     }
     
-    function editMessage(id, type) {
-        let newText = prompt('Новый текст:');
-        if(newText && newText.trim()) {
-            fetch('/edit_message', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({msg_id: id, new_content: newText, type: type})
-            }).then(() => setTimeout(checkNewMessages, 300));
-        }
-    }
-    
-    function deleteMessage(id, type, all) {
-        if(confirm('Удалить сообщение?')) {
-            fetch('/delete_message', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})
-            }).then(() => {
-                document.querySelector(`.message[data-id="${id}"]`)?.remove();
-                if(window.pinnedMsgId == id) loadPinnedMessage();
-            });
-        }
-    }
-    
-    function toggleFavorite(id, type) {
-        fetch('/toggle_favorite', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({msg_id: id, type: type})
-        }).then(() => setTimeout(checkNewMessages, 300));
-    }
-    
-    function forwardMessage(id, type) {
-        let target = prompt('ID пользователя для пересылки:');
-        if(target) {
-            fetch('/forward_message', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})
-            }).then(() => alert('Переслано!'));
-        }
-    }
-    
-    function replyToMessage(id, content) {
-        currentReplyToId = id;
-        const bar = document.getElementById('replyBar');
-        document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : '');
-        bar.style.display = 'flex';
-        msgInput.focus();
-    }
-    
-    function cancelReply() {
-        currentReplyToId = null;
-        document.getElementById('replyBar').style.display = 'none';
-    }
+    function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText && newText.trim()) { fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type})}).then(() => setTimeout(checkNewMessages, 300)); } }
+    function deleteMessage(id, type, all) { if(confirm('Удалить сообщение?')) { fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})}).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
+    function toggleFavorite(id, type) { fetch('/toggle_favorite', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})}).then(() => setTimeout(checkNewMessages, 300)); }
+    function forwardMessage(id, type) { let target = prompt('ID пользователя для пересылки:'); if(target) { fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})}).then(() => alert('Переслано!')); } }
+    function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
+    function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
     
     async function startVoiceRecording() {
         try {
@@ -616,7 +426,6 @@
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
             startTime = Date.now();
-            
             mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
             mediaRecorder.onstop = () => {
                 const duration = Math.round((Date.now() - startTime) / 1000);
@@ -624,7 +433,6 @@
                 const fd = new FormData();
                 fd.append('audio', blob);
                 fd.append('duration', duration);
-                
                 fetch('/upload_voice', {method: 'POST', body: fd})
                     .then(r => r.json())
                     .then(d => {
@@ -636,281 +444,63 @@
                             fd2.append('file_type', 'audio');
                             fd2.append('voice_duration', duration);
                             if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
-                            fetch('/send', {method: 'POST', body: fd2})
-                                .then(() => {
-                                    currentReplyToId = null;
-                                    document.getElementById('replyBar').style.display = 'none';
-                                    setTimeout(checkNewMessages, 200);
-                                });
+                            fd2.append('_from_ajax', 'true');
+                            fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
                         }
                     });
-                
                 stream.getTracks().forEach(t => t.stop());
                 document.getElementById('voiceBtn').classList.remove('recording');
                 document.getElementById('voiceBtn').textContent = '🎤';
                 isAudioRecording = false;
             };
-            
             mediaRecorder.start();
             isAudioRecording = true;
             document.getElementById('voiceBtn').classList.add('recording');
             document.getElementById('voiceBtn').textContent = '⏹️';
-            
             setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
         } catch(e) { alert('Микрофон не доступен'); }
     }
-    
     function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
-    function toggleVoiceRecording() { if(isAudioRecording) stopVoiceRecording(); else startVoiceRecording(); }
+    function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
     document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
     
-    document.getElementById('emojiBtn').onclick = () => {
-        document.getElementById('emojiPicker').classList.toggle('active');
-        document.getElementById('stickerPanel').classList.remove('active');
-    };
-    document.querySelectorAll('.emoji-picker span').forEach(e => {
-        e.onclick = () => {
-            msgInput.value += e.textContent;
-            document.getElementById('emojiPicker').classList.remove('active');
-            msgInput.focus();
-        };
-    });
+    document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); document.getElementById('stickerPanel').classList.remove('active'); };
+    document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
     
     const stickerPanel = document.getElementById('stickerPanel');
     const stickerBtn = document.getElementById('stickerPanelBtn');
-    
-    stickerBtn.onclick = () => {
-        stickerPanel.classList.toggle('active');
-        document.getElementById('emojiPicker').classList.remove('active');
-        if(stickerPanel.classList.contains('active')) {
-            loadMyStickers();
-            loadAILimits();
-        }
-    };
-    
-    function switchStickerTab(tab) {
-        document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-        document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
-        document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none';
-        if(tab === 'my') loadMyStickers();
-        if(tab === 'ai') loadAILimits();
-    }
-    
+    stickerBtn.onclick = () => { stickerPanel.classList.toggle('active'); document.getElementById('emojiPicker').classList.remove('active'); if(stickerPanel.classList.contains('active')) { loadMyStickers(); loadAILimits(); } };
+    function switchStickerTab(tab) { document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active')); event.target.classList.add('active'); document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none'; document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none'; if(tab === 'my') loadMyStickers(); if(tab === 'ai') loadAILimits(); }
     function loadMyStickers() {
-        fetch('/api/stickers/all')
-            .then(r => r.json())
-            .then(data => {
-                const container = document.getElementById('myStickers');
-                let html = '';
-                if(data.custom && data.custom.length > 0) {
-                    html += '<div class="sticker-grid">';
-                    data.custom.forEach(s => {
-                        html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
-                    });
+        fetch('/api/stickers/all').then(r=>r.json()).then(data => {
+            const container = document.getElementById('myStickers');
+            let html = '';
+            if(data.custom && data.custom.length > 0) {
+                html += '<div class="sticker-grid">';
+                data.custom.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
+                html += '</div>';
+            } else html += '<div style="text-align:center;color:#888;padding:20px">Нет своих стикеров</div>';
+            if(data.packs && data.packs.length > 0) {
+                data.packs.forEach(pack => {
+                    html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div><div class="sticker-grid">`;
+                    pack.stickers.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
                     html += '</div>';
-                } else {
-                    html += '<div style="text-align:center;color:#888;padding:20px">Нет своих стикеров</div>';
-                }
-                if(data.packs && data.packs.length > 0) {
-                    data.packs.forEach(pack => {
-                        html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div>`;
-                        html += '<div class="sticker-grid">';
-                        pack.stickers.forEach(s => {
-                            html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`;
-                        });
-                        html += '</div>';
-                    });
-                }
-                container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
-                
-                fetch('/api/coins/balance')
-                    .then(r => r.json())
-                    .then(d => {
-                        document.getElementById('stickerCount').textContent = `${d.custom_stickers_count}/${d.max_custom || '∞'}`;
-                    });
-            });
-    }
-    
-    function uploadCustomSticker(file) {
-        if(!file) return;
-        const emoji = prompt('Эмодзи для стикера:', '🐻') || '🐻';
-        const fd = new FormData();
-        fd.append('sticker', file);
-        fd.append('emoji', emoji);
-        fetch('/stickers/custom/upload', {method: 'POST', body: fd})
-            .then(r => r.json())
-            .then(data => { if(data.success) loadMyStickers(); else alert(data.error); });
-        document.getElementById('customStickerInput').value = '';
-    }
-    
-    function sendSticker(url) {
-        fetch('/stickers/send', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})
-        }).then(() => { stickerPanel.classList.remove('active'); setTimeout(checkNewMessages, 300); });
-    }
-    
-    function loadAILimits() {
-        fetch('/stickers/ai/limits')
-            .then(r => r.json())
-            .then(data => {
-                aiLimits = data;
-                const info = document.getElementById('aiInfo');
-                const btn = document.getElementById('aiGenerateBtn');
-                if(data.is_premium) {
-                    info.innerHTML = '⭐ Premium — безлимит!';
-                    btn.disabled = false;
-                    btn.textContent = '⭐ Premium — безлимит!';
-                    btn.disabled = false;
-                    btn.textContent = '✨ Сгенерировать';
-                } else {
-                    info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
-                    btn.disabled = data.remaining <= 0;
-                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит' :✨ Сгенерировать';
-                } else {
-                    info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`;
-                    btn.disabled = data.remaining <= 0;
-                    btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать';
-                }
-            });
-    }
-    
-    function generateAISticker() '✨ Сгенерировать';
-                }
-            });
-    }
-    
-    function generateAISticker() {
-        const prompt = document.getElementById('aiPrompt').value.trim();
-        if(!prompt) {
-        const prompt = document.getElementById('aiPrompt').value.trim();
-        if(!prompt) { alert('Введите оп { alert('Введите описание'); return; }
-        const resultDiv = document.getElementById('aiResult');
-        const btn = document.getElementById('aiGenerateBtn');
-        
-        resultисание'); return; }
-        const resultDiv = document.getElementById('aiResult');
-        const btn = document.getElementById('aiGenerateBtn');
-        
-        resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>';
-        btn.disabled = true;
-        btn.textContentDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>';
-        btn.disabled = true;
-        btn.textContent = ' = '⏳ Ждите...';
-        
-        fetch('/stickers/ai/generate', {
-           ⏳ Ждите...';
-        
-        fetch('/stickers/ai/generate', method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({prompt: prompt})
-        })
-        .then(r => r.json())
-        .then(data => {
-            if(data {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({prompt: prompt})
-        })
-        .then(r => r.json())
-        .then(data => {
-            if(data.success) {
-                resultDiv.innerHTML = `<div.success) {
-                resultDiv.innerHTML = `<div class="ai-preview"><img src class="ai-preview"><img src="${data.sticker.url}"><div class="ai-p="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.urlreview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
-                document.getElementById('aiPrompt').value = '';
-                loadAILimits}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`;
-                document.getElementById('aiPrompt').value = '';
-                loadAILimits();
-            } else {
-                resultDiv.innerHTML = `<div style="color:#ff6b6b;();
-            } else {
-                resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`;
-                loadAILimits();
+                });
             }
-        })
-        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>text-align:center">❌ ${data.error}</div>`;
-                loadAILimits();
-            }
-        })
-        .catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent'; btn.disabled = false; btn.textContent = '✨ Сгене = '✨ Сгенерировать'; });
-   рировать'; });
+            container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
+            fetch('/api/coins/balance').then(r=>r.json()).then(d => { document.getElementById('stickerCount').textContent = `${d.custom_stickers_count}/${d.max_custom || '∞'}`; });
+        });
     }
-    
-    function saveAISticker(url) {
-        const emoji = prompt('Эмодзи:', '🤖') || '🤖';
-        fetch(url).then(r => r.blob()).then( }
-    
-    function saveAISticker(url) {
-        const emoji = prompt('Эмодзи:', '🤖') || '🤖';
-        fetch(url).then(r => r.blob()).then(blob => {
-            const fd = new FormData();
-            fd.append('sticker', blob, 'ai_sticker.png');
-           blob => {
-            const fd = new FormData();
-            fd.append('sticker', blob, 'ai_sticker.png');
-            fd.append('emoji', emoji);
-            return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
-        })
-        .then(r => r.json())
-        .then(data => { if(data fd.append('emoji', emoji);
-            return fetch('/stickers/custom/upload', {method: 'POST', body: fd});
-        })
-        .then(r => r.json())
-        .then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error);.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); });
-    }
-    
-    function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
-    
-    msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); send });
-    }
-    
+    function uploadCustomSticker(file) { if(!file) return; const emoji = prompt('Эмодзи для стикера:', '🐻') || '🐻'; const fd = new FormData(); fd.append('sticker', file); fd.append('emoji', emoji); fetch('/stickers/custom/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(data => { if(data.success) loadMyStickers(); else alert(data.error); }); document.getElementById('customStickerInput').value = ''; }
+    function sendSticker(url) { fetch('/stickers/send', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})}).then(() => { stickerPanel.classList.remove('active'); setTimeout(checkNewMessages, 300); }); }
+    function loadAILimits() { fetch('/stickers/ai/limits').then(r=>r.json()).then(data => { aiLimits = data; const info = document.getElementById('aiInfo'); const btn = document.getElementById('aiGenerateBtn'); if(data.is_premium) { info.innerHTML = '⭐ Premium — безлимит!'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; } else { info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`; btn.disabled = data.remaining <= 0; btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать'; } }); }
+    function generateAISticker() { const prompt = document.getElementById('aiPrompt').value.trim(); if(!prompt) { alert('Введите описание'); return; } const resultDiv = document.getElementById('aiResult'); const btn = document.getElementById('aiGenerateBtn'); resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>'; btn.disabled = true; btn.textContent = '⏳ Ждите...'; fetch('/stickers/ai/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt: prompt})}).then(r=>r.json()).then(data => { if(data.success) { resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`; document.getElementById('aiPrompt').value = ''; loadAILimits(); } else { resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`; loadAILimits(); } }).catch(e => { resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; }); }
+    function saveAISticker(url) { const emoji = prompt('Эмодзи:', '🤖') || '🤖'; fetch(url).then(r=>r.blob()).then(blob => { const fd = new FormData(); fd.append('sticker', blob, 'ai_sticker.png'); fd.append('emoji', emoji); return fetch('/stickers/custom/upload', {method: 'POST', body: fd}); }).then(r=>r.json()).then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); }); }
     function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
     
     msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
-    
-    document.addEventListener('click', (e) => {
-        if(!documentMsg(); } });
-    
-    document.addEventListener('click', (e) => {
-        if(!document.getElementById('mentionSuggestions')..getElementById('mentionSuggestions').contains(econtains(e.target) && e.target) && e.target !== msgInput) hideSuggestions();
-        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
-            document.getElementById('emo.target !== msgInput) hideSuggestions();
-        if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
-            document.getElementById('emojiPickerjiPicker').classList.remove('active');
-        }
-        if(!stickerPanel.contains(e.target) && e.target').classList.remove('active');
-        }
-        if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) {
-            stickerPanel.classList.remove('active');
-        }
-    });
-    
-    document.querySelectorAll('.reply-preview').forEach(el => {
-        const msgId = el.closest('.message')?.getAttribute('data-id');
-        !== stickerBtn) {
-            stickerPanel.classList.remove('active');
-        }
-    });
-    
-    document.querySelectorAll('.reply-preview').forEach(el => {
-        const msgId = el.closest('.message')?.getAttribute('data-id');
-        if(msgId) {
-            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
-                if(el) el.innerHTML = `<span>📩 Ответ:</span><br if(msgId) {
-            fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => {
-                if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`;
-            });
-        }
-    });
-    
-    loadPinnedMessage();
-    setInterval(checkNewMessages, 1000);
-    document.getElementById('messages').scrollTop =><span>${escapeHtml(data.content)}</span>`;
-            });
-        }
-    });
+    document.addEventListener('click', (e) => { if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) document.getElementById('emojiPicker').classList.remove('active'); if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) stickerPanel.classList.remove('active'); });
+    document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); });
     
     loadPinnedMessage();
     setInterval(checkNewMessages, 1000);
