@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives import padding
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messenger.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/data/messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 AVATAR_FOLDER = 'static/avatars'
@@ -36,7 +36,7 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-
+os.makedirs('/app/data', exist_ok=True)
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
     'mp3', 'wav', 'ogg', 'flac', 'm4a',
