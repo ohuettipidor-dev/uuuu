@@ -312,7 +312,7 @@
     function saveAISticker(url) { const emoji = prompt('Эмодзи:','🤖')||'🤖'; fetch(url).then(r=>r.blob()).then(blob => { const fd = new FormData(); fd.append('sticker', blob, 'ai_sticker.png'); fd.append('emoji', emoji); return fetch('/stickers/custom/upload',{method:'POST',body:fd}); }).then(r=>r.json()).then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); }); }
     function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
     
-    // Отправка сообщений (КАК В MESSAGES)
+    // Отправка сообщений
     function addNewMessage(msg) {
         if(processedIds.has(msg.id)) return;
         processedIds.add(msg.id);
@@ -401,10 +401,55 @@
     document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); stickerPanel.classList.remove('active'); };
     document.querySelectorAll('.emoji-picker span').forEach(e => e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); });
     
-    // Голосовые (заглушка — добавь свою реализацию)
-    async function startVoiceRecording() { /* твоя логика */ }
-    function stopVoiceRecording() { /* */ }
-    document.getElementById('voiceBtn').onclick = () => isAudioRecording ? stopVoiceRecording() : startVoiceRecording();
+    // Голосовые сообщения (РАБОЧАЯ ВЕРСИЯ)
+    async function startVoiceRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            startTime = Date.now();
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const duration = Math.round((Date.now() - startTime) / 1000);
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const fd = new FormData();
+                fd.append('audio', blob);
+                fd.append('duration', duration);
+                fetch('/upload_voice', {method: 'POST', body: fd})
+                    .then(r => r.json())
+                    .then(d => {
+                        if(d.path) {
+                            const fd2 = new FormData();
+                            fd2.append('group_id', group_id);
+                            fd2.append('file_path', d.path);
+                            fd2.append('file_name', 'Голосовое');
+                            fd2.append('file_type', 'audio');
+                            fd2.append('voice_duration', duration);
+                            if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                            fd2.append('_from_ajax', 'true');
+                            fetch('/send_group', {method: 'POST', body: fd2})
+                                .then(() => {
+                                    currentReplyToId = null;
+                                    document.getElementById('replyBar').style.display = 'none';
+                                    setTimeout(checkNewMessages, 100);
+                                });
+                        }
+                    });
+                stream.getTracks().forEach(t => t.stop());
+                document.getElementById('voiceBtn').classList.remove('recording');
+                document.getElementById('voiceBtn').textContent = '🎤';
+                isAudioRecording = false;
+            };
+            mediaRecorder.start();
+            isAudioRecording = true;
+            document.getElementById('voiceBtn').classList.add('recording');
+            document.getElementById('voiceBtn').textContent = '⏹️';
+            setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
+        } catch(e) { alert('Микрофон не доступен'); }
+    }
+    function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
+    function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
+    document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
     
     // Упоминания (кратко)
     let mentionSearchTimeout, currentMentionStart = -1;
