@@ -189,8 +189,8 @@
                     </div>
                 {% endif %}
                 <div class="time">
-                    <!-- 🕒 Правка времени: сохраняем UTC в data-атрибут, скрипт заменит на локальное -->
-                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    <!-- 🕒 Передаём timestamp в миллисекундах -->
+                    <span class="message-time" data-ts="{{ (m.timestamp.timestamp() * 1000) | int }}">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                     {% if m.sender_id == current_user.id %}
@@ -274,17 +274,24 @@
 </div>
 
 <script>
-function formatLocalTime(utcString) {
-    if (!utcString) return '';
-    const date = new Date(utcString);
-    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+// 🕒 Функция форматирования времени (принимает timestamp в миллисекундах)
+function formatLocalTime(timestampMs) {
+    if (!timestampMs || isNaN(timestampMs)) return '--:--';
+    try {
+        const date = new Date(timestampMs);
+        // Проверяем, что дата валидна
+        if (isNaN(date.getTime())) return '--:--';
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } catch(e) {
+        return '--:--';
+    }
 }
 
 // 🕒 Обновляем время для старых сообщений при загрузке
 document.querySelectorAll('.message-time').forEach(el => {
-    const utcStr = el.dataset.utc;
-    if(utcStr) {
-        el.textContent = formatLocalTime(utcStr);
+    const ts = parseInt(el.dataset.ts);
+    if (!isNaN(ts)) {
+        el.textContent = formatLocalTime(ts);
     }
 });
 
@@ -368,7 +375,9 @@ document.querySelectorAll('.message-time').forEach(el => {
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
         let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
-        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${formatLocalTime(msg.timestamp)}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+        // timestamp приходит как строка ISO или число, пытаемся конвертировать в миллисекунды
+        const ts = Date.parse(msg.timestamp);
+        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${!isNaN(ts) ? formatLocalTime(ts) : '--:--'}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
