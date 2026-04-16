@@ -177,7 +177,8 @@
                     <div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>{{ m.voice_duration }}″</span></div>
                 {% endif %}
                 <div class="time">
-                    <span>{{ m.timestamp.strftime('%H:%M') }}</span>
+                    <!-- 🕒 Правка времени -->
+                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                 </div>
@@ -266,6 +267,19 @@
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
     
+    // 🕒 Функция форматирования времени
+    function formatLocalTime(utcString) {
+        if (!utcString) return '';
+        const date = new Date(utcString);
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Обновляем время для старых сообщений
+    document.querySelectorAll('.message-time').forEach(el => {
+        const utcStr = el.dataset.utc;
+        if(utcStr) el.textContent = formatLocalTime(utcStr);
+    });
+    
     // Стикеры
     const stickerPanel = document.getElementById('stickerPanel');
     const stickerBtn = document.getElementById('stickerPanelBtn');
@@ -336,7 +350,7 @@
         let voiceHtml = msg.voice_duration ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        div.innerHTML = `${header}<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${msg.timestamp}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content||'')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'group')">📌</button>${msg.is_own?`<button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group')">🗑️</button>`:''}</div>`;
+        div.innerHTML = `${header}<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${formatLocalTime(msg.timestamp)}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content||'')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'group')">📌</button>${msg.is_own?`<button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group')">🗑️</button>`:''}</div>`;
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/group`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -401,7 +415,7 @@
     document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); stickerPanel.classList.remove('active'); };
     document.querySelectorAll('.emoji-picker span').forEach(e => e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); });
     
-    // Голосовые сообщения (РАБОЧАЯ ВЕРСИЯ)
+    // Голосовые сообщения
     async function startVoiceRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
