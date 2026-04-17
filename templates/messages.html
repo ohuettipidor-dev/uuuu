@@ -189,8 +189,8 @@
                     </div>
                 {% endif %}
                 <div class="time">
-                    <!-- 🕒 Передаём timestamp в миллисекундах -->
-                    <span class="message-time" data-ts="{{ (m.timestamp.timestamp() * 1000) | int }}">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    <!-- Храним UTC строку в data-атрибуте, скрипт заменит на локальное время -->
+                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                     {% if m.sender_id == current_user.id %}
@@ -274,24 +274,25 @@
 </div>
 
 <script>
-// 🕒 Функция форматирования времени (принимает timestamp в миллисекундах)
-function formatLocalTime(timestampMs) {
-    if (!timestampMs || isNaN(timestampMs)) return '--:--';
-    try {
-        const date = new Date(timestampMs);
-        // Проверяем, что дата валидна
-        if (isNaN(date.getTime())) return '--:--';
-        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    } catch(e) {
-        return '--:--';
-    }
+// ✅ Функция форматирования UTC строки в локальное время (без ошибок)
+function formatUTCTime(utcString) {
+    if (!utcString) return '';
+    // Регулярка вытаскивает компоненты из ISO 8601 или похожих форматов
+    const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (!match) return utcString; // fallback
+    
+    const [_, year, month, day, hour, minute, second] = match.map(Number);
+    // Создаём дату в UTC
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    // Возвращаем локальное время
+    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-// 🕒 Обновляем время для старых сообщений при загрузке
+// Обновляем время для старых сообщений при загрузке
 document.querySelectorAll('.message-time').forEach(el => {
-    const ts = parseInt(el.dataset.ts);
-    if (!isNaN(ts)) {
-        el.textContent = formatLocalTime(ts);
+    const utcStr = el.dataset.utc;
+    if (utcStr) {
+        el.textContent = formatUTCTime(utcStr);
     }
 });
 
@@ -375,9 +376,9 @@ document.querySelectorAll('.message-time').forEach(el => {
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
         let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
-        // timestamp приходит как строка ISO или число, пытаемся конвертировать в миллисекунды
-        const ts = Date.parse(msg.timestamp);
-        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${!isNaN(ts) ? formatLocalTime(ts) : '--:--'}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+        // ✅ Используем нашу надёжную функцию
+        const timeStr = formatUTCTime(msg.timestamp);
+        div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;

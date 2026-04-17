@@ -177,8 +177,8 @@
                     <div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>{{ m.voice_duration }}″</span></div>
                 {% endif %}
                 <div class="time">
-                    <!-- 🕒 Передаём timestamp в миллисекундах -->
-                    <span class="message-time" data-ts="{{ (m.timestamp.timestamp() * 1000) | int }}">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    <!-- Храним UTC строку в data-атрибуте, скрипт заменит на локальное время -->
+                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                 </div>
@@ -252,6 +252,24 @@
 </div>
 
 <script>
+// ✅ Функция форматирования UTC строки в локальное время (без ошибок)
+function formatUTCTime(utcString) {
+    if (!utcString) return '';
+    const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (!match) return utcString;
+    const [_, year, month, day, hour, minute, second] = match.map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Обновляем время для старых сообщений при загрузке
+document.querySelectorAll('.message-time').forEach(el => {
+    const utcStr = el.dataset.utc;
+    if (utcStr) {
+        el.textContent = formatUTCTime(utcStr);
+    }
+});
+
     const group_id = {{ group.id }};
     const msgInput = document.getElementById('msgInput');
     let mediaRecorder = null;
@@ -266,24 +284,6 @@
     
     function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
-    
-    // 🕒 Функция форматирования времени
-    function formatLocalTime(timestampMs) {
-        if (!timestampMs || isNaN(timestampMs)) return '--:--';
-        try {
-            const date = new Date(timestampMs);
-            if (isNaN(date.getTime())) return '--:--';
-            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        } catch(e) {
-            return '--:--';
-        }
-    }
-
-    // Обновляем время для старых сообщений
-    document.querySelectorAll('.message-time').forEach(el => {
-        const ts = parseInt(el.dataset.ts);
-        if (!isNaN(ts)) el.textContent = formatLocalTime(ts);
-    });
     
     // Стикеры
     const stickerPanel = document.getElementById('stickerPanel');
@@ -355,8 +355,8 @@
         let voiceHtml = msg.voice_duration ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
         let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
         let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-        const ts = Date.parse(msg.timestamp);
-        div.innerHTML = `${header}<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${!isNaN(ts) ? formatLocalTime(ts) : '--:--'}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content||'')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'group')">📌</button>${msg.is_own?`<button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group')">🗑️</button>`:''}</div>`;
+        const timeStr = formatUTCTime(msg.timestamp);
+        div.innerHTML = `${header}<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content||'')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'group')">📌</button>${msg.is_own?`<button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group')">🗑️</button>`:''}</div>`;
         messagesDiv.appendChild(div);
         if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/group`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
