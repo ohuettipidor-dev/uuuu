@@ -153,7 +153,7 @@
                 </div>
             </div>
             <div class="chat-meta" onclick="openChat('{{ c.type }}', {{ c.id }})">
-                <div class="chat-time">
+                <div class="chat-time" {% if c.last and c.last.timestamp %}data-utc="{{ c.last.timestamp.isoformat() }}Z"{% endif %}>
                     {% if c.last and c.last.timestamp %}
                         {{ c.last.timestamp.strftime('%H:%M') }}
                     {% endif %}
@@ -188,6 +188,28 @@
 </div>
 
 <script>
+    // ========== ФУНКЦИЯ КОНВЕРТАЦИИ UTC → ЛОКАЛЬНОЕ ВРЕМЯ (без ошибок) ==========
+    function formatUTCTime(utcString) {
+        if (!utcString) return '';
+        // Регулярка вытаскивает компоненты из ISO 8601
+        const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+        if (!match) return utcString; // fallback на исходную строку
+        const [_, year, month, day, hour, minute, second] = match.map(Number);
+        // Создаём дату в UTC
+        const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+        // Возвращаем локальное время
+        return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Обновляем время в списке чатов сразу после загрузки DOM
+    document.querySelectorAll('.chat-time').forEach(el => {
+        const utcStr = el.dataset.utc;
+        if (utcStr) {
+            el.textContent = formatUTCTime(utcStr);
+        }
+    });
+
+    // ========== ОРИГИНАЛЬНЫЙ КОД (НЕ ТРОГАЛ) ==========
     let selectedUserId = null;
     let searchTimeout = null;
     
