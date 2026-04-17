@@ -80,85 +80,6 @@
         }
     </style>
 </head>
-<!-- Плавающая кнопка ИИ-помощника -->
-<div style="position:fixed; bottom:20px; right:20px; z-index:999;">
-    <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">
-        🐻❓
-    </button>
-</div>
-
-<!-- Окно чата -->
-<div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
-    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;">
-        <span>🐻 Помощник BearGram</span>
-        <button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button>
-    </div>
-    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
-        <div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">
-            Привет! Я твой мишка-помощник 🐻. Спрашивай о функциях BearGram!
-        </div>
-    </div>
-    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;">
-        <input type="text" id="aiChatInput" placeholder="Спроси меня..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
-        <button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button>
-    </div>
-</div>
-
-<!-- Подключаем бесплатный ИИ без API-ключа -->
-<script src="https://js.puter.com/v2/"></script>
-<script>
-(function() {
-    const btn = document.getElementById('aiAssistantBtn');
-    const windowDiv = document.getElementById('aiChatWindow');
-    const closeBtn = document.getElementById('closeAiChat');
-    const input = document.getElementById('aiChatInput');
-    const sendBtn = document.getElementById('aiChatSend');
-    const messagesDiv = document.getElementById('aiChatMessages');
-
-    btn.onclick = () => windowDiv.style.display = 'flex';
-    closeBtn.onclick = () => windowDiv.style.display = 'none';
-
-    async function sendMessage() {
-        const text = input.value.trim();
-        if (!text) return;
-        
-        // Добавляем сообщение пользователя
-        messagesDiv.innerHTML += `<div style="background:#ff6b6b; color:white; padding:8px 12px; border-radius:12px; align-self:flex-end; max-width:80%;">${escapeHtml(text)}</div>`;
-        input.value = '';
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        
-        // Показываем "печатает..."
-        const typingDiv = document.createElement('div');
-        typingDiv.id = 'typingIndicator';
-        typingDiv.innerHTML = `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start;">🐻 Печатает...</div>`;
-        messagesDiv.appendChild(typingDiv);
-        
-        try {
-            // Отправляем запрос к ИИ (бесплатно, без API-ключа)
-            const response = await puter.ai.chat(text, { 
-                model: 'gpt-4o-mini',  // быстрая и бесплатная модель
-                system_prompt: 'Ты — дружелюбный помощник приложения BearGram. Объясняй пользователям функции: личные чаты, группы, секретные чаты (AES-256), каналы, голосовые сообщения, стикеры, AI-генерация стикеров, видеозвонки. Отвечай кратко, с эмодзи, в стиле уютного мессенджера с медвежонком.'
-            });
-            
-            typingDiv.remove();
-            messagesDiv.innerHTML += `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">${escapeHtml(response)}</div>`;
-        } catch (e) {
-            typingDiv.remove();
-            messagesDiv.innerHTML += `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">🐻 Ой, что-то сломалось. Попробуй позже!</div>`;
-        }
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    sendBtn.onclick = sendMessage;
-    input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-})();
-</script>
 <body>
 <div class="container">
     <div class="header">
@@ -266,160 +187,237 @@
     </div>
 </div>
 
+<!-- Кнопка помощника -->
+<div style="position:fixed; bottom:20px; right:20px; z-index:999;">
+    <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">
+        🐻❓
+    </button>
+</div>
+
+<!-- Окно чата помощника -->
+<div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
+    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;">
+        <span>🐻 Помощник BearGram</span>
+        <button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button>
+    </div>
+    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">
+            Привет! Я мишка-помощник 🐻. Спрашивай о чатах, группах, секретных чатах, каналах, голосовых, стикерах или звонках!
+        </div>
+    </div>
+    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;">
+        <input type="text" id="aiChatInput" placeholder="Спроси меня..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
+        <button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button>
+    </div>
+</div>
+
 <script>
-    // ========== ФУНКЦИЯ КОНВЕРТАЦИИ UTC → ЛОКАЛЬНОЕ ВРЕМЯ (без ошибок) ==========
-    function formatUTCTime(utcString) {
-        if (!utcString) return '';
-        // Регулярка вытаскивает компоненты из ISO 8601
-        const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
-        if (!match) return utcString; // fallback на исходную строку
-        const [_, year, month, day, hour, minute, second] = match.map(Number);
-        // Создаём дату в UTC
-        const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-        // Возвращаем локальное время
-        return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    }
+// ========== ФУНКЦИЯ КОНВЕРТАЦИИ UTC → ЛОКАЛЬНОЕ ВРЕМЯ ==========
+function formatUTCTime(utcString) {
+    if (!utcString) return '';
+    const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (!match) return utcString;
+    const [_, year, month, day, hour, minute, second] = match.map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
 
-    // Обновляем время в списке чатов сразу после загрузки DOM
-    document.querySelectorAll('.chat-time').forEach(el => {
-        const utcStr = el.dataset.utc;
-        if (utcStr) {
-            el.textContent = formatUTCTime(utcStr);
-        }
-    });
+// Обновляем время в списке чатов
+document.querySelectorAll('.chat-time').forEach(el => {
+    const utcStr = el.dataset.utc;
+    if (utcStr) el.textContent = formatUTCTime(utcStr);
+});
 
-    // ========== ОРИГИНАЛЬНЫЙ КОД (НЕ ТРОГАЛ) ==========
-    let selectedUserId = null;
-    let searchTimeout = null;
-    
-    function escapeHtml(t) {
-        if(!t) return '';
-        const div = document.createElement('div');
-        div.textContent = t;
-        return div.innerHTML;
-    }
-    
-    function openChat(type, id) {
-        if(type === 'private') window.location.href = '/messages/' + id;
-        else if(type === 'secret') window.location.href = '/secret_chat/' + id;
-        else window.location.href = '/group/' + id;
-    }
-    
-    function showChatTypeModal(userId, userName) {
-        selectedUserId = userId;
-        document.getElementById('chatTypeModal').classList.add('active');
-    }
-    
-    function closeChatTypeModal() {
-        document.getElementById('chatTypeModal').classList.remove('active');
-        selectedUserId = null;
-    }
-    
-    document.getElementById('regularChatBtn').onclick = function() {
-        if(selectedUserId) window.location.href = '/messages/' + selectedUserId;
-    };
-    
-    document.getElementById('secretChatBtn').onclick = function() {
-        if(selectedUserId) {
-            fetch('/create_secret_chat/' + selectedUserId, {method: 'POST', headers: {'Content-Type': 'application/json'}})
-                .then(r => r.json()).then(data => {
-                    if(data.chat_id) window.location.href = '/secret_chat/' + data.chat_id;
-                    else if(data.redirect) window.location.href = data.redirect;
-                    else alert('Ошибка создания секретного чата');
-                }).catch(() => {
-                    let form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '/create_secret_chat/' + selectedUserId;
-                    document.body.appendChild(form);
-                    form.submit();
-                });
-        }
-    };
-    
-    const searchToggleBtn = document.getElementById('searchToggleBtn');
-    const searchContainer = document.getElementById('searchContainer');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    const searchCloseBtn = document.getElementById('searchCloseBtn');
-    
-    searchToggleBtn.onclick = function() {
-        searchContainer.classList.toggle('active');
-        if(searchContainer.classList.contains('active')) {
-            searchInput.focus();
-        }
-    };
-    
-    searchCloseBtn.onclick = function() {
-        searchContainer.classList.remove('active');
-        searchResults.classList.remove('active');
-        searchInput.value = '';
-    };
-    
-    function searchUsers() {
-        const query = searchInput.value.trim();
-        if(query.length < 1) {
-            searchResults.classList.remove('active');
-            return;
-        }
-        
-        fetch(`/search_users?q=${encodeURIComponent(query)}`)
-            .then(r => r.json())
-            .then(users => {
-                if(users.length === 0) {
-                    searchResults.innerHTML = '<div style="padding:12px;text-align:center;color:#888;">Пользователи не найдены</div>';
-                    searchResults.classList.add('active');
-                    return;
-                }
-                
-                searchResults.innerHTML = '';
-                users.forEach(user => {
-                    const div = document.createElement('div');
-                    div.className = 'search-result-item';
-                    div.onclick = () => window.location.href = '/profile/' + user.id;
-                    div.innerHTML = `
-                        <div class="search-result-avatar">
-                            ${user.avatar != 'default.png' ? `<img src="/static/avatars/${user.avatar}">` : user.username[0].toUpperCase()}
-                        </div>
-                        <div class="search-result-info">
-                            <div class="search-result-name">${escapeHtml(user.username)}</div>
-                            <div class="search-result-link">${escapeHtml(user.username_link)}</div>
-                        </div>
-                        <div style="color:#ff6b6b">→</div>
-                    `;
-                    searchResults.appendChild(div);
-                });
-                searchResults.classList.add('active');
+// ========== ОРИГИНАЛЬНЫЙ КОД ЧАТА ==========
+let selectedUserId = null;
+let searchTimeout = null;
+
+function escapeHtml(t) {
+    if(!t) return '';
+    const div = document.createElement('div');
+    div.textContent = t;
+    return div.innerHTML;
+}
+
+function openChat(type, id) {
+    if(type === 'private') window.location.href = '/messages/' + id;
+    else if(type === 'secret') window.location.href = '/secret_chat/' + id;
+    else window.location.href = '/group/' + id;
+}
+
+function showChatTypeModal(userId, userName) {
+    selectedUserId = userId;
+    document.getElementById('chatTypeModal').classList.add('active');
+}
+
+function closeChatTypeModal() {
+    document.getElementById('chatTypeModal').classList.remove('active');
+    selectedUserId = null;
+}
+
+document.getElementById('regularChatBtn').onclick = function() {
+    if(selectedUserId) window.location.href = '/messages/' + selectedUserId;
+};
+
+document.getElementById('secretChatBtn').onclick = function() {
+    if(selectedUserId) {
+        fetch('/create_secret_chat/' + selectedUserId, {method: 'POST', headers: {'Content-Type': 'application/json'}})
+            .then(r => r.json()).then(data => {
+                if(data.chat_id) window.location.href = '/secret_chat/' + data.chat_id;
+                else if(data.redirect) window.location.href = data.redirect;
+                else alert('Ошибка создания секретного чата');
+            }).catch(() => {
+                let form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/create_secret_chat/' + selectedUserId;
+                document.body.appendChild(form);
+                form.submit();
             });
     }
-    
-    searchInput.addEventListener('input', function() {
-        if(searchTimeout) clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(searchUsers, 300);
-    });
-    
-    document.addEventListener('click', function(e) {
-        if(!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchToggleBtn) {
-            searchResults.classList.remove('active');
-        }
-    });
-    
-    function openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
-    function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById('groupName').value = ''; }
-    
-    function createGroup() {
-        let name = document.getElementById('groupName').value.trim();
-        if(name) {
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/create_group';
-            let inp = document.createElement('input');
-            inp.name = 'name';
-            inp.value = name;
-            form.appendChild(inp);
-            document.body.appendChild(form);
-            form.submit();
-        } else alert('Введите название группы');
+};
+
+const searchToggleBtn = document.getElementById('searchToggleBtn');
+const searchContainer = document.getElementById('searchContainer');
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+const searchCloseBtn = document.getElementById('searchCloseBtn');
+
+searchToggleBtn.onclick = function() {
+    searchContainer.classList.toggle('active');
+    if(searchContainer.classList.contains('active')) {
+        searchInput.focus();
     }
+};
+
+searchCloseBtn.onclick = function() {
+    searchContainer.classList.remove('active');
+    searchResults.classList.remove('active');
+    searchInput.value = '';
+};
+
+function searchUsers() {
+    const query = searchInput.value.trim();
+    if(query.length < 1) {
+        searchResults.classList.remove('active');
+        return;
+    }
+    
+    fetch(`/search_users?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(users => {
+            if(users.length === 0) {
+                searchResults.innerHTML = '<div style="padding:12px;text-align:center;color:#888;">Пользователи не найдены</div>';
+                searchResults.classList.add('active');
+                return;
+            }
+            
+            searchResults.innerHTML = '';
+            users.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.onclick = () => window.location.href = '/profile/' + user.id;
+                div.innerHTML = `
+                    <div class="search-result-avatar">
+                        ${user.avatar != 'default.png' ? `<img src="/static/avatars/${user.avatar}">` : user.username[0].toUpperCase()}
+                    </div>
+                    <div class="search-result-info">
+                        <div class="search-result-name">${escapeHtml(user.username)}</div>
+                        <div class="search-result-link">${escapeHtml(user.username_link)}</div>
+                    </div>
+                    <div style="color:#ff6b6b">→</div>
+                `;
+                searchResults.appendChild(div);
+            });
+            searchResults.classList.add('active');
+        });
+}
+
+searchInput.addEventListener('input', function() {
+    if(searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(searchUsers, 300);
+});
+
+document.addEventListener('click', function(e) {
+    if(!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchToggleBtn) {
+        searchResults.classList.remove('active');
+    }
+});
+
+function openGroupModal() { document.getElementById('groupModal').classList.add('active'); }
+function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); document.getElementById('groupName').value = ''; }
+
+function createGroup() {
+    let name = document.getElementById('groupName').value.trim();
+    if(name) {
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/create_group';
+        let inp = document.createElement('input');
+        inp.name = 'name';
+        inp.value = name;
+        form.appendChild(inp);
+        document.body.appendChild(form);
+        form.submit();
+    } else alert('Введите название группы');
+}
+
+// ========== ЛЁГКИЙ FAQ-БОТ ==========
+(function() {
+    const btn = document.getElementById('aiAssistantBtn');
+    const win = document.getElementById('aiChatWindow');
+    const close = document.getElementById('closeAiChat');
+    const input = document.getElementById('aiChatInput');
+    const send = document.getElementById('aiChatSend');
+    const msgDiv = document.getElementById('aiChatMessages');
+
+    const faq = [
+        { keywords: ['привет','здравствуй','прив','здарова','хай'], reply: '🐻 Привет! Я мишка-помощник BearGram. Спрашивай о чатах, группах, секретных чатах, каналах, голосовых сообщениях, стикерах или видеозвонках!' },
+        { keywords: ['секретный','секретные','шифрование','aes','безопасность'], reply: '🔒 Секретные чаты используют AES-256 шифрование. Сообщения не хранятся на сервере и могут самоуничтожаться. Идеально для приватных разговоров.' },
+        { keywords: ['группа','групповой','создать группу'], reply: '👥 Чтобы создать группу, нажми кнопку "✨ + Создать группу ✨" на главном экране. Придумай название и добавь участников.' },
+        { keywords: ['канал','каналы'], reply: '📢 Каналы — это лента новостей. Ты можешь подписываться на каналы других пользователей или создать свой и делиться постами.' },
+        { keywords: ['голосовое','голосовые','аудио','микрофон'], reply: '🎤 Чтобы записать голосовое сообщение, зажми и удерживай кнопку с микрофоном (🎤) в поле ввода. Отпусти — сообщение отправится.' },
+        { keywords: ['стикер','стикеры','стикерпак'], reply: '🎨 Стикеры можно отправлять через кнопку 🎨 рядом с полем ввода. Ты можешь загружать свои стикеры или генерировать новые с помощью AI.' },
+        { keywords: ['видеозвонок','звонок','позвонить','видео'], reply: '📹 Видеозвонки доступны в личных чатах. Нажми кнопку 📹 в шапке чата, чтобы начать звонок.' },
+        { keywords: ['помощь','помоги','что ты умеешь','функции'], reply: '🐻 Я могу объяснить: личные и секретные чаты, группы, каналы, голосовые сообщения, стикеры, видеозвонки. Просто спроси!' }
+    ];
+
+    function findReply(msg) {
+        const lower = msg.toLowerCase();
+        for (let item of faq) {
+            for (let kw of item.keywords) {
+                if (lower.includes(kw)) return item.reply;
+            }
+        }
+        return '🐻 Извини, я не совсем понял. Попробуй спросить про "секретные чаты", "группы", "каналы", "голосовые", "стикеры" или "видеозвонки".';
+    }
+
+    btn.onclick = () => win.style.display = 'flex';
+    close.onclick = () => win.style.display = 'none';
+
+    function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+        
+        msgDiv.innerHTML += `<div style="background:#ff6b6b; color:white; padding:8px 12px; border-radius:12px; align-self:flex-end; max-width:80%;">${escapeHtml(text)}</div>`;
+        input.value = '';
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+        
+        const typing = document.createElement('div');
+        typing.id = 'typing';
+        typing.innerHTML = `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start;">🐻 Печатает...</div>`;
+        msgDiv.appendChild(typing);
+        
+        setTimeout(() => {
+            const reply = findReply(text);
+            typing.remove();
+            msgDiv.innerHTML += `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">${escapeHtml(reply)}</div>`;
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        }, 500);
+    }
+
+    send.onclick = sendMessage;
+    input.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
+})();
 </script>
 </body>
 </html>
