@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎵 Звуки BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh;padding:16px}
+        .container{max-width:500px;margin:0 auto}
+        h1{color:#ff6b6b;margin-bottom:16px;font-size:24px}
+        .card{background:rgba(255,255,255,0.9);border-radius:20px;padding:16px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
+        .card h2{color:#333;font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+        .option{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0}
+        .option:last-child{border-bottom:none}
+        .option label{font-size:14px;color:#555;flex:1;margin-right:8px}
+        .option button{background:#ff6b6b;border:none;color:white;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:12px;margin-left:4px}
+        .option button.active{background:#4cd964}
+        .option audio{width:100px;height:24px;margin-left:8px}
+        .save-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;border-radius:30px;padding:12px;width:100%;font-weight:bold;cursor:pointer;font-size:16px;margin-top:8px}
+        .back-link{display:block;text-align:center;margin-top:12px;color:#ff6b6b;text-decoration:none;font-weight:500}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎵 Настройка звуков</h1>
+    <p style="color:#888;margin-bottom:16px;">Выбери авторские треки создателя BearGram для уведомлений, звонков и атмосферы.</p>
+
+    <div class="card">
+        <h2>🔔 Уведомления</h2>
+        <div class="option">
+            <label>Хрустальное (Космос)</label>
+            <audio controls preload="none"><source src="/static/sounds/notify_space.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('notification','notify_space','Хрустальное (Космос)')" id="btn-notify_space">Выбрать</button>
+        </div>
+        <div class="option">
+            <label>Кристалл мечты</label>
+            <audio controls preload="none"><source src="/static/sounds/notify_dream.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('notification','notify_dream','Кристалл мечты')" id="btn-notify_dream">Выбрать</button>
+        </div>
+        <div class="option">
+            <label>Родной голос (Ремикс)</label>
+            <audio controls preload="none"><source src="/static/sounds/notify_ru.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('notification','notify_ru','Родной голос (Ремикс)')" id="btn-notify_ru">Выбрать</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📞 Рингтон</h2>
+        <div class="option">
+            <label>Космический взлёт</label>
+            <audio controls preload="none"><source src="/static/sounds/ringtone_space.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('ringtone','ringtone_space','Космический взлёт')" id="btn-ringtone_space">Выбрать</button>
+        </div>
+        <div class="option">
+            <label>Гимн реализатора</label>
+            <audio controls preload="none"><source src="/static/sounds/ringtone_dream.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('ringtone','ringtone_dream','Гимн реализатора')" id="btn-ringtone_dream">Выбрать</button>
+        </div>
+        <div class="option">
+            <label>Зов создателя</label>
+            <audio controls preload="none"><source src="/static/sounds/ringtone_ru.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('ringtone','ringtone_ru','Зов создателя')" id="btn-ringtone_ru">Выбрать</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🌌 Атмосфера (фон)</h2>
+        <div class="option">
+            <label>Космический портал</label>
+            <audio controls preload="none"><source src="/static/sounds/profile_space.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('ambient','profile_space','Космический портал')" id="btn-profile_space">Выбрать</button>
+        </div>
+        <div class="option">
+            <label>Глубина (Ремикс)</label>
+            <audio controls preload="none"><source src="/static/sounds/profile_ru.mp3" type="audio/mpeg"></audio>
+            <button onclick="selectSound('ambient','profile_ru','Глубина (Ремикс)')" id="btn-profile_ru">Выбрать</button>
+        </div>
+    </div>
+
+    <button class="save-btn" onclick="saveSettings()">💾 Сохранить настройки</button>
+    <div id="status" style="text-align:center;margin-top:12px;color:#4cd964;font-weight:500;"></div>
+    <a href="/chat" class="back-link">← Назад в чаты</a>
+</div>
+
+<script>
+    const selections = {
+        notification: null,
+        ringtone: null,
+        ambient: null
+    };
+
+    function loadSettings() {
+        const saved = localStorage.getItem('beargram_sounds');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.notification) selectSound('notification', parsed.notification.file, parsed.notification.name, true);
+            if (parsed.ringtone) selectSound('ringtone', parsed.ringtone.file, parsed.ringtone.name, true);
+            if (parsed.ambient) selectSound('ambient', parsed.ambient.file, parsed.ambient.name, true);
+        }
+    }
+
+    function selectSound(type, file, name, silent = false) {
+        document.querySelectorAll(`button[id^="btn-${type}"]`).forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(`btn-${file}`);
+        if (btn) btn.classList.add('active');
+        selections[type] = { file, name };
+        if (!silent) {
+            const status = document.getElementById('status');
+            status.textContent = `✅ Выбрано: ${name}`;
+            setTimeout(() => status.textContent = '', 2000);
+        }
+    }
+
+    function saveSettings() {
+        if (!selections.notification && !selections.ringtone && !selections.ambient) {
+            alert('Выбери хотя бы один звук, брат!');
+            return;
+        }
+        localStorage.setItem('beargram_sounds', JSON.stringify(selections));
+        const status = document.getElementById('status');
+        status.textContent = '🎉 Настройки сохранены! Твоя музыка теперь с тобой.';
+        setTimeout(() => status.textContent = '', 3000);
+    }
+
+    loadSettings();
+</script>
+</body>
+</html>

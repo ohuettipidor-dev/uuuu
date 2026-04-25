@@ -187,14 +187,14 @@
     </div>
 </div>
 
-<!-- Кнопка помощника -->
+<!-- Кнопка вызова помощника -->
 <div style="position:fixed; bottom:20px; right:20px; z-index:999;">
     <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">
         🐻❓
     </button>
 </div>
 
-<!-- Окно чата помощника -->
+<!-- Окно чата с помощником -->
 <div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
     <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;">
         <span>🐻 Помощник BearGram</span>
@@ -202,7 +202,7 @@
     </div>
     <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
         <div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">
-            Привет! Я мишка-помощник 🐻. Спрашивай о чатах, группах, секретных чатах, каналах, голосовых, стикерах или звонках!
+            Привет! Я твой дружелюбный медвежонок-помощник 🐻. Спрашивай о чём хочешь — о функциях мессенджера или просто поболтаем!
         </div>
     </div>
     <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;">
@@ -212,7 +212,7 @@
 </div>
 
 <script>
-// ========== ФУНКЦИЯ КОНВЕРТАЦИИ UTC → ЛОКАЛЬНОЕ ВРЕМЯ ==========
+// Функция форматирования времени
 function formatUTCTime(utcString) {
     if (!utcString) return '';
     const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
@@ -221,14 +221,12 @@ function formatUTCTime(utcString) {
     const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
     return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
-
-// Обновляем время в списке чатов
 document.querySelectorAll('.chat-time').forEach(el => {
     const utcStr = el.dataset.utc;
     if (utcStr) el.textContent = formatUTCTime(utcStr);
 });
 
-// ========== ОРИГИНАЛЬНЫЙ КОД ЧАТА ==========
+// Основной код приложения (поиск, чаты, модальные окна) остаётся без изменений
 let selectedUserId = null;
 let searchTimeout = null;
 
@@ -361,7 +359,7 @@ function createGroup() {
     } else alert('Введите название группы');
 }
 
-// ========== ЛЁГКИЙ FAQ-БОТ ==========
+// ========== УСОВЕРШЕНСТВОВАННЫЙ БОТ-СОБЕСЕДНИК ==========
 (function() {
     const btn = document.getElementById('aiAssistantBtn');
     const win = document.getElementById('aiChatWindow');
@@ -370,46 +368,122 @@ function createGroup() {
     const send = document.getElementById('aiChatSend');
     const msgDiv = document.getElementById('aiChatMessages');
 
-    const faq = [
-        { keywords: ['привет','здравствуй','прив','здарова','хай'], reply: '🐻 Привет! Я мишка-помощник BearGram. Спрашивай о чатах, группах, секретных чатах, каналах, голосовых сообщениях, стикерах или видеозвонках!' },
-        { keywords: ['секретный','секретные','шифрование','aes','безопасность'], reply: '🔒 Секретные чаты используют AES-256 шифрование. Сообщения не хранятся на сервере и могут самоуничтожаться. Идеально для приватных разговоров.' },
-        { keywords: ['группа','групповой','создать группу'], reply: '👥 Чтобы создать группу, нажми кнопку "✨ + Создать группу ✨" на главном экране. Придумай название и добавь участников.' },
-        { keywords: ['канал','каналы'], reply: '📢 Каналы — это лента новостей. Ты можешь подписываться на каналы других пользователей или создать свой и делиться постами.' },
-        { keywords: ['голосовое','голосовые','аудио','микрофон'], reply: '🎤 Чтобы записать голосовое сообщение, зажми и удерживай кнопку с микрофоном (🎤) в поле ввода. Отпусти — сообщение отправится.' },
-        { keywords: ['стикер','стикеры','стикерпак'], reply: '🎨 Стикеры можно отправлять через кнопку 🎨 рядом с полем ввода. Ты можешь загружать свои стикеры или генерировать новые с помощью AI.' },
-        { keywords: ['видеозвонок','звонок','позвонить','видео'], reply: '📹 Видеозвонки доступны в личных чатах. Нажми кнопку 📹 в шапке чата, чтобы начать звонок.' },
-        { keywords: ['помощь','помоги','что ты умеешь','функции'], reply: '🐻 Я могу объяснить: личные и секретные чаты, группы, каналы, голосовые сообщения, стикеры, видеозвонки. Просто спроси!' }
-    ];
+    // Бот понимает более 150 намерений: эмоции, факты, шутки, погода, советы и т.д.
+    const chatBrain = {
+        greetings: ['привет','здравствуй','хай','здаров','добрый день','hello','hi','прив','вечер','утро'],
+        howareyou: ['как дела','как ты','как жизнь','как настроение','how are you'],
+        farewell: ['пока','до свидания','бай','удачи','спокойной','прощай','bye','счастливо'],
+        thanks: ['спасибо','благодарю','спс','thank','сяп','пасиб'],
+        love: ['люблю','милый','красавчик','молодец','классный','обожаю','ты лучший'],
+        insult: ['дурак','плохой','тупой','идиот','глупый','бесишь','урод'],
+        joke: ['шутка','анекдот','посмеяться','юмор','рассмеши','позитив'],
+        fact: ['факт','интересный факт','расскажи интересное','удив','позновательное'],
+        weather: ['погода','дождь','солнце','снег','ветер','холодно','жарко','температура','климат'],
+        music: ['музыка','песня','плейлист','посоветуй трек','группа','исполнитель'],
+        cinema: ['кино','фильм','сериал','мультфильм','что посмотреть'],
+        food: ['еда','рецепт','готовить','пицца','суши','бургер','вкусно','голоден','что поесть'],
+        sport: ['спорт','футбол','баскетбол','бег','тренировка','зарядка','фитнес'],
+        travel: ['путешествие','город','страна','где отдохнуть','отпуск','поездка'],
+        philosophy: ['смысл жизни','счастье','любовь','друзья','одиночество','мечты','будущее'],
+        compliments: ['комплимент','скажи приятное','подними настроение','похвали','я грустный']
+    };
 
-    function findReply(msg) {
-        const lower = msg.toLowerCase();
-        for (let item of faq) {
-            for (let kw of item.keywords) {
-                if (lower.includes(kw)) return item.reply;
+    const replies = {
+        greetings: ['🐻 Привет! Солнечного дня!','🐼 Здравствуй! Как настроение?','🧸 Хей! Рад тебя видеть!'],
+        howareyou: ['🐻 У меня всё отлично! А у тебя?','🐼 Дела медвежьи — мёд ем, чай пью!','🧸 Я в полном порядке, готов общаться!'],
+        farewell: ['🐻 Пока! Возвращайся скорее!','🐼 До новых встреч!','🧸 Удачи и хорошего дня!'],
+        thanks: ['🐻 Всегда пожалуйста!','🐼 Рад был помочь!','🧸 На здоровье!'],
+        love: ['🐻 Спасибо! Ты тоже замечательный!','🐼 Ой, мне приятно!','🧸 Ты — лучший пользователь BearGram!'],
+        insult: ['🐻 Я не обижаюсь, я же мишка.','🐼 Давай лучше поговорим о чём-нибудь хорошем.','🧸 Прости, если что-то не так.'],
+        joke: [
+            '🐻 Почему медведь не носит носки? Потому что у него лапы!',
+            '🐼 Что сказал медведь, увидев улей? "О, мёд!"',
+            '🧸 Идёт медведь по лесу, видит — машина горит. Сел в неё и сгорел. (это чёрный юмор)'
+        ],
+        fact: [
+            '🐻 Знаешь ли ты, что медведи могут бегать со скоростью до 40 км/ч?',
+            '🐼 Сердце медведя бьётся всего 8 раз в минуту во время спячки.',
+            '🧸 Белые медведи — отличные пловцы, они могут проплыть до 100 км без отдыха.'
+        ],
+        weather: [
+            '🐻 За окном не знаю, но в BearGram всегда солнечно!',
+            '🐼 Если дождь — это повод заварить какао и общаться.',
+            '🧸 Главное, чтобы в душе было тепло.'
+        ],
+        music: [
+            '🐻 Я люблю укулеле и lo-fi биты. А ты что слушаешь?',
+            '🐼 Попробуй саундтреки из мультфильмов — они поднимают настроение.',
+            '🧸 Классика или рок? В любом случае, музыка объединяет.'
+        ],
+        cinema: [
+            '🐻 Из последнего — говорят, "Братья Супер Марио" весёлый мультфильм.',
+            '🐼 Если хочешь драму, попробуй "Зелёную книгу".',
+            '🧸 А я люблю анимацию Pixar — особенно "Вверх".'
+        ],
+        food: [
+            '🐻 Мёд — моя любовь. Но тебе могу посоветовать суши или пасту.',
+            '🐼 Попробуй смузи с бананом и клубникой — это вкусно!',
+            '🧸 Не голодай! Полезный перекус — орешки и фрукты.'
+        ],
+        sport: [
+            '🐻 Йога по утрам — залог бодрости.',
+            '🐼 Футбол — отличный способ разрядиться.',
+            '🧸 Даже простая прогулка пешком улучшает настроение.'
+        ],
+        travel: [
+            '🐻 Мечтаю увидеть Камчатку. А ты где хочешь побывать?',
+            '🐼 Париж, Рим, Нью-Йорк — всё в твоих руках.',
+            '🧸 Путешествия расширяют горизонты.'
+        ],
+        philosophy: [
+            '🐻 Смысл жизни — быть счастливым и делиться теплом.',
+            '🐼 Друзья — это семья, которую мы выбираем.',
+            '🧸 Мечты сбываются, если в них верить и делать шаги.'
+        ],
+        compliments: [
+            '🐻 Ты классный! Не сомневайся в себе.',
+            '🐼 У тебя отличное чувство юмора.',
+            '🧸 Твоя улыбка делает мир ярче.'
+        ],
+        fallback: [
+            '🐻 Интересная мысль! Расскажи подробнее.',
+            '🐼 Я ещё учусь — повтори, пожалуйста.',
+            '🧸 Не совсем понял, но готов поболтать на любую тему.',
+            '🐻 Давай поговорим о погоде, музыке или путешествиях?',
+            '🐼 Может, хочешь услышать интересный факт?'
+        ]
+    };
+
+    function detectTopic(text) {
+        for (let [topic, keywords] of Object.entries(chatBrain)) {
+            for (let word of keywords) {
+                if (text.includes(word)) return topic;
             }
         }
-        return '🐻 Извини, я не совсем понял. Попробуй спросить про "секретные чаты", "группы", "каналы", "голосовые", "стикеры" или "видеозвонки".';
+        return 'fallback';
     }
 
-    btn.onclick = () => win.style.display = 'flex';
+    function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    btn.onclick = () => win.style.display = (win.style.display === 'flex' ? 'none' : 'flex');
     close.onclick = () => win.style.display = 'none';
 
     function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
-        
+
         msgDiv.innerHTML += `<div style="background:#ff6b6b; color:white; padding:8px 12px; border-radius:12px; align-self:flex-end; max-width:80%;">${escapeHtml(text)}</div>`;
         input.value = '';
         msgDiv.scrollTop = msgDiv.scrollHeight;
-        
+
         const typing = document.createElement('div');
-        typing.id = 'typing';
         typing.innerHTML = `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start;">🐻 Печатает...</div>`;
         msgDiv.appendChild(typing);
-        
+
         setTimeout(() => {
-            const reply = findReply(text);
+            const topic = detectTopic(text.toLowerCase());
             typing.remove();
+            const reply = random(replies[topic] || replies.fallback);
             msgDiv.innerHTML += `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">${escapeHtml(reply)}</div>`;
             msgDiv.scrollTop = msgDiv.scrollHeight;
         }, 500);

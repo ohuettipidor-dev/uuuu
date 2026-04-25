@@ -3041,6 +3041,11 @@ def api_has_unseen_stories():
     
     return jsonify({'has_unseen': unseen_count > 0, 'count': unseen_count})
 # ========== ЗАПУСК ==========
+# ---------- ЗВУКИ BEARGRAM (новая фича) ----------
+@app.route('/soundlab')
+@login_required
+def soundlab():
+    return render_template('soundlab.html')
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

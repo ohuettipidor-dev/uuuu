@@ -232,6 +232,7 @@
             <button class="input-icon" id="emojiBtn">😊</button>
             <button class="input-icon" id="stickerPanelBtn">🎨</button>
             <button class="input-icon voice-btn" id="voiceBtn">🎤</button>
+            <button class="input-icon video-btn" id="videoBtn">📹</button>
         </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
@@ -281,7 +282,6 @@ function formatUTCTime(utcString) {
     const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
     return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
-
 document.querySelectorAll('.message-time').forEach(el => {
     const utcStr = el.dataset.utc;
     if (utcStr) el.textContent = formatUTCTime(utcStr);
@@ -292,6 +292,9 @@ const msgInput = document.getElementById('msgInput');
 let mediaRecorder = null;
 let audioChunks = [];
 let isAudioRecording = false;
+let videoRecorder = null;
+let videoChunks = [];
+let isVideoRecording = false;
 let startTime = null;
 let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
 let currentReplyToId = null;
@@ -359,7 +362,7 @@ function addNewMessage(msg) {
         if(msg.file_type == 'sticker') fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
         else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
         else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-        else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}"></video>`;
+        else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}" class="video-msg" style="max-width:200px;border-radius:12px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
     }
     let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
@@ -435,6 +438,7 @@ function forwardMessage(id, type) { let target = prompt('ID пользовате
 function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
+// --- VOICE RECORDING (original) ---
 async function startVoiceRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -478,6 +482,53 @@ async function startVoiceRecording() {
 function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
 document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
+
+// --- VIDEO MESSAGE (NEW) ---
+async function startVideoRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
+            audio: true
+        });
+        videoRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8,opus' });
+        videoChunks = [];
+        startTime = Date.now();
+        videoRecorder.ondataavailable = e => { if(e.data.size > 0) videoChunks.push(e.data); };
+        videoRecorder.onstop = () => {
+            const duration = Math.round((Date.now() - startTime) / 1000);
+            const blob = new Blob(videoChunks, { type: 'video/webm' });
+            const fd = new FormData();
+            fd.append('file', blob, `video_${Date.now()}.webm`);
+            fetch('/upload', {method: 'POST', body: fd})
+                .then(r => r.json())
+                .then(d => {
+                    if(d.path) {
+                        const fd2 = new FormData();
+                        fd2.append('receiver_id', receiver_id);
+                        fd2.append('file_path', d.path);
+                        fd2.append('file_name', 'Видеосообщение');
+                        fd2.append('file_type', 'video');
+                        fd2.append('voice_duration', duration);
+                        if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                        fd2.append('_from_ajax', 'true');
+                        fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
+                    }
+                });
+            stream.getTracks().forEach(t => t.stop());
+            document.getElementById('videoBtn').classList.remove('recording');
+            document.getElementById('videoBtn').textContent = '📹';
+            isVideoRecording = false;
+        };
+        videoRecorder.start();
+        isVideoRecording = true;
+        document.getElementById('videoBtn').classList.add('recording');
+        document.getElementById('videoBtn').textContent = '⏹️';
+        setTimeout(() => { if(isVideoRecording) stopVideoRecording(); }, 60000);
+    } catch(e) { alert('Камера или микрофон не доступны'); }
+}
+function stopVideoRecording() { if(videoRecorder && isVideoRecording) videoRecorder.stop(); }
+function toggleVideoRecording() { isVideoRecording ? stopVideoRecording() : startVideoRecording(); }
+document.getElementById('videoBtn').onclick = toggleVideoRecording;
 
 document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); document.getElementById('stickerPanel').classList.remove('active'); };
 document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
