@@ -242,26 +242,6 @@
     </div>
 </div>
 
-<!-- Кнопка помощника -->
-<div style="position:fixed; bottom:20px; right:20px; z-index:999;">
-    <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
-</div>
-
-<!-- Окно чата помощника -->
-<div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
-    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;">
-        <span>🐻 Помощник BearGram</span>
-        <button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button>
-    </div>
-    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
-        <div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">Привет! Я мишка-помощник 🐻. Спрашивай о чатах, группах, секретных чатах, каналах, голосовых, стикерах или звонках!</div>
-    </div>
-    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;">
-        <input type="text" id="aiChatInput" placeholder="Спроси меня..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
-        <button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button>
-    </div>
-</div>
-
 <script>
 function formatUTCTime(utcString) {
     if (!utcString) return '';
@@ -404,37 +384,6 @@ loadPinnedMessage();
 setInterval(checkNewMessages, 800);
 msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
 document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-
-// ========== FAQ-БОТ ==========
-(function() {
-    const btn = document.getElementById('aiAssistantBtn');
-    const win = document.getElementById('aiChatWindow');
-    const close = document.getElementById('closeAiChat');
-    const input = document.getElementById('aiChatInput');
-    const send = document.getElementById('aiChatSend');
-    const msgDiv = document.getElementById('aiChatMessages');
-    const faq = [
-        { keywords: ['привет','здравствуй'], reply: '🐻 Привет! Спрашивай о чатах, группах, секретных чатах, каналах, голосовых, стикерах или звонках!' },
-        { keywords: ['секретный','шифрование'], reply: '🔒 Секретные чаты используют AES-256. Сообщения не хранятся на сервере.' },
-        { keywords: ['группа','групповой'], reply: '👥 Группы создаются на главном экране кнопкой "✨ + Создать группу ✨".' },
-        { keywords: ['канал'], reply: '📢 Каналы — это публичные ленты. Подписывайся и делись новостями.' },
-        { keywords: ['голосовое','микрофон'], reply: '🎤 Зажми кнопку микрофона (🎤) в поле ввода, чтобы записать голосовое.' },
-        { keywords: ['стикер'], reply: '🎨 Стикеры — через кнопку 🎨. Можно загружать свои или генерировать AI.' },
-        { keywords: ['звонок','видео'], reply: '📹 Видеозвонки запускаются кнопкой 📹 в шапке личного чата.' }
-    ];
-    function findReply(msg) { const lower = msg.toLowerCase(); for (let item of faq) { for (let kw of item.keywords) { if (lower.includes(kw)) return item.reply; } } return '🐻 Извини, не понял. Спроси про "секретные чаты", "группы", "каналы", "голосовые", "стикеры" или "звонки".'; }
-    btn.onclick = () => win.style.display = 'flex';
-    close.onclick = () => win.style.display = 'none';
-    function sendMessage() {
-        const text = input.value.trim(); if (!text) return;
-        msgDiv.innerHTML += `<div style="background:#ff6b6b; color:white; padding:8px 12px; border-radius:12px; align-self:flex-end; max-width:80%;">${escapeHtml(text)}</div>`;
-        input.value = ''; msgDiv.scrollTop = msgDiv.scrollHeight;
-        const typing = document.createElement('div'); typing.innerHTML = `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start;">🐻 Печатает...</div>`; msgDiv.appendChild(typing);
-        setTimeout(() => { const reply = findReply(text); typing.remove(); msgDiv.innerHTML += `<div style="background:#f0f0f0; padding:8px 12px; border-radius:12px; align-self:flex-start; max-width:80%;">${escapeHtml(reply)}</div>`; msgDiv.scrollTop = msgDiv.scrollHeight; }, 500);
-    }
-    send.onclick = sendMessage;
-    input.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
-})();
 </script>
 </body>
 </html>
