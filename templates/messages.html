@@ -178,8 +178,8 @@
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}
-                        <div class="video-circle" onclick="this.querySelector('video').play()">
-                            <video src="{{ m.file_path }}" muted loop playsinline></video>
+                        <div class="video-circle" onclick="const v=this.querySelector('video'); v.muted=false; v.play()">
+                            <video src="{{ m.file_path }}" loop playsinline></video>
                             <span class="duration-badge">{{ m.voice_duration }}″</span>
                         </div>
                     {% elif m.file_type == 'video' %}
@@ -305,6 +305,7 @@ let isAudioRecording = false;
 let videoRecorder = null;
 let videoChunks = [];
 let isVideoRecording = false;
+let videoStream = null;
 let startTime = null;
 let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
 let currentReplyToId = null;
@@ -373,7 +374,7 @@ function addNewMessage(msg) {
         else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
         else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
         else if(msg.file_type == 'video' && msg.voice_duration && msg.voice_duration > 0) {
-            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); this.querySelector('video').play()"><video src="${msg.file_path}" muted loop playsinline></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
+            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" loop playsinline></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
         }
         else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
@@ -496,8 +497,7 @@ function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecor
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
 document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
 
-// --- ВИДЕО-КРУЖКИ (переписанные, без вылетов) ---
-let videoStream = null;
+// --- ВИДЕО-КРУЖКИ (со звуком) ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -563,7 +563,6 @@ document.getElementById('videoBtn').addEventListener('mouseup', (e) => {
 document.getElementById('videoBtn').addEventListener('mouseleave', (e) => {
     if (isVideoRecording) stopVideoRecording();
 });
-// для сенсорных экранов
 document.getElementById('videoBtn').addEventListener('touchstart', (e) => {
     e.preventDefault();
     startVideoRecording();
