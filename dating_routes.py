@@ -1,4 +1,4 @@
-# dating_routes.py — модуль знакомств (пол + лайки)
+# dating_routes.py — финальная версия (без relationship, с гарантией)
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -34,20 +34,18 @@ def next_profile():
     db = current_app.extensions['sqlalchemy']
     from app import User, UserProfile, Like
 
-    # Собираем ID тех, с кем уже было взаимодействие
     liked_ids = [l.liked_id for l in db.session.query(Like).filter_by(liker_id=current_user.id).all()]
     exclude = set(liked_ids) | {current_user.id}
 
-    # Узнаём предпочтения текущего пользователя
     my_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
     preference = my_profile.preference if my_profile else 'all'
 
     query = db.session.query(UserProfile).filter(UserProfile.user_id.notin_(exclude))
 
-    # Фильтр по предпочтениям
     if preference != 'all':
-        # Ищем пользователей, чей gender совпадает с нашим preference
-        query = query.filter(UserProfile.user.has(User.gender == preference))
+        # Фильтруем пользователей, у которых gender == preference
+        suitable_user_ids = db.session.query(User.id).filter(User.gender == preference).subquery()
+        query = query.filter(UserProfile.user_id.in_(suitable_user_ids))
 
     profile = query.order_by(db.func.random()).first()
     if not profile:
@@ -147,18 +145,14 @@ def update_profile():
     flash('Анкета обновлена!', 'success')
     return redirect(url_for('profile'))
 
-# ---------- ОБРАТНАЯ СВЯЗЬ (ЛАЙКИ) ----------
 @dating_bp.route('/my_likes')
 @login_required
 def my_likes():
     db = current_app.extensions['sqlalchemy']
     from app import Like, User
 
-    # Входящие лайки (те, кто лайкнул меня)
     incoming = db.session.query(Like).filter_by(liked_id=current_user.id).all()
-    # Исходящие лайки (кого лайкнул я)
     outgoing = db.session.query(Like).filter_by(liker_id=current_user.id).all()
-    # Мэтчи – взаимные лайки
     matches = [l for l in incoming if l.is_match]
 
     def user_info(uid):
