@@ -15,9 +15,9 @@
         .section{margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #eee}
         .section-title{font-size:18px;font-weight:600;color:#333;margin-bottom:15px}
         .form-group{margin-bottom:15px}
-        input,textarea{width:100%;padding:12px 16px;border:1px solid #ffb3b3;border-radius:25px;font-size:14px;background:white}
+        input,select,textarea{width:100%;padding:12px 16px;border:1px solid #ffb3b3;border-radius:25px;font-size:14px;background:white}
         textarea{resize:vertical;min-height:60px}
-        input:focus,textarea:focus{outline:none;border-color:#ff6b6b}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#ff6b6b}
         button{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;font-weight:500}
         .btn-danger{background:#e74c3c}
         .btn-danger:hover{background:#c0392b}
@@ -86,27 +86,62 @@
         </form>
     </div>
 
-   <div class="section">
-    <div class="section-title">💕 Анкета для знакомств</div>
-    <form method="POST" action="/update_profile" enctype="multipart/form-data">
-        <div class="form-group">
-            <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Пол</label>
-            <select name="gender" style="width:100%;padding:12px 16px;border:1px solid #ffb3b3;border-radius:25px;font-size:14px;background:white;">
-                <option value="" {% if current_user.gender == None %}selected{% endif %}>Не указан</option>
-                <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Мужской</option>
-                <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Женский</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Кого искать</label>
-            <select name="preference" style="width:100%;padding:12px 16px;border:1px solid #ffb3b3;border-radius:25px;font-size:14px;background:white;">
-                <option value="all" {% if not profile or profile.preference == 'all' %}selected{% endif %}>Всех</option>
-                <option value="male" {% if profile and profile.preference == 'male' %}selected{% endif %}>Мужчин</option>
-                <option value="female" {% if profile and profile.preference == 'female' %}selected{% endif %}>Женщин</option>
-            </select>
-        </div>
-        <!-- Остальные поля (город, интересы, о себе, фото) остаются без изменений -->
-    </form>
+    <!-- АНКЕТА ДЛЯ ЗНАКОМСТВ -->
+    <div class="section">
+        <div class="section-title">💕 Анкета для знакомств</div>
+        <form method="POST" action="/update_profile" enctype="multipart/form-data">
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Пол</label>
+                <select name="gender">
+                    <option value="" {% if current_user.gender == None %}selected{% endif %}>Не указан</option>
+                    <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Мужской</option>
+                    <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Женский</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Кого искать</label>
+                <select name="preference">
+                    <option value="all" {% if not profile or profile.preference == 'all' %}selected{% endif %}>Всех</option>
+                    <option value="male" {% if profile and profile.preference == 'male' %}selected{% endif %}>Мужчин</option>
+                    <option value="female" {% if profile and profile.preference == 'female' %}selected{% endif %}>Женщин</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Дата рождения 🎂</label>
+                <input type="date" name="birthday" value="{{ current_user.birthday }}">
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Город</label>
+                <input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="Москва">
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Интересы</label>
+                <input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="Музыка, спорт, кино">
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">О себе</label>
+                <textarea name="bio" placeholder="Напиши пару слов...">{{ profile.bio if profile else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Фото для анкеты</label>
+                <input type="file" name="photo" accept="image/*">
+            </div>
+            <button type="submit">Сохранить анкету</button>
+        </form>
+    </div>
+
+    <div class="section danger-zone">
+        <div class="section-title">⚠️ Опасная зона</div>
+        <form method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт? Все сообщения будут потеряны.')">
+            <input type="hidden" name="delete_account" value="1">
+            <button type="submit" class="btn-danger">🗑️ Удалить аккаунт</button>
+        </form>
+        <small style="display: block; margin-top: 10px;">Это действие необратимо. Все ваши сообщения будут удалены.</small>
+    </div>
+
+    <div class="back-link">
+        <a href="/chat">← Вернуться в чат</a>
+    </div>
 </div>
 </body>
 </html>
