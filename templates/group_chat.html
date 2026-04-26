@@ -94,10 +94,11 @@
         .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:24px;height:24px;font-size:14px;padding:3px}
-            .send-btn{width:34px;height:34px;font-size:16px}
-            .input-wrapper{padding:2px 4px}
-            .input-wrapper input{font-size:13px;padding:6px 2px}
+            .input-icon{width:22px;height:22px;font-size:13px;padding:2px}
+            .send-btn{width:30px;height:30px;font-size:15px}
+            .input-wrapper{padding:2px 3px;gap:1px}
+            .input-wrapper input{font-size:12px;padding:6px 1px}
+            .input-area{gap:3px}
             .header{padding:6px 10px}
             .avatar{width:30px;height:30px}
             .back{padding:4px 8px;font-size:11px}
@@ -161,7 +162,7 @@
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}
                         <div class="video-circle" onclick="const v=this.querySelector('video'); v.muted=false; v.play()">
-                            <video src="{{ m.file_path }}" muted loop playsinline></video>
+                            <video src="{{ m.file_path }}" loop playsinline></video>
                             <span class="duration-badge">{{ m.voice_duration }}″</span>
                         </div>
                     {% elif m.file_type == 'video' %}
@@ -316,7 +317,7 @@ function addNewMessage(msg) {
         else if(msg.file_type === 'image') fileHtml = `<img src="${msg.file_path}" onclick="window.open(this.src)">`;
         else if(msg.file_type === 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
         else if(msg.file_type === 'video' && msg.voice_duration && msg.voice_duration > 0) {
-            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" muted loop playsinline></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
+            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" loop playsinline></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
         }
         else if(msg.file_type === 'video') fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
@@ -391,7 +392,7 @@ function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecor
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
 document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
 
-// --- ВИДЕО-КРУЖКИ (с включением звука по клику) ---
+// --- ВИДЕО-КРУЖКИ (со звуком) ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
