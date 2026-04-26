@@ -1,5 +1,5 @@
-# dating_routes.py — модуль знакомств BearGram (изолированный)
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+# dating_routes.py — модуль знакомств BearGram (изолированный и надёжный)
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
 import os
@@ -7,20 +7,13 @@ from werkzeug.utils import secure_filename
 
 dating_bp = Blueprint('dating', __name__)
 
-def get_db():
-    from app import db
-    return db
-
-def get_models():
-    from app import User, UserProfile, Like
-    return User, UserProfile, Like
-
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'mp4', 'webm'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def ensure_tables():
-    db = get_db()
+    """Создаёт таблицы дейтинга, если их ещё нет (вызывается при первом запросе)"""
+    db = current_app.extensions['sqlalchemy']
     try:
         db.engine.execute("CREATE TABLE IF NOT EXISTS user_profile (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, city TEXT, interests TEXT, bio TEXT, photo TEXT)")
         db.engine.execute("CREATE TABLE IF NOT EXISTS like (id INTEGER PRIMARY KEY, liker_id INTEGER, liked_id INTEGER, is_match BOOLEAN DEFAULT 0)")
@@ -37,15 +30,16 @@ def dating():
 @login_required
 def next_profile():
     ensure_tables()
-    User, UserProfile, Like = get_models()
-    db = get_db()
+    db = current_app.extensions['sqlalchemy']
+    from app import User, UserProfile, Like
+
     liked_ids = [l.liked_id for l in Like.query.filter_by(liker_id=current_user.id).all()]
     exclude = set(liked_ids) | {current_user.id}
     profile = UserProfile.query.filter(UserProfile.user_id.notin_(exclude)).order_by(db.func.random()).first()
     if not profile:
         return jsonify(None)
     user = User.query.get(profile.user_id)
-    birthday = user.birthday
+    birthday = getattr(user, 'birthday', None)
     return jsonify({
         'id': user.id,
         'username': user.username,
@@ -60,8 +54,9 @@ def next_profile():
 @login_required
 def like_user(liked_id):
     ensure_tables()
-    _, _, Like = get_models()
-    db = get_db()
+    db = current_app.extensions['sqlalchemy']
+    from app import Like
+
     existing = Like.query.filter_by(liker_id=current_user.id, liked_id=liked_id).first()
     if existing:
         return jsonify({'status': 'already_liked'})
@@ -80,8 +75,9 @@ def like_user(liked_id):
 @login_required
 def dislike_user(liked_id):
     ensure_tables()
-    _, _, Like = get_models()
-    db = get_db()
+    db = current_app.extensions['sqlalchemy']
+    from app import Like
+
     existing = Like.query.filter_by(liker_id=current_user.id, liked_id=liked_id).first()
     if not existing:
         like = Like(liker_id=current_user.id, liked_id=liked_id, is_match=False)
@@ -93,8 +89,10 @@ def dislike_user(liked_id):
 @login_required
 def update_profile():
     ensure_tables()
-    User, UserProfile, _ = get_models()
-    db = get_db()
+    db = current_app.extensions['sqlalchemy']
+    from app import UserProfile
+    from flask_login import current_user
+
     city = request.form.get('city', '')
     interests = request.form.get('interests', '')
     bio = request.form.get('bio', '')
