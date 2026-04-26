@@ -1,4 +1,4 @@
-# dating_routes.py — модуль знакомств BearGram (изолированный и надёжный)
+# dating_routes.py — стабильный модуль знакомств
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -12,7 +12,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def ensure_tables():
-    """Создаёт таблицы дейтинга, если их ещё нет (вызывается при первом запросе)"""
     db = current_app.extensions['sqlalchemy']
     try:
         db.engine.execute("CREATE TABLE IF NOT EXISTS user_profile (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, city TEXT, interests TEXT, bio TEXT, photo TEXT)")
@@ -31,14 +30,15 @@ def dating():
 def next_profile():
     ensure_tables()
     db = current_app.extensions['sqlalchemy']
+    # ВСЕ ИМПОРТЫ — ВНУТРИ ФУНКЦИИ
     from app import User, UserProfile, Like
 
-    liked_ids = [l.liked_id for l in Like.query.filter_by(liker_id=current_user.id).all()]
+    liked_ids = [l.liked_id for l in db.session.query(Like).filter_by(liker_id=current_user.id).all()]
     exclude = set(liked_ids) | {current_user.id}
-    profile = UserProfile.query.filter(UserProfile.user_id.notin_(exclude)).order_by(db.func.random()).first()
+    profile = db.session.query(UserProfile).filter(UserProfile.user_id.notin_(exclude)).order_by(db.func.random()).first()
     if not profile:
         return jsonify(None)
-    user = User.query.get(profile.user_id)
+    user = db.session.query(User).get(profile.user_id)
     birthday = getattr(user, 'birthday', None)
     return jsonify({
         'id': user.id,
@@ -57,12 +57,12 @@ def like_user(liked_id):
     db = current_app.extensions['sqlalchemy']
     from app import Like
 
-    existing = Like.query.filter_by(liker_id=current_user.id, liked_id=liked_id).first()
+    existing = db.session.query(Like).filter_by(liker_id=current_user.id, liked_id=liked_id).first()
     if existing:
         return jsonify({'status': 'already_liked'})
     like = Like(liker_id=current_user.id, liked_id=liked_id)
     db.session.add(like)
-    mutual = Like.query.filter_by(liker_id=liked_id, liked_id=current_user.id).first()
+    mutual = db.session.query(Like).filter_by(liker_id=liked_id, liked_id=current_user.id).first()
     if mutual:
         like.is_match = True
         mutual.is_match = True
@@ -78,7 +78,7 @@ def dislike_user(liked_id):
     db = current_app.extensions['sqlalchemy']
     from app import Like
 
-    existing = Like.query.filter_by(liker_id=current_user.id, liked_id=liked_id).first()
+    existing = db.session.query(Like).filter_by(liker_id=current_user.id, liked_id=liked_id).first()
     if not existing:
         like = Like(liker_id=current_user.id, liked_id=liked_id, is_match=False)
         db.session.add(like)
@@ -91,7 +91,6 @@ def update_profile():
     ensure_tables()
     db = current_app.extensions['sqlalchemy']
     from app import UserProfile
-    from flask_login import current_user
 
     city = request.form.get('city', '')
     interests = request.form.get('interests', '')
@@ -114,7 +113,7 @@ def update_profile():
         photo_file.save(filepath)
         photo_path = f'/static/uploads/{filename}'
 
-    profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+    profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
     if not profile:
         profile = UserProfile(user_id=current_user.id)
         db.session.add(profile)
