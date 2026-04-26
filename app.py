@@ -115,6 +115,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     current_theme_id = db.Column(db.Integer, nullable=True)
     birthday = db.Column(db.Date, nullable=True)
+    gender = db.Column(db.String(10), default=None)  # 'male', 'female' или None
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -178,6 +179,7 @@ class UserProfile(db.Model):
     interests = db.Column(db.String(300))
     bio = db.Column(db.Text)
     photo = db.Column(db.String(200))
+    preference = db.Column(db.String(10), default='all')  # 'male', 'female', 'all'
 
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)

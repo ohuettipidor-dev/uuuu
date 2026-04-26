@@ -1,4 +1,4 @@
-# dating_routes.py — модуль знакомств BearGram (исправлено)
+# dating_routes.py — модуль знакомств (пол + лайки)
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -14,9 +14,11 @@ def allowed_file(filename):
 def ensure_tables():
     db = current_app.extensions['sqlalchemy']
     try:
-        db.engine.execute("CREATE TABLE IF NOT EXISTS user_profile (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, city TEXT, interests TEXT, bio TEXT, photo TEXT)")
+        db.engine.execute("CREATE TABLE IF NOT EXISTS user_profile (id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, city TEXT, interests TEXT, bio TEXT, photo TEXT, preference TEXT DEFAULT 'all')")
         db.engine.execute("CREATE TABLE IF NOT EXISTS like (id INTEGER PRIMARY KEY, liker_id INTEGER, liked_id INTEGER, is_match BOOLEAN DEFAULT 0)")
         db.engine.execute("ALTER TABLE user ADD COLUMN birthday DATE")
+        db.engine.execute("ALTER TABLE user ADD COLUMN gender TEXT")
+        db.engine.execute("ALTER TABLE user_profile ADD COLUMN preference TEXT DEFAULT 'all'")
     except:
         pass
 
@@ -32,11 +34,25 @@ def next_profile():
     db = current_app.extensions['sqlalchemy']
     from app import User, UserProfile, Like
 
+    # Собираем ID тех, с кем уже было взаимодействие
     liked_ids = [l.liked_id for l in db.session.query(Like).filter_by(liker_id=current_user.id).all()]
     exclude = set(liked_ids) | {current_user.id}
-    profile = db.session.query(UserProfile).filter(UserProfile.user_id.notin_(exclude)).order_by(db.func.random()).first()
+
+    # Узнаём предпочтения текущего пользователя
+    my_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+    preference = my_profile.preference if my_profile else 'all'
+
+    query = db.session.query(UserProfile).filter(UserProfile.user_id.notin_(exclude))
+
+    # Фильтр по предпочтениям
+    if preference != 'all':
+        # Ищем пользователей, чей gender совпадает с нашим preference
+        query = query.filter(UserProfile.user.has(User.gender == preference))
+
+    profile = query.order_by(db.func.random()).first()
     if not profile:
         return jsonify(None)
+
     user = db.session.query(User).get(profile.user_id)
     birthday = getattr(user, 'birthday', None)
     return jsonify({
@@ -95,6 +111,8 @@ def update_profile():
     interests = request.form.get('interests', '')
     bio = request.form.get('bio', '')
     birthday_str = request.form.get('birthday', '')
+    gender = request.form.get('gender', '')
+    preference = request.form.get('preference', 'all')
     photo_file = request.files.get('photo')
     photo_path = None
 
@@ -103,6 +121,9 @@ def update_profile():
             current_user.birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date()
         except:
             pass
+
+    if gender:
+        current_user.gender = gender
 
     if photo_file and photo_file.filename and allowed_file(photo_file.filename):
         filename = secure_filename(photo_file.filename)
@@ -119,9 +140,32 @@ def update_profile():
     profile.city = city
     profile.interests = interests
     profile.bio = bio
+    profile.preference = preference
     if photo_path:
         profile.photo = photo_path
     db.session.commit()
     flash('Анкета обновлена!', 'success')
-    # ИСПРАВЛЕНО: используем основной маршрут профиля, а не dating.profile
     return redirect(url_for('profile'))
+
+# ---------- ОБРАТНАЯ СВЯЗЬ (ЛАЙКИ) ----------
+@dating_bp.route('/my_likes')
+@login_required
+def my_likes():
+    db = current_app.extensions['sqlalchemy']
+    from app import Like, User
+
+    # Входящие лайки (те, кто лайкнул меня)
+    incoming = db.session.query(Like).filter_by(liked_id=current_user.id).all()
+    # Исходящие лайки (кого лайкнул я)
+    outgoing = db.session.query(Like).filter_by(liker_id=current_user.id).all()
+    # Мэтчи – взаимные лайки
+    matches = [l for l in incoming if l.is_match]
+
+    def user_info(uid):
+        u = db.session.query(User).get(uid)
+        return {'id': u.id, 'username': u.username, 'avatar': u.avatar} if u else None
+
+    return render_template('my_likes.html',
+                           incoming=[{'user': user_info(l.liker_id), 'is_match': l.is_match} for l in incoming],
+                           outgoing=[{'user': user_info(l.liked_id), 'is_match': l.is_match} for l in outgoing],
+                           matches=[{'user': user_info(l.liker_id)} for l in matches])
