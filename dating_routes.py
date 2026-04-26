@@ -1,4 +1,4 @@
-# dating_routes.py — стабильный модуль знакомств
+# dating_routes.py — модуль знакомств BearGram (исправлено)
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -30,7 +30,6 @@ def dating():
 def next_profile():
     ensure_tables()
     db = current_app.extensions['sqlalchemy']
-    # ВСЕ ИМПОРТЫ — ВНУТРИ ФУНКЦИИ
     from app import User, UserProfile, Like
 
     liked_ids = [l.liked_id for l in db.session.query(Like).filter_by(liker_id=current_user.id).all()]
@@ -124,4 +123,5 @@ def update_profile():
         profile.photo = photo_path
     db.session.commit()
     flash('Анкета обновлена!', 'success')
-    return redirect(url_for('dating.profile'))
+    # ИСПРАВЛЕНО: используем основной маршрут профиля, а не dating.profile
+    return redirect(url_for('profile'))
