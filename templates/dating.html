@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐻 Знакомства | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+        .card{background:white;border-radius:24px;padding:20px;width:90%;max-width:350px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.1);position:relative}
+        .photo{width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 12px;background:#ddd}
+        .name{font-size:20px;font-weight:700;color:#333}
+        .info{font-size:13px;color:#888;margin:6px 0}
+        .bio{font-size:14px;color:#555;margin:8px 0}
+        .actions{display:flex;justify-content:space-around;margin-top:16px}
+        .btn{border:none;font-size:28px;width:55px;height:55px;border-radius:50%;cursor:pointer;transition:0.2s}
+        .like{background:#4cd964;color:white}
+        .dislike{background:#ff6b6b;color:white}
+        .back{display:block;margin-top:12px;color:#888;text-decoration:none}
+        .compatibility{font-size:13px;color:#ff6b6b;margin-top:4px}
+    </style>
+</head>
+<body>
+<div class="card" id="card">
+    <div id="profile">
+        <p>Загрузка...</p>
+    </div>
+    <div class="actions">
+        <button class="btn dislike" id="dislikeBtn">✖</button>
+        <button class="btn like" id="likeBtn">❤️</button>
+    </div>
+    <a href="/chat" class="back">← Назад в чаты</a>
+</div>
+
+<script>
+let currentUser = null;
+
+async function loadProfile() {
+    try {
+        const resp = await fetch('/api/next_profile');
+        if (!resp.ok) {
+            document.getElementById('profile').innerHTML = '<p>Ошибка загрузки 😢</p>';
+            return;
+        }
+        const data = await resp.json();
+        if (!data) {
+            document.getElementById('profile').innerHTML = '<p>Анкет больше нет 😢</p>';
+            return;
+        }
+        currentUser = data;
+        document.getElementById('profile').innerHTML = `
+            <img class="photo" src="${data.photo || '/static/avatars/default.png'}">
+            <div class="name">${escapeHtml(data.username)}</div>
+            <div class="info">${data.city || 'Город не указан'} · ${data.interests || 'Интересы не указаны'}</div>
+            <div class="bio">${escapeHtml(data.bio || '')}</div>
+            <div class="compatibility" id="compat">✨ Совместимость: считается...</div>
+        `;
+        checkCompatibility(data.id);
+    } catch (err) {
+        document.getElementById('profile').innerHTML = '<p>Нет соединения с сервером</p>';
+    }
+}
+
+async function checkCompatibility(userId) {
+    try {
+        const resp = await fetch(`/api/compatibility/${userId}`);
+        const data = await resp.json();
+        if (data.percent) {
+            document.getElementById('compat').textContent = `✨ Совместимость: ${data.percent}%`;
+        } else {
+            document.getElementById('compat').textContent = '';
+        }
+    } catch(e) {
+        document.getElementById('compat').textContent = '';
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.getElementById('likeBtn').addEventListener('click', async () => {
+    if (!currentUser) return;
+    const resp = await fetch(`/api/like/${currentUser.id}`, {method:'POST'});
+    const data = await resp.json();
+    if (data.status === 'match') {
+        alert('🎉 Взаимная симпатия! Проверь чаты.');
+    }
+    loadProfile();
+});
+
+document.getElementById('dislikeBtn').addEventListener('click', async () => {
+    if (!currentUser) return;
+    await fetch(`/api/dislike/${currentUser.id}`, {method:'POST'});
+    loadProfile();
+});
+
+loadProfile();
+</script>
+</body>
+</html>

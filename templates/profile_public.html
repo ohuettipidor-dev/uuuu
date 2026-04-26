@@ -17,7 +17,7 @@
         .status.online{background:#4cd96420;color:#4cd964}
         .status.offline{background:#88888820;color:#888}
         .btn-group{display:flex;flex-direction:column;gap:10px;margin-top:15px}
-        .btn{display:block;padding:12px;border-radius:30px;text-decoration:none;font-weight:600;text-align:center;transition:transform 0.2s;border:none;cursor:pointer;font-size:14px}
+        .btn{display:block;padding:12px;border-radius:30px;text-decoration:none;font-weight:600;text-align:center;transition:transform 0.2s;border:none;cursor:pointer;font-size:14px;width:100%}
         .btn:hover{transform:translateY(-2px)}
         .btn-primary{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .btn-danger{background:#ff4444;color:white}
@@ -25,6 +25,15 @@
         .btn-secret{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b}
         .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none;display:inline-block;margin-bottom:20px}
         .info-text{color:#666;font-size:14px;line-height:1.5;margin-top:10px}
+        .profile-detail{text-align:left;margin:10px 0;color:#555;font-size:14px}
+        .profile-detail b{color:#333}
+        .compat-btn{cursor:pointer;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;padding:10px 20px;border-radius:25px;border:none;font-weight:bold;margin-top:8px}
+        .like-btn{background:#4cd964;color:white;margin-top:5px}
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .modal.active{opacity:1;visibility:visible}
+        .modal-content{background:white;border-radius:24px;padding:20px;text-align:center;width:280px}
+        .sign{font-size:28px;margin:8px 0}
+        .percent{font-size:48px;font-weight:bold;color:#ff6b6b}
     </style>
 </head>
 <body>
@@ -46,6 +55,28 @@
         <div class="status {% if profile_user.status == 'online' %}online{% else %}offline{% endif %}">
             {% if profile_user.status == 'online' %}● Онлайн{% else %}○ Офлайн{% endif %}
         </div>
+
+        <!-- Анкета знакомств (если заполнена) -->
+        {% if profile %}
+        <div style="text-align:left; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+            {% if profile.city %}
+            <div class="profile-detail">📍 <b>Город:</b> {{ profile.city }}</div>
+            {% endif %}
+            {% if profile.interests %}
+            <div class="profile-detail">🎯 <b>Интересы:</b> {{ profile.interests }}</div>
+            {% endif %}
+            {% if profile.bio %}
+            <div class="profile-detail">💬 {{ profile.bio }}</div>
+            {% endif %}
+            {% if profile.photo %}
+            <img src="{{ profile.photo }}" style="width:200px; border-radius:16px; margin-top:8px;">
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Совместимость и лайк -->
+        <button class="compat-btn" onclick="checkCompatibility({{ profile_user.id }})">✨ Проверить совместимость</button>
+        <button class="btn like-btn" id="likeBtn" onclick="sendLike({{ profile_user.id }})">❤️ Лайк</button>
         
         <div class="btn-group">
             <a href="/messages/{{ profile_user.id }}" class="btn btn-primary">💬 Написать сообщение</a>
@@ -74,5 +105,63 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно совместимости -->
+<div class="modal" id="compatModal">
+    <div class="modal-content">
+        <div id="compatResult">
+            <p>Загрузка...</p>
+        </div>
+        <button onclick="closeCompatModal()" style="background:#f0f0f0;border:none;padding:8px;border-radius:20px;margin-top:12px;">Закрыть</button>
+    </div>
+</div>
+
+<script>
+async function checkCompatibility(userId) {
+    const modal = document.getElementById('compatModal');
+    const resDiv = document.getElementById('compatResult');
+    modal.classList.add('active');
+    resDiv.innerHTML = '<p>🔮 Звёзды советуются...</p>';
+    try {
+        const resp = await fetch(`/api/compatibility/${userId}`);
+        const data = await resp.json();
+        if (data.error) {
+            resDiv.innerHTML = `<p>❌ ${data.error}</p>`;
+        } else {
+            resDiv.innerHTML = `
+                <div class="sign">${data.elem1} ${data.sign1}  ↔  ${data.elem2} ${data.sign2}</div>
+                <div class="percent">${data.percent}%</div>
+                <p style="color:#888;margin-top:8px;">${data.message}</p>
+            `;
+        }
+    } catch (e) {
+        resDiv.innerHTML = '<p>Ошибка соединения</p>';
+    }
+}
+function closeCompatModal() {
+    document.getElementById('compatModal').classList.remove('active');
+}
+
+async function sendLike(userId) {
+    const btn = document.getElementById('likeBtn');
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+        const resp = await fetch(`/api/like/${userId}`, {method:'POST'});
+        const data = await resp.json();
+        if (data.status === 'match') {
+            alert('🎉 Взаимная симпатия! Проверь чаты.');
+        } else if (data.status === 'already_liked') {
+            alert('Ты уже лайкнул этого пользователя');
+        } else {
+            alert('❤️ Лайк отправлен!');
+        }
+    } catch(e) {
+        alert('Ошибка');
+    }
+    btn.disabled = false;
+    btn.textContent = '❤️ Лайк';
+}
+</script>
 </body>
 </html>

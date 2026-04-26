@@ -114,6 +114,7 @@ class User(UserMixin, db.Model):
     notifications_enabled = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     current_theme_id = db.Column(db.Integer, nullable=True)
+    birthday = db.Column(db.Date, nullable=True)
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -169,6 +170,20 @@ class Message(db.Model):
     forwarded_from = db.relationship('User', foreign_keys=[forwarded_from_id])
     sender = db.relationship('User', foreign_keys=[sender_id])
     receiver = db.relationship('User', foreign_keys=[receiver_id])
+
+class UserProfile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
+    city = db.Column(db.String(100))
+    interests = db.Column(db.String(300))
+    bio = db.Column(db.Text)
+    photo = db.Column(db.String(200))
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    liker_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    liked_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_match = db.Column(db.Boolean, default=False)
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -3046,6 +3061,36 @@ def api_has_unseen_stories():
 @login_required
 def soundlab():
     return render_template('soundlab.html')
+from dating_routes import dating_bp
+app.register_blueprint(dating_bp)
+@app.route('/api/compatibility/<int:user_id>')
+@login_required
+def compatibility(user_id):
+    other = User.query.get_or_404(user_id)
+    if not current_user.birthday or not other.birthday:
+        return jsonify({'error': 'У одного из вас не указана дата рождения'})
+    def get_zodiac_sign(day, month):
+        if (month == 3 and day >= 21) or (month == 4 and day <= 19): return 'Овен', '🔥'
+        elif (month == 4 and day >= 20) or (month == 5 and day <= 20): return 'Телец', '🌍'
+        elif (month == 5 and day >= 21) or (month == 6 and day <= 20): return 'Близнецы', '💨'
+        elif (month == 6 and day >= 21) or (month == 7 and day <= 22): return 'Рак', '💧'
+        elif (month == 7 and day >= 23) or (month == 8 and day <= 22): return 'Лев', '🔥'
+        elif (month == 8 and day >= 23) or (month == 9 and day <= 22): return 'Дева', '🌍'
+        elif (month == 9 and day >= 23) or (month == 10 and day <= 22): return 'Весы', '💨'
+        elif (month == 10 and day >= 23) or (month == 11 and day <= 21): return 'Скорпион', '💧'
+        elif (month == 11 and day >= 22) or (month == 12 and day <= 21): return 'Стрелец', '🔥'
+        elif (month == 12 and day >= 22) or (month == 1 and day <= 19): return 'Козерог', '🌍'
+        elif (month == 1 and day >= 20) or (month == 2 and day <= 18): return 'Водолей', '💨'
+        else: return 'Рыбы', '💧'
+    u1 = current_user.birthday; u2 = other.birthday
+    s1, e1 = get_zodiac_sign(u1.day, u1.month)
+    s2, e2 = get_zodiac_sign(u2.day, u2.month)
+    comp = {('🔥','🔥'):80,('🔥','💨'):90,('🔥','🌍'):50,('🔥','💧'):30,('🌍','🌍'):85,('🌍','💧'):70,('🌍','💨'):40,('💨','💨'):75,('💨','💧'):45,('💧','💧'):95}
+    pair = (e1,e2) if e1 <= e2 else (e2,e1)
+    base = comp.get(pair,60)
+    percent = min(98, max(30, base + random.randint(-5,8)))
+    msg = '🔥 Идеальная пара!' if percent>=90 else '💫 Отлично!' if percent>=70 else '🌈 Возможно' if percent>=50 else '❄️ Сложно'
+    return jsonify({'sign1':s1,'elem1':e1,'sign2':s2,'elem2':e2,'percent':percent,'message':msg})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

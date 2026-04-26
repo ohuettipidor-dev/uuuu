@@ -95,6 +95,8 @@
         </div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
+            <!-- ЕДИНСТВЕННАЯ ДОБАВЛЕННАЯ СТРОКА: -->
+            <a href="/dating" class="icon-btn">💕</a>
             <a href="/channels" class="icon-btn">📢</a>
             <a href="/voice_channels" class="icon-btn">🎤</a>
             <a href="/secret_chats" class="icon-btn">🔒</a>
@@ -212,7 +214,6 @@
 </div>
 
 <script>
-// Функция форматирования времени
 function formatUTCTime(utcString) {
     if (!utcString) return '';
     const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
@@ -226,7 +227,6 @@ document.querySelectorAll('.chat-time').forEach(el => {
     if (utcStr) el.textContent = formatUTCTime(utcStr);
 });
 
-// Основной код приложения (поиск, чаты, модальные окна) остаётся без изменений
 let selectedUserId = null;
 let searchTimeout = null;
 
@@ -368,7 +368,6 @@ function createGroup() {
     const send = document.getElementById('aiChatSend');
     const msgDiv = document.getElementById('aiChatMessages');
 
-    // Бот понимает более 150 намерений: эмоции, факты, шутки, погода, советы и т.д.
     const chatBrain = {
         greetings: ['привет','здравствуй','хай','здаров','добрый день','hello','hi','прив','вечер','утро'],
         howareyou: ['как дела','как ты','как жизнь','как настроение','how are you'],
