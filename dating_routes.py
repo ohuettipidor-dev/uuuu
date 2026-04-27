@@ -1,4 +1,4 @@
-# dating_routes.py — дейтинг с Premium-лимитами (полная версия)
+# dating_routes.py — дейтинг с Premium-фильтром (ненавязчивый)
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
@@ -9,12 +9,10 @@ dating_bp = Blueprint('dating', __name__)
 DAILY_LIKES_LIMIT = 50   # бесплатных лайков в сутки
 
 def get_db():
-    """Возвращает db и модели, чтобы избежать циклических импортов в начале."""
     from app import db, User, UserProfile, Like
     return db, User, UserProfile, Like
 
 def get_premium_status(user_id):
-    """Использует модель Subscription из app.py."""
     from app import Subscription
     sub = Subscription.query.filter_by(user_id=user_id).first()
     if sub and sub.expires_at and sub.expires_at > datetime.utcnow():
@@ -87,7 +85,7 @@ def next_profile():
 def like_user(liked_id):
     db, User, UserProfile, Like = get_db()
 
-    # Проверка дневного лимита (если нет Premium)
+    # Проверка дневного лимита (без Premium)
     if not get_premium_status(current_user.id):
         today = date.today()
         if current_user.last_likes_reset != today:
@@ -96,10 +94,7 @@ def like_user(liked_id):
             db.session.commit()
 
         if current_user.daily_likes_count >= DAILY_LIKES_LIMIT:
-            return jsonify({
-                'error': 'Лимит лайков (50/день) исчерпан. Купите Premium для безлимита.',
-                'limit_reached': True
-            }), 403
+            return jsonify({'error': 'Лимит лайков на сегодня исчерпан.', 'limit_reached': True}), 403
 
     existing = Like.query.filter_by(liker_id=current_user.id, liked_id=liked_id).first()
     if existing:
@@ -117,8 +112,7 @@ def like_user(liked_id):
         db.session.commit()
         return jsonify({'status': 'match', 'partner': liked_id})
 
-    remaining = DAILY_LIKES_LIMIT - current_user.daily_likes_count if not get_premium_status(current_user.id) else None
-    return jsonify({'status': 'liked', 'remaining_likes': remaining})
+    return jsonify({'status': 'liked', 'remaining_likes': DAILY_LIKES_LIMIT - current_user.daily_likes_count if not get_premium_status(current_user.id) else None})
 
 @dating_bp.route('/api/dislike/<int:liked_id>', methods=['POST'])
 @login_required
@@ -136,7 +130,7 @@ def dislike_user(liked_id):
 def who_liked_me():
     """Premium‑фича: список тех, кто лайкнул меня."""
     if not get_premium_status(current_user.id):
-        return jsonify({'error': 'Требуется Premium. <a href="/premium">Купить</a>'}), 403
+        return jsonify({'error': 'Требуется Premium'}), 403
 
     db, User, UserProfile, Like = get_db()
     likers = Like.query.filter_by(liked_id=current_user.id, is_match=False).all()
