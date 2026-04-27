@@ -2655,6 +2655,143 @@ def create_theme():
         flash('Тема создана!', 'success')
         return redirect(url_for('themes_list'))
     return render_template('create_theme.html')
+# ======================== PREMIUM И МОНЕТИЗАЦИЯ ========================
+
+@app.route('/premium')
+@login_required
+def premium_page():
+    if get_premium_status(current_user.id):
+        return render_template('premium_active.html')
+    return render_template('premium.html')
+
+@app.route('/api/create_premium_order', methods=['POST'])
+@login_required
+def create_premium_order():
+    PRICE_RUB = 299.0
+
+    existing = Subscription.query.filter_by(user_id=current_user.id).first()
+    if existing and existing.expires_at and existing.expires_at > datetime.utcnow():
+        return jsonify({'error': 'У вас уже активен Premium'}), 400
+
+    order = Order(
+        user_id=current_user.id,
+        order_type='premium',
+        amount_rub=PRICE_RUB,
+        status='pending'
+    )
+    db.session.add(order)
+    db.session.commit()
+
+    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={PRICE_RUB}&label=order_{order.id}"
+
+    return jsonify({
+        'order_id': order.id,
+        'amount': PRICE_RUB,
+        'payment_url': payment_url
+    })
+
+@app.route('/api/shop/coins/packages')
+@login_required
+def get_coin_packages():
+    packages = [
+        {'id': 1, 'coins': 100, 'price_rub': 99,
+         'name': '🍯 Маленький горшочек', 'emoji': '🍯'},
+        {'id': 2, 'coins': 500, 'price_rub': 399,
+         'name': '🐝 Пчелиный улей', 'emoji': '🐝', 'popular': True},
+        {'id': 3, 'coins': 1200, 'price_rub': 799,
+         'name': '👑 Медовый король', 'emoji': '👑', 'bonus': 200}
+    ]
+    return jsonify(packages)
+
+@app.route('/api/create_coins_order', methods=['POST'])
+@login_required
+def create_coins_order():
+    data = request.get_json()
+    package_id = data.get('package_id')
+
+    packages = {
+        1: {'coins': 100, 'price': 99},
+        2: {'coins': 500, 'price': 399},
+        3: {'coins': 1200, 'price': 799}
+    }
+
+    if package_id not in packages:
+        return jsonify({'error': 'Пакет не найден'}), 404
+
+    pkg = packages[package_id]
+
+    order = Order(
+        user_id=current_user.id,
+        order_type='coins',
+        amount_rub=pkg['price'],
+        coins_amount=pkg['coins'],
+        status='pending'
+    )
+    db.session.add(order)
+    db.session.commit()
+
+    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={pkg['price']}&label=order_{order.id}"
+
+    return jsonify({
+        'order_id': order.id,
+        'amount': pkg['price'],
+        'coins': pkg['coins'],
+        'payment_url': payment_url
+    })
+
+@app.route('/api/user/premium_status')
+@login_required
+def api_premium_status():
+    is_premium = get_premium_status(current_user.id)
+    coins = get_user_coins(current_user.id)
+    sub = Subscription.query.filter_by(user_id=current_user.id).first()
+
+    expires_at = None
+    if sub and sub.expires_at:
+        expires_at = sub.expires_at.strftime('%d.%m.%Y')
+
+    return jsonify({
+        'is_premium': is_premium,
+        'balance': coins.balance,
+        'expires_at': expires_at,
+        'plan': sub.plan if sub else 'free'
+    })
+
+@app.route('/api/payment_webhook', methods=['POST'])
+def payment_webhook():
+    data = request.get_json()
+
+    order_id = data.get('order_id') or data.get('MERCHANT_ORDER_ID') or data.get('orderId')
+    status = data.get('status') or data.get('STATE') or data.get('state')
+    amount_paid = float(data.get('amount') or data.get('AMOUNT') or 0)
+
+    if not order_id:
+        return 'No order_id', 400
+
+    if isinstance(order_id, str) and order_id.startswith('order_'):
+        order_id = order_id[6:]
+    try:
+        order = Order.query.get(int(order_id))
+    except ValueError:
+        return 'Invalid order_id', 400
+
+    if not order:
+        return 'Order not found', 404
+
+    if status in ['paid', 'success', 'COMPLETED', 'completed'] and amount_paid >= order.amount_rub:
+        if order.status == 'pending':
+            order.status = 'paid'
+            order.paid_at = datetime.utcnow()
+
+            if order.order_type == 'premium':
+                activate_premium(order.user_id, months=1)
+            elif order.order_type == 'coins':
+                coins = get_user_coins(order.user_id)
+                coins.balance += order.coins_amount
+
+            db.session.commit()
+
+    return 'OK', 200
 
 # ========== ХРАНИЛИЩЕ ==========
 @app.route('/storage')
@@ -3108,140 +3245,6 @@ with app.app_context():
             db.create_all()
     else:
         print("✅ База уже существует и не пуста – восстановление не требуется.")
-
-
-# ======================== API МОНЕТИЗАЦИИ ========================
-WEBHOOK_SECRET = "your_super_secret_webhook_key_12345"   # для настоящих вебхуков позже заменишь
-
-@app.route('/api/user/premium_status')
-@login_required
-def api_premium_status():
-    is_premium = get_premium_status(current_user.id)
-    coins = get_user_coins(current_user.id)
-    sub = Subscription.query.filter_by(user_id=current_user.id).first()
-
-    expires_at = None
-    if sub and sub.expires_at:
-        expires_at = sub.expires_at.strftime('%d.%m.%Y')
-
-    return jsonify({
-        'is_premium': is_premium,
-        'balance': coins.balance,
-        'expires_at': expires_at,
-        'plan': sub.plan if sub else 'free'
-    })
-
-@app.route('/api/create_premium_order', methods=['POST'])
-@login_required
-def create_premium_order():
-    PRICE_RUB = 299.0
-
-    existing = Subscription.query.filter_by(user_id=current_user.id).first()
-    if existing and existing.expires_at and existing.expires_at > datetime.utcnow():
-        return jsonify({'error': 'У вас уже активен Premium'}), 400
-
-    order = Order(
-        user_id=current_user.id,
-        order_type='premium',
-        amount_rub=PRICE_RUB,
-        status='pending'
-    )
-    db.session.add(order)
-    db.session.commit()
-
-    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={PRICE_RUB}&label=order_{order.id}"
-
-    return jsonify({
-        'order_id': order.id,
-        'amount': PRICE_RUB,
-        'payment_url': payment_url
-    })
-
-@app.route('/api/shop/coins/packages')
-@login_required
-def get_coin_packages():
-    packages = [
-        {'id': 1, 'coins': 100, 'price_rub': 99,
-         'name': '🍯 Маленький горшочек', 'emoji': '🍯'},
-        {'id': 2, 'coins': 500, 'price_rub': 399,
-         'name': '🐝 Пчелиный улей', 'emoji': '🐝', 'popular': True},
-        {'id': 3, 'coins': 1200, 'price_rub': 799,
-         'name': '👑 Медовый король', 'emoji': '👑', 'bonus': 200}
-    ]
-    return jsonify(packages)
-
-@app.route('/api/create_coins_order', methods=['POST'])
-@login_required
-def create_coins_order():
-    data = request.get_json()
-    package_id = data.get('package_id')
-
-    packages = {
-        1: {'coins': 100, 'price': 99},
-        2: {'coins': 500, 'price': 399},
-        3: {'coins': 1200, 'price': 799}
-    }
-
-    if package_id not in packages:
-        return jsonify({'error': 'Пакет не найден'}), 404
-
-    pkg = packages[package_id]
-
-    order = Order(
-        user_id=current_user.id,
-        order_type='coins',
-        amount_rub=pkg['price'],
-        coins_amount=pkg['coins'],
-        status='pending'
-    )
-    db.session.add(order)
-    db.session.commit()
-
-    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={pkg['price']}&label=order_{order.id}"
-
-    return jsonify({
-        'order_id': order.id,
-        'amount': pkg['price'],
-        'coins': pkg['coins'],
-        'payment_url': payment_url
-    })
-
-@app.route('/api/payment_webhook', methods=['POST'])
-def payment_webhook():
-    data = request.get_json()
-
-    order_id = data.get('order_id') or data.get('MERCHANT_ORDER_ID') or data.get('orderId')
-    status = data.get('status') or data.get('STATE') or data.get('state')
-    amount_paid = float(data.get('amount') or data.get('AMOUNT') or 0)
-
-    if not order_id:
-        return 'No order_id', 400
-
-    if isinstance(order_id, str) and order_id.startswith('order_'):
-        order_id = order_id[6:]
-    try:
-        order = Order.query.get(int(order_id))
-    except ValueError:
-        return 'Invalid order_id', 400
-
-    if not order:
-        return 'Order not found', 404
-
-    if status in ['paid', 'success', 'COMPLETED', 'completed'] and amount_paid >= order.amount_rub:
-        if order.status == 'pending':
-            order.status = 'paid'
-            order.paid_at = datetime.utcnow()
-
-            if order.order_type == 'premium':
-                activate_premium(order.user_id, months=1)
-            elif order.order_type == 'coins':
-                coins = get_user_coins(order.user_id)
-                coins.balance += order.coins_amount
-
-            db.session.commit()
-
-    return 'OK', 200
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
