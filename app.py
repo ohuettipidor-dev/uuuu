@@ -3118,7 +3118,65 @@ def start_backup_scheduler():
 # Запускаем планировщик только в production (Railway), чтобы локально не мешал
 if os.environ.get('RAILWAY_ENVIRONMENT') or not app.debug:
     start_backup_scheduler()
+# ---------- РУЧНОЙ БЭКАП (СКАЧАТЬ) ----------
+import shutil
+import os
 
+@app.route('/admin/backup')
+@login_required
+def admin_backup():
+    # Защита: только пользователь с ID = 1 может скачать бэкап
+    if current_user.id != 1:
+        flash('Нет доступа', 'danger')
+        return redirect(url_for('chat'))
+    
+    db_path = '/app/data/messenger.db'
+    if not os.path.exists(db_path):
+        flash('База данных не найдена', 'danger')
+        return redirect(url_for('chat'))
+
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    backup_filename = f'messenger_backup_{timestamp}.db'
+    backup_path = os.path.join('static', 'backups', backup_filename)
+    os.makedirs('static/backups', exist_ok=True)
+    shutil.copy2(db_path, backup_path)
+    return send_file(backup_path, as_attachment=True)
+
+# ---------- ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ----------
+@app.route('/admin/restore', methods=['GET', 'POST'])
+@login_required
+def admin_restore():
+    if current_user.id != 1:
+        flash('Нет доступа', 'danger')
+        return redirect(url_for('chat'))
+
+    if request.method == 'POST':
+        if 'backup_file' not in request.files:
+            flash('Файл не выбран', 'danger')
+            return redirect(request.url)
+        file = request.files['backup_file']
+        if file.filename == '':
+            flash('Файл не выбран', 'danger')
+            return redirect(request.url)
+        if file and file.filename.endswith('.db'):
+            db_path = '/app/data/messenger.db'
+            if os.path.exists(db_path):
+                os.remove(db_path)
+            file.save(db_path)
+            flash('✅ База восстановлена! Перезапустите приложение.', 'success')
+            return redirect(url_for('admin_restore'))
+        else:
+            flash('Только .db файлы', 'danger')
+
+    return '''
+    <!doctype html>
+    <title>Восстановление базы</title>
+    <h1>Загрузите файл бэкапа (.db)</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=backup_file>
+      <input type=submit value=Загрузить>
+    </form>
+    '''
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
