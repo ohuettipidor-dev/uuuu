@@ -1,4 +1,4 @@
-# dating_routes.py — финальная версия (без relationship, с гарантией)
+# dating_routes.py — финальная версия с Premium-фичей «Кто лайкнул меня»
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -22,10 +22,20 @@ def ensure_tables():
     except:
         pass
 
+# Вспомогательная функция для проверки Premium (работает с базой через current_app)
+def _is_premium(user_id):
+    db = current_app.extensions['sqlalchemy']
+    from app import Subscription
+    sub = db.session.query(Subscription).filter_by(user_id=user_id).first()
+    if sub and sub.expires_at and sub.expires_at > datetime.utcnow():
+        return True
+    return False
+
 @dating_bp.route('/dating')
 @login_required
 def dating():
-    return render_template('dating.html')
+    is_premium = _is_premium(current_user.id)
+    return render_template('dating.html', is_premium=is_premium)
 
 @dating_bp.route('/api/next_profile')
 @login_required
@@ -96,6 +106,22 @@ def dislike_user(liked_id):
         db.session.add(like)
         db.session.commit()
     return jsonify({'status': 'disliked'})
+
+# НОВАЯ ПРЕМИУМ-ФИЧА
+@dating_bp.route('/api/who_liked_me')
+@login_required
+def who_liked_me():
+    if not _is_premium(current_user.id):
+        return jsonify({'error': 'Требуется Premium'}), 403
+
+    db = current_app.extensions['sqlalchemy']
+    from app import Like, User
+    likers = db.session.query(Like).filter_by(liked_id=current_user.id, is_match=False).all()
+    result = []
+    for l in likers:
+        user = db.session.query(User).get(l.liker_id)
+        result.append({'id': user.id, 'username': user.username, 'avatar': user.avatar})
+    return jsonify(result)
 
 @dating_bp.route('/update_profile', methods=['POST'])
 @login_required

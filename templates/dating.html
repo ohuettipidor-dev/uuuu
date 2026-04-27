@@ -18,6 +18,9 @@
         .dislike{background:#ff6b6b;color:white}
         .back{display:block;margin-top:12px;color:#888;text-decoration:none}
         .compatibility{font-size:13px;color:#ff6b6b;margin-top:4px}
+        .premium-hint{margin-top:14px;font-size:14px;}
+        .premium-hint a{color:#ff6b6b;text-decoration:none;border:1px solid #ff6b6b;padding:8px 16px;border-radius:20px;}
+        .premium-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;}
     </style>
 </head>
 <body>
@@ -29,6 +32,16 @@
         <button class="btn dislike" id="dislikeBtn">✖</button>
         <button class="btn like" id="likeBtn">❤️</button>
     </div>
+
+    <!-- 👀 Кто лайкнул меня (Premium) -->
+    <div class="premium-hint">
+        {% if not is_premium %}
+            <a href="/premium">⚡ Premium: узнать, кто лайкнул</a>
+        {% else %}
+            <button class="premium-btn" id="whoLikedBtn">👀 Кто лайкнул меня</button>
+        {% endif %}
+    </div>
+
     <a href="/chat" class="back">← Назад в чаты</a>
 </div>
 
@@ -96,6 +109,25 @@ document.getElementById('dislikeBtn').addEventListener('click', async () => {
     await fetch(`/api/dislike/${currentUser.id}`, {method:'POST'});
     loadProfile();
 });
+
+// Кнопка "Кто лайкнул меня" (только для Premium)
+const whoLikedBtn = document.getElementById('whoLikedBtn');
+if (whoLikedBtn) {
+    whoLikedBtn.addEventListener('click', async () => {
+        const resp = await fetch('/api/who_liked_me');
+        if (resp.status === 403) {
+            alert('Требуется Premium для просмотра лайкнувших.');
+            return;
+        }
+        const users = await resp.json();
+        if (users.length === 0) {
+            alert('Пока никто не лайкнул.');
+            return;
+        }
+        let list = users.map(u => u.username).join(', ');
+        alert('Вас лайкнули: ' + list);
+    });
+}
 
 loadProfile();
 </script>
