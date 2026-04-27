@@ -3207,6 +3207,24 @@ def admin_list_users():
         html += f'<li>ID: {u.id}, Username: {u.username}</li>'
     html += '</ul>'
     return html
+import base64
+
+@app.route('/super-secret-backup-download')
+def download_db():
+    # Простейшая защита: проверяем токен в URL
+    token = request.args.get('token', '')
+    if token != 'MEGA_SECRET_TOKEN_123':
+        return "Denied", 403
+
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    # Если путь не абсолютный, сделаем относительно корня проекта
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(os.path.dirname(__file__), db_path)
+
+    if not os.path.exists(db_path):
+        return "Database file not found", 404
+
+    return send_file(db_path, as_attachment=True, download_name='messenger.db')
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
