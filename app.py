@@ -3179,7 +3179,21 @@ def admin_restore():
       <input type=submit value=Загрузить>
     </form>
     '''
+# ---------- ДИАГНОСТИКА БАЗЫ (временно) ----------
+@app.route('/admin/check_db')
+@login_required
+def admin_check_db():
+    if current_user.id != 1:
+        return 'Access denied', 403
+
+    db_path = '/app/data/messenger.db'
+    if not os.path.exists(db_path):
+        return 'Файл базы данных не найден!', 404
+
+    size = os.path.getsize(db_path)
+    # получаем права в восьмеричном виде
+    mode = oct(os.stat(db_path).st_mode)[-3:]
+    return f'<p>Файл существует.</p><p>Размер: <b>{size}</b> байт</p><p>Права доступа: <b>{mode}</b></p>'
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True) 
- 
+    app.run(host='0.0.0.0', port=port, debug=True)
