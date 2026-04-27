@@ -117,6 +117,7 @@ class User(UserMixin, db.Model):
     current_theme_id = db.Column(db.Integer, nullable=True)
     birthday = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(10), default=None)  # 'male', 'female' или None
+    sticker_generations_free = db.Column(db.Integer, default=0)   
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -2403,37 +2404,33 @@ def send_sticker_message():
 def ai_generate_sticker():
     data = request.get_json()
     prompt = data.get('prompt', '').strip()
-    
+
     if not prompt:
         return jsonify({'error': 'Введите описание стикера'}), 400
-    
+
     if len(prompt) > 200:
         return jsonify({'error': 'Описание слишком длинное (макс 200 символов)'}), 400
-    
+
+    # Проверяем лимит бесплатных генераций (10 шт. всего)
     is_premium = get_premium_status(current_user.id)
     if not is_premium:
-        today = datetime.utcnow().date()
-        count_today = AIGeneration.query.filter(
-            AIGeneration.user_id == current_user.id,
-            db.func.date(AIGeneration.created_at) == today
-        ).count()
-        
-        if count_today >= 3:
+        if current_user.sticker_generations_free >= 10:
             return jsonify({
-                'error': 'Лимит 3 генерации в день. Купите Premium для безлимита!',
+                'error': 'Лимит 10 бесплатных стикеров исчерпан. Купите Premium для безлимита.',
                 'limit_reached': True,
-                'count': count_today
+                'generated_count': current_user.sticker_generations_free
             }), 403
-    
+
+    # --- ГЕНЕРАЦИЯ (твоя текущая логика) ---
     try:
         full_prompt = f"{prompt}, cute sticker style, kawaii, white background, simple clean lines, vector illustration"
         encoded_prompt = requests.utils.quote(full_prompt)
-        
+
         urls = [
             f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true",
             f"https://pollinations.ai/p/{encoded_prompt}?width=512&height=512&model=flux",
         ]
-        
+
         response = None
         for url in urls:
             try:
@@ -2442,32 +2439,34 @@ def ai_generate_sticker():
                     break
             except:
                 continue
-        
+
         if not response or response.status_code != 200 or len(response.content) < 5000:
             return jsonify({'error': 'Сервис генерации временно недоступен. Попробуйте позже.'}), 500
-        
+
         filename = f"ai_{current_user.id}_{uuid.uuid4().hex}.png"
         filepath = os.path.join(CUSTOM_STICKER_FOLDER, filename)
-        
+
         with open(filepath, 'wb') as f:
             f.write(response.content)
-        
+
         sticker = CustomSticker(
             user_id=current_user.id,
             file_path=f'/static/stickers/custom/{filename}',
             emoji='🤖'
         )
         db.session.add(sticker)
-        
+
         gen = AIGeneration(user_id=current_user.id, prompt=prompt)
         db.session.add(gen)
+
+        # Увеличиваем счётчик БЕСПЛАТНЫХ генераций (только если не Premium)
+        if not is_premium:
+            current_user.sticker_generations_free += 1
+
         db.session.commit()
-        
-        remaining = None if is_premium else (3 - AIGeneration.query.filter(
-            AIGeneration.user_id == current_user.id,
-            db.func.date(AIGeneration.created_at) == datetime.utcnow().date()
-        ).count())
-        
+
+        remaining = None if is_premium else (10 - current_user.sticker_generations_free)
+
         return jsonify({
             'success': True,
             'sticker': {
@@ -2475,41 +2474,74 @@ def ai_generate_sticker():
                 'url': sticker.file_path,
                 'emoji': sticker.emoji
             },
-            'remaining': remaining
+            'remaining': remaining,
+            'is_premium': is_premium
         })
-        
+
     except Exception as e:
         print(f"AI generation error: {e}")
         return jsonify({'error': 'Ошибка при генерации. Попробуйте другой запрос.'}), 500
 
-@app.route('/stickers/ai/limits')
-@login_required
-def ai_generation_limits():
-    is_premium = get_premium_status(current_user.id)
-    
-    if is_premium:
-        return jsonify({
-            'is_premium': True,
-            'limit': None,
-            'used_today': None,
-            'remaining': None
-        })
-    
-    today = datetime.utcnow().date()
-    used_today = AIGeneration.query.filter(
-        AIGeneration.user_id == current_user.id,
-        db.func.date(AIGeneration.created_at) == today
-    ).count()
-    
-    return jsonify({
-        'is_premium': False,
-        'limit': 3,
-        'used_today': used_today,
-        'remaining': 3 - used_today
-    })
 
 # ========== ПЛАТЕЖИ И МОНЕТИЗАЦИЯ ==========
-WEBHOOK_SECRET = "your_super_secret_webhook_key_12345"
+# ======================== МОДЕЛИ МОНЕТИЗАЦИИ ========================
+from datetime import datetime
+
+class Subscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan = db.Column(db.String(20), default='free')      # free / premium
+    expires_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class UserCoins(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    balance = db.Column(db.Integer, default=0)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_type = db.Column(db.String(20))   # 'premium' или 'coins'
+    amount_rub = db.Column(db.Float)
+    coins_amount = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='pending')  # pending, paid, cancelled
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime)
+
+# ======================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========================
+def get_premium_status(user_id):
+    sub = Subscription.query.filter_by(user_id=user_id).first()
+    if sub and sub.expires_at and sub.expires_at > datetime.utcnow():
+        return True
+    return False
+
+def get_user_coins(user_id):
+    coins = UserCoins.query.filter_by(user_id=user_id).first()
+    if not coins:
+        coins = UserCoins(user_id=user_id, balance=0)
+        db.session.add(coins)
+        db.session.commit()
+    return coins
+
+def activate_premium(user_id, months=1):
+    sub = Subscription.query.filter_by(user_id=user_id).first()
+    now = datetime.utcnow()
+    if sub:
+        # Если подписка ещё активна, продлеваем с текущей даты окончания
+        if sub.expires_at and sub.expires_at > now:
+            sub.expires_at = sub.expires_at + timedelta(days=30 * months)
+        else:
+            sub.expires_at = now + timedelta(days=30 * months)
+        sub.plan = 'premium'
+    else:
+        sub = Subscription(user_id=user_id, plan='premium',
+                           expires_at=now + timedelta(days=30 * months))
+        db.session.add(sub)
+    db.session.commit()
+
+# ======================== API МОНЕТИЗАЦИИ ========================
+WEBHOOK_SECRET = "your_super_secret_webhook_key_12345"   # для настоящих вебхуков позже заменишь
 
 @app.route('/api/user/premium_status')
 @login_required
@@ -2517,11 +2549,11 @@ def api_premium_status():
     is_premium = get_premium_status(current_user.id)
     coins = get_user_coins(current_user.id)
     sub = Subscription.query.filter_by(user_id=current_user.id).first()
-    
+
     expires_at = None
     if sub and sub.expires_at:
         expires_at = sub.expires_at.strftime('%d.%m.%Y')
-    
+
     return jsonify({
         'is_premium': is_premium,
         'balance': coins.balance,
@@ -2533,11 +2565,11 @@ def api_premium_status():
 @login_required
 def create_premium_order():
     PRICE_RUB = 299.0
-    
+
     existing = Subscription.query.filter_by(user_id=current_user.id).first()
     if existing and existing.expires_at and existing.expires_at > datetime.utcnow():
         return jsonify({'error': 'У вас уже активен Premium'}), 400
-    
+
     order = Order(
         user_id=current_user.id,
         order_type='premium',
@@ -2546,9 +2578,13 @@ def create_premium_order():
     )
     db.session.add(order)
     db.session.commit()
-    
-    payment_url = f"https://pay.beargram.com/premium?order_id={order.id}"
-    
+
+    # Пока нет реального платёжного шлюза — редиректим на твою форму ЮMoney
+    # или позже замени на настоящий URL оплаты
+    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={PRICE_RUB}&label=order_{order.id}"
+    # Альтернатива: если хочешь в будущем свой шлюз
+    # payment_url = f"https://pay.beargram.com/premium?order_id={order.id}"
+
     return jsonify({
         'order_id': order.id,
         'amount': PRICE_RUB,
@@ -2559,9 +2595,12 @@ def create_premium_order():
 @login_required
 def get_coin_packages():
     packages = [
-        {'id': 1, 'coins': 100, 'price_rub': 99, 'name': '🍯 Маленький горшочек', 'emoji': '🍯'},
-        {'id': 2, 'coins': 500, 'price_rub': 399, 'name': '🐝 Пчелиный улей', 'emoji': '🐝', 'popular': True},
-        {'id': 3, 'coins': 1200, 'price_rub': 799, 'name': '👑 Медовый король', 'emoji': '👑', 'bonus': 200}
+        {'id': 1, 'coins': 100, 'price_rub': 99,
+         'name': '🍯 Маленький горшочек', 'emoji': '🍯'},
+        {'id': 2, 'coins': 500, 'price_rub': 399,
+         'name': '🐝 Пчелиный улей', 'emoji': '🐝', 'popular': True},
+        {'id': 3, 'coins': 1200, 'price_rub': 799,
+         'name': '👑 Медовый король', 'emoji': '👑', 'bonus': 200}
     ]
     return jsonify(packages)
 
@@ -2570,18 +2609,18 @@ def get_coin_packages():
 def create_coins_order():
     data = request.get_json()
     package_id = data.get('package_id')
-    
+
     packages = {
         1: {'coins': 100, 'price': 99},
         2: {'coins': 500, 'price': 399},
         3: {'coins': 1200, 'price': 799}
     }
-    
+
     if package_id not in packages:
         return jsonify({'error': 'Пакет не найден'}), 404
-    
+
     pkg = packages[package_id]
-    
+
     order = Order(
         user_id=current_user.id,
         order_type='coins',
@@ -2591,9 +2630,10 @@ def create_coins_order():
     )
     db.session.add(order)
     db.session.commit()
-    
-    payment_url = f"https://pay.beargram.com/coins?order_id={order.id}"
-    
+
+    # Ссылка на оплату (пока ведёт на общую форму ЮMoney, можно передать сумму)
+    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={pkg['price']}&label=order_{order.id}"
+
     return jsonify({
         'order_id': order.id,
         'amount': pkg['price'],
@@ -2603,32 +2643,42 @@ def create_coins_order():
 
 @app.route('/api/payment_webhook', methods=['POST'])
 def payment_webhook():
+    # В будущем сюда будет стучаться ЮMoney / ЮKassa / твой шлюз
     data = request.get_json()
-    
+
+    # Пытаемся вытащить order_id из разных возможных полей
     order_id = data.get('order_id') or data.get('MERCHANT_ORDER_ID') or data.get('orderId')
     status = data.get('status') or data.get('STATE') or data.get('state')
     amount_paid = float(data.get('amount') or data.get('AMOUNT') or 0)
-    
+
     if not order_id:
         return 'No order_id', 400
-    
-    order = Order.query.get(int(order_id))
+
+    # Ищем заказ. Если label передавался как "order_123", чистим
+    if isinstance(order_id, str) and order_id.startswith('order_'):
+        order_id = order_id[6:]
+    try:
+        order = Order.query.get(int(order_id))
+    except ValueError:
+        return 'Invalid order_id', 400
+
     if not order:
         return 'Order not found', 404
-    
+
+    # Проверяем статус и сумму
     if status in ['paid', 'success', 'COMPLETED', 'completed'] and amount_paid >= order.amount_rub:
         if order.status == 'pending':
             order.status = 'paid'
             order.paid_at = datetime.utcnow()
-            
+
             if order.order_type == 'premium':
                 activate_premium(order.user_id, months=1)
             elif order.order_type == 'coins':
                 coins = get_user_coins(order.user_id)
                 coins.balance += order.coins_amount
-            
+
             db.session.commit()
-    
+
     return 'OK', 200
 
 # ========== ПОДАРКИ ==========
