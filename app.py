@@ -3163,6 +3163,8 @@ def admin_restore():
             if os.path.exists(db_path):
                 os.remove(db_path)
             file.save(db_path)
+            # ДАЁМ ПРАВА НА ЧТЕНИЕ И ЗАПИСЬ
+            os.chmod(db_path, 0o666)
             flash('✅ База восстановлена! Перезапустите приложение.', 'success')
             return redirect(url_for('admin_restore'))
         else:
