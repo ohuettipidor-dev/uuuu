@@ -3094,6 +3094,31 @@ def compatibility(user_id):
     percent = min(98, max(30, base + random.randint(-5,8)))
     msg = '🔥 Идеальная пара!' if percent>=90 else '💫 Отлично!' if percent>=70 else '🌈 Возможно' if percent>=50 else '❄️ Сложно'
     return jsonify({'sign1':s1,'elem1':e1,'sign2':s2,'elem2':e2,'percent':percent,'message':msg})
+
+# ---------- АВТОМАТИЧЕСКОЕ РЕЗЕРВНОЕ КОПИРОВАНИЕ (ФОНОВЫЙ ПЛАНИРОВЩИК) ----------
+import threading
+import time
+
+def start_backup_scheduler():
+    """Запускает фоновый поток, который раз в сутки делает бэкап."""
+    def run_schedule():
+        # Ждём 30 секунд после старта, чтобы дать приложению полностью загрузиться
+        time.sleep(30)
+        while True:
+            with app.app_context():
+                try:
+                    backup_database()
+                except Exception as e:
+                    print(f"Ошибка при авто-бэкапе: {e}")
+            time.sleep(86400)  # 24 часа
+
+    thread = threading.Thread(target=run_schedule, daemon=True)
+    thread.start()
+
+# Запускаем планировщик только в production (Railway), чтобы локально не мешал
+if os.environ.get('RAILWAY_ENVIRONMENT') or not app.debug:
+    start_backup_scheduler()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
