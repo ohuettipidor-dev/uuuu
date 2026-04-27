@@ -3225,6 +3225,27 @@ def download_db():
         return "Database file not found", 404
 
     return send_file(db_path, as_attachment=True, download_name='messenger.db')
+# ================= УМНОЕ ВОССТАНОВЛЕНИЕ БАЗЫ =================
+import os, shutil, stat
+
+with app.app_context():
+    RESTORE_FILE = os.path.join('static', 'restore', 'restore.db')
+    DB_FILE = '/app/data/messenger.db'   # путь, который у тебя в конфиге
+
+    # Восстанавливаем только если базы нет или она пустая
+    if not os.path.exists(DB_FILE) or os.path.getsize(DB_FILE) == 0:
+        if os.path.exists(RESTORE_FILE):
+            print(f"♻️  Восстанавливаю базу из {RESTORE_FILE} → {DB_FILE}")
+            shutil.copy2(RESTORE_FILE, DB_FILE)
+            # фиксим права, чтобы точно писалось
+            os.chmod(DB_FILE, stat.S_IWRITE | stat.S_IREAD | stat.S_IWGRP | stat.S_IRGRP | stat.S_IROTH)
+            print("✅ База восстановлена!")
+        else:
+            print("❌ Файл восстановления не найден – создаю чистую базу.")
+            db.create_all()
+    else:
+        print("✅ База уже существует и не пуста – восстановление не требуется.")
+# ==============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
