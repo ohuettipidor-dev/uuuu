@@ -3194,6 +3194,19 @@ def admin_check_db():
     # получаем права в восьмеричном виде
     mode = oct(os.stat(db_path).st_mode)[-3:]
     return f'<p>Файл существует.</p><p>Размер: <b>{size}</b> байт</p><p>Права доступа: <b>{mode}</b></p>'
+
+# ---------- СПИСОК ПОЛЬЗОВАТЕЛЕЙ (диагностика) ----------
+@app.route('/admin/list_users')
+@login_required
+def admin_list_users():
+    if current_user.id != 1:
+        return 'Access denied', 403
+    users = User.query.all()
+    html = '<h2>Список пользователей в базе</h2><ul>'
+    for u in users:
+        html += f'<li>ID: {u.id}, Username: {u.username}</li>'
+    html += '</ul>'
+    return html
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
