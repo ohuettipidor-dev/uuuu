@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BearGram Premium</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        .btn { background: #f90; color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🐻 BearGram Premium</h1>
+    <p>Безлимитные стикеры, эксклюзивные темы, приоритет в дейтинге и многое другое.</p>
+    <p><strong>299 ₽ / месяц</strong></p>
+    <a class="btn" href="#" onclick="buyPremium()">Оплатить через ЮMoney</a>
+
+    <script>
+    async function buyPremium() {
+        const resp = await fetch('/api/create_premium_order', { method: 'POST' });
+        const data = await resp.json();
+        if (data.payment_url) {
+            window.location.href = data.payment_url;
+        } else {
+            alert(data.error || 'Ошибка');
+        }
+    }
+    </script>
+</body>
+</html>
