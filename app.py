@@ -20,7 +20,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/data/messenger.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+import json
 
+@app.template_filter('json_decode')
+def json_decode_filter(s):
+    """Преобразует JSON-строку из базы в объект Python для шаблона"""
+    return json.loads(s)
 AVATAR_FOLDER = 'static/avatars'
 FILE_FOLDER = 'static/uploads'
 VOICE_FOLDER = 'static/voices'
@@ -118,6 +123,8 @@ class User(UserMixin, db.Model):
     birthday = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(10), default=None)  # 'male', 'female' или None
     sticker_generations_free = db.Column(db.Integer, default=0)   
+    daily_likes_count = db.Column(db.Integer, default=0)
+    last_likes_reset = db.Column(db.Date, nullable=True)
 
 class Blacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -504,17 +511,37 @@ def activate_premium(user_id, months=1):
 @login_manager.user_loader
 def load_user(uid):
     return db.session.get(User, uid)
-
 with app.app_context():
     db.create_all()
-    print("✅ База данных создана/обновлена")
-
-@app.template_filter('json_decode')
-def json_decode_filter(data):
-    try:
-        return json.loads(data) if data else []
-    except:
-        return []
+    # Создаём премиум-темы, если их ещё нет
+    if not CustomTheme.query.filter_by(name='Золотой медведь').first():
+        gold = CustomTheme(
+            name='Золотой медведь',
+            author_id=1,
+            primary_color='#FFD700',
+            secondary_color='#FFA500',
+            bubble_color_sent='#DAA520',
+            bubble_color_received='#FFF8DC',
+            text_color='#2C1810',
+            is_premium=True,
+            price=0
+        )
+        db.session.add(gold)
+    if not CustomTheme.query.filter_by(name='Неоновая ночь').first():
+        neon = CustomTheme(
+            name='Неоновая ночь',
+            author_id=1,
+            primary_color='#FF00FF',
+            secondary_color='#00FFFF',
+            bubble_color_sent='#FF1493',
+            bubble_color_received='#191970',
+            text_color='#FFFFFF',
+            is_premium=True,
+            price=0
+        )
+        db.session.add(neon)
+    db.session.commit()
+    print("✅ База данных и премиум-темы готовы")
 
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
@@ -2589,72 +2616,15 @@ def themes_list():
     current_theme = None
     if current_user.current_theme_id:
         current_theme = CustomTheme.query.get(current_user.current_theme_id)
-    return render_template('themes.html', free_themes=free_themes, premium_themes=premium_themes, user_theme_ids=user_theme_ids, current_theme=current_theme)
 
-@app.route('/themes/apply/<int:theme_id>', methods=['POST'])
-@login_required
-def apply_theme(theme_id):
-    theme = CustomTheme.query.get(theme_id)
-    if not theme:
-        return jsonify({'error': 'Тема не найдена'}), 404
-    if theme.is_premium:
-        user_has = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
-        if not user_has:
-            return jsonify({'error': 'Тема не куплена'}), 403
-    current_user.current_theme_id = theme_id
-    db.session.commit()
-    return jsonify({'success': True, 'theme': {
-        'primary': theme.primary_color,
-        'secondary': theme.secondary_color,
-        'bubble_sent': theme.bubble_color_sent,
-        'bubble_received': theme.bubble_color_received,
-        'text': theme.text_color
-    }})
+    is_premium = get_premium_status(current_user.id)
 
-@app.route('/themes/purchase/<int:theme_id>', methods=['POST'])
-@login_required
-def purchase_theme(theme_id):
-    theme = CustomTheme.query.get(theme_id)
-    if not theme:
-        return jsonify({'error': 'Тема не найдена'}), 404
-    existing = UserTheme.query.filter_by(user_id=current_user.id, theme_id=theme_id).first()
-    if existing:
-        return jsonify({'error': 'Тема уже куплена'}), 400
-    if theme.is_premium and theme.price > 0:
-        pass
-    user_theme = UserTheme(user_id=current_user.id, theme_id=theme_id)
-    db.session.add(user_theme)
-    db.session.commit()
-    return jsonify({'success': True})
-
-@app.route('/themes/create', methods=['GET', 'POST'])
-@login_required
-def create_theme():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        primary = request.form.get('primary_color', '#ff9a9e')
-        secondary = request.form.get('secondary_color', '#fecfef')
-        bubble_sent = request.form.get('bubble_sent', '#ff6b6b')
-        bubble_received = request.form.get('bubble_received', '#ffffff')
-        text = request.form.get('text_color', '#333333')
-        is_premium = request.form.get('is_premium') == 'on'
-        price = float(request.form.get('price', 0))
-        theme = CustomTheme(
-            name=name,
-            author_id=current_user.id,
-            primary_color=primary,
-            secondary_color=secondary,
-            bubble_color_sent=bubble_sent,
-            bubble_color_received=bubble_received,
-            text_color=text,
-            is_premium=is_premium,
-            price=price
-        )
-        db.session.add(theme)
-        db.session.commit()
-        flash('Тема создана!', 'success')
-        return redirect(url_for('themes_list'))
-    return render_template('create_theme.html')
+    return render_template('themes.html',
+                           free_themes=free_themes,
+                           premium_themes=premium_themes,
+                           user_theme_ids=user_theme_ids,
+                           current_theme=current_theme,
+                           is_premium=is_premium)
 # ======================== PREMIUM И МОНЕТИЗАЦИЯ ========================
 
 @app.route('/premium')
