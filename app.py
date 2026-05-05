@@ -15,7 +15,10 @@ import random
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+import json
 
+YOOMONEY_WALLET = '4100119522166446'
+YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/data/messenger.db'
@@ -275,6 +278,8 @@ class Channel(db.Model):
     is_private = db.Column(db.Boolean, default=False)
     subscribers_count = db.Column(db.Integer, default=0)
     creator = db.relationship('User', foreign_keys=[created_by])
+    yoomoney_wallet = db.Column(db.String(20), nullable=True)
+    donation_balance = db.Column(db.Float, default=0.0)
 
 class ChannelSubscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1744,6 +1749,20 @@ def get_new_group_messages(last_id, group_id):
     return jsonify(result)
 
 # ========== КАНАЛЫ ==========
+
+# Вспомогательная функция (если нет - оставь здесь)
+
+def get_file_type(filename):
+    ext = filename.rsplit('.', 1)[-1].lower()
+    if ext in ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']:
+        return 'image'
+    elif ext in ['mp3', 'wav', 'ogg', 'flac', 'm4a']:
+        return 'audio'
+    elif ext in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+        return 'video'
+    else:
+        return 'document'
+
 @app.route('/channels')
 @login_required
 def channels_list():
@@ -1854,15 +1873,11 @@ def channel_post_create(channel_id):
             ext = f.filename.rsplit('.', 1)[1].lower()
             name = f"channel_{channel_id}_{post.id}_{uuid.uuid4().hex}.{ext}"
             f.save(os.path.join(FILE_FOLDER, name))
-            if ext in ['png','jpg','jpeg','gif','webp','bmp']:
-                file_type = 'image'
-            elif ext in ['mp3','wav','ogg','flac','m4a']:
-                file_type = 'audio'
-            elif ext in ['mp4','avi','mov','mkv','webm']:
-                file_type = 'video'
-            else:
-                file_type = 'document'
-            attachments.append({'path': f'/static/uploads/{name}', 'name': f.filename, 'type': file_type})
+            attachments.append({
+                'path': f'/static/uploads/{name}',
+                'name': f.filename,
+                'type': get_file_type(f.filename)
+            })
     post.attachments = json.dumps(attachments)
     db.session.commit()
     flash('Пост опубликован!', 'success')
@@ -1908,31 +1923,126 @@ def api_channels_search():
         })
     return jsonify(result)
 
+# ---- ЛАЙКИ, ПРОСМОТРЫ, РЕДАКТИРОВАНИЕ ----
+
+@app.route('/channel/like_post/<int:post_id>', methods=['POST'])
+@login_required
+def like_channel_post(post_id):
+    post = ChannelPost.query.get_or_404(post_id)
+    existing = ChannelPostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        like = ChannelPostLike(post_id=post_id, user_id=current_user.id)
+        db.session.add(like)
+        liked = True
+    db.session.commit()
+    likes_count = ChannelPostLike.query.filter_by(post_id=post_id).count()
+    return jsonify({'success': True, 'liked': liked, 'likes_count': likes_count})
+
+@app.route('/channel/like_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def like_channel_comment(comment_id):
+    comment = ChannelComment.query.get_or_404(comment_id)
+    existing = ChannelCommentLike.query.filter_by(comment_id=comment_id, user_id=current_user.id).first()
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        like = ChannelCommentLike(comment_id=comment_id, user_id=current_user.id)
+        db.session.add(like)
+        liked = True
+    db.session.commit()
+    likes_count = ChannelCommentLike.query.filter_by(comment_id=comment_id).count()
+    return jsonify({'success': True, 'liked': liked, 'likes_count': likes_count})
+
+@app.route('/channel/view_post/<int:post_id>', methods=['POST'])
+@login_required
+def view_channel_post(post_id):
+    post = ChannelPost.query.get_or_404(post_id)
+    post.views += 1
+    db.session.commit()
+    return jsonify({'success': True, 'views': post.views})
+
 @app.route('/channel/post/edit/<int:post_id>', methods=['POST'])
 @login_required
-def edit_channel_post(post_id):
-    post = ChannelPost.query.get(post_id)
-    if not post or post.channel.created_by != current_user.id:
+def edit_post(post_id):
+    post = ChannelPost.query.get_or_404(post_id)
+    channel = post.channel
+    if channel.created_by != current_user.id:
         return jsonify({'error': 'Нет прав'}), 403
-    data = request.get_json()
-    post.content = data.get('content', post.content)
+    content = request.form.get('content', '')
+    if not content.strip():
+        return jsonify({'error': 'Текст не может быть пустым'}), 400
+    post.content = content
+
+    files = request.files.getlist('files')
+    if files and any(f.filename for f in files):
+        # Удаляем старые файлы
+        if post.file_path:
+            old_path = os.path.join(FILE_FOLDER, os.path.basename(post.file_path))
+            if os.path.exists(old_path):
+                os.remove(old_path)
+        if post.attachments:
+            try:
+                old_attachments = json.loads(post.attachments)
+                for att in old_attachments:
+                    old_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+            except:
+                pass
+
+        # Сохраняем новые
+        saved_files = []
+        for file in files:
+            if file.filename == '':
+                continue
+            filename = secure_filename(file.filename)
+            unique_name = f"{current_user.id}_{uuid.uuid4().hex}_{filename}"
+            filepath = os.path.join(FILE_FOLDER, unique_name)
+            file.save(filepath)
+            file_type = get_file_type(filename)
+            saved_files.append({
+                'name': filename,
+                'path': unique_name,
+                'type': file_type
+            })
+
+        if len(saved_files) == 1:
+            post.file_path = saved_files[0]['path']
+            post.file_type = saved_files[0]['type']
+            post.file_name = saved_files[0]['name']
+            post.attachments = None
+        else:
+            post.attachments = json.dumps(saved_files)
+            post.file_path = None
+            post.file_type = None
+            post.file_name = None
+
     db.session.commit()
     return jsonify({'success': True})
 
 @app.route('/channel/post/delete/<int:post_id>', methods=['POST'])
 @login_required
 def delete_channel_post(post_id):
-    post = ChannelPost.query.get(post_id)
-    if not post or post.channel.created_by != current_user.id:
+    post = ChannelPost.query.get_or_404(post_id)
+    if post.channel.created_by != current_user.id:
         return jsonify({'error': 'Нет прав'}), 403
     if post.attachments:
-        attachments = json.loads(post.attachments)
-        for att in attachments:
-            file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
-            if os.path.exists(file_path):
-                os.remove(file_path)
-    if post.file_path and os.path.exists(os.path.join(FILE_FOLDER, os.path.basename(post.file_path))):
-        os.remove(os.path.join(FILE_FOLDER, os.path.basename(post.file_path)))
+        try:
+            attachments = json.loads(post.attachments)
+            for att in attachments:
+                file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+        except:
+            pass
+    if post.file_path:
+        file_path = os.path.join(FILE_FOLDER, os.path.basename(post.file_path))
+        if os.path.exists(file_path):
+            os.remove(file_path)
     db.session.delete(post)
     db.session.commit()
     return jsonify({'success': True})
@@ -1940,17 +2050,20 @@ def delete_channel_post(post_id):
 @app.route('/channel/delete/<int:channel_id>', methods=['POST'])
 @login_required
 def delete_channel(channel_id):
-    channel = Channel.query.get(channel_id)
-    if not channel or channel.created_by != current_user.id:
+    channel = Channel.query.get_or_404(channel_id)
+    if channel.created_by != current_user.id:
         return jsonify({'error': 'Нет прав'}), 403
     posts = ChannelPost.query.filter_by(channel_id=channel_id).all()
     for post in posts:
         if post.attachments:
-            attachments = json.loads(post.attachments)
-            for att in attachments:
-                file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            try:
+                attachments = json.loads(post.attachments)
+                for att in attachments:
+                    file_path = os.path.join(FILE_FOLDER, os.path.basename(att['path']))
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+            except:
+                pass
         if post.file_path:
             file_path = os.path.join(FILE_FOLDER, os.path.basename(post.file_path))
             if os.path.exists(file_path):
@@ -1965,15 +2078,69 @@ def delete_channel(channel_id):
 @app.route('/channel/edit/<int:channel_id>', methods=['POST'])
 @login_required
 def edit_channel(channel_id):
-    channel = Channel.query.get(channel_id)
-    if not channel or channel.created_by != current_user.id:
+    channel = Channel.query.get_or_404(channel_id)
+    if channel.created_by != current_user.id:
         return jsonify({'error': 'Нет прав'}), 403
     data = request.get_json()
-    channel.name = data.get('name', channel.name)
-    channel.description = data.get('description', channel.description)
-    channel.username = data.get('username', channel.username)
+    if 'name' in data:
+        channel.name = data['name']
+    if 'username' in data:
+        channel.username = data['username']
+    if 'description' in data:
+        channel.description = data['description']
+    if 'yoomoney_wallet' in data:
+        channel.yoomoney_wallet = data['yoomoney_wallet'] if data['yoomoney_wallet'] else None
     db.session.commit()
     return jsonify({'success': True})
+
+# ---- ДОНАТЫ ----
+
+@app.route('/api/yoomoney/hook', methods=['POST'])
+def yoomoney_hook():
+    notification_type = request.form.get('notification_type')
+    if notification_type != 'p2p-incoming':
+        return 'OK'
+    amount = float(request.form.get('amount'))
+    comment = request.form.get('codepro') or request.form.get('label', '')
+    if comment.startswith('donate_channel_'):
+        channel_id = int(comment.split('_')[-1])
+        channel = Channel.query.get(channel_id)
+        if channel:
+            channel.donation_balance += amount
+            db.session.commit()
+    return 'OK'
+
+@app.route('/channel/withdraw/<int:channel_id>', methods=['POST'])
+@login_required
+def withdraw_donations(channel_id):
+    channel = Channel.query.get_or_404(channel_id)
+    if channel.owner_id != current_user.id:
+        abort(403)
+    if channel.donation_balance <= 0:
+        return jsonify({'error': 'Нет средств для вывода'}), 400
+    wallet_to = channel.yoomoney_wallet
+    if not wallet_to:
+        return jsonify({'error': 'Не указан кошелёк автора'}), 400
+
+    amount_with_commission = round(channel.donation_balance * 0.9, 2)
+
+    headers = {'Authorization': f'Bearer {YOOMONEY_TOKEN}'}
+    data = {
+        'to': wallet_to,
+        'amount': amount_with_commission,
+        'comment': f'Выплата с канала {channel.name}',
+        'protection_code': '',
+    }
+    try:
+        response = requests.post('https://yoomoney.ru/api/transfer', headers=headers, json=data)
+        if response.status_code == 200:
+            channel.donation_balance = 0
+            db.session.commit()
+            return jsonify({'success': True, 'withdrawn': amount_with_commission})
+        else:
+            return jsonify({'error': 'Ошибка перевода'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ========== ЛАЙКИ И ПРОСМОТРЫ ДЛЯ КАНАЛОВ ==========
 @app.route('/channel/like_post/<int:post_id>', methods=['POST'])
