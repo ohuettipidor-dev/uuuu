@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🐻 Пузыри • #GRRR</title>
+  <style>
+    /* идентичные стили как в предыдущем кликере, только лого и название соответствующие */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    body {
+      font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+      background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);
+      min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:12px; color:#fff; touch-action:manipulation;
+    }
+    .game-container {
+      width:100%; max-width:420px; background:rgba(255,255,255,0.06); backdrop-filter:blur(20px);
+      border-radius:40px; padding:20px 16px 28px;
+      box-shadow:0 30px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,0.15);
+    }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .logo {
+      font-weight:700; font-size:1.6rem; background:linear-gradient(135deg,#f9ca24,#f0932b);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .balance-panel {
+      background:rgba(0,0,0,0.35); border-radius:30px; padding:8px 16px; display:flex; align-items:center;
+      gap:8px; border:1px solid rgba(255,215,0,0.3);
+    }
+    .grrr-icon { font-size:1.3rem; }
+    .balance-text { font-weight:700; font-size:1.2rem; color:#ffeaa7; }
+    .daily-limit {
+      background:rgba(255,255,255,0.1); border-radius:20px; padding:6px 14px; font-size:0.75rem; color:#ccc;
+      margin-bottom:16px; display:flex; justify-content:space-between;
+    }
+    .limit-bar { width:60%; height:6px; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden; align-self:center; }
+    .limit-fill { height:100%; width:0%; background:linear-gradient(90deg,#f9ca24,#f0932b); border-radius:10px; transition:width 0.2s; }
+    .bubble-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; justify-items:center; align-items:center; margin:12px 0 16px; }
+    .bubble {
+      width:68px; height:68px; border-radius:50%;
+      box-shadow:0 8px 15px rgba(0,0,0,0.4), inset 0 -6px 8px rgba(0,0,0,0.2), inset 0 6px 8px rgba(255,255,255,0.6);
+      transition:transform 0.1s, box-shadow 0.1s; cursor:pointer; border:1px solid rgba(255,255,255,0.2);
+    }
+    .bubble:active { transform:scale(0.82); box-shadow:0 2px 6px rgba(0,0,0,0.4), inset 0 0 12px rgba(255,255,255,0.8); }
+    .bubble.popping { animation:popBubble 0.25s ease-out forwards; }
+    @keyframes popBubble {
+      0% { transform:scale(1); opacity:1; }
+      40% { transform:scale(1.25); opacity:0.7; }
+      100% { transform:scale(0); opacity:0; }
+    }
+    .action-buttons { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:8px 0 16px; }
+    .btn-yellow {
+      background:linear-gradient(135deg,#f9ca24,#f0932b); color:#1a1e2b; border:none;
+      font-weight:700; font-size:0.85rem; padding:10px 18px; border-radius:50px;
+      box-shadow:0 8px 16px rgba(240,147,43,0.4); cursor:pointer; transition:all 0.2s;
+    }
+    .beargram-section {
+      margin-top:18px; display:flex; flex-direction:column; align-items:center; gap:12px;
+      background:rgba(0,0,0,0.3); border-radius:30px; padding:16px 10px; border:1px solid rgba(255,255,255,0.1);
+    }
+    .btn {
+      border:none; color:white; font-weight:700; font-size:1rem; padding:14px 28px; border-radius:50px;
+      box-shadow:0 10px 20px rgba(0,0,0,0.3); cursor:pointer; text-decoration:none; display:inline-block;
+    }
+    .btn-install { background:linear-gradient(135deg,#6c5ce7,#a29bfe); }
+    .btn-withdraw { background:linear-gradient(135deg,#f9ca24,#f0932b); color:#000; }
+    .beargram-text { font-size:0.8rem; color:#aaa; text-align:center; }
+    .highlight { color:#ffeaa7; font-weight:600; }
+    .toast {
+      position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8);
+      color:#fff; padding:12px 24px; border-radius:30px; font-weight:600; font-size:0.9rem;
+      z-index:2000; animation:toastFadeIn 0.3s ease, toastFadeOut 0.5s ease 2.5s forwards;
+    }
+    @keyframes toastFadeIn { from{opacity:0; transform:translateX(-50%) scale(0.8);} to{opacity:1; transform:translateX(-50%) scale(1);} }
+    @keyframes toastFadeOut { from{opacity:1;} to{opacity:0; transform:translateX(-50%) translateY(-10px);} }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="header">
+    <span class="logo">🐻 Пузыри</span>
+    <div class="balance-panel">
+      <span class="grrr-icon">🪙</span>
+      <span class="balance-text" id="grrrBalance">0</span>
+    </div>
+  </div>
+  <div class="daily-limit">
+    <span>Сегодня</span>
+    <div class="limit-bar"><div class="limit-fill" id="limitFill"></div></div>
+    <span id="limitLabel">0/100</span>
+  </div>
+  <div class="bubble-grid" id="bubbleGrid"></div>
+  <div class="action-buttons">
+    <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
+    <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
+  </div>
+  <div class="beargram-section">
+    <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank" rel="noopener">🚀 Установить BearGram</a>
+    <a class="btn btn-withdraw" href="https://beargram.up.railway.app/?utm_source=telegram_game&utm_medium=bubbles&utm_campaign=withdraw" target="_blank" rel="noopener">💰 Вывести #GRRR</a>
+    <div class="beargram-text">Фарми <span class="highlight">#GRRR</span> и выводи в рубли</div>
+  </div>
+</div>
+<script>
+  (function() {
+    const STORAGE_KEY = 'grrr_balance';
+    const DAILY_KEY = 'grrr_daily';
+    const LIMIT = 100;
+    let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+    let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
+    const today = new Date().toDateString();
+    if (localStorage.getItem('grrr_date') !== today) { daily = 0; localStorage.setItem(DAILY_KEY, '0'); localStorage.setItem('grrr_date', today); }
+
+    function save() { localStorage.setItem(STORAGE_KEY, balance); localStorage.setItem(DAILY_KEY, daily); }
+    function updateUI() {
+      document.getElementById('grrrBalance').textContent = balance;
+      let percent = Math.min((daily / LIMIT) * 100, 100);
+      document.getElementById('limitFill').style.width = percent + '%';
+      document.getElementById('limitLabel').textContent = daily + '/' + LIMIT;
+    }
+    function addGRRR(amount) {
+      if (daily >= LIMIT) return false;
+      let add = Math.min(amount, LIMIT - daily);
+      balance += add; daily += add; save(); updateUI();
+      return true;
+    }
+    function showToast(text) {
+      const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = text;
+      document.body.appendChild(toast); setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+    }
+
+    // Звуки природы (предзагружены)
+    let audioCtx = null;
+    let natureBuffers = [];
+    async function initNatureSounds() {
+      if (natureBuffers.length) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const sampleRate = audioCtx.sampleRate;
+      async function gen(oscType, freqStart, freqEnd, dur, gainVal, filterType, filterFreq) {
+        const offline = new OfflineAudioContext(1, sampleRate * dur, sampleRate);
+        const osc = offline.createOscillator();
+        osc.type = oscType;
+        osc.frequency.setValueAtTime(freqStart, 0);
+        osc.frequency.exponentialRampToValueAtTime(freqEnd, dur);
+        const g = offline.createGain();
+        g.gain.setValueAtTime(gainVal, 0);
+        g.gain.exponentialRampToValueAtTime(0.001, dur);
+        if (filterType) {
+          const filter = offline.createBiquadFilter();
+          filter.type = filterType;
+          filter.frequency.value = filterFreq;
+          osc.connect(filter); filter.connect(g);
+        } else osc.connect(g);
+        g.connect(offline.destination);
+        osc.start(0); osc.stop(dur);
+        return await offline.startRendering();
+      }
+      natureBuffers = [
+        await gen('sine', 200, 50, 0.5, 0.5, null, null),
+        await gen('sine', 650, 180, 0.35, 0.3, null, null),
+        await gen('sine', 100, 30, 0.55, 0.35, null, null)
+      ];
+    }
+    function playNature() {
+      if (!natureBuffers.length) return;
+      const buf = natureBuffers[Math.floor(Math.random() * natureBuffers.length)];
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
+    }
+
+    document.addEventListener('pointerdown', initNatureSounds, {once: true});
+
+    const bubbleGrid = document.getElementById('bubbleGrid');
+    const colors = ['#f8a5c2','#f7d794','#f3a683','#778beb','#e77f67','#cf6a87','#786fa6','#63cdda'];
+    function renderBubbles() {
+      bubbleGrid.innerHTML = '';
+      for (let i=0; i<20; i++) {
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        const color = colors[i%colors.length];
+        b.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.8) 5%, ${color}88 60%, ${color}44 100%)`;
+        b.addEventListener('pointerdown', function(e){
+          e.preventDefault();
+          if (b.classList.contains('popping')) return;
+          if (!addGRRR(1)) { showToast('🚫 Лимит'); return; }
+          b.classList.add('popping');
+          playNature();
+          b.addEventListener('animationend', function h() { b.classList.remove('popping'); b.removeEventListener('animationend', h); }, {once: true});
+        });
+        bubbleGrid.appendChild(b);
+      }
+    }
+    renderBubbles();
+
+    document.getElementById('dailyBonusBtn').addEventListener('click', ()=>{
+      const last = localStorage.getItem('grrr_bonus_date');
+      if (last === today) { showToast('🎁 Уже получен'); return; }
+      localStorage.setItem('grrr_bonus_date', today);
+      addGRRR(10);
+      showToast('🎁 +10 🪙');
+    });
+    document.getElementById('referralBtn').addEventListener('click', ()=>{
+      const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2,8);
+      localStorage.setItem('refId', ref);
+      const url = location.origin + location.pathname + '?ref=' + ref;
+      if (navigator.share) navigator.share({title:'Пузыри • #GRRR', text:'Лопай и фарми!', url});
+      else prompt('Ссылка:', url);
+      addGRRR(5);
+      showToast('📨 +5 🪙');
+    });
+    const refParam = new URLSearchParams(location.search).get('ref');
+    if (refParam && !localStorage.getItem('refUsed')) {
+      localStorage.setItem('refUsed', '1');
+      addGRRR(10);
+      showToast('🎁 +10 🪙');
+    }
+    updateUI();
+  })();
+</script>
+<a href="/games" style="position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold;">← Игры</a>
+</body>
+</html>

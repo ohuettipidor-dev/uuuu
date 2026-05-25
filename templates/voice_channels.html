@@ -13,7 +13,13 @@
         .logo span{color:#ff6b6b}
         .back-btn{background:#ff6b6b;padding:8px 16px;border-radius:25px;color:white;text-decoration:none;font-size:14px}
         .create-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);border:none;color:white;padding:10px 20px;border-radius:30px;cursor:pointer;font-weight:bold}
-        
+
+        .search-bar{display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end}
+        .search-bar input{flex:1;max-width:220px;padding:8px 14px;border-radius:25px;border:none;background:#2a2a3e;color:white;font-size:13px}
+        .search-bar button{padding:8px 14px;border-radius:25px;border:none;cursor:pointer;font-weight:bold;font-size:13px}
+        .btn-popular{background:#ffd700;color:#000}
+        .btn-search{background:#ff6b6b;color:white;display:flex;align-items:center;gap:6px}
+
         .channels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:30px}
         .channel-card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:16px;cursor:pointer;transition:0.2s;border:1px solid rgba(255,107,107,0.3)}
         .channel-card:hover{transform:translateY(-2px);background:rgba(255,255,255,0.15)}
@@ -23,16 +29,65 @@
         .member-avatar{width:28px;height:28px;border-radius:50%;background:#ff6b6b;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;overflow:hidden}
         .member-avatar img{width:100%;height:100%;object-fit:cover}
         .join-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:25px;margin-top:10px;cursor:pointer;width:100%}
-        
-        /* МОДАЛЬНОЕ ОКНО КАНАЛА */
+
         .channel-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center}
         .channel-modal.active{display:flex}
-        .channel-room{background:#1a1a2e;width:100%;max-width:900px;height:80vh;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
-        .channel-room-header{padding:12px 16px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ff6b6b}
+        .channel-room{background:#1a1a2e;width:100%;max-width:1300px;height:90vh;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
+        .channel-room-header{padding:12px 16px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ff6b6b;flex-wrap:wrap;gap:8px}
         .channel-room-header h3{color:white}
-        .leave-btn{background:#ff6b6b;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer}
-        
-        /* ВИДЕО-КОМНАТА ДЛЯ YOUTUBE */
+        .header-buttons{display:flex;gap:8px;align-items:center}
+        .leave-btn{background:#ff6b6b;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:13px}
+        .shop-btn{background:#ffd700;color:#000;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .merch-btn{background:#ff8c00;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px}
+        .coins-balance{color:#ffd700;font-size:14px;font-weight:bold;margin-right:8px;display:flex;align-items:center;gap:4px}
+
+        .videos-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto}
+        .local-video-container{margin-bottom:10px}
+        .local-video-container video{width:640px;height:480px;background:#000;border-radius:16px;object-fit:cover}
+        .remote-videos-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;width:100%}
+        .remote-video-item{position:relative;width:400px;height:300px;background:#000;border-radius:16px;overflow:hidden}
+        .remote-video-item video{width:100%;height:100%;object-fit:cover}
+        .remote-video-label{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
+
+        .controls-bar{display:flex;gap:10px;justify-content:center;margin:10px 0}
+        .control-btn{background:#ff6b6b;border:none;padding:10px;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .control-btn.muted{background:#888}
+
+        .bottom-panel{padding:8px 12px;background:rgba(15,15,26,0.95);border-top:1px solid #ff6b6b;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+        .donate-panel{display:flex;align-items:center;gap:8px;order:2}
+        .donate-panel input{flex:1;padding:6px 8px;border-radius:18px;border:none;background:#2a2a3e;color:white;font-size:12px}
+        .donate-btn-small{background:linear-gradient(135deg,#4caf50,#66bb6a);color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px}
+        .chat-area{display:flex;flex-direction:column;gap:6px;order:1}
+        .chat-messages{overflow-y:auto;padding:4px;background:rgba(0,0,0,0.2);border-radius:10px;min-height:30px;max-height:50px;color:#f5f5f5;font-size:12px}
+        .chat-messages div{color:#f5f5f5;margin:2px 0}
+        .chat-input-row{display:flex;gap:6px}
+        .chat-input-row input{flex:1;padding:6px 10px;border-radius:18px;border:none;background:#2a2a3e;color:white;font-size:12px}
+        .chat-input-row button{background:#ff6b6b;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;color:white;font-size:12px}
+
+        .donate-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            transform: translateX(120%);
+            background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(20,20,40,0.95));
+            border: 2px solid #ffd700;
+            border-radius: 18px;
+            padding: 14px 20px;
+            z-index: 4000;
+            pointer-events: none;
+            animation: toastSlideIn 0.4s ease forwards;
+            max-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .donate-toast .toast-icon { font-size: 24px; flex-shrink: 0; }
+        .donate-toast .toast-content { color: white; line-height: 1.3; }
+        .donate-toast .toast-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+        .donate-toast .toast-amount { color: #ffd700; font-size: 22px; font-weight: bold; }
+        .donate-toast .toast-message { color: #eee; font-size: 13px; margin-top: 6px; max-width: 200px; word-wrap: break-word; }
+        @keyframes toastSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
         .youtube-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:3000;display:none;flex-direction:column}
         .youtube-modal.active{display:flex}
         .youtube-header{padding:12px 16px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center}
@@ -43,10 +98,32 @@
         .youtube-chat-messages{flex:1;overflow-y:auto;padding:10px}
         .youtube-chat-input{display:flex;padding:10px;gap:5px}
         .youtube-chat-input input{flex:1;padding:8px;border-radius:20px;border:none}
-        
+
+        /* Панель мерча */
+       .merch-panel{
+    position:fixed;
+    bottom:120px; /* выше нижней панели */
+    left:50%;
+    transform:translateX(-50%);
+    width:90%;
+    max-width:500px;
+    background:#1a1a2e;
+    border-radius:20px;
+    padding:20px;
+    z-index:5000; /* выше всего */
+    max-height:60vh;
+    overflow-y:auto;
+    display:none;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+}
+
         @media (max-width:768px){
             .channels-grid{grid-template-columns:1fr}
             .youtube-chat{width:250px}
+            .local-video-container video{width:100%;height:auto}
+            .remote-video-item{width:280px;height:210px}
+            .donate-toast{right:10px;bottom:10px;max-width:240px}
+            .search-bar input{max-width:150px}
         }
     </style>
 </head>
@@ -54,26 +131,38 @@
 <div class="container">
     <div class="header">
         <div class="logo">🐻 Bear<span>Gram</span> 🎤</div>
-        <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Поиск каналов..." oninput="searchChannels()">
+                <button class="btn-search" onclick="searchChannels()">🔍</button>
+                <button class="btn-popular" onclick="loadPopular()">🔥 Популярное</button>
+            </div>
             <button class="create-btn" onclick="openCreateChannelModal()">➕ Создать канал</button>
             <a href="/chat" class="back-btn">← Назад</a>
         </div>
     </div>
-    
+
     <div class="channels-grid" id="channelsGrid">
-        <div style="text-align:center;color:#888;padding:40px">Загрузка каналов...</div>
+        <div style="text-align:center;color:#888;padding:40px">Загрузка популярных каналов...</div>
     </div>
 </div>
 
 <!-- МОДАЛ СОЗДАНИЯ КАНАЛА -->
 <div id="createChannelModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;display:none;align-items:center;justify-content:center">
-    <div style="background:#1a1a2e;border-radius:28px;padding:24px;width:300px">
+    <div style="background:#1a1a2e;border-radius:28px;padding:24px;width:350px">
         <h3 style="color:white;margin-bottom:16px">🎤 Новый голосовой канал</h3>
-        <input type="text" id="channelName" placeholder="Название канала" style="width:100%;padding:12px;border-radius:25px;border:none;margin-bottom:12px">
-        <input type="number" id="maxUsers" placeholder="Макс. участников (0=безлимит)" style="width:100%;padding:12px;border-radius:25px;border:none;margin-bottom:12px">
-        <label style="color:white;display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <input type="text" id="channelName" placeholder="Название канала" style="width:100%;padding:12px;border-radius:25px;border:none;margin-bottom:12px;background:#2a2a3e;color:white">
+        <input type="number" id="maxUsers" placeholder="Макс. участников (0=безлимит)" style="width:100%;padding:12px;border-radius:25px;border:none;margin-bottom:12px;background:#2a2a3e;color:white">
+        <label style="color:white;display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <input type="checkbox" id="isPrivate"> 🔒 Приватный канал
         </label>
+        <label style="color:white;display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <input type="checkbox" id="isPaid" onchange="document.getElementById('priceBlock').style.display = this.checked ? 'block' : 'none'"> 💎 Платный вход
+        </label>
+        <div id="priceBlock" style="display:none;margin-bottom:12px">
+            <input type="number" id="priceCoins" placeholder="Цена в Кристаллайзерах" style="width:100%;padding:12px;border-radius:25px;border:none;background:#2a2a3e;color:white">
+        </div>
+        <input type="text" id="yoomoneyWallet" placeholder="ЮMoney кошелёк (опционально)" style="width:100%;padding:12px;border-radius:25px;border:none;margin-bottom:16px;background:#2a2a3e;color:white">
         <div style="display:flex;gap:10px">
             <button onclick="createChannel()" style="flex:1;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:25px">Создать</button>
             <button onclick="closeCreateModal()" style="flex:1;background:#333;color:white;border:none;padding:10px;border-radius:25px">Отмена</button>
@@ -86,35 +175,62 @@
     <div class="channel-room">
         <div class="channel-room-header">
             <h3 id="currentChannelName">Голосовой канал</h3>
-            <div>
-                <button class="leave-btn" onclick="startYouTubeTogether()" style="background:#2ea6ff;margin-right:8px">🎬 YouTube Together</button>
+            <div class="header-buttons">
+                <span id="premiumBadge" style="display:none; color:#ffd700; margin-right:6px; font-size:18px;">👑</span>
+                <span class="coins-balance" id="userCoinsBalance">💎 0</span>
+                <button class="shop-btn" onclick="window.open('/shop/coins', '_blank')">💎 Магазин</button>
+                <button class="merch-btn" onclick="showStreamerShop()">🛍️ Мерч</button>
+                <button class="leave-btn" onclick="startYouTubeTogether()" style="background:#2ea6ff">🎬 YouTube</button>
                 <button class="leave-btn" onclick="leaveChannel()">🚪 Покинуть</button>
             </div>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;padding:16px">
-            <div id="localVideoContainer" style="display:flex;justify-content:center;margin-bottom:16px">
-                <video id="localVideo" autoplay muted playsinline style="width:200px;height:150px;background:#000;border-radius:16px;object-fit:cover"></video>
+        
+        <div class="videos-area">
+            <div class="local-video-container">
+                <video id="localVideo" autoplay muted playsinline></video>
             </div>
-            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;flex-wrap:wrap">
-                <button id="muteBtn" onclick="toggleMute()" style="background:#ff6b6b;border:none;padding:10px;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer">🎤</button>
-                <button id="videoBtn" onclick="toggleVideo()" style="background:#ff6b6b;border:none;padding:10px;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer">📹</button>
-                <button onclick="shareScreen()" style="background:#ff6b6b;border:none;padding:10px;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer">🖥️</button>
+            <div class="controls-bar">
+                <button id="muteBtn" class="control-btn" onclick="toggleMute()">🎤</button>
+                <button id="videoBtn" class="control-btn" onclick="toggleVideo()">📹</button>
+                <button class="control-btn" onclick="shareScreen()">🖥️</button>
             </div>
-            <div id="remoteVideos" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;flex:1;overflow-y:auto;padding:10px">
-                <div style="text-align:center;color:#aaa">Участники появятся здесь...</div>
+            <div id="remoteVideos" class="remote-videos-grid">
+                <div style="text-align:center;color:#aaa;width:100%">Участники появятся здесь...</div>
             </div>
-            <div style="margin-top:16px;background:#0f0f1a;border-radius:16px;padding:10px;max-height:150px;overflow-y:auto">
-                <div id="chatMessages" style="color:#ccc;font-size:12px"></div>
-                <div style="display:flex;gap:8px;margin-top:8px">
-                    <input type="text" id="voiceChatInput" placeholder="Текстовый чат в канале..." style="flex:1;padding:8px;border-radius:20px;border:none">
-                    <button onclick="sendVoiceChatMessage()" style="background:#ff6b6b;border:none;padding:8px 16px;border-radius:20px;cursor:pointer">📨</button>
+        </div>
+        
+        <div class="bottom-panel">
+            <div class="chat-area">
+                <div class="chat-messages" id="chatMessages">
+                    <div style="color:#888;text-align:center">💬 Чат и донаты здесь</div>
                 </div>
+                <div class="chat-input-row">
+                    <input type="text" id="voiceChatInput" placeholder="Сообщение в чат...">
+                    <button onclick="sendVoiceChatMessage()">📨</button>
+                </div>
+            </div>
+            <div class="donate-panel">
+                <span style="color:white;font-size:13px;white-space:nowrap">💎 Донат:</span>
+                <input type="number" id="donateAmount" placeholder="Сумма 💎" min="10" value="10" style="width:80px;font-weight:bold;text-align:center">
+                <input type="text" id="donateMessage" placeholder="Сообщение (необязательно)" style="flex:1">
+                <button class="donate-btn-small" onclick="sendDonate()">Поддержать</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- МОДАЛ YOUTUBE TOGETHER -->
+<!-- ПАНЕЛЬ МЕРЧА СТРИМЕРА -->
+<div id="streamerShopPanel" class="merch-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3>🛍️ Мерч стримера</h3>
+        <button onclick="document.getElementById('streamerShopPanel').style.display='none'" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✖</button>
+    </div>
+    <div id="streamerItems">
+        <p style="color:#888; text-align:center;">Загрузка...</p>
+    </div>
+</div>
+
+<!-- YOUTUBE TOGETHER -->
 <div id="youtubeModal" class="youtube-modal">
     <div class="youtube-header">
         <span style="color:white">🎬 YouTube Together</span>
@@ -148,70 +264,104 @@
     let currentVideoId = null;
     let signalPollingInterval = null;
     let membersPollingInterval = null;
-    
-    // ========== ЗАГРУЗКА КАНАЛОВ ==========
+    let donationsPollingInterval = null;
+    let currentToast = null;
+    let allChannels = [];
+
+    const currentUserId = {{ current_user.id }};
+
     function loadChannels() {
         fetch('/voice/channels/list')
             .then(r => r.json())
             .then(channels => {
-                const grid = document.getElementById('channelsGrid');
-                if(channels.length === 0) {
-                    grid.innerHTML = '<div style="text-align:center;color:#888;padding:40px">🎤 Нет голосовых каналов. Создайте первый!</div>';
-                    return;
-                }
-                grid.innerHTML = '';
-                channels.forEach(ch => {
-                    const card = document.createElement('div');
-                    card.className = 'channel-card';
-                    card.innerHTML = `
-                        <div class="channel-name">🎤 ${escapeHtml(ch.name)}</div>
-                        <div class="channel-stats">👥 ${ch.member_count} участников ${ch.max_users > 0 ? `(макс: ${ch.max_users})` : ''}</div>
-                        <div class="member-list" id="members-${ch.id}">
-                            ${ch.members.slice(0,5).map(m => `<div class="member-avatar" title="${escapeHtml(m.username)}">${m.username[0]}</div>`).join('')}
-                            ${ch.members.length > 5 ? `<div class="member-avatar">+${ch.members.length-5}</div>` : ''}
-                        </div>
-                        <button class="join-btn" onclick="joinChannel(${ch.id}, '${escapeHtml(ch.name)}')">
-                            ${ch.is_joined ? '🔊 В канале' : '🎧 Войти'}
-                        </button>
-                    `;
-                    grid.appendChild(card);
-                });
+                allChannels = channels;
+                loadPopular(); // при первой загрузке показываем популярные
             });
     }
-    
+
+    function loadPopular() {
+        document.getElementById('searchInput').value = '';
+        // Сортируем по убыванию количества участников (самый надёжный показатель популярности)
+        const popular = [...allChannels].sort((a, b) => b.member_count - a.member_count);
+        // Показываем все, без ограничения
+        renderChannels(popular);
+    }
+
+    function searchChannels() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        if (!query) {
+            loadPopular();
+            return;
+        }
+        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(query));
+        renderChannels(filtered);
+    }
+
+    function renderChannels(channels) {
+        const grid = document.getElementById('channelsGrid');
+        if (!channels || channels.length === 0) {
+            grid.innerHTML = '<div style="text-align:center;color:#888;padding:40px">😔 Ничего не найдено</div>';
+            return;
+        }
+        grid.innerHTML = '';
+        channels.forEach(ch => {
+            const card = document.createElement('div');
+            card.className = 'channel-card';
+            card.innerHTML = `
+                <div class="channel-name">🎤 ${escapeHtml(ch.name)}</div>
+                <div class="channel-stats">👥 ${ch.member_count} участников ${ch.max_users > 0 ? `(макс: ${ch.max_users})` : ''}</div>
+                <div class="member-list">
+                    ${ch.members.slice(0,5).map(m => `<div class="member-avatar" title="${escapeHtml(m.username)}">${m.username[0]}</div>`).join('')}
+                    ${ch.members.length > 5 ? `<div class="member-avatar">+${ch.members.length-5}</div>` : ''}
+                </div>
+                <button class="join-btn" onclick="joinChannel(${ch.id}, '${escapeHtml(ch.name)}')">
+                    ${ch.is_joined ? '🔊 В канале' : '🎧 Войти'}
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
     function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
-    
     function openCreateChannelModal() { document.getElementById('createChannelModal').style.display = 'flex'; }
     function closeCreateModal() { document.getElementById('createChannelModal').style.display = 'none'; }
-    
+
     function createChannel() {
         const name = document.getElementById('channelName').value.trim();
         const maxUsers = parseInt(document.getElementById('maxUsers').value) || 0;
         const isPrivate = document.getElementById('isPrivate').checked;
+        const isPaid = document.getElementById('isPaid').checked;
+        const priceCoins = parseInt(document.getElementById('priceCoins').value) || 0;
+        const yoomoneyWallet = document.getElementById('yoomoneyWallet').value.trim();
         if(!name) { alert('Введите название'); return; }
-        
         const fd = new FormData();
         fd.append('name', name);
         fd.append('max_users', maxUsers);
         fd.append('is_private', isPrivate ? 'on' : '');
-        
+        fd.append('is_paid', isPaid ? 'on' : '');
+        fd.append('price_coins', priceCoins);
+        fd.append('yoomoney_wallet', yoomoneyWallet);
         fetch('/create_voice_channel', {method: 'POST', body: fd})
             .then(() => { closeCreateModal(); loadChannels(); });
     }
-    
-    // ========== WEBRTC ДЛЯ ГОЛОСОВЫХ КАНАЛОВ ==========
+
+    async function loadUserBalance() {
+        try {
+            const res = await fetch('/api/coins/balance');
+            const data = await res.json();
+            document.getElementById('userCoinsBalance').innerHTML = `💎 ${data.balance}`;
+            const badge = document.getElementById('premiumBadge');
+            if (badge) badge.style.display = data.is_premium ? 'inline' : 'none';
+        } catch(e) {}
+    }
+
     const configuration = {
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
     };
-    
+
     async function joinChannel(channelId, channelName) {
         currentChannelId = channelId;
         document.getElementById('currentChannelName').innerText = channelName;
-        
-        // Запрашиваем доступ к микрофону и камере
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
             document.getElementById('localVideo').srcObject = localStream;
@@ -224,233 +374,133 @@
                 return;
             }
         }
-        
-        // Отправляем запрос на вход
         const res = await fetch('/voice/join/' + channelId, {method: 'POST'});
-        if(!res.ok) { alert('Не удалось войти в канал'); return; }
-        
+        if(!res.ok) { alert('Не удалось войти'); return; }
         document.getElementById('channelModal').classList.add('active');
-        
-        // Запускаем опрос сигналов и участников
+        loadUserBalance();
         startSignalPolling();
         startMembersPolling();
-        
-        // Создаём офферы для существующих участников
+        loadDonations();
+        if (donationsPollingInterval) clearInterval(donationsPollingInterval);
+        donationsPollingInterval = setInterval(loadDonations, 4000);
         setTimeout(() => createOffersForExistingMembers(), 500);
-        
         loadChannels();
     }
-    
+
     function startSignalPolling() {
         if(signalPollingInterval) clearInterval(signalPollingInterval);
-        
         signalPollingInterval = setInterval(async () => {
             if(!currentChannelId) return;
-            
-            try {
-                // Получаем сигналы от всех участников
-                for(const userId of Object.keys(currentChannelMembers)) {
-                    const res = await fetch(`/voice/get_signals/${currentChannelId}/${userId}`);
-                    const signals = await res.json();
-                    
-                    if(signals.offer) {
-                        await handleOffer(userId, signals.offer);
-                    }
-                    if(signals.answer) {
-                        await handleAnswer(userId, signals.answer);
-                    }
-                    if(signals.ice) {
-                        await handleIceCandidate(userId, signals.ice);
-                    }
-                }
-            } catch(e) {
-                console.error('Polling error:', e);
+            for(const userId of Object.keys(currentChannelMembers)) {
+                const res = await fetch(`/voice/get_signals/${currentChannelId}/${userId}`);
+                const signals = await res.json();
+                if(signals.offer) await handleOffer(userId, signals.offer);
+                if(signals.answer) await handleAnswer(userId, signals.answer);
+                if(signals.ice) await handleIceCandidate(userId, signals.ice);
             }
         }, 2000);
     }
-    
+
     function startMembersPolling() {
         if(membersPollingInterval) clearInterval(membersPollingInterval);
-        
         membersPollingInterval = setInterval(async () => {
             if(!currentChannelId) return;
-            
-            try {
-                const res = await fetch(`/voice/members/${currentChannelId}`);
-                const members = await res.json();
-                
-                // Добавляем новых участников
-                for(const member of members) {
-                    if(member.id !== {{ current_user.id }} && !currentChannelMembers[member.id]) {
-                        addRemoteUser(member.id, member.username);
-                        await createOffer(member.id);
-                    }
-                }
-                
-                // Удаляем ушедших
-                const currentIds = members.map(m => m.id);
-                for(const userId of Object.keys(currentChannelMembers)) {
-                    if(!currentIds.includes(parseInt(userId))) {
-                        removeRemoteUser(userId);
-                    }
-                }
-            } catch(e) {
-                console.error('Members polling error:', e);
-            }
-        }, 3000);
-    }
-    
-    async function createOffersForExistingMembers() {
-        try {
             const res = await fetch(`/voice/members/${currentChannelId}`);
             const members = await res.json();
-            
             for(const member of members) {
-                if(member.id !== {{ current_user.id }}) {
+                if(member.id !== currentUserId && !currentChannelMembers[member.id]) {
                     addRemoteUser(member.id, member.username);
                     await createOffer(member.id);
                 }
             }
-        } catch(e) {
-            console.error('Error creating offers:', e);
+            const currentIds = members.map(m => m.id);
+            for(const userId of Object.keys(currentChannelMembers)) {
+                if(!currentIds.includes(parseInt(userId))) removeRemoteUser(userId);
+            }
+        }, 3000);
+    }
+
+    async function createOffersForExistingMembers() {
+        const res = await fetch(`/voice/members/${currentChannelId}`);
+        const members = await res.json();
+        for(const member of members) {
+            if(member.id !== currentUserId) {
+                addRemoteUser(member.id, member.username);
+                await createOffer(member.id);
+            }
         }
     }
-    
+
     function addRemoteUser(userId, username) {
         if(peerConnections[userId]) return;
-        
         const container = document.getElementById('remoteVideos');
-        // Убираем плейсхолдер если есть
         const placeholder = container.querySelector('div[style*="text-align:center"]');
         if(placeholder) placeholder.remove();
-        
         const videoDiv = document.createElement('div');
+        videoDiv.className = 'remote-video-item';
         videoDiv.id = `remote-${userId}`;
-        videoDiv.style.cssText = 'position:relative;width:200px;height:150px;background:#000;border-radius:16px;overflow:hidden';
-        videoDiv.innerHTML = `
-            <video id="video-${userId}" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
-            <div style="position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px">${escapeHtml(username)}</div>
-        `;
+        videoDiv.innerHTML = `<video id="video-${userId}" autoplay playsinline></video><div class="remote-video-label">${escapeHtml(username)}</div>`;
         container.appendChild(videoDiv);
-        
         currentChannelMembers[userId] = username;
     }
-    
+
     function removeRemoteUser(userId) {
         const el = document.getElementById(`remote-${userId}`);
         if(el) el.remove();
-        if(peerConnections[userId]) {
-            peerConnections[userId].close();
-            delete peerConnections[userId];
-        }
+        if(peerConnections[userId]) { peerConnections[userId].close(); delete peerConnections[userId]; }
         delete currentChannelMembers[userId];
-        
-        // Возвращаем плейсхолдер если никого нет
-        const container = document.getElementById('remoteVideos');
-        if(Object.keys(currentChannelMembers).length === 0) {
-            container.innerHTML = '<div style="text-align:center;color:#aaa">Участники появятся здесь...</div>';
-        }
     }
-    
+
     async function createOffer(userId) {
         const pc = new RTCPeerConnection(configuration);
         peerConnections[userId] = pc;
-        
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-        });
-        
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
         pc.ontrack = (event) => {
             const video = document.getElementById(`video-${userId}`);
-            if(video && event.streams[0]) {
-                video.srcObject = event.streams[0];
-                video.play().catch(e => console.log('Play error:', e));
-            }
+            if(video && event.streams[0]) video.srcObject = event.streams[0];
         };
-        
-        pc.onicecandidate = (event) => {
-            if(event.candidate) {
-                sendSignal(userId, { ice: event.candidate });
-            }
-        };
-        
-        pc.onnegotiationneeded = async () => {
-            try {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                sendSignal(userId, { sdp: pc.localDescription, type: 'offer' });
-            } catch(e) {
-                console.error('Negotiation error:', e);
-            }
-        };
-        
-        // Принудительно создаём оффер
+        pc.onicecandidate = (event) => { if(event.candidate) sendSignal(userId, { ice: event.candidate }); };
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal(userId, { sdp: offer, type: 'offer' });
     }
-    
+
     async function handleOffer(userId, offer) {
         let pc = peerConnections[userId];
         if(!pc) {
             pc = new RTCPeerConnection(configuration);
             peerConnections[userId] = pc;
-            
-            localStream.getTracks().forEach(track => {
-                pc.addTrack(track, localStream);
-            });
-            
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
             pc.ontrack = (event) => {
                 const video = document.getElementById(`video-${userId}`);
-                if(video && event.streams[0]) {
-                    video.srcObject = event.streams[0];
-                    video.play().catch(e => console.log('Play error:', e));
-                }
+                if(video && event.streams[0]) video.srcObject = event.streams[0];
             };
-            
-            pc.onicecandidate = (event) => {
-                if(event.candidate) {
-                    sendSignal(userId, { ice: event.candidate });
-                }
-            };
+            pc.onicecandidate = (event) => { if(event.candidate) sendSignal(userId, { ice: event.candidate }); };
         }
-        
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         sendSignal(userId, { sdp: answer, type: 'answer' });
     }
-    
+
     async function handleAnswer(userId, answer) {
         const pc = peerConnections[userId];
-        if(pc && pc.signalingState !== 'stable') {
-            await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        }
+        if(pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
     }
-    
+
     async function handleIceCandidate(userId, candidate) {
         const pc = peerConnections[userId];
-        if(pc) {
-            try {
-                await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch(e) {
-                console.error('ICE candidate error:', e);
-            }
-        }
+        if(pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
     }
-    
+
     function sendSignal(toUserId, signal) {
         fetch('/voice/signal', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                channel_id: currentChannelId,
-                to_user_id: toUserId,
-                ...signal
-            })
-        }).catch(e => console.error('Signal send error:', e));
+            body: JSON.stringify({ channel_id: currentChannelId, to_user_id: toUserId, ...signal })
+        });
     }
-    
+
     function toggleMute() {
         if(localStream) {
             const audioTrack = localStream.getAudioTracks()[0];
@@ -459,13 +509,10 @@
                 isMuted = !audioTrack.enabled;
                 document.getElementById('muteBtn').innerHTML = isMuted ? '🔇' : '🎤';
                 document.getElementById('muteBtn').style.background = isMuted ? '#888' : '#ff6b6b';
-                
-                // Отправляем статус
-                fetch(`/voice/mute/${currentChannelId}`, {method: 'POST'});
             }
         }
     }
-    
+
     function toggleVideo() {
         if(localStream) {
             const videoTrack = localStream.getVideoTracks()[0];
@@ -477,17 +524,15 @@
             }
         }
     }
-    
+
     async function shareScreen() {
         try {
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const videoTrack = screenStream.getVideoTracks()[0];
-            
             Object.values(peerConnections).forEach(pc => {
                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
                 if(sender) sender.replaceTrack(videoTrack);
             });
-            
             videoTrack.onended = () => {
                 const cameraTrack = localStream.getVideoTracks()[0];
                 Object.values(peerConnections).forEach(pc => {
@@ -497,147 +542,206 @@
             };
         } catch(e) { alert('Демонстрация экрана не доступна'); }
     }
-    
+
     function sendVoiceChatMessage() {
         const input = document.getElementById('voiceChatInput');
         const message = input.value.trim();
         if(!message) return;
-        
-        // Отправляем через HTTP (можно добавить эндпоинт позже)
         addChatMessage('Вы', message);
         input.value = '';
     }
-    
+
     function addChatMessage(username, message) {
         const container = document.getElementById('chatMessages');
         const div = document.createElement('div');
-        div.innerHTML = `<strong style="color:#ff6b6b">${escapeHtml(username)}:</strong> ${escapeHtml(message)}`;
+        div.innerHTML = `<strong style="color:#ff6b6b">${escapeHtml(username)}:</strong> <span style="color:#f5f5f5">${escapeHtml(message)}</span>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
-    
+
     async function leaveChannel() {
         if(signalPollingInterval) clearInterval(signalPollingInterval);
         if(membersPollingInterval) clearInterval(membersPollingInterval);
-        
+        if(donationsPollingInterval) clearInterval(donationsPollingInterval);
         Object.values(peerConnections).forEach(pc => pc.close());
         peerConnections = {};
-        
-        if(localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-        
-        if(currentChannelId) {
-            await fetch('/voice/leave/' + currentChannelId, {method: 'POST'});
-        }
-        
+        if(localStream) localStream.getTracks().forEach(track => track.stop());
+        if(currentChannelId) await fetch('/voice/leave/' + currentChannelId, {method: 'POST'});
         document.getElementById('channelModal').classList.remove('active');
-        document.getElementById('remoteVideos').innerHTML = '<div style="text-align:center;color:#aaa">Участники появятся здесь...</div>';
-        document.getElementById('chatMessages').innerHTML = '';
+        document.getElementById('remoteVideos').innerHTML = '<div style="text-align:center;color:#aaa;width:100%">Участники появятся здесь...</div>';
+        document.getElementById('chatMessages').innerHTML = '<div style="color:#888;text-align:center">💬 Чат и донаты здесь</div>';
         currentChannelId = null;
         currentChannelMembers = {};
-        
         loadChannels();
     }
-    
-    // ========== YOUTUBE TOGETHER ==========
+
+    function showDonateToast(fromUser, amount, message = '') {
+        if (currentToast) { currentToast.remove(); currentToast = null; }
+        const toast = document.createElement('div');
+        toast.className = 'donate-toast';
+        toast.innerHTML = `
+            <div class="toast-icon">💎</div>
+            <div class="toast-content">
+                <div class="toast-name">${escapeHtml(fromUser)}</div>
+                <div class="toast-amount">${amount} 💎</div>
+                ${message ? `<div class="toast-message">${escapeHtml(message)}</div>` : ''}
+            </div>
+        `;
+        document.body.appendChild(toast);
+        currentToast = toast;
+        setTimeout(() => { if (toast === currentToast) { toast.remove(); currentToast = null; } }, 5000);
+    }
+
+    async function sendDonate() {
+        const amountInput = document.getElementById('donateAmount');
+        const amount = parseInt(amountInput.value, 10);
+        const message = document.getElementById('donateMessage').value.trim();
+        if (isNaN(amount) || amount < 10) { alert('Минимальный донат 10 💎'); return; }
+        const res = await fetch(`/voice/donate/${currentChannelId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({amount: amount, message: message})
+        });
+        const data = await res.json();
+        if (data.success) {
+            amountInput.value = 10;
+            document.getElementById('donateMessage').value = '';
+            loadDonations();
+            loadUserBalance();
+            showDonateToast('Вы', amount, message);
+        } else { alert(data.error || 'Ошибка доната'); }
+    }
+
+    // ===== МЕРЧ СТРИМЕРА =====
+    async function showStreamerShop() {
+        if (!currentChannelId) return;
+        
+        const res = await fetch(`/voice/members/${currentChannelId}`);
+        const members = await res.json();
+        if (!members || members.length === 0) return;
+        
+        // Берём ID создателя канала (первый в списке)
+        const creatorId = members[0].id;
+        
+        // Загружаем только дропы и мерч создателя
+        const shopRes = await fetch(`/shop/author/${creatorId}`);
+        const items = await shopRes.json();
+        
+        const container = document.getElementById('streamerItems');
+        
+        if (!items || items.length === 0) {
+            container.innerHTML = '<p style="color:#888; text-align:center;">У стримера пока нет дропов или мерча</p>';
+        } else {
+            container.innerHTML = items.map(item => `
+                <div class="merch-item">
+                    <div class="icon">${item.category === 'merch' ? '👕' : '💎'}</div>
+                    <div class="info">
+                        <div class="name">${escapeHtml(item.name)}</div>
+                        <div class="price">${item.price} 💎</div>
+                        ${item.stock > 0 ? `<div class="stock">Осталось: ${item.stock - item.sales_count} шт.</div>` : ''}
+                    </div>
+                    <button onclick="buyStreamerItem(${item.id})" ${item.stock > 0 && item.sales_count >= item.stock ? 'disabled' : ''}>
+                        ${item.stock > 0 && item.sales_count >= item.stock ? 'Распродано' : 'Купить'}
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('streamerShopPanel').style.display = 'block';
+    }
+
+    async function buyStreamerItem(itemId) {
+        const res = await fetch(`/shop/buy/${itemId}`, {method:'POST'});
+        const data = await res.json();
+        if (data.success) {
+            alert('Куплено! Новый баланс: ' + data.new_balance + ' 💎');
+            showStreamerShop();
+            loadUserBalance();
+        } else {
+            alert(data.error);
+        }
+    }
+
+    let lastDonationId = null;
+    async function loadDonations() {
+        if (!currentChannelId) return;
+        const res = await fetch(`/voice/donations/${currentChannelId}`);
+        const donations = await res.json();
+        if (!Array.isArray(donations) || donations.length === 0) return;
+        const chatDiv = document.getElementById('chatMessages');
+        const regularMessages = Array.from(chatDiv.querySelectorAll('div:not(.donation-message)'));
+        chatDiv.innerHTML = '';
+        regularMessages.forEach(el => chatDiv.appendChild(el));
+        donations.forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'donation-message';
+            div.textContent = `💎 ${d.from_user} подарил ${d.amount} Кристаллайзеров${d.message ? ' — ' + d.message : ''}`;
+            chatDiv.appendChild(div);
+        });
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+        const latest = donations[donations.length - 1];
+        if (latest && latest.id !== lastDonationId) {
+            lastDonationId = latest.id;
+            showDonateToast(latest.from_user, latest.amount, latest.message);
+        }
+    }
+
     function startYouTubeTogether() {
         document.getElementById('youtubeModal').classList.add('active');
         document.getElementById('youtubePlayer').src = 'https://www.youtube.com/embed/';
-        
         if(youtubeSyncInterval) clearInterval(youtubeSyncInterval);
         youtubeSyncInterval = setInterval(syncYouTubeStatus, 3000);
     }
-    
     function loadYouTubeVideo() {
         let url = document.getElementById('youtubeUrl').value.trim();
         let videoId = extractYouTubeId(url);
-        
-        if(!videoId) {
-            alert('Введите корректную ссылку YouTube');
-            return;
-        }
-        
+        if(!videoId) { alert('Введите корректную ссылку YouTube'); return; }
         currentVideoId = videoId;
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-        document.getElementById('youtubePlayer').src = embedUrl;
+        document.getElementById('youtubePlayer').src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
     }
-    
     function extractYouTubeId(url) {
         if(!url) return null;
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?#]+)/,
-            /youtube\.com\/embed\/([^/?]+)/,
-            /^[A-Za-z0-9_-]{11}$/
-        ];
-        for(const pattern of patterns) {
-            const match = url.match(pattern);
-            if(match) return match[1];
-        }
+        const patterns = [/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?#]+)/, /youtube\.com\/embed\/([^/?]+)/, /^[A-Za-z0-9_-]{11}$/];
+        for(const pattern of patterns) { const match = url.match(pattern); if(match) return match[1]; }
         return null;
     }
-    
     function syncYouTube() {
         const iframe = document.getElementById('youtubePlayer');
-        if(iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: 'getCurrentTime',
-                args: []
-            }), '*');
-        }
+        if(iframe && iframe.contentWindow) { iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'getCurrentTime', args: [] }), '*'); }
     }
-    
     function sendYouTubeChat() {
         const input = document.getElementById('youtubeChatInput');
         const message = input.value.trim();
         if(!message) return;
-        
         addYouTubeChatMessage('Вы', message);
         input.value = '';
     }
-    
     function addYouTubeChatMessage(username, message) {
         const container = document.getElementById('youtubeChatMessages');
         const div = document.createElement('div');
-        div.style.padding = '4px 0';
-        div.style.borderBottom = '1px solid #333';
+        div.style.padding = '4px 0'; div.style.borderBottom = '1px solid #333';
         div.innerHTML = `<strong style="color:#ff6b6b">${escapeHtml(username)}:</strong> ${escapeHtml(message)}`;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        container.appendChild(div); container.scrollTop = container.scrollHeight;
     }
-    
     function syncYouTubeStatus() {
         const iframe = document.getElementById('youtubePlayer');
-        if(iframe && iframe.contentWindow && currentVideoId) {
-            iframe.contentWindow.postMessage(JSON.stringify({
-                event: 'listening',
-                id: 'youtube-player'
-            }), '*');
-        }
+        if(iframe && iframe.contentWindow && currentVideoId) { iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 'youtube-player' }), '*'); }
     }
-    
     function closeYouTubeTogether() {
         document.getElementById('youtubeModal').classList.remove('active');
         if(youtubeSyncInterval) clearInterval(youtubeSyncInterval);
-        document.getElementById('youtubePlayer').src = '';
-        currentVideoId = null;
+        document.getElementById('youtubePlayer').src = ''; currentVideoId = null;
     }
-    
+
     window.addEventListener('message', (event) => {
         if(event.data && typeof event.data === 'string') {
-            try {
-                const data = JSON.parse(event.data);
-                if(data.event === 'infoDelivery' && data.info && data.info.currentTime !== undefined) {
-                    // Можно синхронизировать с другими
-                }
-            } catch(e) {}
+            try { const data = JSON.parse(event.data); if(data.event === 'infoDelivery' && data.info && data.info.currentTime !== undefined) {} } catch(e) {}
         }
     });
-    
-    // Загрузка каналов при старте
+
+    loadUserBalance();
     loadChannels();
-    setInterval(loadChannels, 5000);
+    setInterval(loadChannels, 60000);
 </script>
 </body>
 </html>

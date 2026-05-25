@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.mycompany.beargram",
+    "sha256_cert_fingerprints":
+    ["36:FC:54:02:D7:9F:77:9B:4C:36:86:B7:65:09:0F:45:F1:44:76:14:E4:88:5E:17:EF:04:16:48:D8:A6:BA:F1"]
+  }
+}]

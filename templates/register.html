@@ -105,13 +105,27 @@
             font-size: 12px;
             margin-top: 5px;
         }
+        .phone-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #ff6b6b;
+            text-align: center;
+            justify-content: center;
+        }
+        .phone-hint::before {
+            content: "💎";
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 <div class="card">
     <h2>🐻 Bear<span>Gram</span></h2>
     <h2 style="font-size:22px; margin-bottom:20px">📝 Регистрация</h2>
-    
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -119,7 +133,7 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    
+
     <form method="POST">
         <div class="form-group">
             <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
@@ -134,9 +148,20 @@
         <div class="form-group">
             <input type="password" name="confirm_password" placeholder="🔒 Подтвердите пароль" required>
         </div>
+        
+        <!-- ПОЛЕ ТЕЛЕФОНА (СКОБКИ ЗАКРЫТЫ) -->
+        <div class="form-group">
+            <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)">
+            <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
+        </div>
+        
         <button type="submit">🐾 Зарегистрироваться</button>
     </form>
-    
+
+    <div class="phone-hint">
+        Подтвердите номер после регистрации и получите 100 кристалайзеров в подарок!
+    </div>
+
     <div class="link">
         Уже есть аккаунт? <a href="/login">Войти 🐻</a>
     </div>

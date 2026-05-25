@@ -20,8 +20,10 @@
         input:focus,select:focus,textarea:focus{outline:none;border-color:#ff6b6b}
         button{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;font-weight:500}
         .btn-danger{background:#e74c3c}
-        .btn-danger:hover{background:#c0392b}
-        .btn-secondary{background:transparent;border:1px solid #ff6b6b;color:#ff6b6b}
+        .btn-coins{background:#4caf50;color:white;padding:10px 20px;border-radius:25px;text-decoration:none;font-weight:bold;display:inline-block;margin:5px}
+        .btn-withdraw{background:#ff8c00;color:white;padding:10px 20px;border-radius:25px;text-decoration:none;font-weight:bold;display:inline-block;margin:5px}
+        .btn-grrr{background:#ffd700;color:#000;padding:10px 20px;border-radius:25px;text-decoration:none;font-weight:bold;display:inline-block;margin:5px}
+        .btn-friends{background:#ff8c00;color:white;padding:10px 20px;border-radius:25px;text-decoration:none;font-weight:bold;display:inline-block;margin:5px}
         .checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer}
         .checkbox-label input{width:auto}
         .flash{padding:12px;border-radius:20px;margin-bottom:20px;font-size:14px}
@@ -32,116 +34,206 @@
         small{color:#aaa;font-size:11px}
         .danger-zone{border-bottom:none;background:rgba(231,76,60,0.1);border-radius:20px;padding:20px;margin-top:10px}
         .danger-zone .section-title{color:#e74c3c}
+        /* Плеер (компактный) */
+        .music-search{position:relative; margin-bottom:10px;}
+        .music-search input{padding-right:40px;}
+        .search-results{position:absolute; top:100%; left:0; right:0; background:white; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:10; max-height:200px; overflow-y:auto; display:none;}
+        .search-results.active{display:block;}
+        .search-item{display:flex; align-items:center; padding:8px 12px; gap:8px; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:13px;}
+        .search-item:hover{background:#f9f9f9;}
+        .music-item{display:flex; align-items:center; gap:8px; padding:8px; background:rgba(255,240,240,0.5); border-radius:12px; margin-bottom:6px; text-align:left;}
+        .music-info{flex:1; min-width:0;}
+        .music-title{font-weight:bold; font-size:13px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+        .music-meta{font-size:10px; color:#888;}
+        audio{width:100%; margin-top:3px; height:28px;}
+        .music-actions{display:flex; gap:4px; align-items:center;}
+        .btn-music{padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold; text-decoration:none; border:none; cursor:pointer;}
+        .btn-donate-music{background:#ffd700; color:#000;}
+        .btn-download{background:#4cd964; color:white;}
+        .btn-add-mine{background:#ff6b6b; color:white;}
+        .btn-delete{background:#e74c3c; color:white;}
+        .music-add-row{display:flex; gap:8px; margin-bottom:10px;}
     </style>
 </head>
 <body>
 <div class="card">
     <div class="avatar-large">
-        {% if user.avatar != 'default.png' %}
-            <img src="/static/avatars/{{ user.avatar }}">
-        {% else %}
-            🐻
-        {% endif %}
+        {% if user.avatar != 'default.png' %}<img src="/static/avatars/{{ user.avatar }}">{% else %}🐻{% endif %}
     </div>
     <h2>{{ user.username }}</h2>
     <div class="info">{{ user.username_link or 'Нет @username' }}</div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
+    <div class="section" style="text-align:center;">
+        <div class="section-title">💎 Баланс кристалайзеров</div>
+        <p style="font-size:28px; font-weight:bold; color:#333;">{{ coins.balance }} 💎</p>
+        {% if current_user.phone_verified %}<small style="color:green;">✅ Номер подтверждён</small>{% else %}<small style="color:#ff6b6b;">⚠️ Подтвердите номер</small>{% endif %}
+        <div style="margin-top:12px;">
+            <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
+            <a href="/withdraw" class="btn-withdraw">💰 Вывести</a>
+        </div>
+    </div>
+
+    <div class="section" style="text-align:center;">
+        <div class="section-title">🐻 Баланс $GRRR</div>
+        <p style="font-size:28px; font-weight:bold; color:#333;">{{ "%.2f"|format(grrr_balance) }} $GRRR</p>
+        <small style="color:#888;">Валюта хищников BearGram</small>
+        <div style="margin-top:12px;">
+            <a href="/grrr" class="btn-grrr">🐻 Управлять $GRRR</a>
+        </div>
+    </div>
+
+    <div class="section" style="text-align:center;">
+        <div class="section-title">👥 Пригласить друзей</div>
+        <p style="color:#888;font-size:13px;">Пригласи друзей из контактов и получи +25 💎 за каждого!</p>
+        <div style="margin-top:12px;">
+            <a href="/chat" class="btn-friends" onclick="sessionStorage.setItem('openSearch','1')">👥 Пригласить друзей</a>
+        </div>
+    </div>
+
+    <!-- 🎵 Музыка -->
     <div class="section">
-        <div class="section-title">📸 Аватар</div>
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <input type="file" name="avatar" accept="image/*">
-            </div>
-            <button type="submit">Загрузить аватар</button>
-        </form>
+        <div class="section-title">🎵 Музыка</div>
+        <div class="music-search">
+            <input type="text" id="musicSearch" placeholder="🔍 Найти трек..." oninput="searchTracks()" autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+        <div class="music-add-row">
+            <input type="text" id="musicUrl" placeholder="Ссылка на mp3..." style="flex:1;">
+            <button onclick="addTrack()" style="padding:8px 12px;">➕</button>
+        </div>
+        <div class="music-add-row">
+            <input type="file" id="musicFile" accept="audio/*" style="flex:1;">
+            <button onclick="uploadTrack()" style="padding:8px 12px;">📤</button>
+        </div>
+        <div id="myTracksContainer">
+            {% if tracks %}
+                {% for track in tracks %}
+                <div class="music-item" id="track-{{ track.id }}">
+                    <div class="music-info">
+                        <div class="music-title">{{ track.title }}</div>
+                        <div class="music-meta">👁 {{ track.listens }}</div>
+                        <audio controls src="{{ track.file_path }}" onplay="countListen({{ track.id }})"></audio>
+                    </div>
+                    <div class="music-actions">
+                        <a href="{{ track.file_path }}" download class="btn-music btn-download">⬇️</a>
+                        <button class="btn-music btn-delete" onclick="deleteTrack({{ track.id }})">🗑️</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:#888; text-align:center;">Нет треков</p>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">🔗 @username</div>
-        <form method="POST">
-            <div class="form-group">
-                <input type="text" name="username_link" value="{{ user.username_link or '' }}" placeholder="@username">
-                <small>Уникальный идентификатор. Оставьте пустым, чтобы удалить</small>
-            </div>
-            <button type="submit">Сохранить @username</button>
-        </form>
-    </div>
-
-    <div class="section">
-        <div class="section-title">🔔 Уведомления</div>
-        <form method="POST">
-            <label class="checkbox-label">
-                <input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>
-                Получать уведомления о новых сообщениях
-            </label>
-            <button type="submit" style="margin-top: 15px;">Сохранить настройки</button>
-        </form>
-    </div>
-
-    <!-- АНКЕТА ДЛЯ ЗНАКОМСТВ -->
-    <div class="section">
-        <div class="section-title">💕 Анкета для знакомств</div>
-        <form method="POST" action="/update_profile" enctype="multipart/form-data">
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Пол</label>
-                <select name="gender">
-                    <option value="" {% if current_user.gender == None %}selected{% endif %}>Не указан</option>
-                    <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Мужской</option>
-                    <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Женский</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Кого искать</label>
-                <select name="preference">
-                    <option value="all" {% if not profile or profile.preference == 'all' %}selected{% endif %}>Всех</option>
-                    <option value="male" {% if profile and profile.preference == 'male' %}selected{% endif %}>Мужчин</option>
-                    <option value="female" {% if profile and profile.preference == 'female' %}selected{% endif %}>Женщин</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Дата рождения 🎂</label>
-                <input type="date" name="birthday" value="{{ current_user.birthday }}">
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Город</label>
-                <input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="Москва">
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Интересы</label>
-                <input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="Музыка, спорт, кино">
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">О себе</label>
-                <textarea name="bio" placeholder="Напиши пару слов...">{{ profile.bio if profile else '' }}</textarea>
-            </div>
-            <div class="form-group">
-                <label style="display:block;margin-bottom:4px;color:#888;font-size:13px;">Фото для анкеты</label>
-                <input type="file" name="photo" accept="image/*">
-            </div>
-            <button type="submit">Сохранить анкету</button>
-        </form>
-    </div>
-
-    <div class="section danger-zone">
-        <div class="section-title">⚠️ Опасная зона</div>
-        <form method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт? Все сообщения будут потеряны.')">
-            <input type="hidden" name="delete_account" value="1">
-            <button type="submit" class="btn-danger">🗑️ Удалить аккаунт</button>
-        </form>
-        <small style="display: block; margin-top: 10px;">Это действие необратимо. Все ваши сообщения будут удалены.</small>
-    </div>
-
-    <div class="back-link">
-        <a href="/chat">← Вернуться в чат</a>
-    </div>
+    <div class="section"><div class="section-title">📸 Аватар</div><form method="POST" enctype="multipart/form-data"><div class="form-group"><input type="file" name="avatar" accept="image/*"></div><button type="submit">Загрузить аватар</button></form></div>
+    <div class="section"><div class="section-title">🔗 @username</div><form method="POST"><div class="form-group"><input type="text" name="username_link" value="{{ user.username_link or '' }}" placeholder="@username"><small>Уникальный идентификатор</small></div><button type="submit">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">🔒 Приватность</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="is_private" {% if current_user.is_private %}checked{% endif %}>Закрытый профиль</label><button type="submit" style="margin-top:15px;">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">🔔 Уведомления</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>Получать уведомления</label><button type="submit" style="margin-top:15px;">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">📱 Подтверждение телефона</div>{% if current_user.phone_verified %}<p style="color:green;">✅ {{ current_user.phone_number }}</p>{% else %}<p style="color:#ff6b6b;">⚠️ Не подтверждён</p><form method="POST" action="/verify_phone"><div class="form-group"><input type="text" name="phone" placeholder="+7XXXXXXXXXX" value="{{ current_user.phone_number or '' }}"></div><div class="form-group"><input type="text" name="code" placeholder="Код (1234)"></div><button type="submit" name="verify_code">Подтвердить</button></form><small>Код: 1234</small>{% endif %}</div>
+    <div class="section"><div class="section-title">💕 Анкета</div><form method="POST" action="/update_profile" enctype="multipart/form-data"><div class="form-group"><select name="gender"><option value="">Не указан</option><option value="male">Мужской</option><option value="female">Женский</option></select></div><div class="form-group"><select name="preference"><option value="all">Всех</option><option value="male">Мужчин</option><option value="female">Женщин</option></select></div><div class="form-group"><input type="date" name="birthday" value="{{ current_user.birthday }}"></div><div class="form-group"><input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="Москва"></div><div class="form-group"><input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="Интересы"></div><div class="form-group"><textarea name="bio" placeholder="О себе...">{{ profile.bio if profile else '' }}</textarea></div><div class="form-group"><input type="file" name="photo" accept="image/*"></div><button type="submit">Сохранить</button></form></div>
+    <div class="section danger-zone"><div class="section-title">⚠️ Опасная зона</div><form method="POST" onsubmit="return confirm('Удалить аккаунт?')"><input type="hidden" name="delete_account" value="1"><button type="submit" class="btn-danger">🗑️ Удалить аккаунт</button></form></div>
+    <div class="back-link"><a href="/chat">← Вернуться в чат</a></div>
 </div>
+
+<script>
+// Поиск треков
+let searchTimeout;
+async function searchTracks() {
+    clearTimeout(searchTimeout);
+    const q = document.getElementById('musicSearch').value.trim();
+    const results = document.getElementById('searchResults');
+    if (q.length < 1) {
+        results.classList.remove('active');
+        return;
+    }
+    searchTimeout = setTimeout(async () => {
+        const resp = await fetch('/api/music/search?q=' + encodeURIComponent(q));
+        const data = await resp.json();
+        if (!data.tracks.length) {
+            results.innerHTML = '<div style="padding:10px;color:#888;">Ничего не найдено</div>';
+        } else {
+            results.innerHTML = data.tracks.map(t => `
+                <div class="search-item" onclick="addToMyMusic('${t.file_path}', '${t.title}')">
+                    <span style="flex:1;">🎵 ${t.title} <span style="color:#888;">(${t.author})</span></span>
+                    <span class="btn-music btn-add-mine" style="flex-shrink:0;">➕</span>
+                </div>
+            `).join('');
+        }
+        results.classList.add('active');
+    }, 300);
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.music-search')) document.getElementById('searchResults').classList.remove('active');
+});
+
+async function addTrack() {
+    const url = document.getElementById('musicUrl').value.trim();
+    if (!url) return;
+    const title = prompt('Название трека:') || 'Без названия';
+    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) { document.getElementById('musicUrl').value = ''; location.reload(); }
+    else alert(data.error || 'Ошибка');
+}
+
+async function uploadTrack() {
+    const file = document.getElementById('musicFile').files[0];
+    if (!file) return;
+    const title = prompt('Название трека:') || file.name;
+    const fd = new FormData(); fd.append('file', file); fd.append('title', title);
+    const resp = await fetch('/api/music/upload', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) { document.getElementById('musicFile').value = ''; location.reload(); }
+    else alert(data.error || 'Ошибка');
+}
+
+async function deleteTrack(trackId) {
+    if (!confirm('Удалить трек?')) return;
+    const resp = await fetch('/api/music/delete/' + trackId, {method:'POST'});
+    const data = await resp.json();
+    if (data.success) document.getElementById('track-' + trackId).remove();
+    else alert('Ошибка удаления');
+}
+
+async function addToMyMusic(url, title) {
+    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) alert('✅ Трек добавлен в твой плеер!');
+    else alert('Ошибка при добавлении');
+}
+
+function countListen(trackId) {
+    fetch('/api/music/listen/' + trackId, {method:'POST'});
+}
+
+// ========== Лимит видимых треков ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('myTracksContainer');
+    if (!container) return;
+    const items = container.querySelectorAll('.music-item');
+    const MAX_VISIBLE = 4; // показываем первые 4 трека
+    if (items.length > MAX_VISIBLE) {
+        for (let i = MAX_VISIBLE; i < items.length; i++) {
+            items[i].style.display = 'none';
+        }
+        const btn = document.createElement('button');
+        btn.textContent = `Показать все (${items.length})`;
+        btn.className = 'btn-music';
+        btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
+        btn.onclick = function() {
+            for (let i = MAX_VISIBLE; i < items.length; i++) {
+                items[i].style.display = '';
+            }
+            btn.style.display = 'none';
+        };
+        container.appendChild(btn);
+    }
+});
+</script>
 </body>
 </html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔮 Магазин Кристалайзеров | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;justify-content:center;align-items:center}
+        .shop-container{max-width:500px;width:100%;padding:20px}
+        .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:28px;padding:24px;margin-bottom:16px;border:1px solid rgba(255,107,107,0.3);text-align:center}
+        .card h2{color:white;margin-bottom:8px}
+        .packages{display:flex;flex-direction:column;gap:12px}
+        .package-item{background:rgba(255,255,255,0.05);border-radius:20px;padding:16px;cursor:pointer;transition:0.2s;border:2px solid transparent}
+        .package-item:hover{background:rgba(255,255,255,0.1)}
+        .package-item.popular{border-color:#ffd700}
+        .package-name{font-size:20px;color:white;font-weight:bold}
+        .package-price{font-size:16px;color:#4caf50;margin:8px 0}
+        .package-bonus{font-size:12px;color:#ffd700}
+        .buy-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:30px;width:100%;cursor:pointer;font-size:16px;font-weight:bold;margin-top:12px}
+        .back-btn{background:rgba(255,255,255,0.1);color:white;padding:12px;border-radius:30px;text-decoration:none;display:block;text-align:center;margin-top:10px}
+    </style>
+</head>
+<body>
+<div class="shop-container">
+    <div class="card">
+        <h2>🔮 Магазин Кристалайзеров</h2>
+        <p style="color:#aaa;margin-bottom:16px">Заряди свои Кристалайзеры и поддерживай стримеров!</p>
+        <div class="packages" id="packagesList">
+            Загрузка пакетов...
+        </div>
+    </div>
+    <a href="/profile" class="back-btn">← Назад в профиль</a>
+</div>
+
+<script>
+    async function loadPackages() {
+        const res = await fetch('/api/shop/coins/packages');
+        const packages = await res.json();
+        const container = document.getElementById('packagesList');
+        if (!Array.isArray(packages) || packages.length === 0) {
+            container.innerHTML = '<p style="color:#888">Пакеты скоро появятся</p>';
+            return;
+        }
+        container.innerHTML = packages.map(pkg => `
+            <div class="package-item ${pkg.popular ? 'popular' : ''}" onclick="buyPackage(${pkg.id})">
+                <div class="package-name">${pkg.emoji} ${pkg.name}</div>
+                <div class="package-price">${pkg.coins} 💎 за ${pkg.price_rub} ₽</div>
+                ${pkg.bonus ? `<div class="package-bonus">🎁 +${pkg.bonus} бонусных Кристалайзеров!</div>` : ''}
+                <button class="buy-btn" onclick="event.stopPropagation(); buyPackage(${pkg.id})">Зарядить</button>
+            </div>
+        `).join('');
+    }
+    
+    async function buyPackage(packageId) {
+        const res = await fetch('/api/create_coins_order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({package_id: packageId})
+        });
+        const data = await res.json();
+        if (data.payment_url) {
+            window.open(data.payment_url, '_blank');
+            alert(`Заказ #${data.order_id} создан! После оплаты Кристалайзеры начислятся автоматически.`);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    }
+    
+    loadPackages();
+</script>
+</body>
+</html>

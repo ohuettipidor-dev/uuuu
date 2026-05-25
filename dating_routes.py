@@ -22,10 +22,12 @@ def ensure_tables():
     except:
         pass
 
-# Вспомогательная функция для проверки Premium (работает с базой через current_app)
 def _is_premium(user_id):
-    db = current_app.extensions['sqlalchemy']
+    # импорт внутри функции, чтобы избежать циклического импорта
     from app import Subscription
+    from flask import current_app
+    
+    db = current_app.extensions['sqlalchemy']
     sub = db.session.query(Subscription).filter_by(user_id=user_id).first()
     if sub and sub.expires_at and sub.expires_at > datetime.utcnow():
         return True

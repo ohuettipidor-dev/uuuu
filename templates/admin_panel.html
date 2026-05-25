@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Админ-панель | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:#1a1a2e;color:white;padding:20px}
+        h1{color:#ffd700;margin-bottom:20px}
+        .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;margin:20px 0}
+        h2{color:#ff6b6b;margin-bottom:15px}
+        .btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:25px;cursor:pointer;font-weight:bold;font-size:16px;margin:5px}
+        .btn-success{background:#4cd964}
+        input{padding:10px;border-radius:20px;border:none;margin:10px 0;width:200px;font-size:14px}
+        .result{margin-top:10px;padding:10px;border-radius:10px}
+        .result.success{background:rgba(76,217,100,0.2);color:#4cd964}
+        .result.error{background:rgba(255,68,68,0.2);color:#ff4444}
+    </style>
+</head>
+<body>
+    <h1>🔧 Админ-панель BearGram</h1>
+    
+    <div class="card">
+        <h2>💰 Создать новый фонд</h2>
+        <p>Сумма общего фонда (💎):</p>
+        <input type="number" id="totalPool" value="100000" min="10000" step="10000">
+        <br>
+        <button class="btn btn-success" onclick="createFund()">Создать фонд</button>
+        <div id="fundResult" class="result"></div>
+    </div>
+
+    <div class="card">
+        <h2>📊 Распределить фонд</h2>
+        <p>ID фонда:</p>
+        <input type="number" id="fundId" value="1" min="1">
+        <br>
+        <button class="btn" onclick="distributeFund()">Распределить</button>
+        <div id="distributeResult" class="result"></div>
+    </div>
+
+    <div class="card">
+        <h2>💎 Вывод средств</h2>
+        <p><a href="/admin/withdrawals" style="color:#ffd700;">Перейти к заявкам на вывод</a></p>
+    </div>
+
+    <script>
+        async function createFund() {
+            const total = document.getElementById('totalPool').value;
+            const res = await fetch('/admin/create_fund', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `total_pool=${total}`
+            });
+            const data = await res.json();
+            const resultEl = document.getElementById('fundResult');
+            if (data.success) {
+                resultEl.className = 'result success';
+                resultEl.innerHTML = `✅ Фонд создан! ID: ${data.fund_id}`;
+            } else {
+                resultEl.className = 'result error';
+                resultEl.innerHTML = `❌ ${data.error}`;
+            }
+        }
+
+        async function distributeFund() {
+            const fundId = document.getElementById('fundId').value;
+            const res = await fetch(`/admin/distribute_fund/${fundId}`, {method:'POST'});
+            const data = await res.json();
+            const resultEl = document.getElementById('distributeResult');
+            if (data.success) {
+                resultEl.className = 'result success';
+                resultEl.innerHTML = `✅ Распределено: ${data.distributed} 💎`;
+            } else {
+                resultEl.className = 'result error';
+                resultEl.innerHTML = `❌ ${data.error}`;
+            }
+        }
+    </script>
+</body>
+</html>

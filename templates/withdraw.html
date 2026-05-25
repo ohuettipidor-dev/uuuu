@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>💰 Вывод кристаллайзеров | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white}
+        .container{max-width:500px;margin:40px auto;padding:20px}
+        .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:28px;padding:25px;margin-bottom:20px}
+        h2{color:#ffd700;margin-bottom:20px}
+        .form-group{margin-bottom:20px}
+        label{display:block;margin-bottom:8px;color:#ddd}
+        input,select{width:100%;padding:12px;border-radius:30px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;outline:none}
+        .btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:30px;width:100%;cursor:pointer;font-weight:bold;font-size:16px}
+        .btn:hover{transform:translateY(-1px)}
+        .info{font-size:13px;color:#888;margin:10px 0}
+        .flash{padding:10px;border-radius:12px;margin-bottom:15px}
+        .flash.success{background:rgba(76,217,100,0.2);color:#4cd964}
+        .flash.danger{background:rgba(255,68,68,0.2);color:#ff4444}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>💰 Вывод кристаллайзеров</h2>
+    <div class="card">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <p>Ваш баланс: <strong>{{ coins.balance }} 💎</strong></p>
+        <p class="info">Курс: 1💎 = {{ rub_per_coin }} ₽<br>
+        Комиссия платформы: 20%<br>
+        НДФЛ: 13% (удерживается автоматически)<br>
+        Минимальный вывод: 1000 💎</p>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Сумма в 💎 (минимум 1000)</label>
+                <input type="number" name="amount_coins" id="amount_coins" min="1000" step="100" oninput="calculate()" required>
+            </div>
+            <div class="form-group">
+                <label>Способ выплаты</label>
+                <select name="method">
+                    <option value="yoomoney">ЮMoney</option>
+                    <option value="card">Банковская карта</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Номер кошелька / карты</label>
+                <input type="text" name="wallet" required>
+            </div>
+            <div id="calc_result" class="info" style="color:#ffd700;"></div>
+            <button type="submit" class="btn">Запросить вывод</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const coins = parseInt(document.getElementById('amount_coins').value) || 0;
+        if (coins < 1000) {
+            document.getElementById('calc_result').innerHTML = '';
+            return;
+        }
+        const gross = coins * {{ rub_per_coin }};
+        const fee = gross * 0.2;
+        const afterFee = gross - fee;
+        const tax = afterFee * 0.13;
+        const net = afterFee - tax;
+        document.getElementById('calc_result').innerHTML = 
+            `К выплате: <strong>${net.toFixed(2)} ₽</strong> (из ${gross.toFixed(2)} ₽, комиссия: ${fee.toFixed(2)} ₽, налог: ${tax.toFixed(2)} ₽)`;
+    }
+</script>
+</body>
+</html>

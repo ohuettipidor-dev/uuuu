@@ -5,7 +5,6 @@
     <title>📢 {{ channel.name }} | BearGram</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <style>
-        /* ========== все старые стили + добавлены минимальные правки для донат-модалки ========== */
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94);backdrop-filter:blur(10px)}
@@ -25,6 +24,8 @@
         .danger-btn{background:#ff4444;color:white;padding:6px 12px;border-radius:25px;text-decoration:none;font-size:13px;cursor:pointer;border:none}
         .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 12px;border-radius:25px;cursor:pointer;font-size:13px}
         .donate-btn{background:#4caf50;color:white;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;border:none;text-decoration:none;font-size:13px}
+        .coins-balance{color:#ff6b6b;font-weight:600;font-size:14px;display:flex;align-items:center;gap:4px}
+        .shop-btn{background:#ffd700;color:#000;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
         
         .posts{flex:1;overflow-y:auto;padding:12px}
         .post{background:white;border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
@@ -35,17 +36,22 @@
         .post-time{font-size:10px;color:#aaa}
         .post-content{font-size:14px;color:#333;margin-bottom:12px;line-height:1.4}
         
-        .attachments-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:8px;margin-top:8px}
-        .attachment-item{position:relative;background:#f5f5f5;border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.2s;aspect-ratio:1/1}
-        .attachment-item:hover{transform:scale(1.02);background:#e8e8e8}
-        .attachment-image{width:100%;height:100%;object-fit:cover}
-        .attachment-audio{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:8px;color:white;font-size:12px;text-align:center}
-        .attachment-video{width:100%;height:100%;object-fit:cover}
-        .attachment-document{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:#ff6b6b;font-size:12px;text-align:center;padding:8px}
-        .attachment-document span{font-size:28px}
-        .attachment-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px}
+        .media-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:6px;margin:8px 0}
+        .media-grid .attachment-item{border-radius:12px;overflow:hidden;aspect-ratio:1/1;background:#f5f5f5;position:relative;cursor:pointer}
+        .media-grid .attachment-item img{width:100%;height:100%;object-fit:cover}
+        .media-grid .attachment-item video{width:100%;height:100%;object-fit:cover}
+        .video-play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;pointer-events:none}
         
-        .inline-video-wrapper{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;margin-top:0}
+        .files-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+        .file-item{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#f5f5f5;border-radius:12px;cursor:pointer;transition:0.2s}
+        .file-item:hover{background:#e8e8e8}
+        .file-icon{font-size:24px;min-width:32px;text-align:center}
+        .file-info{flex:1;overflow:hidden}
+        .file-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .file-size{font-size:11px;color:#888}
+        .file-action{color:#ff6b6b;font-size:13px}
+        
+        .inline-video-wrapper{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;margin-top:8px}
         .inline-video-wrapper video{width:100%;display:block;max-height:400px;object-fit:contain;cursor:pointer}
         .inline-video-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:0.2s;z-index:5}
         .inline-video-play:hover{background:rgba(0,0,0,0.8);transform:translate(-50%,-50%) scale(1.1)}
@@ -92,7 +98,7 @@
         
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
-        .modal-content{background:white;border-radius:28px;padding:20px;width:320px;max-width:90%}
+        .modal-content{background:white;border-radius:28px;padding:20px;width:360px;max-width:90%;max-height:80vh;overflow-y:auto}
         .modal-content h3{color:#ff6b6b;margin-bottom:16px}
         .modal-content input[type="number"],
         .modal-content input[type="text"],
@@ -106,6 +112,13 @@
         .media-viewer.active{opacity:1;visibility:visible}
         .media-viewer img,.media-viewer video{max-width:95%;max-height:90vh;border-radius:12px}
         .media-viewer .close-viewer{position:absolute;top:20px;right:20px;color:white;font-size:32px;cursor:pointer;z-index:10;background:rgba(0,0,0,0.5);width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+        .media-viewer .download-btn{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:#4caf50;color:white;padding:12px 24px;border-radius:30px;text-decoration:none;font-weight:500;z-index:10}
+        
+        .paid-overlay{text-align:center;padding:40px 20px}
+        .paid-overlay p{font-size:20px;margin-bottom:15px}
+        .paid-overlay .price{color:#ff6b6b;font-weight:bold}
+        .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
+        .error-message{color:#ff4444;margin-top:8px;display:none}
         
         @media (max-width:480px){
             .container{padding:0}
@@ -113,7 +126,7 @@
             .header{padding:10px}
             .channel-avatar{width:40px;height:40px;font-size:20px}
             .subscribe-btn,.subscribed-btn{padding:6px 14px;font-size:12px}
-            .attachments-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
+            .media-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
             .post-stats{gap:12px}
         }
     </style>
@@ -139,7 +152,7 @@
         </div>
         {% if is_admin %}
             <div style="display:flex; gap:8px;">
-                <button class="edit-btn" onclick="editChannel()">✏️</button>
+                <button class="edit-btn" onclick="openEditChannelModal()">✏️</button>
                 <button class="danger-btn" onclick="deleteChannel()">🗑️</button>
             </div>
         {% else %}
@@ -150,19 +163,30 @@
             </form>
         {% endif %}
         <a href="/profile" class="profile-btn">🧸</a>
-        {% if channel.yoomoney_wallet %}
-            <button class="donate-btn" onclick="openDonateModal()">💸 Поддержать</button>
+        <div class="coins-balance" id="userBalanceDisplay">💎 <span id="userBalance">0</span></div>
+        <button class="shop-btn" onclick="window.open('/shop/coins','_blank')">💎 Магазин</button>
+        {% if not is_admin %}
+            <button class="donate-btn" onclick="openDonateModal()">💎 Поддержать</button>
         {% endif %}
     </div>
     
-    <!-- форма аватара -->
     <form id="avatarForm" method="POST" action="/channel/{{ channel.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
         <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
     </form>
     
+    <!-- Платный доступ -->
+    {% if channel.is_paid and not has_access and not is_admin %}
+    <div class="paid-overlay">
+        <p>🔒 Этот канал доступен по подписке</p>
+        <p>Стоимость: <span class="price">{{ channel.price_coins }} 💎 / 30 дней</span></p>
+        <button class="paid-subscribe-btn" onclick="subscribePaidChannel()">💳 Подписаться за {{ channel.price_coins }} 💎</button>
+        <p class="error-message" id="subscribeError"></p>
+    </div>
+    {% else %}
+    <!-- Контент канала -->
     <div class="posts" id="posts">
         {% for post in posts %}
-        <div class="post" data-post-id="{{ post.id }}">
+        <div class="post" data-post-id="{{ post.id }}" data-attachments="{{ post.attachments }}">
             <div class="post-header">
                 <div class="post-author-avatar">
                     {% if post.author.avatar != 'default.png' %}
@@ -179,30 +203,48 @@
             <div class="post-content">{{ post.content|safe }}</div>
             
             {% if post.attachments %}
-            <div class="attachments-grid">
-                {% for att in post.attachments|json_decode %}
-                <div class="attachment-item" onclick="openMediaViewer('{{ att.path }}', '{{ att.type }}')">
-                    {% if att.type == 'image' %}
-                        <img src="{{ att.path }}" class="attachment-image" loading="lazy">
-                    {% elif att.type == 'audio' %}
-                        <div style="background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;height:100%;font-size:28px">🎵</div>
-                        <div class="attachment-audio">{{ att.name[:15] }}</div>
-                    {% elif att.type == 'video' %}
-                        <video src="{{ att.path }}" class="attachment-video-thumb" preload="metadata" muted></video>
-                        <div class="attachment-play">▶️</div>
+                {% set attachments_list = post.attachments|json_decode %}
+                {% set media_att = [] %}
+                {% set file_att = [] %}
+                {% for att in attachments_list %}
+                    {% if att.type in ('image', 'video') %}
+                        {% set _ = media_att.append(att) %}
                     {% else %}
-                        <div class="attachment-document">
-                            <span>📎</span>
-                            {{ att.name[:15] }}
-                        </div>
+                        {% set _ = file_att.append(att) %}
                     {% endif %}
-                </div>
                 {% endfor %}
-            </div>
+                {% if media_att %}
+                <div class="media-grid">
+                    {% for att in media_att %}
+                        <div class="attachment-item" onclick="openMediaViewer('{{ att.path }}', '{{ att.type }}')">
+                            {% if att.type == 'image' %}
+                                <img src="{{ att.path }}" loading="lazy">
+                            {% else %}
+                                <video src="{{ att.path }}" preload="metadata" muted></video>
+                                <div class="video-play-icon">▶️</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if file_att %}
+                <div class="files-list">
+                    {% for att in file_att %}
+                        <div class="file-item" onclick="openMediaViewer('{{ att.path }}', '{{ att.type }}', '{{ att.name }}')">
+                            <div class="file-icon">{% if att.type == 'audio' %}🎵{% else %}📄{% endif %}</div>
+                            <div class="file-info">
+                                <div class="file-name">{{ att.name }}</div>
+                                <div class="file-size">{{ att.type | capitalize }}</div>
+                            </div>
+                            <div class="file-action">{% if att.type == 'audio' %}▶ Слушать{% else %}📥 Скачать{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             {% elif post.file_path %}
                 <div class="post-media">
                     {% if post.file_type == 'image' %}
-                        <img src="{{ post.file_path }}" onclick="openMediaViewer('{{ post.file_path }}', 'image')" style="cursor:pointer">
+                        <img src="{{ post.file_path }}" onclick="openMediaViewer('{{ post.file_path }}', 'image')" style="cursor:pointer; max-width:100%; border-radius:12px;">
                     {% elif post.file_type == 'audio' %}
                         <audio controls src="{{ post.file_path }}" style="width:100%"></audio>
                     {% elif post.file_type == 'video' %}
@@ -261,6 +303,9 @@
             <div class="post-actions">
                 <button class="post-action-btn" onclick="editPost({{ post.id }})">✏️</button>
                 <button class="post-action-btn" onclick="deletePost({{ post.id }})" style="color:#ff4444;">🗑️</button>
+                <button class="post-action-btn" onclick="togglePostComments({{ post.id }})">
+                    {% if post.comments_enabled %}💬 Выкл{% else %}💬 Вкл{% endif %}
+                </button>
             </div>
             {% endif %}
         </div>
@@ -275,14 +320,13 @@
         {% endfor %}
     </div>
     
-    {% if is_admin %}
+    {% if is_admin and has_access %}
     <div class="new-post-area">
         <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
             <div class="new-post-input">
                 <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
                 <div style="margin-top:8px;">
-                    <input type="file" name="files" multiple id="fileInput" style="display:none" onchange="updateFileGrid()">
-                    <button type="button" class="attach-btn" onclick="document.getElementById('fileInput').click()">📎 Выбрать файлы (до 10)</button>
+                    <button type="button" class="attach-btn" onclick="addFiles()">📎 Добавить файлы</button>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
                 <div class="selected-files-grid" id="selectedFilesGrid"></div>
@@ -290,23 +334,25 @@
         </form>
     </div>
     {% endif %}
+    {% endif %}
 </div>
 
-<!-- Модалка доната -->
+<!-- Донат модалка -->
 <div class="modal" id="donateModal">
     <div class="modal-content">
-        <h3>💸 Поддержать канал</h3>
-        <p style="margin-bottom:12px;color:#666">Сумма в рублях:</p>
-        <input type="number" id="donateAmount" placeholder="100" min="10" max="15000" step="1">
-        <p style="font-size:11px;color:#888;margin-bottom:16px">Минимум: 10 ₽. Комиссия сервиса: 10%</p>
+        <h3>💎 Поддержать канал</h3>
+        <p style="margin-bottom:12px;color:#666">Сумма в кристалайзерах:</p>
+        <input type="number" id="donateAmount" placeholder="10" min="10" max="10000" step="1" value="10">
+        <p style="font-size:11px;color:#888;margin-bottom:16px">Минимум: 10 кристалайзеров</p>
         <div class="modal-buttons">
-            <button class="confirm-btn" onclick="submitDonate()">Перейти к оплате</button>
+            <button class="confirm-btn" onclick="submitDonate()">💎 Поддержать</button>
             <button class="cancel-btn" onclick="closeDonateModal()">Отмена</button>
         </div>
+        <p id="donateError" style="color:#ff4444;font-size:13px;margin-top:8px;display:none;"></p>
     </div>
 </div>
 
-<!-- Модалка аватара -->
+<!-- Аватар модалка -->
 <div class="modal" id="avatarModal">
     <div class="modal-content">
         <h3>📷 Аватар</h3>
@@ -318,12 +364,16 @@
     </div>
 </div>
 
-<!-- Модалка редактирования поста -->
+<!-- Редактирование поста -->
 <div class="modal" id="editPostModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:500px;">
         <h3>✏️ Редактировать пост</h3>
-        <textarea id="editPostContent" rows="3" placeholder="Новый текст"></textarea>
-        <input type="file" id="editPostFiles" multiple>
+        <textarea id="editPostContent" rows="4" placeholder="Текст поста"></textarea>
+        <div id="currentAttachments" style="margin:12px 0; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:12px;color:#888;">Добавить новые файлы:</label>
+            <input type="file" id="newEditFiles" multiple style="margin-top:4px;">
+        </div>
         <div class="modal-buttons">
             <button class="confirm-btn" onclick="saveEditPost()">Сохранить</button>
             <button class="cancel-btn" onclick="closeEditPostModal()">Отмена</button>
@@ -331,86 +381,209 @@
     </div>
 </div>
 
+<!-- Настройки канала -->
+<div class="modal" id="editChannelModal">
+    <div class="modal-content">
+        <h3>⚙️ Настройки канала</h3>
+        <input type="text" id="editChannelName" placeholder="Название канала" value="{{ channel.name }}">
+        <input type="text" id="editChannelUsername" placeholder="@username (необязательно)" value="{{ channel.username if channel.username else '' }}">
+        <input type="text" id="editChannelWallet" placeholder="Номер ЮMoney (для донатов)" value="{{ channel.yoomoney_wallet or '' }}">
+        <div class="modal-buttons">
+            <button class="confirm-btn" onclick="saveChannelSettings()">Сохранить</button>
+            <button class="cancel-btn" onclick="closeEditChannelModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <!-- Медиа-просмотрщик -->
 <div class="media-viewer" id="mediaViewer" onclick="closeMediaViewer()">
     <div class="close-viewer">✖</div>
-    <div id="mediaContent"></div>
+    <div id="mediaContent" style="display:flex; flex-direction:column; align-items:center;"></div>
+    <a id="mediaDownloadBtn" class="download-btn" style="display:none;" href="#" download>📥 Скачать</a>
 </div>
 
 <script>
-    // ========== Общие утилиты ==========
-    let selectedFiles = [];
     const MAX_FILES = 10;
-    const YOOMONEY_WALLET = '4100119522166446'; // твой кошелек
+    let selectedFiles = [];
+    let editingPostId = null;
+    let existingAttachments = [];
+    let deletedPaths = [];
 
+    async function loadBalance() {
+        try {
+            const res = await fetch('/api/coins/balance');
+            const data = await res.json();
+            document.getElementById('userBalance').innerText = data.balance;
+        } catch(e) { console.error('Balance error:', e); }
+    }
+    loadBalance();
+
+    // Подписка на платный канал
+    async function subscribePaidChannel() {
+        const errEl = document.getElementById('subscribeError');
+        errEl.style.display = 'none';
+        try {
+            const res = await fetch(`/channel/subscribe_paid/{{ channel.id }}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                errEl.innerText = data.error || 'Ошибка подписки';
+                errEl.style.display = 'block';
+            }
+        } catch(e) {
+            errEl.innerText = 'Ошибка сети';
+            errEl.style.display = 'block';
+        }
+    }
+
+    // Остальной JS (посты, донаты и т.д.)
+    function addFiles() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.onchange = function() {
+            for (let file of input.files) {
+                if (selectedFiles.length >= MAX_FILES) { alert('Максимум ' + MAX_FILES + ' файлов'); break; }
+                selectedFiles.push(file);
+            }
+            updateFileGrid();
+            input.remove();
+        };
+        document.body.appendChild(input);
+        input.click();
+    }
     function updateFileGrid() {
-        const input = document.getElementById('fileInput');
         const gridDiv = document.getElementById('selectedFilesGrid');
-        let files = Array.from(input.files);
-        if(files.length > MAX_FILES) { alert(`Максимум ${MAX_FILES} файлов`); const dt = new DataTransfer(); files.slice(0, MAX_FILES).forEach(f => dt.items.add(f)); input.files = dt.files; files = Array.from(input.files); }
-        selectedFiles = files;
-        if(selectedFiles.length === 0) { gridDiv.innerHTML = ''; return; }
+        if (selectedFiles.length === 0) { gridDiv.innerHTML = ''; return; }
         gridDiv.innerHTML = selectedFiles.map((file, idx) => {
             const isImage = file.type.startsWith('image/');
             const isAudio = file.type.startsWith('audio/');
             const isVideo = file.type.startsWith('video/');
             let previewHtml = '';
-            if(isImage) { const url = URL.createObjectURL(file); previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`; }
-            else if(isVideo) { previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🎬</div>`; }
-            else if(isAudio) { previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🎵</div>`; }
-            else { previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`; }
-            return `<div class="selected-file-item"><div class="remove-file" onclick="removeFileFromGrid(${idx})">✖</div>${previewHtml}<div class="selected-file-type">${file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name}</div></div>`;
+            if (isImage) {
+                const url = URL.createObjectURL(file);
+                previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
+            } else if (isVideo) {
+                const url = URL.createObjectURL(file);
+                previewHtml = `<video src="${url}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
+            } else if (isAudio) {
+                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🎵</div>`;
+            } else {
+                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
+            }
+            return `<div class="selected-file-item">
+                <div class="remove-file" onclick="removeFileFromGrid(${idx})">✖</div>
+                ${previewHtml}
+                <div class="selected-file-type">${file.name.substring(0,15)}</div>
+            </div>`;
         }).join('');
     }
-    function removeFileFromGrid(index) { const input = document.getElementById('fileInput'); const dt = new DataTransfer(); selectedFiles = selectedFiles.filter((_, i) => i !== index); selectedFiles.forEach(f => dt.items.add(f)); input.files = dt.files; updateFileGrid(); }
+    function removeFileFromGrid(index) { selectedFiles.splice(index, 1); updateFileGrid(); }
+    document.getElementById('postForm').onsubmit = function(e) {
+        e.preventDefault();
+        const content = this.querySelector('textarea[name="content"]').value;
+        const formData = new FormData();
+        formData.append('content', content);
+        for (let f of selectedFiles) formData.append('files', f);
+        fetch(this.action, { method: 'POST', body: formData })
+            .then(r => r.ok ? location.reload() : alert('Ошибка при публикации'))
+            .catch(() => alert('Ошибка сети'));
+    };
 
-    // ========== Донаты ==========
+    // Донаты кристалайзерами
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
-    function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); }
-    function submitDonate() {
-        const amount = document.getElementById('donateAmount').value;
-        if (amount < 10) { alert('Минимальная сумма 10 ₽'); return; }
-        const channelId = {{ channel.id }};
-        const comment = `donate_channel_${channelId}`;
-        const url = `https://yoomoney.ru/quickpay/confirm.xml?receiver=${YOOMONEY_WALLET}&quickpay-form=shop&targets=Поддержка канала {{ channel.name }}&sum=${amount}&comment=${encodeURIComponent(comment)}`;
-        window.open(url, '_blank');
-        closeDonateModal();
+    function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
+    async function submitDonate() {
+        const amount = parseInt(document.getElementById('donateAmount').value, 10);
+        const msg = document.getElementById('donateError');
+        if (isNaN(amount) || amount < 10) {
+            msg.innerText = 'Минимум 10 кристалайзеров';
+            msg.style.display = 'block';
+            return;
+        }
+        msg.style.display = 'none';
+        try {
+            const res = await fetch(`/channel/donate/{{ channel.id }}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount: amount})
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeDonateModal();
+                loadBalance();
+                alert(`Спасибо! Вы поддержали канал на ${amount} кристалайзеров.`);
+            } else {
+                msg.innerText = data.error || 'Ошибка';
+                msg.style.display = 'block';
+            }
+        } catch(e) {
+            msg.innerText = 'Ошибка сети';
+            msg.style.display = 'block';
+        }
     }
 
-    // ========== Медиа-просмотрщик ==========
-    function openMediaViewer(src, type) {
+    // Медиа-просмотрщик и остальное без изменений...
+    function openMediaViewer(src, type, name = '') {
         const viewer = document.getElementById('mediaViewer');
         const content = document.getElementById('mediaContent');
-        if (type === 'video') content.innerHTML = `<video src="${src}" controls autoplay playsinline style="max-width:95%;max-height:90vh;border-radius:12px;"></video>`;
-        else content.innerHTML = `<img src="${src}" style="max-width:95%;max-height:90vh;border-radius:12px;">`;
-        viewer.classList.add('active'); document.body.style.overflow='hidden';
+        const downloadBtn = document.getElementById('mediaDownloadBtn');
+        content.innerHTML = '';
+        downloadBtn.style.display = 'none';
+        if (type === 'image') {
+            content.innerHTML = `<img src="${src}" style="max-width:95%;max-height:80vh;border-radius:12px;">`;
+        } else if (type === 'video') {
+            content.innerHTML = `<video src="${src}" controls autoplay playsinline style="max-width:95%;max-height:80vh;border-radius:12px;"></video>`;
+        } else if (type === 'audio') {
+            content.innerHTML = `<audio controls src="${src}" style="width:80%;max-width:400px;"></audio>`;
+            downloadBtn.href = src;
+            downloadBtn.download = name || 'audio.mp3';
+            downloadBtn.style.display = 'block';
+        } else {
+            content.innerHTML = `<p style="color:white;text-align:center;">📄 ${name}</p>`;
+            downloadBtn.href = src;
+            downloadBtn.download = name || 'file';
+            downloadBtn.style.display = 'block';
+        }
+        viewer.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
     function closeMediaViewer() {
         document.getElementById('mediaViewer').classList.remove('active');
         document.getElementById('mediaContent').innerHTML = '';
-        document.body.style.overflow='';
+        document.getElementById('mediaDownloadBtn').style.display = 'none';
+        document.body.style.overflow = '';
     }
 
-    // ========== Инлайн-видео ==========
     function toggleInlineVideo(videoId, btnId) {
         const video = document.getElementById(videoId);
         const btn = document.getElementById(btnId);
         if (!video || !btn) return;
-        if (video.paused) { video.play(); btn.classList.add('hidden'); }
-        else { video.pause(); btn.classList.remove('hidden'); }
+        if (video.paused) {
+            document.querySelectorAll('.inline-video').forEach(v => { if (v !== video) { v.pause(); const b = v.parentElement.querySelector('.inline-video-play'); if (b) b.classList.remove('hidden'); } });
+            video.play();
+            btn.classList.add('hidden');
+        } else { video.pause(); btn.classList.remove('hidden'); }
     }
+    document.addEventListener('click', function(e) {
+        const wrapper = e.target.closest('.inline-video-wrapper');
+        if (!wrapper) return;
+        const video = wrapper.querySelector('video');
+        const btn = wrapper.querySelector('.inline-video-play');
+        if (!video || !btn) return;
+        if (e.target.tagName === 'VIDEO' && !video.paused) { video.pause(); btn.classList.remove('hidden'); }
+    });
     document.querySelectorAll('.inline-video').forEach(video => {
-        video.addEventListener('pause', function() { const btn = this.parentElement.querySelector('.inline-video-play'); if (btn) btn.classList.remove('hidden'); });
-        video.addEventListener('play', function() { const btn = this.parentElement.querySelector('.inline-video-play'); if (btn) btn.classList.add('hidden'); });
-        video.addEventListener('ended', function() { const btn = this.parentElement.querySelector('.inline-video-play'); if (btn) btn.classList.remove('hidden'); });
+        video.addEventListener('pause', () => { const btn = video.parentElement.querySelector('.inline-video-play'); if (btn) btn.classList.remove('hidden'); });
+        video.addEventListener('ended', () => { const btn = video.parentElement.querySelector('.inline-video-play'); if (btn) btn.classList.remove('hidden'); });
     });
 
-    // ========== Комментарии ==========
     function toggleComments(postId) { document.getElementById(`comments-${postId}`).classList.toggle('active'); }
     function addComment(postId) {
         const input = document.getElementById(`comment-input-${postId}`);
         const content = input.value.trim();
-        if(!content) return;
+        if (!content) return;
         fetch(`/channel/comment/${postId}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -418,16 +591,18 @@
         }).then(() => location.reload());
     }
 
-    // ========== Лайки постов ==========
     function likePost(postId) {
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
-            if(data.success) {
+            if (data.success) {
                 document.getElementById(`likes-count-${postId}`).innerText = data.likes_count;
                 const likeStat = document.getElementById(`like-stat-${postId}`);
-                if(data.liked) { likeStat.classList.add('liked'); likeStat.querySelector('.like-icon').style.animation = 'likePop 0.3s ease'; setTimeout(() => { likeStat.querySelector('.like-icon').style.animation = ''; }, 300); }
-                else { likeStat.classList.remove('liked'); }
+                if (data.liked) {
+                    likeStat.classList.add('liked');
+                    likeStat.querySelector('.like-icon').style.animation = 'likePop 0.3s ease';
+                    setTimeout(() => likeStat.querySelector('.like-icon').style.animation = '', 300);
+                } else likeStat.classList.remove('liked');
             }
         });
     }
@@ -435,26 +610,39 @@
         fetch(`/channel/like_comment/${commentId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
-            if(data.success) {
-                document.getElementById(`comment-likes-${commentId}`).innerText = data.likes_count;
+            if (data.success) {
+                const likesSpan = document.getElementById(`comment-likes-${commentId}`);
+                if (likesSpan) likesSpan.innerText = data.likes_count;
                 const likeDiv = document.getElementById(`comment-like-${commentId}`);
-                if(data.liked) likeDiv.classList.add('liked'); else likeDiv.classList.remove('liked');
+                if (likeDiv) {
+                    if (data.liked) likeDiv.classList.add('liked');
+                    else likeDiv.classList.remove('liked');
+                }
             }
         });
     }
+    function togglePostComments(postId) {
+        const commentSection = document.getElementById(`comments-${postId}`);
+        const isCurrentlyEnabled = commentSection.style.display !== 'none';
+        const newState = !isCurrentlyEnabled;
+        fetch(`/channel/post/edit/${postId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `content=keep&comments_enabled=${newState}`
+        }).then(() => location.reload());
+    }
 
-    // ========== Просмотры ==========
     function registerView(postId) {
         fetch(`/channel/view_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json()).then(data => {
-            if(data.success) document.getElementById(`views-count-${postId}`).innerText = data.views;
+            if (data.success) document.getElementById(`views-count-${postId}`).innerText = data.views;
         });
     }
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if(entry.isIntersecting) {
+            if (entry.isIntersecting) {
                 const postDiv = entry.target.closest('.post');
-                if(postDiv && !postDiv.hasAttribute('data-viewed')) {
+                if (postDiv && !postDiv.hasAttribute('data-viewed')) {
                     registerView(postDiv.getAttribute('data-post-id'));
                     postDiv.setAttribute('data-viewed', 'true');
                 }
@@ -463,55 +651,90 @@
     }, { threshold: 0.5 });
     document.querySelectorAll('.post').forEach(post => observer.observe(post));
 
-    // ========== Аватар ==========
     function openAvatarModal() { document.getElementById('avatarModal').classList.add('active'); }
     function closeAvatarModal() { document.getElementById('avatarModal').classList.remove('active'); }
     function uploadAvatar() {
         const file = document.getElementById('avatarFile').files[0];
-        if(!file) { alert('Выберите файл'); return; }
+        if (!file) { alert('Выберите файл'); return; }
         const formData = new FormData(); formData.append('avatar', file);
         fetch('/channel/{{ channel.id }}/upload_avatar', { method: 'POST', body: formData }).then(() => location.reload());
     }
 
-    // ========== Редактирование / удаление ==========
-    function editChannel() {
-        const newName = prompt('Название:', '{{ channel.name }}');
-        const newUsername = prompt('@username:', '{{ channel.username }}');
-        const newDesc = prompt('Описание:', '{{ channel.description }}');
-        const wallet = prompt('💳 Номер ЮMoney кошелька (для донатов, оставьте пустым, если не нужно):', '{{ channel.yoomoney_wallet or "" }}');
+    function openEditChannelModal() { document.getElementById('editChannelModal').classList.add('active'); }
+    function closeEditChannelModal() { document.getElementById('editChannelModal').classList.remove('active'); }
+    function saveChannelSettings() {
+        const name = document.getElementById('editChannelName').value.trim();
+        let username = document.getElementById('editChannelUsername').value.trim();
+        if (username && !username.startsWith('@')) username = '@' + username;
+        const wallet = document.getElementById('editChannelWallet').value.trim();
         const data = {};
-        if(newName && newName.trim()) data.name = newName.trim();
-        if(newUsername !== null) data.username = newUsername.trim() || null;
-        if(newDesc !== null) data.description = newDesc;
-        if(wallet !== null) data.yoomoney_wallet = wallet.trim() || null;
-        if(Object.keys(data).length) {
-            fetch(`/channel/edit/{{ channel.id }}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            }).then(() => location.reload());
-        }
+        if (name) data.name = name;
+        data.username = username || null;
+        data.yoomoney_wallet = wallet || null;
+        fetch(`/channel/edit/{{ channel.id }}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(() => location.reload());
     }
-    function deleteChannel() {
-        if(confirm('УДАЛИТЬ КАНАЛ НАВСЕГДА?')) {
-            fetch(`/channel/delete/{{ channel.id }}`, {method: 'POST'})
-            .then(() => window.location.href = '/channels');
-        }
-    }
+
     function editPost(postId) {
         editingPostId = postId;
-        const contentEl = document.querySelector(`.post[data-post-id="${postId}"] .post-content`);
-        document.getElementById('editPostContent').value = contentEl ? contentEl.innerText : '';
+        const postDiv = document.querySelector(`.post[data-post-id="${postId}"]`);
+        document.getElementById('editPostContent').value = postDiv.querySelector('.post-content').innerText;
+        const attachmentsJson = postDiv.getAttribute('data-attachments');
+        existingAttachments = attachmentsJson && attachmentsJson !== 'None' ? JSON.parse(attachmentsJson) : [];
+        deletedPaths = [];
+        renderCurrentAttachments();
         document.getElementById('editPostModal').classList.add('active');
     }
-    function closeEditPostModal() { document.getElementById('editPostModal').classList.remove('active'); editingPostId = null; }
+    function renderCurrentAttachments() {
+        const container = document.getElementById('currentAttachments');
+        if (existingAttachments.length === 0) {
+            container.innerHTML = '<p style="color:#888;font-size:13px;width:100%;">Нет вложений</p>';
+            return;
+        }
+        container.innerHTML = existingAttachments.map((att, idx) => {
+            let preview = '';
+            if (att.path.startsWith('http')) {
+                if (att.type === 'image') preview = `<img src="${att.path}" style="width:100%;height:100%;object-fit:cover">`;
+                else if (att.type === 'video') preview = `<video src="${att.path}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
+                else preview = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;background:#2a2a3e;">📎</div>`;
+            } else {
+                const fullPath = '/static/uploads/' + att.path;
+                if (att.type === 'image') preview = `<img src="${fullPath}" style="width:100%;height:100%;object-fit:cover">`;
+                else if (att.type === 'video') preview = `<video src="${fullPath}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
+                else preview = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;background:#2a2a3e;">📎</div>`;
+            }
+            return `<div class="selected-file-item" style="position:relative; width:80px; height:80px; margin:4px;">
+                ${preview}
+                <div class="remove-file" onclick="markAttachmentDeleted(${idx})">✖</div>
+                <div class="selected-file-type">${att.name ? att.name.substring(0,12) : ''}</div>
+            </div>`;
+        }).join('');
+    }
+    function markAttachmentDeleted(index) {
+        if (index < existingAttachments.length) {
+            deletedPaths.push(existingAttachments[index].path);
+            existingAttachments.splice(index, 1);
+            renderCurrentAttachments();
+        }
+    }
+    function closeEditPostModal() {
+        document.getElementById('editPostModal').classList.remove('active');
+        editingPostId = null;
+        existingAttachments = [];
+        deletedPaths = [];
+    }
     async function saveEditPost() {
         const newText = document.getElementById('editPostContent').value.trim();
-        const filesInput = document.getElementById('editPostFiles');
+        if (!newText) { alert('Текст не может быть пустым'); return; }
         const formData = new FormData();
         formData.append('content', newText);
-        if (filesInput.files.length > 0) {
-            for (let file of filesInput.files) formData.append('files', file);
+        formData.append('deleted_paths', JSON.stringify(deletedPaths));
+        const newFilesInput = document.getElementById('newEditFiles');
+        if (newFilesInput.files.length > 0) {
+            for (let file of newFilesInput.files) formData.append('files', file);
         }
         try {
             const response = await fetch(`/channel/post/edit/${editingPostId}`, { method: 'POST', body: formData });
@@ -519,16 +742,20 @@
             else alert('Ошибка при редактировании');
         } catch(e) { alert('Ошибка сети'); }
     }
+
+    function deleteChannel() {
+        if (confirm('УДАЛИТЬ КАНАЛ НАВСЕГДА?')) {
+            fetch(`/channel/delete/{{ channel.id }}`, {method: 'POST'}).then(() => window.location.href = '/channels');
+        }
+    }
     function deletePost(postId) {
-        if(confirm('Удалить пост?')) {
-            fetch(`/channel/post/delete/${postId}`, {method: 'POST'})
-            .then(() => location.reload());
+        if (confirm('Удалить пост?')) {
+            fetch(`/channel/post/delete/${postId}`, {method: 'POST'}).then(() => location.reload());
         }
     }
 
-    // Закрытие модалок по клику вне
     document.querySelectorAll('.modal, .media-viewer').forEach(modal => {
-        modal.addEventListener('click', function(e) { if(e.target === this) this.classList.remove('active'); });
+        modal.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
     });
 </script>
 </body>

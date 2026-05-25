@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🧩 2048 Bear | #GRRR</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;color:#fff;touch-action:manipulation}
+        .game-container{width:100%;max-width:420px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border-radius:40px;padding:20px 16px 28px;box-shadow:0 30px 50px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1)}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+        .logo{font-weight:700;font-size:1.4rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
+        .balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
+        .score-panel{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
+        .score-panel span{color:#f9ca24;font-weight:bold}
+        .grid-container{display:flex;justify-content:center;margin:10px 0}
+        .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:rgba(0,0,0,0.3);padding:10px;border-radius:15px;width:280px;height:280px}
+        .cell{background:rgba(255,255,255,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:22px;transition:all 0.15s;aspect-ratio:1}
+        .cell[data-value="2"]{background:#eee4da;color:#776e65}
+        .cell[data-value="4"]{background:#ede0c8;color:#776e65}
+        .cell[data-value="8"]{background:#f2b179;color:#f9f6f2}
+        .cell[data-value="16"]{background:#f59563;color:#f9f6f2}
+        .cell[data-value="32"]{background:#f67c5f;color:#f9f6f2}
+        .cell[data-value="64"]{background:#f65e3b;color:#f9f6f2}
+        .cell[data-value="128"]{background:#edcf72;color:#f9f6f2;font-size:18px}
+        .cell[data-value="256"]{background:#edcc61;color:#f9f6f2;font-size:18px}
+        .cell[data-value="512"]{background:#edc850;color:#f9f6f2;font-size:18px}
+        .cell[data-value="1024"]{background:#edc53f;color:#f9f6f2;font-size:16px}
+        .cell[data-value="2048"]{background:#edc22e;color:#f9f6f2;font-size:16px}
+        .action-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 16px}
+        .btn-yellow{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#1a1e2b;border:none;font-weight:700;font-size:0.85rem;padding:10px 18px;border-radius:50px;box-shadow:0 8px 16px rgba(240,147,43,0.4);cursor:pointer}
+        .beargram-section{margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.3);border-radius:30px;padding:16px 10px;border:1px solid rgba(255,255,255,0.1)}
+        .btn{border:none;color:white;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:50px;box-shadow:0 10px 20px rgba(0,0,0,0.3);cursor:pointer;text-decoration:none;display:inline-block;text-align:center;width:100%}
+        .btn:active{transform:scale(0.96)}
+        .btn-install{background:linear-gradient(135deg,#6c5ce7,#a29bfe)}
+        .btn-grrr{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000}
+        .btn-withdraw{background:#4cd964;color:white}
+        .beargram-text{font-size:0.8rem;color:#aaa;text-align:center}
+        .highlight{color:#ffeaa7;font-weight:600}
+        .back-btn{position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;font-size:0.9rem;z-index:2000;animation:toastFadeIn 0.3s ease,toastFadeOut 0.5s ease 2.5s forwards}
+        @keyframes toastFadeIn{from{opacity:0;transform:translateX(-50%) scale(0.8)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+        @keyframes toastFadeOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+    </style>
+</head>
+<body>
+<a href="/games" class="back-btn">← Игры</a>
+<div class="game-container">
+    <div class="header"><span class="logo">🧩 2048 Bear</span><div class="balance-panel"><span>🪙</span><span class="balance-text" id="grrrBalance">0</span></div></div>
+    <div class="score-panel"><span>🎯 Счёт: <b id="scoreDisplay">0</b></span><span>🏆 Лучший: <b id="bestDisplay">0</b></span></div>
+    <div class="grid-container"><div class="grid" id="grid"></div></div>
+    <div class="action-buttons">
+        <button class="btn-yellow" id="newGameBtn">🔄 Новое</button>
+        <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
+        <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
+    </div>
+    <div class="beargram-section">
+        <div class="beargram-text" style="font-size:12px;color:#f9ca24;">🎯 <span class="highlight">Очки = $GRRR!</span> Собирай 2048!</div>
+        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать $GRRR</a>
+        <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
+        <a class="btn btn-withdraw" href="#" id="withdrawBtn">💰 Вывести $GRRR</a>
+        <div class="beargram-text">Фарми <span class="highlight">$GRRR</span> и выводи! 1 $GRRR ≈ 0.95 ₽</div>
+    </div>
+</div>
+<script>
+(function(){
+    const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
+    let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0');
+    let daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
+    const today=new Date().toDateString();
+    if(localStorage.getItem('grrr_date')!==today){daily=0;localStorage.setItem(DAILY_KEY,'0');localStorage.setItem('grrr_date',today)}
+    function save(){localStorage.setItem(STORAGE_KEY,balance);localStorage.setItem(DAILY_KEY,daily)}
+    function updateUI(){document.getElementById('grrrBalance').textContent=balance}
+    function addGRRR(a){if(daily>=LIMIT)return false;let add=Math.min(a,LIMIT-daily);balance+=add;daily+=add;save();updateUI();return true}
+    function showToast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove()},3000)}
+
+    let grid=[],score=0,best=parseInt(localStorage.getItem('2048_best')||'0');
+
+    function init(){grid=Array(4).fill().map(()=>Array(4).fill(0));addRandom();addRandom();score=0;updateScore();render()}
+    function addRandom(){const empty=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!grid[r][c])empty.push({r,c});if(empty.length){const {r,c}=empty[Math.floor(Math.random()*empty.length)];grid[r][c]=Math.random()<0.9?2:4}}
+    function render(){const g=document.getElementById('grid');g.innerHTML='';for(let r=0;r<4;r++)for(let c=0;c<4;c++){const cell=document.createElement('div');cell.className='cell';const v=grid[r][c];if(v){cell.textContent=v;cell.dataset.value=v}g.appendChild(cell)}}
+    function slide(row){let arr=row.filter(v=>v);for(let i=0;i<arr.length-1;i++){if(arr[i]===arr[i+1]){arr[i]*=2;score+=arr[i];arr.splice(i+1,1);addGRRR(Math.floor(arr[i]/4))}}while(arr.length<4)arr.push(0);return arr}
+    function move(d){const old=grid.map(r=>[...r]);if(d==='left')grid=grid.map(slide);else if(d==='right')grid=grid.map(r=>slide(r.reverse()).reverse());else if(d==='up'){for(let c=0;c<4;c++){let col=slide([grid[0][c],grid[1][c],grid[2][c],grid[3][c]]);for(let r=0;r<4;r++)grid[r][c]=col[r]}}else if(d==='down'){for(let c=0;c<4;c++){let col=slide([grid[3][c],grid[2][c],grid[1][c],grid[0][c]]).reverse();for(let r=0;r<4;r++)grid[r][c]=col[r]}}if(JSON.stringify(old)!==JSON.stringify(grid)){addRandom();render();updateScore();if(isGameOver())showToast('💀 Игра окончена!')}}
+    function isGameOver(){for(let r=0;r<4;r++)for(let c=0;c<4;c++){if(!grid[r][c])return false;if(c<3&&grid[r][c]===grid[r][c+1])return false;if(r<3&&grid[r][c]===grid[r+1][c])return false}if(score>best){best=score;localStorage.setItem('2048_best',best)}updateScore();return true}
+    function updateScore(){document.getElementById('scoreDisplay').textContent=score;document.getElementById('bestDisplay').textContent=best}
+
+    let startX=0,startY=0;
+    document.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY});
+    document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy>0?'down':'up')});
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')move('left');if(e.key==='ArrowRight')move('right');if(e.key==='ArrowUp')move('up');if(e.key==='ArrowDown')move('down')});
+
+    document.getElementById('newGameBtn').addEventListener('click',init);
+    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 $GRRR')});
+    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'2048 Bear • #GRRR',text:'Собирай 2048 и фарми!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 $GRRR')});
+    document.getElementById('withdrawBtn').addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
+    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 $GRRR')}
+
+    init();updateUI();
+})();
+</script>
+</body>
+</html>

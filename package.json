@@ -1,0 +1,29 @@
+{
+  "name": "my-messenger-final",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://ohuettipidor-dev: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@github.com/ohuettipidor-dev/uuuu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ohuettipidor-dev/uuuu/issues"
+  },
+  "homepage": "https://github.com/ohuettipidor-dev/uuuu#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}

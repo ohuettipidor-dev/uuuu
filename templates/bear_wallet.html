@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐻 BEAR Wallet | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white;padding:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back-btn{color:#ff6b6b;text-decoration:none;font-size:18px}
+        h1{color:#ffd700;font-size:20px}
+        .balance{background:rgba(255,215,0,0.1);border-radius:15px;padding:10px 15px;text-align:center;margin-bottom:15px}
+        .balance span{color:#ffd700;font-weight:bold;font-size:18px}
+        .balance-item{display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px}
+        .balance-item div{font-size:14px}
+        
+        .tabs{display:flex;gap:5px;margin-bottom:15px}
+        .tab-btn{flex:1;padding:10px;border:none;border-radius:15px;cursor:pointer;font-weight:bold;font-size:13px;background:rgba(255,255,255,0.1);color:#888;transition:0.2s;text-decoration:none;text-align:center}
+        .tab-btn.active{background:#ffd700;color:#000}
+        
+        .card{background:rgba(255,255,255,0.1);border-radius:20px;padding:20px;margin-bottom:15px}
+        h3{color:#ffd700;margin-bottom:15px}
+        
+        .form-group{margin-bottom:15px}
+        label{display:block;margin-bottom:5px;color:#aaa;font-size:13px}
+        input,select{width:100%;padding:12px;border-radius:15px;border:none;background:rgba(255,255,255,0.1);color:white;font-size:16px}
+        select option{background:#1a1a2e;color:white}
+        small{color:#888;font-size:11px}
+        .btn{width:100%;padding:14px;border:none;border-radius:15px;font-weight:bold;font-size:16px;cursor:pointer;margin-top:10px}
+        .btn-gold{background:#ffd700;color:#000}
+        .btn-green{background:#4cd964;color:white}
+        
+        .stats{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px}
+        .stat-card{background:rgba(255,215,0,0.1);border-radius:15px;padding:12px;flex:1;min-width:80px;text-align:center}
+        .stat-value{font-size:20px;font-weight:bold;color:#ffd700}
+        .stat-label{font-size:10px;color:#aaa}
+        
+        .info-bubble{background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:15px;padding:15px;margin-bottom:15px;text-align:center}
+        .info-bubble p{color:#ffd700;font-size:13px;margin:5px 0;line-height:1.5}
+        .info-bubble .highlight{color:#4cd964;font-weight:bold}
+        
+        .exchange-box{background:rgba(255,215,0,0.05);border-radius:20px;padding:20px;text-align:center;margin-bottom:15px}
+        .exchange-icon{font-size:48px;margin:15px 0}
+        .exchange-rate{color:#4cd964;font-size:18px;font-weight:bold;margin:10px 0}
+        
+        .levels{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+        .level-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:12px;flex:1;min-width:90px;text-align:center;border:2px solid transparent;cursor:pointer;transition:0.2s}
+        .level-card:hover{border-color:#ffd700}
+        .level-card.selected{border-color:#ffd700;background:rgba(255,215,0,0.1)}
+        .level-name{font-weight:bold;color:#ffd700;font-size:12px}
+        .level-rate{font-size:18px;font-weight:bold;color:#4cd964}
+        .level-info{font-size:9px;color:#888}
+        
+        .stake-item{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:10px}
+        .stake-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .stake-amount{font-weight:bold;color:#ffd700;font-size:16px}
+        .stake-rate{color:#4cd964;font-size:13px}
+        .stake-progress{width:100%;height:6px;background:#333;border-radius:3px;overflow:hidden;margin:8px 0}
+        .stake-fill{height:100%;background:#ffd700}
+        .stake-info{font-size:11px;color:#888;margin-top:5px}
+        .claim-btn{background:#4cd964;color:white;border:none;padding:8px 16px;border-radius:12px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:5px}
+        
+        .invoice-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        .invoice-info{flex:1}
+        .invoice-amount{font-weight:bold;color:#ffd700;font-size:16px}
+        .invoice-desc{font-size:12px;color:#aaa}
+        .invoice-status{font-size:11px;padding:3px 8px;border-radius:8px}
+        .status-paid{background:rgba(76,217,100,0.2);color:#4cd964}
+        .status-pending{background:rgba(255,215,0,0.2);color:#ffd700}
+        .pay-btn{background:#4cd964;color:white;border:none;padding:8px 16px;border-radius:12px;cursor:pointer;font-weight:bold;font-size:13px;text-decoration:none}
+        
+        .flash{padding:10px;border-radius:12px;margin-bottom:15px;font-size:14px}
+        .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
+        .flash-danger{background:rgba(255,68,68,0.2);color:#ff4444}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/chat" class="back-btn">← Чат</a>
+        <h1>🐻 BEAR Wallet</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="balance">
+        <div class="balance-item">
+            <div>💎 Кристаллайзеры: <span>{{ coins.balance }} 💎</span></div>
+            <div>🐻 $GRRR: <span>{{ "%.2f"|format(grrr_balance) }} $GRRR</span></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a href="/bearpay?tab=send" class="tab-btn {% if tab == 'send' %}active{% endif %}">💸 Переводы</a>
+        <a href="/bearpay?tab=pay" class="tab-btn {% if tab == 'pay' %}active{% endif %}">💰 Счета</a>
+        <a href="/bearpay?tab=bank" class="tab-btn {% if tab == 'bank' %}active{% endif %}">🏦 Банк</a>
+    </div>
+
+    <!-- BEAR SEND (Переводы) -->
+    {% if tab == 'send' %}
+    <div class="card">
+        <h3>💸 Отправить перевод</h3>
+        <form method="POST" action="/bearpay/send">
+            <div class="form-group">
+                <label>Кому (username)</label>
+                <input type="text" name="username" placeholder="@username" required>
+            </div>
+            <div class="form-group">
+                <label>Сумма (💎)</label>
+                <input type="number" name="amount" min="10" value="100" required>
+                <small>Комиссия: 10% | Получатель получит указанную сумму, комиссия спишется дополнительно</small>
+            </div>
+            <button type="submit" class="btn btn-gold">💸 Отправить</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- BEAR PAY (Счета) -->
+    {% if tab == 'pay' %}
+    <div class="card">
+        <h3>💰 Выставить счёт</h3>
+        <form method="POST" action="/bearpay/create_invoice">
+            <div class="form-group">
+                <label>Сумма (💎)</label>
+                <input type="number" name="amount" min="10" value="100" required>
+                <small>Комиссия платформы: 10%</small>
+            </div>
+            <div class="form-group">
+                <label>Описание (необязательно)</label>
+                <input type="text" name="description" placeholder="За что?">
+            </div>
+            <button type="submit" class="btn btn-gold">📤 Выставить</button>
+        </form>
+    </div>
+
+    {% if available_invoices %}
+    <div class="card">
+        <h3>🛒 Доступные счета</h3>
+        {% for inv in available_invoices %}
+        <div class="invoice-card">
+            <div class="invoice-info">
+                <div class="invoice-amount">{{ inv.amount }} 💎</div>
+                <div class="invoice-desc">{{ inv.description or 'Без описания' }} · от @{{ inv.seller.username }}</div>
+            </div>
+            <a href="/bearpay/pay/{{ inv.id }}" class="pay-btn">Оплатить</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if my_invoices %}
+    <div class="card">
+        <h3>📋 Мои счета</h3>
+        {% for inv in my_invoices %}
+        <div class="invoice-card">
+            <div class="invoice-info">
+                <div class="invoice-amount">{{ inv.amount }} 💎</div>
+                <div class="invoice-desc">{{ inv.description or 'Без описания' }} · {{ inv.created_at.strftime('%H:%M') }}</div>
+            </div>
+            <div class="invoice-status {{ 'status-paid' if inv.status == 'paid' else 'status-pending' }}">
+                {{ 'Оплачен' if inv.status == 'paid' else 'Ждёт' }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- BEAR BANK (Обменник + Вклады в $GRRR) -->
+    {% if tab == 'bank' %}
+    
+    <!-- ИНФО-БЛОК: КАК РАБОТАЮТ ПРОЦЕНТЫ -->
+    <div class="info-bubble">
+        <div style="font-size:32px;margin-bottom:8px;">💰🖐️</div>
+        <p><strong>Проценты начисляются вручную!</strong></p>
+        <p>Каждые <span class="highlight">30 дней</span> ты можешь забрать награду кликом.</p>
+        <p>Ничего не сгорает — просто заходи и жми <span class="highlight">«Забрать проценты»</span>.</p>
+    </div>
+
+    <!-- ОБМЕННИК 💎 → $GRRR -->
+    <div class="exchange-box">
+        <h3>🔄 Обменник BearGram</h3>
+        <p style="color:#aaa;font-size:13px;">Меняй Кристаллайзеры на $GRRR прямо здесь</p>
+        <div class="exchange-icon">💎 ➡️ 🐻</div>
+        <div class="exchange-rate">Курс: 1 💎 = 0.95 $GRRR (комиссия 5%)</div>
+        <form method="POST" action="/bearpay/exchange">
+            <div class="form-group">
+                <label>Сколько 💎 обменять</label>
+                <input type="number" name="amount" min="1" max="{{ coins.balance }}" value="100" required>
+                <small>Доступно: {{ coins.balance }} 💎 · Комиссия: 5%</small>
+            </div>
+            <button type="submit" class="btn btn-gold">🔄 Обменять на $GRRR</button>
+        </form>
+        <small style="color:#ffd700;display:block;margin-top:10px;">⚡ Мгновенно · Комиссия 5% · Прямо в мессенджере</small>
+    </div>
+
+    <!-- СТАТИСТИКА БАНКА -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_platform_staked }} $GRRR</div>
+            <div class="stat-label">Всего в банке</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_stakers }}</div>
+            <div class="stat-label">Вкладчиков</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_staked }} $GRRR</div>
+            <div class="stat-label">Мой депозит</div>
+        </div>
+    </div>
+
+    <!-- ВКЛАД В $GRRR -->
+    <div class="card">
+        <h3>🐻 Вклад в $GRRR</h3>
+        <p style="color:#aaa;font-size:13px;margin-bottom:15px;">Геометрическая прогрессия — чем больше сумма и срок, тем выше процент</p>
+        
+        <div class="levels" id="levelsGRRR">
+            <div class="level-card selected" data-level="grrr_100" onclick="selectLevel('grrr_100')">
+                <div class="level-name">🌟 Старт</div>
+                <div class="level-rate">25%</div>
+                <div class="level-info">3 мес · 100 $GRRR</div>
+            </div>
+            <div class="level-card" data-level="grrr_500" onclick="selectLevel('grrr_500')">
+                <div class="level-name">🔥 Рост</div>
+                <div class="level-rate">40%</div>
+                <div class="level-info">6 мес · 500 $GRRR</div>
+            </div>
+            <div class="level-card" data-level="grrr_1000" onclick="selectLevel('grrr_1000')">
+                <div class="level-name">💎 Богатство</div>
+                <div class="level-rate">60%</div>
+                <div class="level-info">12 мес · 1000 $GRRR</div>
+            </div>
+            <div class="level-card" data-level="grrr_2000" onclick="selectLevel('grrr_2000')">
+                <div class="level-name">🚀 Ракета</div>
+                <div class="level-rate">80%</div>
+                <div class="level-info">18 мес · 2000 $GRRR</div>
+            </div>
+            <div class="level-card" data-level="grrr_5000" onclick="selectLevel('grrr_5000')">
+                <div class="level-name">👑 Император</div>
+                <div class="level-rate">100%</div>
+                <div class="level-info">24 мес · 5000 $GRRR</div>
+            </div>
+        </div>
+        
+        <form method="POST" action="/bearbank/stake_grrr">
+            <input type="hidden" name="level" id="selectedLevel" value="grrr_100">
+            <input type="hidden" name="currency" value="grrr">
+            <div class="form-group">
+                <label>Сумма ($GRRR)</label>
+                <input type="number" name="amount" id="stakeAmount" min="100" value="100" required>
+                <small id="levelInfo">Ставка: 25% годовых · Срок: 3 месяца</small>
+            </div>
+            <button type="submit" class="btn btn-gold">💰 Открыть вклад в $GRRR</button>
+        </form>
+    </div>
+
+    <!-- МОИ ДЕПОЗИТЫ -->
+    <div class="card">
+        <h3>📋 Мои депозиты</h3>
+        {% if stakes %}
+            {% for stake in stakes %}
+            <div class="stake-item">
+                <div class="stake-header">
+                    <div class="stake-amount">{{ stake.amount }} $GRRR</div>
+                    <div class="stake-rate">{{ stake.annual_rate }}% годовых</div>
+                </div>
+                {% set total_days = (stake.ends_at - stake.created_at).days %}
+                {% set days_left = (stake.ends_at - now).days if stake.ends_at > now else 0 %}
+                {% set progress = ((total_days - days_left) / total_days * 100)|int if total_days > 0 else 100 %}
+                <div class="stake-progress">
+                    <div class="stake-fill" style="width:{{ progress }}%"></div>
+                </div>
+                <div class="stake-info">
+                    {% if stake.is_active %}
+                        Осталось: {{ days_left }} дней
+                        {% if (now - (stake.last_payout_at or stake.created_at)).days >= 30 %}
+                            <br><span style="color:#4cd964;">✅ Можно забрать проценты!</span>
+                        {% else %}
+                            {% set days_to_claim = 30 - (now - (stake.last_payout_at or stake.created_at)).days %}
+                            <br><span style="color:#888;">До следующих процентов: {{ days_to_claim }} дн.</span>
+                        {% endif %}
+                    {% else %}
+                        Завершён ✅
+                    {% endif %}
+                </div>
+                {% if stake.is_active and (now - (stake.last_payout_at or stake.created_at)).days >= 30 %}
+                <button class="claim-btn" onclick="claimInterest({{ stake.id }})">💰 Забрать проценты</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color:#888;text-align:center;">Нет активных депозитов</p>
+            <p style="color:#aaa;text-align:center;font-size:13px;">Обменяйте 💎 на $GRRR и откройте вклад!</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <script>
+        function selectLevel(level) {
+            document.querySelectorAll('#levelsGRRR .level-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`#levelsGRRR [data-level="${level}"]`).classList.add('selected');
+            document.getElementById('selectedLevel').value = level;
+            
+            const config = {
+                'grrr_100': {rate: 25, months: 3, min: 100},
+                'grrr_500': {rate: 40, months: 6, min: 500},
+                'grrr_1000': {rate: 60, months: 12, min: 1000},
+                'grrr_2000': {rate: 80, months: 18, min: 2000},
+                'grrr_5000': {rate: 100, months: 24, min: 5000}
+            };
+            
+            const cfg = config[level];
+            document.getElementById('stakeAmount').min = cfg.min;
+            document.getElementById('stakeAmount').value = cfg.min;
+            document.getElementById('levelInfo').textContent = `Ставка: ${cfg.rate}% годовых · Срок: ${cfg.months} мес.`;
+        }
+        
+        async function claimInterest(stakeId) {
+            const resp = await fetch(`/bearbank/claim/${stakeId}`, {method:'POST'});
+            const data = await resp.json();
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        }
+    </script>
+</body>
+</html>

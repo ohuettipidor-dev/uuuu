@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🐻 BearGram</title>
+    {% if active_theme %}
+    <style>
+        body {
+            background: {{ active_theme.primary_color }} !important;
+            color: {{ active_theme.text_color }} !important;
+        }
+        .chat-item, .card, .header, .channel-card, .post {
+            background: {{ active_theme.secondary_color }} !important;
+            color: {{ active_theme.text_color }} !important;
+        }
+        .chat-messages div, .message {
+            background: {{ active_theme.bubble_color_received }} !important;
+        }
+        .message.own, .side-btn .icon, .bottom-bar {
+            background: {{ active_theme.bubble_color_sent }} !important;
+        }
+    </style>
+    {% endif %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🎨 Мастерская скинов | BearGram</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg,#1a1e2b,#2a3142);min-height:100vh;color:white;padding:20px}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
+        .back-btn{color:#f9ca24;text-decoration:none;font-size:18px}
+        h1{color:#f9ca24;font-size:22px}
+        .section{max-width:400px;margin:0 auto 20px}
+        .section-title{color:#f9ca24;font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between}
+        .section-title a{color:#a29bfe;font-size:13px;text-decoration:none}
+        .skin-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+        .skin-preview{width:40px;height:40px;border-radius:10px;flex-shrink:0}
+        .skin-info{flex:1}
+        .skin-name{font-weight:bold;font-size:14px}
+        .skin-author{font-size:10px;color:#aaa}
+        .skin-price{color:#f9ca24;font-weight:bold;font-size:13px}
+        .skin-buy{background:#6c5ce7;color:white;border:none;padding:8px 16px;border-radius:15px;cursor:pointer;font-size:12px}
+        .upload-form{display:none;background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:15px}
+        .upload-form input,.upload-form textarea{width:100%;padding:10px;border-radius:10px;border:none;margin-bottom:8px;background:rgba(255,255,255,0.1);color:white}
+        .upload-form textarea{min-height:100px;resize:vertical;font-family:monospace}
+        .upload-form button{width:100%;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:white;border:none;padding:10px;border-radius:15px;font-weight:bold;cursor:pointer}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/games" class="back-btn">← Игры</a>
+        <h1>🎨 Мастерская скинов</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>🛍️ Скины</span>
+            <a href="#" onclick="document.getElementById('uploadForm').style.display='block';this.style.display='none'">✨ + Создать</a>
+        </div>
+
+        <div class="upload-form" id="uploadForm">
+            <form method="POST" action="/games/skins/upload">
+                <input type="text" name="name" placeholder="Название скина" required>
+                <textarea name="css_content" placeholder="CSS-код скина (цвета, стили)" required></textarea>
+                <input type="text" name="description" placeholder="Описание">
+                <input type="number" name="price" placeholder="Цена (10-500 💎)" min="10" max="500" value="50">
+                <input type="color" name="preview_color" value="#f9ca24">
+                <button type="submit">📤 Загрузить скин</button>
+            </form>
+        </div>
+
+        {% for skin in skins %}
+        <div class="skin-card">
+            <div class="skin-preview" style="background:{{ skin.preview_color }};"></div>
+            <div class="skin-info">
+                <div class="skin-name">{{ skin.name }}</div>
+                <div class="skin-author">@{{ skin.author.username }} · {{ skin.sales_count }} продаж</div>
+            </div>
+            <div class="skin-price">{{ skin.price }} 💎</div>
+            <button class="skin-buy" onclick="buySkin({{ skin.id }})">Купить</button>
+        </div>
+        {% else %}
+        <p style="color:#888;text-align:center;">Нет скинов. Будь первым!</p>
+        {% endfor %}
+    </div>
+
+    <script>
+        async function buySkin(id) {
+            if(confirm('Купить скин за 💎?')) {
+                const res = await fetch('/games/skins/buy/' + id, {method:'POST'});
+                const data = await res.json();
+                if(data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert(data.error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

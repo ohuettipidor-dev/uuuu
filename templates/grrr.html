@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐻 $GRRR | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://i.ibb.co/Q3ZK5Yqc/lucid-origin-A-fierce-bear-head-in-profile-a-glowing-crystal-clamped-in-its-teeth-the-crystal-0.jpg">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white;display:flex;align-items:center;justify-content:center}
+        .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);border-radius:32px;padding:30px;max-width:400px;width:90%;text-align:center}
+        .logo{width:120px;height:120px;border-radius:50%;margin:0 auto 15px;overflow:hidden;border:3px solid #ffd700;box-shadow:0 0 20px rgba(255,215,0,0.3)}
+        .logo img{width:100%;height:100%;object-fit:cover}
+        h1{color:#ffd700;font-size:24px;margin-bottom:5px}
+        .symbol{color:#ff8c00;font-size:18px;margin-bottom:20px}
+        .balance{font-size:36px;font-weight:bold;color:#ffd700;margin:15px 0}
+        .label{color:#aaa;font-size:14px}
+        .btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:bold;font-size:16px;margin:10px 0;width:100%}
+        .btn-gold{background:#ffd700;color:#000}
+        .btn-green{background:#4cd964;color:white}
+        .btn-orange{background:#ff8c00;color:white}
+        input{width:100%;padding:12px;border-radius:30px;border:none;margin:10px 0;text-align:center;font-size:16px}
+        .back-link{margin-top:15px}
+        .back-link a{color:#ff8c00;text-decoration:none}
+        .flash{padding:10px;border-radius:12px;margin:10px 0;font-size:14px}
+        .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
+        .flash-danger{background:rgba(255,68,68,0.2);color:#ff4444}
+        .airdrop-banner{background:rgba(255,215,0,0.1);border:1px solid #ffd700;border-radius:16px;padding:15px;margin:15px 0}
+        .airdrop-banner h3{color:#ffd700;margin-bottom:5px}
+        .airdrop-banner p{color:#aaa;font-size:12px}
+        .exchange-banner{background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
+        .exchange-banner p{color:#ffd700;font-size:14px;margin:5px 0}
+        .mining-banner{background:rgba(255,140,0,0.08);border:1px solid rgba(255,140,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
+        .mining-banner p{color:#ff8c00;font-size:14px;margin:5px 0}
+        .withdraw-section{margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.2)}
+        .withdraw-section h3{color:#ffd700;margin-bottom:10px}
+        .fee-info{color:#888;font-size:11px;margin:5px 0}
+        .node-banner{background:rgba(255,140,0,0.1);border:1px solid #ff8c00;border-radius:16px;padding:15px;margin:15px 0}
+        .node-banner h3{color:#ff8c00;margin-bottom:5px}
+        .node-banner p{color:#aaa;font-size:12px}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <img src="https://i.ibb.co/Q3ZK5Yqc/lucid-origin-A-fierce-bear-head-in-profile-a-glowing-crystal-clamped-in-its-teeth-the-crystal-0.jpg" alt="$GRRR">
+    </div>
+    <h1>$GRRR Token</h1>
+    <div class="symbol">Валюта хищников</div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="label">Твой баланс $GRRR:</div>
+    <div class="balance">{{ "%.2f"|format(grrr_balance) }} $GRRR</div>
+    
+    {% if grrr_balance == 0 %}
+    <div class="airdrop-banner">
+        <h3>🎁 Бесплатный Airdrop!</h3>
+        <p>Получи 100 $GRRR прямо сейчас!</p>
+        <button class="btn btn-green" onclick="claimAirdrop()">🔥 Забрать 100 $GRRR</button>
+    </div>
+    {% endif %}
+    
+    <!-- ОБМЕННИК -->
+    <div class="exchange-banner">
+        <p>💎 Хочешь обменять кристаллайзеры на $GRRR?</p>
+        <a href="/bearpay?tab=bank" class="btn btn-gold" style="display:inline-block;text-decoration:none;margin-top:8px;">🔄 Открыть обменник</a>
+        <p style="color:#888;font-size:11px;margin-top:5px;">Курс: 1 💎 = 0.95 $GRRR · Комиссия 5%</p>
+    </div>
+    
+    <!-- МАЙНИНГ -->
+    <div class="mining-banner">
+        <div style="font-size:32px;">⛏️</div>
+        <p>Майни $GRRR и другие криптовалюты!</p>
+        <a href="/mining" class="btn btn-orange" style="display:inline-block;text-decoration:none;margin-top:8px;">⛏️ Открыть майнинг</a>
+        <p style="color:#888;font-size:11px;margin-top:5px;">$GRRR + Verus Coin + Monero</p>
+    </div>
+    
+    <!-- BEAR Node -->
+    <div class="node-banner">
+        <h3>🔋 BEAR Node</h3>
+        <p>Купи ноду — поддержи независимую сеть и получай до 50% годовых в $GRRR</p>
+        <a href="/bearnode" class="btn btn-orange" style="display:inline-block;margin-top:8px;text-decoration:none;">🔋 Купить Ноду</a>
+    </div>
+    
+    <!-- ВЫВОД $GRRR -->
+    <div class="withdraw-section">
+        <h3>📤 Вывести $GRRR</h3>
+        <form method="POST" action="/grrr/withdraw">
+            <input type="text" name="address" placeholder="Адрес кошелька (0x...)" required>
+            <input type="number" name="amount" placeholder="Сумма $GRRR (мин. 10)" min="10" step="1" required>
+            <p class="fee-info">Комиссия: 10% | Минимум: 10 $GRRR</p>
+            <button type="submit" class="btn">📤 Вывести на кошелёк</button>
+        </form>
+    </div>
+    
+    <div class="back-link">
+        <a href="/chat">← Вернуться в чат</a>
+    </div>
+</div>
+
+<script>
+async function claimAirdrop() {
+    const res = await fetch('/grrr/airdrop', {method:'POST'});
+    const data = await res.json();
+    if (data.success) {
+        alert(data.message);
+        location.reload();
+    } else {
+        alert(data.error);
+    }
+}
+</script>
+</body>
+</html>

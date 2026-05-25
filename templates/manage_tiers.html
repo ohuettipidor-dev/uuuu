@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Уровни доната — {{ channel.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: system-ui; background: #f5f5f5; padding: 20px; }
+        .tier { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 6px 14px; border-radius: 20px; border: none; cursor: pointer; }
+        .btn-del { background: #ff4444; color: white; }
+        .btn-create { background: #4caf50; color: white; margin-top: 10px; }
+        input { width: 90%; padding: 8px; margin: 4px 0; border-radius: 8px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Уровни поддержки канала «{{ channel.name }}»</h1>
+    {% for tier in tiers %}
+    <div class="tier">
+        <div>
+            <strong>{{ tier.name }}</strong> — {{ tier.price }} ₽<br>
+            <small>{{ tier.description }}</small>
+            {% if tier.bonus_role %}<br><small>🏅 {{ tier.bonus_role }}</small>{% endif %}
+        </div>
+        <form method="post" action="/channel/{{ channel.id }}/tiers/delete/{{ tier.id }}" style="display:inline">
+            <button class="btn btn-del">Удалить</button>
+        </form>
+    </div>
+    {% endfor %}
+
+    <h2>Создать новый уровень</h2>
+    <form method="post" action="/channel/{{ channel.id }}/tiers/create">
+        <input type="text" name="name" placeholder="Название (пример: Спонсор)" required>
+        <input type="number" name="price" placeholder="Цена в рублях" required step="1" min="10">
+        <input type="text" name="description" placeholder="Описание (необязательно)">
+        <input type="text" name="bonus_role" placeholder="Роль (например, 🥇)">
+        <button type="submit" class="btn btn-create">Создать уровень</button>
+    </form>
+    <p><a href="/channel/{{ channel.id }}">← Назад к каналу</a></p>
+</body>
+</html>

@@ -23,6 +23,8 @@
         .btn-danger{background:#ff4444;color:white}
         .btn-secondary{background:#f0f0f0;color:#ff6b6b}
         .btn-secret{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b}
+        .btn-add{background:#ffd700;color:#000;font-weight:bold}
+        .btn-remove{background:#ff4444;color:white}
         .back{background:#ff6b6b;padding:8px 18px;border-radius:25px;color:white;text-decoration:none;display:inline-block;margin-bottom:20px}
         .info-text{color:#666;font-size:14px;line-height:1.5;margin-top:10px}
         .profile-detail{text-align:left;margin:10px 0;color:#555;font-size:14px}
@@ -34,6 +36,18 @@
         .modal-content{background:white;border-radius:24px;padding:20px;text-align:center;width:280px}
         .sign{font-size:28px;margin:8px 0}
         .percent{font-size:48px;font-weight:bold;color:#ff6b6b}
+
+        /* Стили плеера (компактные) */
+        .music-item{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,240,240,0.5);border-radius:12px;margin-bottom:6px;text-align:left}
+        .music-info{flex:1;min-width:0}
+        .music-title{font-weight:bold;font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .music-meta{font-size:10px;color:#888}
+        audio{width:100%;margin-top:3px;height:28px}
+        .music-actions{display:flex;gap:4px;align-items:center}
+        .btn-music{padding:4px 8px;border-radius:12px;font-size:11px;font-weight:bold;text-decoration:none;border:none;cursor:pointer}
+        .btn-donate-music{background:#ffd700;color:#000}
+        .btn-download{background:#4cd964;color:white}
+        .btn-add-mine{background:#ff6b6b;color:white}
     </style>
 </head>
 <body>
@@ -56,7 +70,7 @@
             {% if profile_user.status == 'online' %}● Онлайн{% else %}○ Офлайн{% endif %}
         </div>
 
-        <!-- Анкета знакомств (если заполнена) -->
+        <!-- Анкета знакомств -->
         {% if profile %}
         <div style="text-align:left; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
             {% if profile.city %}
@@ -74,7 +88,10 @@
         </div>
         {% endif %}
 
-        <!-- Совместимость и лайк -->
+        <button class="btn btn-add" id="addContactBtn" onclick="toggleContact({{ profile_user.id }})">
+            {% if is_contact %}✅ В контактах{% else %}🤝 Добавить{% endif %}
+        </button>
+
         <button class="compat-btn" onclick="checkCompatibility({{ profile_user.id }})">✨ Проверить совместимость</button>
         <button class="btn like-btn" id="likeBtn" onclick="sendLike({{ profile_user.id }})">❤️ Лайк</button>
         
@@ -94,6 +111,35 @@
             </form>
         </div>
     </div>
+
+    <!-- 🎵 Музыка -->
+    <div class="card">
+        <h3 style="color:#ff6b6b;margin-bottom:10px">🎵 Музыка</h3>
+        {% if profile_user.is_private %}
+            <p style="color:#888;">🔒 Профиль закрыт — музыка скрыта</p>
+        {% else %}
+            <div id="tracksContainer">
+                {% if tracks %}
+                    {% for track in tracks %}
+                    <div class="music-item" data-track-id="{{ track.id }}">
+                        <div class="music-info">
+                            <div class="music-title">{{ track.title }}</div>
+                            <div class="music-meta">👁 {{ track.listens }} прослушиваний</div>
+                            <audio controls src="{{ track.file_path }}" onplay="countListen({{ track.id }})"></audio>
+                        </div>
+                        <div class="music-actions">
+                            <a href="{{ track.file_path }}" download class="btn-music btn-download">⬇️</a>
+                            <a href="https://yoomoney.ru/quickpay/button-widget?receiver=4100119522166446&sum=100&label=music_{{ track.id }}" target="_blank" class="btn-music btn-donate-music">💎 Донат</a>
+                            <button class="btn-music btn-add-mine" onclick="addToMyMusic('{{ track.file_path }}', '{{ track.title }}')">➕</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:#888;">Пока нет треков</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
     
     <div class="card">
         <h3 style="color:#ff6b6b;margin-bottom:10px">🔒 Что такое секретный чат?</h3>
@@ -106,17 +152,25 @@
     </div>
 </div>
 
-<!-- Модальное окно совместимости -->
 <div class="modal" id="compatModal">
     <div class="modal-content">
-        <div id="compatResult">
-            <p>Загрузка...</p>
-        </div>
+        <div id="compatResult"><p>Загрузка...</p></div>
         <button onclick="closeCompatModal()" style="background:#f0f0f0;border:none;padding:8px;border-radius:20px;margin-top:12px;">Закрыть</button>
     </div>
 </div>
 
 <script>
+// Старые функции
+async function toggleContact(userId) {
+    const btn = document.getElementById('addContactBtn');
+    const isContact = btn.textContent.includes('✅');
+    const url = isContact ? '/remove_contact/' : '/add_contact/';
+    const res = await fetch(url + userId, {method:'POST'});
+    const data = await res.json();
+    if (data.success) btn.textContent = isContact ? '🤝 Добавить' : '✅ В контактах';
+    alert(data.message || data.error || 'Готово');
+}
+
 async function checkCompatibility(userId) {
     const modal = document.getElementById('compatModal');
     const resDiv = document.getElementById('compatResult');
@@ -128,40 +182,62 @@ async function checkCompatibility(userId) {
         if (data.error) {
             resDiv.innerHTML = `<p>❌ ${data.error}</p>`;
         } else {
-            resDiv.innerHTML = `
-                <div class="sign">${data.elem1} ${data.sign1}  ↔  ${data.elem2} ${data.sign2}</div>
-                <div class="percent">${data.percent}%</div>
-                <p style="color:#888;margin-top:8px;">${data.message}</p>
-            `;
+            resDiv.innerHTML = `<div class="sign">${data.elem1} ${data.sign1}  ↔  ${data.elem2} ${data.sign2}</div><div class="percent">${data.percent}%</div><p style="color:#888;margin-top:8px;">${data.message}</p>`;
         }
-    } catch (e) {
-        resDiv.innerHTML = '<p>Ошибка соединения</p>';
-    }
+    } catch (e) { resDiv.innerHTML = '<p>Ошибка соединения</p>'; }
 }
-function closeCompatModal() {
-    document.getElementById('compatModal').classList.remove('active');
-}
+
+function closeCompatModal() { document.getElementById('compatModal').classList.remove('active'); }
 
 async function sendLike(userId) {
     const btn = document.getElementById('likeBtn');
-    btn.disabled = true;
-    btn.textContent = '...';
+    btn.disabled = true; btn.textContent = '...';
     try {
         const resp = await fetch(`/api/like/${userId}`, {method:'POST'});
         const data = await resp.json();
-        if (data.status === 'match') {
-            alert('🎉 Взаимная симпатия! Проверь чаты.');
-        } else if (data.status === 'already_liked') {
-            alert('Ты уже лайкнул этого пользователя');
-        } else {
-            alert('❤️ Лайк отправлен!');
-        }
-    } catch(e) {
-        alert('Ошибка');
-    }
-    btn.disabled = false;
-    btn.textContent = '❤️ Лайк';
+        if (data.status === 'match') alert('🎉 Взаимная симпатия! Проверь чаты.');
+        else if (data.status === 'already_liked') alert('Ты уже лайкнул этого пользователя');
+        else alert('❤️ Лайк отправлен!');
+    } catch(e) { alert('Ошибка'); }
+    btn.disabled = false; btn.textContent = '❤️ Лайк';
 }
+
+// Плеер
+async function addToMyMusic(url, title) {
+    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) alert('✅ Трек добавлен в твой плеер!');
+    else alert('Ошибка при добавлении');
+}
+
+function countListen(trackId) {
+    fetch('/api/music/listen/' + trackId, {method:'POST'});
+}
+
+// ========== Лимит видимых треков ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('tracksContainer');
+    if (!container) return;
+    const items = container.querySelectorAll('.music-item');
+    const MAX_VISIBLE = 4;
+    if (items.length > MAX_VISIBLE) {
+        for (let i = MAX_VISIBLE; i < items.length; i++) {
+            items[i].style.display = 'none';
+        }
+        const btn = document.createElement('button');
+        btn.textContent = `Показать все (${items.length})`;
+        btn.className = 'btn-music';
+        btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
+        btn.onclick = function() {
+            for (let i = MAX_VISIBLE; i < items.length; i++) {
+                items[i].style.display = '';
+            }
+            btn.style.display = 'none';
+        };
+        container.appendChild(btn);
+    }
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Заявки на вывод | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{background:#1a1a2e;color:white;font-family:system-ui;padding:20px}
+        table{width:100%;border-collapse:collapse;margin-top:20px}
+        th,td{border:1px solid #333;padding:10px;text-align:left}
+        th{background:#ff6b6b}
+        .btn{padding:6px 12px;border:none;border-radius:20px;cursor:pointer;font-weight:bold}
+        .btn-pay{background:#4cd964;color:white;margin-right:5px}
+        .btn-reject{background:#ff4444;color:white}
+    </style>
+</head>
+<body>
+    <h1>Заявки на вывод кристаллайзеров</h1>
+    <table>
+        <tr>
+            <th>ID</th><th>Пользователь</th><th>Сумма 💎</th><th>К выплате (net)</th>
+            <th>Комиссия</th><th>Налог</th><th>Способ</th><th>Реквизиты</th><th>Статус</th><th>Действия</th>
+        </tr>
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.id }}</td>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.amount_coins }}</td>
+            <td>{{ req.net_rub }} ₽</td>
+            <td>{{ req.platform_fee }} ₽</td>
+            <td>{{ req.tax_amount }} ₽</td>
+            <td>{{ req.method }}</td>
+            <td>{{ req.wallet }}</td>
+            <td>{{ req.status }}</td>
+            <td>
+                {% if req.status == 'pending' %}
+                <form method="POST" action="/admin/withdrawal/process/{{ req.id }}" style="display:inline">
+                    <input type="hidden" name="action" value="pay">
+                    <button class="btn btn-pay">Выплатить</button>
+                </form>
+                <form method="POST" action="/admin/withdrawal/process/{{ req.id }}" style="display:inline">
+                    <input type="hidden" name="action" value="reject">
+                    <button class="btn btn-reject">Отклонить</button>
+                </form>
+                {% else %}
+                    {{ req.status }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

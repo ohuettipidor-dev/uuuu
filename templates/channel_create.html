@@ -20,6 +20,9 @@
         .help-text{font-size:11px;color:#888;margin-top:5px}
         .btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:30px;width:100%;cursor:pointer;font-weight:bold;font-size:16px}
         .btn:hover{transform:translateY(-1px)}
+        .checkbox-label{display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer}
+        .checkbox-label input[type="checkbox"]{width:auto;margin-right:8px}
+        .price-block{display:none;margin-top:10px;margin-bottom:20px}
     </style>
 </head>
 <body>
@@ -44,6 +47,25 @@
                 <label>Описание</label>
                 <textarea name="description" rows="3" placeholder="Расскажите о вашем канале..."></textarea>
             </div>
+            
+            <!-- Платный канал -->
+            <label class="checkbox-label">
+                <input type="checkbox" id="isPaidCheckbox" name="is_paid" onchange="togglePriceBlock()">
+                💎 Платный канал (подписка за кристалайзеры)
+            </label>
+            <div id="priceBlock" class="price-block">
+                <div class="form-group">
+                    <label>Цена подписки 💎 (на 30 дней)</label>
+                    <input type="number" name="price_coins" placeholder="100" min="10" step="1">
+                </div>
+            </div>
+            
+            <!-- Приватный канал -->
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_private">
+                🔒 Приватный канал (виден только подписчикам)
+            </label>
+            
             <button type="submit" class="btn">✨ Создать канал ✨</button>
         </form>
     </div>
@@ -58,5 +80,12 @@
         </p>
     </div>
 </div>
+
+<script>
+    function togglePriceBlock() {
+        document.getElementById('priceBlock').style.display = 
+            document.getElementById('isPaidCheckbox').checked ? 'block' : 'none';
+    }
+</script>
 </body>
 </html>

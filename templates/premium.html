@@ -1,28 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BearGram Premium</title>
+    <title>👑 BearGram Premium</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        .btn { background: #f90; color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .premium-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:28px;padding:40px;max-width:500px;width:100%;text-align:center;border:1px solid #ffd700}
+        .premium-card h1{color:#ffd700;font-size:36px;margin-bottom:16px}
+        .premium-card p{color:#ccc;font-size:16px;margin-bottom:24px}
+        .balance{color:#ffd700;font-size:18px;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
+        .status{margin-bottom:20px;font-size:18px}
+        .status.active{color:#4caf50}
+        .status.inactive{color:#aaa}
+        .btn{display:block;width:100%;padding:14px;border-radius:30px;font-size:16px;font-weight:bold;cursor:pointer;margin:12px 0;border:none;transition:0.2s}
+        .btn-coins{background:linear-gradient(135deg,#4caf50,#66bb6a);color:white}
+        .btn-coins:hover{transform:translateY(-1px)}
+        .btn-money{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .btn-money:hover{transform:translateY(-1px)}
+        .btn-back{background:rgba(255,255,255,0.1);color:white;text-decoration:none;padding:12px;border-radius:25px;display:block;margin-top:20px}
+        .notice{background:rgba(255,215,0,0.1);border:1px solid #ffd700;border-radius:12px;padding:12px;margin-top:16px;color:#ffd700;font-size:14px}
+        .error{background:rgba(255,107,107,0.1);border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin-top:16px;color:#ff6b6b;font-size:14px}
     </style>
 </head>
 <body>
-    <h1>🐻 BearGram Premium</h1>
-    <p>Безлимитные стикеры, эксклюзивные темы, приоритет в дейтинге и многое другое.</p>
-    <p><strong>299 ₽ / месяц</strong></p>
-    <a class="btn" href="#" onclick="buyPremium()">Оплатить через ЮMoney</a>
+<div class="premium-card">
+    <h1>👑 BearGram Premium</h1>
+    <p>Безлимитные стикеры, эксклюзивные темы, приоритет в дейтинге, бонусные Кристаллайзеры и многое другое.</p>
+    <div class="balance" id="balanceDisplay">💎 <span id="coinsAmount">{{ coins.balance }}</span></div>
+    <div class="status {% if is_premium %}active{% else %}inactive{% endif %}" id="statusDisplay">
+        {% if is_premium %}
+            ✅ Premium активен
+        {% else %}
+            ❌ Premium неактивен
+        {% endif %}
+    </div>
 
-    <script>
-    async function buyPremium() {
-        const resp = await fetch('/api/create_premium_order', { method: 'POST' });
-        const data = await resp.json();
+    <button class="btn btn-coins" onclick="activateWithCoins()">💎 Активировать за 250 Кристаллайзеров (1 месяц)</button>
+    <button class="btn btn-money" onclick="buyPremiumRuble()">💳 Оплатить 299 ₽ через ЮMoney (1 месяц)</button>
+    <div id="message"></div>
+    <a href="/profile" class="btn-back">← Назад в профиль</a>
+</div>
+
+<script>
+    async function updateUI() {
+        try {
+            const res = await fetch('/api/coins/balance');
+            const data = await res.json();
+            document.getElementById('coinsAmount').innerText = data.balance;
+            const statusDiv = document.getElementById('statusDisplay');
+            if (data.is_premium) {
+                statusDiv.className = 'status active';
+                statusDiv.innerText = '✅ Premium активен';
+            } else {
+                statusDiv.className = 'status inactive';
+                statusDiv.innerText = '❌ Premium неактивен';
+            }
+        } catch(e) {
+            console.error('Update error:', e);
+        }
+    }
+
+    async function activateWithCoins() {
+        const res = await fetch('/api/activate_premium_coins', {method: 'POST'});
+        const data = await res.json();
+        const msgDiv = document.getElementById('message');
+        if (data.success) {
+            msgDiv.innerHTML = '<div class="notice">🎉 Premium активирован за 250 Кристаллайзеров!</div>';
+            updateUI();
+        } else {
+            msgDiv.innerHTML = `<div class="error">Ошибка: ${data.error || 'Не удалось'}</div>`;
+        }
+    }
+
+    async function buyPremiumRuble() {
+        const res = await fetch('/api/create_premium_order', {method: 'POST'});
+        const data = await res.json();
         if (data.payment_url) {
             window.location.href = data.payment_url;
         } else {
-            alert(data.error || 'Ошибка');
+            document.getElementById('message').innerHTML = `<div class="error">Ошибка: ${data.error || 'Не удалось создать заказ'}</div>`;
         }
     }
-    </script>
+
+    // Обновляем при загрузке
+    updateUI();
+</script>
 </body>
 </html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🧠 Wordle Bear | #GRRR</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;color:#fff;touch-action:manipulation}
+        .game-container{width:100%;max-width:420px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border-radius:40px;padding:20px 16px 28px;box-shadow:0 30px 50px rgba(0,0,0,0.5)}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .logo{font-weight:700;font-size:1.4rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
+        .balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
+        .rules-box{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:15px;padding:12px;margin-bottom:15px;font-size:12px;color:#ccc;text-align:center;line-height:1.6}
+        .rules-box span{font-weight:bold}
+        .rules-box .green{color:#4cd964}.rules-box .yellow{color:#f9ca24}.rules-box .gray{color:#888}
+        .score-panel{display:flex;justify-content:space-between;margin:8px 0;font-size:13px}
+        .score-panel span{color:#f9ca24;font-weight:bold}
+        .word-grid{display:flex;flex-direction:column;gap:5px;align-items:center;margin:10px 0}
+        .word-row{display:flex;gap:5px}
+        .letter-cell{width:42px;height:42px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;text-transform:uppercase;transition:all 0.3s}
+        .letter-cell.filled{border-color:rgba(255,255,255,0.6)}
+        .letter-cell.correct{background:#4cd964;border-color:#4cd964;color:white}
+        .letter-cell.present{background:#f9ca24;border-color:#f9ca24;color:#1a1e2b}
+        .letter-cell.absent{background:#333;border-color:#333;color:#888}
+        .keyboard{display:flex;flex-direction:column;gap:4px;align-items:center;margin:10px 0}
+        .key-row{display:flex;gap:3px}
+        .key-btn{min-width:26px;height:38px;background:rgba(255,255,255,0.1);border:none;border-radius:6px;color:white;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s;padding:0 5px}
+        .key-btn:active{background:rgba(255,255,255,0.3)}
+        .key-btn.wide{min-width:45px;font-size:10px}
+        .key-btn.correct{background:#4cd964;color:white}
+        .key-btn.present{background:#f9ca24;color:#1a1e2b}
+        .key-btn.absent{background:#333;color:#888}
+        .action-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0 12px}
+        .btn-yellow{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#1a1e2b;border:none;font-weight:700;font-size:0.8rem;padding:8px 14px;border-radius:50px;box-shadow:0 6px 12px rgba(240,147,43,0.4);cursor:pointer}
+        .beargram-section{margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:10px;background:rgba(0,0,0,0.3);border-radius:30px;padding:14px 10px;border:1px solid rgba(255,255,255,0.1)}
+        .btn{border:none;color:white;font-weight:700;font-size:0.9rem;padding:12px 24px;border-radius:50px;box-shadow:0 8px 16px rgba(0,0,0,0.3);cursor:pointer;text-decoration:none;display:inline-block;text-align:center;width:100%}
+        .btn:active{transform:scale(0.96)}
+        .btn-install{background:linear-gradient(135deg,#6c5ce7,#a29bfe)}
+        .btn-grrr{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000}
+        .btn-withdraw{background:#4cd964;color:white}
+        .beargram-text{font-size:0.75rem;color:#aaa;text-align:center}
+        .highlight{color:#ffeaa7;font-weight:600}
+        .back-btn{position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;font-size:0.9rem;z-index:2000;animation:toastFadeIn 0.3s ease,toastFadeOut 0.5s ease 2.5s forwards}
+        @keyframes toastFadeIn{from{opacity:0;transform:translateX(-50%) scale(0.8)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+        @keyframes toastFadeOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+    </style>
+</head>
+<body>
+<a href="/games" class="back-btn">← Игры</a>
+<div class="game-container">
+    <div class="header"><span class="logo">🧠 Wordle Bear</span><div class="balance-panel"><span>🪙</span><span class="balance-text" id="grrrBalance">0</span></div></div>
+
+    <div class="rules-box">
+        <span>🎯 Как играть:</span> Угадай слово из 7 букв за 6 попыток!<br>
+        <span class="green">Зелёный</span> = буква на месте · <span class="yellow">Жёлтый</span> = есть в слове · <span class="gray">Серый</span> = нет буквы<br>
+        <span>💰 Угадал = +20 $GRRR!</span>
+    </div>
+
+    <div class="score-panel"><span>🎯 Игр: <b id="gamesPlayed">0</b></span><span>🏆 Побед: <b id="winsDisplay">0</b></span></div>
+    <div class="word-grid" id="wordGrid"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="action-buttons">
+        <button class="btn-yellow" id="newGameBtn">🔄 Новое</button>
+        <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
+        <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
+    </div>
+    <div class="beargram-section">
+        <div class="beargram-text">🎯 <span class="highlight">Угадал слово = +20 $GRRR!</span></div>
+        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать $GRRR</a>
+        <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
+        <a class="btn btn-withdraw" href="#" id="withdrawBtn">💰 Вывести $GRRR</a>
+        <div class="beargram-text">Фарми <span class="highlight">$GRRR</span> и выводи! 1 $GRRR ≈ 0.95 ₽</div>
+    </div>
+</div>
+<script>
+(function(){
+    const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
+    let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0'),daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
+    const today=new Date().toDateString();
+    if(localStorage.getItem('grrr_date')!==today){daily=0;localStorage.setItem(DAILY_KEY,'0');localStorage.setItem('grrr_date',today)}
+    function save(){localStorage.setItem(STORAGE_KEY,balance);localStorage.setItem(DAILY_KEY,daily)}
+    function updateUI(){document.getElementById('grrrBalance').textContent=balance}
+    function addGRRR(a){if(daily>=LIMIT)return false;let add=Math.min(a,LIMIT-daily);balance+=add;daily+=add;save();updateUI();return true}
+    function showToast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove()},3000)}
+
+    const WORDS=['МЕДВЕДЬ','БЕРЛОГА','МАЛИНА','КОРОВА','СОБАКА','КНИЖКА','РУЧКА','СТОЛБ','МОЛОКО','ЯБЛОКО','ГРУША','ЛИМОН','БАНАН','АРБУЗ','ТЫКВА','МОРКОВЬ','ПОМИДОР','ОГУРЕЦ','КАПУСТА','ЛОПАТА','ГРАБЛИ','МАШИНА','САМОЛЕТ','КОРАБЛЬ','РАКЕТА','ЗЕРКАЛО','КАРТИНА','БИБЛИОТЕКА'];
+    const WORD=WORDS[Math.floor(Math.random()*WORDS.length)];
+    let currentRow=0,currentCol=0,gameOver=false,won=false;
+    let gamesPlayed=parseInt(localStorage.getItem('wordle_games')||'0'),wins=parseInt(localStorage.getItem('wordle_wins')||'0');
+
+    function init(){
+        currentRow=0;currentCol=0;gameOver=false;won=false;
+        document.getElementById('wordGrid').innerHTML='';
+        for(let r=0;r<6;r++){
+            const row=document.createElement('div');row.className='word-row';row.id='row'+r;
+            for(let c=0;c<7;c++){const cell=document.createElement('div');cell.className='letter-cell';cell.id='cell'+r+c;row.appendChild(cell)}
+            document.getElementById('wordGrid').appendChild(row);
+        }
+        buildKeyboard();updateStats();
+    }
+
+    function buildKeyboard(){
+        const keys=[['Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х'],['Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э'],['←','Я','Ч','С','М','И','Т','Ь','Б','Ю','⏎']];
+        const kb=document.getElementById('keyboard');kb.innerHTML='';
+        keys.forEach(row=>{const r=document.createElement('div');r.className='key-row';row.forEach(k=>{const btn=document.createElement('button');btn.className='key-btn';btn.textContent=k;if(k==='←'||k==='⏎')btn.className+=' wide';btn.addEventListener('click',()=>handleKey(k));r.appendChild(btn)});kb.appendChild(r)});
+    }
+
+    function handleKey(k){
+        if(gameOver)return;
+        if(k==='←'){if(currentCol>0){currentCol--;document.getElementById('cell'+currentRow+currentCol).textContent='';document.getElementById('cell'+currentRow+currentCol).classList.remove('filled')}}
+        else if(k==='⏎'){if(currentCol<7){showToast('Слово из 7 букв!');return};checkWord()}
+        else{if(currentCol<7){document.getElementById('cell'+currentRow+currentCol).textContent=k;document.getElementById('cell'+currentRow+currentCol).classList.add('filled');currentCol++}}
+    }
+
+    function checkWord(){
+        const guess=[];for(let c=0;c<7;c++)guess.push(document.getElementById('cell'+currentRow+c).textContent);
+        let correct=0;const wordArr=WORD.split(''),result=Array(7).fill('absent'),used=Array(7).fill(false);
+        for(let i=0;i<7;i++){if(guess[i]===wordArr[i]){result[i]='correct';used[i]=true;correct++}}
+        for(let i=0;i<7;i++){if(result[i]==='correct')continue;for(let j=0;j<7;j++){if(!used[j]&&guess[i]===wordArr[j]){result[i]='present';used[j]=true;break}}}
+        for(let c=0;c<7;c++){const cell=document.getElementById('cell'+currentRow+c);setTimeout(()=>{cell.classList.add(result[c]);updateKeyboard(guess[c],result[c])},c*120)}
+        if(correct===7){won=true;gameOver=true;wins++;gamesPlayed++;localStorage.setItem('wordle_wins',wins);localStorage.setItem('wordle_games',gamesPlayed);addGRRR(20);updateStats();setTimeout(()=>showToast('🎉 Угадал! +20 $GRRR'),800);return}
+        currentRow++;currentCol=0;if(currentRow>=6){gameOver=true;gamesPlayed++;localStorage.setItem('wordle_games',gamesPlayed);updateStats();setTimeout(()=>showToast('💀 Слово: '+WORD),500)}
+    }
+
+    function updateKeyboard(l,s){document.querySelectorAll('.key-btn').forEach(b=>{if(b.textContent===l&&!b.classList.contains('correct')){b.classList.remove('present','absent');b.classList.add(s)}})}
+    function updateStats(){document.getElementById('gamesPlayed').textContent=gamesPlayed;document.getElementById('winsDisplay').textContent=wins}
+
+    document.addEventListener('keydown',e=>{if(e.key==='Backspace')handleKey('←');else if(e.key==='Enter')handleKey('⏎');else if(/^[А-ЯЁа-яё]$/i.test(e.key))handleKey(e.key.toUpperCase())});
+    document.getElementById('newGameBtn').addEventListener('click',()=>location.reload());
+    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 $GRRR')});
+    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Wordle Bear • #GRRR',text:'Угадай слово и фарми!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 $GRRR')});
+    document.getElementById('withdrawBtn').addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
+    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 $GRRR')}
+
+    init();updateUI();
+})();
+</script>
+</body>
+</html>

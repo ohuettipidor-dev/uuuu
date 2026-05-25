@@ -1,0 +1,9 @@
+{
+  "appId": "com.beargram.app",
+  "appName": "BearGram",
+  "webDir": "templates",
+  "server": {
+    "url": "https://beargram.up.railway.app/",
+    "cleartext": true
+  }
+}

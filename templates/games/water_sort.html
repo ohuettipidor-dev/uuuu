@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>💧 Water Sort • #GRRR</title>
+  <style>
+    /* аналогичные стили, лого "💧 Water Sort" */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    body {
+      font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+      background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);
+      min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:12px; color:#fff; touch-action:manipulation;
+    }
+    .game-container {
+      width:100%; max-width:420px; background:rgba(255,255,255,0.06); backdrop-filter:blur(20px);
+      border-radius:40px; padding:20px 16px 28px;
+      box-shadow:0 30px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .logo {
+      font-weight:700; font-size:1.6rem; background:linear-gradient(135deg,#f9ca24,#f0932b);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .balance-panel {
+      background:rgba(0,0,0,0.35); border-radius:30px; padding:8px 16px; display:flex; align-items:center;
+      gap:8px; border:1px solid rgba(255,215,0,0.3);
+    }
+    .grrr-icon { font-size:1.3rem; }
+    .balance-text { font-weight:700; font-size:1.2rem; color:#ffeaa7; }
+    .tubes-container { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin:16px 0; }
+    .tube {
+      width:55px; height:180px; background:rgba(255,255,255,0.15); border-radius:0 0 20px 20px;
+      border:2px solid rgba(255,255,255,0.3); position:relative; overflow:hidden;
+      transition:transform 0.2s; cursor:pointer;
+    }
+    .tube.selected { transform:translateY(-12px); border-color:#f9ca24; box-shadow:0 10px 20px rgba(249,202,36,0.4); }
+    .color-layer { width:100%; height:33.33%; transition:all 0.3s; }
+    .action-buttons { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:8px 0 16px; }
+    .btn-yellow {
+      background:linear-gradient(135deg,#f9ca24,#f0932b); color:#1a1e2b; border:none;
+      font-weight:700; font-size:0.85rem; padding:10px 18px; border-radius:50px;
+      box-shadow:0 8px 16px rgba(240,147,43,0.4); cursor:pointer;
+    }
+    .beargram-section {
+      margin-top:18px; display:flex; flex-direction:column; align-items:center; gap:12px;
+      background:rgba(0,0,0,0.3); border-radius:30px; padding:16px 10px; border:1px solid rgba(255,255,255,0.1);
+    }
+    .btn {
+      border:none; color:white; font-weight:700; font-size:1rem; padding:14px 28px; border-radius:50px;
+      box-shadow:0 10px 20px rgba(0,0,0,0.3); cursor:pointer; text-decoration:none; display:inline-block;
+    }
+    .btn-install { background:linear-gradient(135deg,#6c5ce7,#a29bfe); }
+    .btn-withdraw { background:linear-gradient(135deg,#f9ca24,#f0932b); color:#000; }
+    .beargram-text { font-size:0.8rem; color:#aaa; text-align:center; }
+    .highlight { color:#ffeaa7; font-weight:600; }
+    .toast {
+      position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8);
+      color:#fff; padding:12px 24px; border-radius:30px; font-weight:600; font-size:0.9rem;
+      z-index:2000; animation:toastFadeIn 0.3s ease, toastFadeOut 0.5s ease 2.5s forwards;
+    }
+    @keyframes toastFadeIn { from{opacity:0; transform:translateX(-50%) scale(0.8);} to{opacity:1; transform:translateX(-50%) scale(1);} }
+    @keyframes toastFadeOut { from{opacity:1;} to{opacity:0; transform:translateX(-50%) translateY(-10px);} }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="header">
+    <span class="logo">💧 Water Sort</span>
+    <div class="balance-panel">
+      <span class="grrr-icon">🪙</span>
+      <span class="balance-text" id="grrrBalance">0</span>
+    </div>
+  </div>
+  <div class="tubes-container" id="tubesContainer"></div>
+  <div class="action-buttons">
+    <button class="btn-yellow" id="newGameBtn">🔄 Новое</button>
+    <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
+    <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
+  </div>
+  <div class="beargram-section">
+    <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank" rel="noopener">🚀 Установить BearGram</a>
+    <a class="btn btn-withdraw" href="https://beargram.up.railway.app/?utm_source=telegram_game&utm_medium=water&utm_campaign=withdraw" target="_blank" rel="noopener">💰 Вывести #GRRR</a>
+    <div class="beargram-text">Фарми <span class="highlight">#GRRR</span> и выводи в рубли</div>
+  </div>
+</div>
+<script>
+  (function() {
+    const STORAGE_KEY = 'grrr_balance';
+    const DAILY_KEY = 'grrr_daily';
+    const LIMIT = 100;
+    let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+    let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
+    const today = new Date().toDateString();
+    if (localStorage.getItem('grrr_date') !== today) { daily = 0; localStorage.setItem(DAILY_KEY, '0'); localStorage.setItem('grrr_date', today); }
+
+    function save() { localStorage.setItem(STORAGE_KEY, balance); localStorage.setItem(DAILY_KEY, daily); }
+    function updateUI() { document.getElementById('grrrBalance').textContent = balance; }
+    function addGRRR(amount) {
+      if (daily >= LIMIT) return false;
+      let add = Math.min(amount, LIMIT - daily);
+      balance += add; daily += add; save(); updateUI();
+      return true;
+    }
+    function showToast(text) {
+      const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = text;
+      document.body.appendChild(toast); setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+    }
+
+    // звуки
+    let audioCtx = null;
+    function playSound(type) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      if (type === 'select') {
+        const osc = audioCtx.createOscillator(); osc.type='sine';
+        osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(500, now+0.1);
+        const g=audioCtx.createGain(); g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.15);
+        osc.connect(g); g.connect(audioCtx.destination); osc.start(now); osc.stop(now+0.15);
+      } else if (type==='pour') {
+        const noise = audioCtx.createScriptProcessor(256,1,1);
+        noise.onaudioprocess = e => { const out=e.outputBuffer.getChannelData(0); for(let i=0;i<out.length;i++) out[i]=Math.random()*2-1; };
+        const filter = audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=700;
+        const g=audioCtx.createGain(); g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.5);
+        noise.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+        noise.start(now); noise.stop(now+0.5);
+      } else if (type==='complete') {
+        [523,659,784,1047].forEach((f,i)=>{
+          const osc=audioCtx.createOscillator(); osc.type='sine';
+          const g=audioCtx.createGain(); g.gain.setValueAtTime(0.2, now+i*0.15); g.gain.exponentialRampToValueAtTime(0.001, now+i*0.15+0.3);
+          osc.frequency.setValueAtTime(f, now+i*0.15); osc.connect(g); g.connect(audioCtx.destination);
+          osc.start(now+i*0.15); osc.stop(now+i*0.15+0.3);
+        });
+      }
+    }
+
+    let tubes=[], selected=null;
+    const COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00cec9','#e17055','#74b9ff'];
+    function generate() {
+      const colors = [...COLORS.slice(0,4), ...COLORS.slice(0,4), ...COLORS.slice(0,4)];
+      for (let i=colors.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [colors[i],colors[j]]=[colors[j],colors[i]]; }
+      tubes = [];
+      for (let i=0; i<4; i++) tubes.push({layers:[colors[i*3], colors[i*3+1], colors[i*3+2]]});
+      tubes.push({layers:[]}); tubes.push({layers:[]});
+      selected=null; render();
+    }
+    function render() {
+      const container = document.getElementById('tubesContainer');
+      container.innerHTML = '';
+      tubes.forEach((t,idx)=>{
+        const el=document.createElement('div'); el.className='tube'+(selected===idx?' selected':'');
+        t.layers.forEach(c=>{ const d=document.createElement('div'); d.className='color-layer'; d.style.background=c; el.appendChild(d); });
+        el.addEventListener('click', ()=>clickTube(idx));
+        container.appendChild(el);
+      });
+    }
+    function clickTube(idx) {
+      playSound('select');
+      if (selected===null) { if (tubes[idx].layers.length) { selected=idx; render(); } return; }
+      if (selected===idx) { selected=null; render(); return; }
+      const src=tubes[selected], dst=tubes[idx];
+      if (!src.layers.length) { selected=null; render(); return; }
+      const topSrc = src.layers[src.layers.length-1];
+      if (dst.layers.length===3) { showToast('❌ Полна'); selected=null; render(); return; }
+      if (dst.layers.length && dst.layers[dst.layers.length-1] !== topSrc) { showToast('❌ Не совпадает'); selected=null; render(); return; }
+      src.layers.pop(); dst.layers.push(topSrc);
+      addGRRR(1); playSound('pour');
+      selected=null; render();
+      if (tubes.every(t=>!t.layers.length||(t.layers.length===3 && new Set(t.layers).size===1))) {
+        addGRRR(15); playSound('complete');
+        showToast('🎉 +15 🪙');
+        setTimeout(generate, 1200);
+      }
+    }
+
+    document.getElementById('newGameBtn').addEventListener('click', generate);
+    document.getElementById('dailyBonusBtn').addEventListener('click', ()=>{
+      const last = localStorage.getItem('grrr_bonus_date');
+      if (last===today) { showToast('🎁 Уже получен'); return; }
+      localStorage.setItem('grrr_bonus_date', today);
+      addGRRR(10); showToast('🎁 +10 🪙');
+    });
+    document.getElementById('referralBtn').addEventListener('click', ()=>{
+      const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2,8);
+      localStorage.setItem('refId', ref);
+      const url = location.origin + location.pathname + '?ref=' + ref;
+      if (navigator.share) navigator.share({title:'Water Sort • #GRRR', text:'Перелей и фарми!', url});
+      else prompt('Ссылка:', url);
+      addGRRR(5); showToast('📨 +5 🪙');
+    });
+    const refParam = new URLSearchParams(location.search).get('ref');
+    if (refParam && !localStorage.getItem('refUsed')) {
+      localStorage.setItem('refUsed', '1');
+      addGRRR(10); showToast('🎁 +10 🪙');
+    }
+    generate(); updateUI();
+  })();
+</script>
+<a href="/games" style="position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold;">← Игры</a>
+</body>
+</html>

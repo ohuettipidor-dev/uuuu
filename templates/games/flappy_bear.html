@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🐻 Flappy Bear | #GRRR</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;color:#fff;touch-action:manipulation}
+        .game-container{width:100%;max-width:420px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:40px;padding:20px 16px 28px;box-shadow:0 30px 50px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15)}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+        .logo{font-weight:700;font-size:1.6rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
+        .grrr-icon{font-size:1.3rem}.balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
+        .canvas-container{display:flex;justify-content:center;margin:10px 0}
+        canvas{border-radius:20px;background:linear-gradient(180deg,#87CEEB 0%,#98FB98 100%);box-shadow:0 10px 30px rgba(0,0,0,0.5);max-width:100%}
+        .score-display{text-align:center;font-size:1.4rem;font-weight:700;margin:8px 0;color:#f9ca24}
+        .speed-display{text-align:center;font-size:0.9rem;color:#ccc;margin-bottom:5px}
+        .action-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 16px}
+        .btn-yellow{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#1a1e2b;border:none;font-weight:700;font-size:0.85rem;padding:10px 18px;border-radius:50px;box-shadow:0 8px 16px rgba(240,147,43,0.4);cursor:pointer;transition:all 0.2s}
+        .btn-yellow:active{transform:scale(0.94)}
+        .beargram-section{margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.3);border-radius:30px;padding:16px 10px;border:1px solid rgba(255,255,255,0.1)}
+        .btn{border:none;color:white;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:50px;box-shadow:0 10px 20px rgba(0,0,0,0.3);cursor:pointer;text-decoration:none;display:inline-block}
+        .btn:active{transform:scale(0.96)}
+        .btn-install{background:linear-gradient(135deg,#6c5ce7,#a29bfe)}
+        .btn-grrr{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000}
+        .btn-withdraw{background:#4cd964;color:white}
+        .beargram-text{font-size:0.8rem;color:#aaa;text-align:center}
+        .highlight{color:#ffeaa7;font-weight:600}
+        .back-btn{position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;font-size:0.9rem;z-index:2000;animation:toastFadeIn 0.3s ease,toastFadeOut 0.5s ease 2.5s forwards}
+        @keyframes toastFadeIn{from{opacity:0;transform:translateX(-50%) scale(0.8)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+        @keyframes toastFadeOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+    </style>
+</head>
+<body>
+<a href="/games" class="back-btn">← Игры</a>
+<div class="game-container">
+    <div class="header"><span class="logo">🐻 Flappy Bear</span><div class="balance-panel"><span class="grrr-icon">🪙</span><span class="balance-text" id="grrrBalance">0</span></div></div>
+    <div class="score-display">🎯 Счёт: <span id="scoreDisplay">0</span></div>
+    <div class="speed-display">⚡ Скорость: <span id="speedDisplay">1.4</span></div>
+    <div class="canvas-container"><canvas id="gameCanvas" width="320" height="480"></canvas></div>
+    <div class="action-buttons">
+        <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
+        <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
+    </div>
+    <div class="beargram-section">
+        <div class="beargram-text" style="font-size:12px;color:#f9ca24;">🎯 <span class="highlight">Очки = $GRRR!</span> Лети — зарабатывай!</div>
+        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать $GRRR</a>
+        <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
+        <a class="btn btn-withdraw" href="#" id="withdrawBtn">💰 Вывести $GRRR</a>
+        <div class="beargram-text">Фарми <span class="highlight">$GRRR</span> и выводи! 1 $GRRR ≈ 0.95 ₽</div>
+    </div>
+</div>
+<script>
+(function(){
+    const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
+    let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0');
+    let daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
+    const today=new Date().toDateString();
+    if(localStorage.getItem('grrr_date')!==today){daily=0;localStorage.setItem(DAILY_KEY,'0');localStorage.setItem('grrr_date',today)}
+    function save(){localStorage.setItem(STORAGE_KEY,balance);localStorage.setItem(DAILY_KEY,daily)}
+    function updateUI(){document.getElementById('grrrBalance').textContent=balance}
+    function addGRRR(a){if(daily>=LIMIT)return false;let add=Math.min(a,LIMIT-daily);balance+=add;daily+=add;save();updateUI();return true}
+    function showToast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove()},3000)}
+
+    const canvas=document.getElementById('gameCanvas');
+    const ctx=canvas.getContext('2d');
+    let bear={x:70,y:220,vy:0},pipes=[],score=0,gameRunning=false,gameOver=false,frameCount=0,currentPipeSpeed=1.4;
+
+    function reset(){bear={x:70,y:220,vy:0};pipes=[];score=0;gameRunning=false;gameOver=false;frameCount=0;currentPipeSpeed=1.4;document.getElementById('scoreDisplay').textContent='0';document.getElementById('speedDisplay').textContent='1.4'}
+    function spawnPipe(){const min=50,max=canvas.height-210;const top=min+Math.random()*(max-min);pipes.push({x:canvas.width,top:top,bottom:top+160,passed:false})}
+
+    function update(){
+        if(!gameRunning||gameOver)return;
+        bear.vy+=0.3;bear.y+=bear.vy;
+        if(bear.y<-10||bear.y>canvas.height-26){gameRunning=false;gameOver=true;if(score>0){const r=Math.min(score,5);addGRRR(r);showToast('💥 +'+r+' $GRRR')}setTimeout(()=>{reset();draw()},2000);return}
+        for(let p of pipes){
+            p.x-=currentPipeSpeed;
+            if(bear.x+40>p.x+6&&bear.x<p.x+46){if(bear.y<p.top+4||bear.y+36>p.bottom-4){gameRunning=false;gameOver=true;if(score>0){const r=Math.min(score,5);addGRRR(r);showToast('💥 +'+r+' $GRRR')}setTimeout(()=>{reset();draw()},2000);return}}
+            if(!p.passed&&p.x+52<bear.x){p.passed=true;score++;document.getElementById('scoreDisplay').textContent=score;if(score%3===0&&currentPipeSpeed<3.5){currentPipeSpeed+=0.04;document.getElementById('speedDisplay').textContent=currentPipeSpeed.toFixed(1)}if(score%3===0)addGRRR(2)}
+        }
+        pipes=pipes.filter(p=>p.x>-52);frameCount++;if(frameCount%110===0)spawnPipe();if(pipes.length>4)pipes.shift()
+    }
+
+    function draw(){
+        ctx.fillStyle='#87CEEB';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle='#98FB98';ctx.fillRect(0,canvas.height-20,canvas.width,20);
+        for(let p of pipes){ctx.fillStyle='#2d5a27';ctx.fillRect(p.x,0,52,p.top);ctx.fillStyle='#4a8c3f';ctx.fillRect(p.x-3,p.top-20,58,20);ctx.fillStyle='#2d5a27';ctx.fillRect(p.x,p.bottom,52,canvas.height-p.bottom);ctx.fillStyle='#4a8c3f';ctx.fillRect(p.x-3,p.bottom,58,20)}
+        const bx=bear.x,by=bear.y;
+        ctx.fillStyle='#8B5E3C';ctx.beginPath();ctx.arc(bx+20,by+18,18,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#6B3F2A';ctx.beginPath();ctx.arc(bx+10,by+10,8,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx+30,by+10,8,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#D2A679';ctx.beginPath();ctx.arc(bx+20,by+22,10,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#000';ctx.beginPath();ctx.arc(bx+14,by+16,3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx+26,by+16,3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx+20,by+24,2.5,0,Math.PI*2);ctx.fill();
+        if(gameOver){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.fillText('Игра окончена',canvas.width/2,canvas.height/2)}
+        if(!gameRunning&&!gameOver){ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText('Тапни чтобы лететь!',canvas.width/2,canvas.height/2)}
+    }
+
+    canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(gameOver){reset();draw();return}if(!gameRunning){gameRunning=true;bear.vy=-6.5;if(!pipes.length)spawnPipe()}else{bear.vy=-6.5}});
+    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 $GRRR')});
+    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Flappy Bear • #GRRR',text:'Летай и фарми $GRRR!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 $GRRR')});
+    document.getElementById('withdrawBtn').addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
+    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 $GRRR')}
+
+    reset();updateUI();setInterval(()=>{update();draw()},16);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BearGram</string>
+    <string name="title_activity_main">BearGram</string>
+    <string name="package_name">com.beargram.app</string>
+    <string name="custom_url_scheme">com.beargram.app</string>
+</resources>

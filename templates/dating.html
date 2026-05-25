@@ -18,6 +18,12 @@
         .dislike{background:#ff6b6b;color:white}
         .back{display:block;margin-top:12px;color:#888;text-decoration:none}
         .compatibility{font-size:13px;color:#ff6b6b;margin-top:4px}
+        .matches-btn{
+            display:block;width:100%;text-align:center;padding:12px;background:rgba(255,68,68,0.1);
+            border-radius:20px;color:#ff4444;text-decoration:none;font-weight:bold;margin:15px 0;
+            border:1px solid rgba(255,68,68,0.3);transition:0.2s;
+        }
+        .matches-btn:hover{background:rgba(255,68,68,0.2)}
         .premium-hint{margin-top:14px;font-size:14px;}
         .premium-hint a{color:#ff6b6b;text-decoration:none;border:1px solid #ff6b6b;padding:8px 16px;border-radius:20px;}
         .premium-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;}
@@ -32,6 +38,9 @@
         <button class="btn dislike" id="dislikeBtn">✖</button>
         <button class="btn like" id="likeBtn">❤️</button>
     </div>
+
+    <!-- ❤️ Взаимные симпатии -->
+    <a href="/my_likes" class="matches-btn">❤️ Взаимные симпатии</a>
 
     <!-- 👀 Кто лайкнул меня (Premium) -->
     <div class="premium-hint">
@@ -110,7 +119,6 @@ document.getElementById('dislikeBtn').addEventListener('click', async () => {
     loadProfile();
 });
 
-// Кнопка "Кто лайкнул меня" (только для Premium)
 const whoLikedBtn = document.getElementById('whoLikedBtn');
 if (whoLikedBtn) {
     whoLikedBtn.addEventListener('click', async () => {

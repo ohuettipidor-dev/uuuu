@@ -1,0 +1,33 @@
+Keystore type: PKCS12
+Keystore provider: SUN
+
+Your keystore contains 1 entry
+
+Alias name: beargram
+Creation date: Apr 16, 2026
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=My Company, OU=My Company, O=My Company, L=My Company, ST=Moskovskaya oblast', C=Russian Federation
+Issuer: CN=My Company, OU=My Company, O=My Company, L=My Company, ST=Moskovskaya oblast', C=Russian Federation
+Serial number: 6e79d28944041782
+Valid from: Thu Apr 16 17:26:55 UTC 2026 until: Mon Sep 01 17:26:55 UTC 2053
+Certificate fingerprints:
+	 SHA1: F6:ED:80:6C:BC:92:8E:99:8F:35:37:6E:BC:CA:87:68:1B:12:43:09
+	 SHA256: 36:FC:54:02:D7:9F:77:9B:4C:36:86:B7:65:09:0F:45:F1:44:76:14:E4:88:5E:17:EF:04:16:48:D8:A6:BA:F1
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: DA D7 BE 66 47 72 44 0C   CB 02 F1 D2 64 0C 3E 82  ...fGrD.....d.>.
+0010: C5 C6 AE 30                                        ...0
+]
+]
+
+
+
