@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        body{
+            background-color:#ffe0ec;
+            background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-repeat:repeat;
+            background-size:180px 180px;
+            min-height:100vh;
+        }
         .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
         
         .header{padding:8px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
@@ -22,7 +28,7 @@
         .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
         .call-btn{background:#ff6b6b;color:white;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;margin-right:4px;flex-shrink:0}
         
-        .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
+        .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px;position:relative}
         .message{display:flex;animation:fadeInUp 0.2s ease;position:relative}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .message.sent{justify-content:flex-end}
@@ -50,9 +56,11 @@
         .favorite-star{color:gold;font-size:12px}
         .pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
         
+        .date-separator{text-align:center;margin:16px 0 8px}
+        .date-separator span{background:rgba(255,255,255,0.8);padding:4px 12px;border-radius:12px;font-size:12px;color:#888;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+        
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:2px;padding:2px 6px;position:relative}
-        /* текстовое поле теперь textarea */
         #msgInput{flex:1;background:none;border:none;color:#333;font-size:16px;padding:8px 2px;outline:none;resize:none;line-height:1.4;overflow-y:auto;max-height:120px;word-break:break-word}
         #msgInput::placeholder{color:#aaa;font-size:15px}
         
@@ -63,19 +71,16 @@
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-        /* Меню вложений */
         .input-menu{position:absolute;bottom:50px;right:10px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;gap:4px;padding:8px;z-index:150}
         .input-menu.active{display:flex}
         .menu-item{padding:10px 16px;background:none;border:none;text-align:left;font-size:16px;cursor:pointer;border-radius:12px;color:#333;white-space:nowrap}
         .menu-item:hover{background:#f0f0f0}
         
-        /* Эмодзи пикер */
         .emoji-picker{position:fixed;bottom:80px;left:8px;right:auto;max-width:calc(100vw - 16px);width:auto;min-width:280px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
         
-        /* Панель стикеров */
         .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
         .sticker-panel.active{display:block}
         .panel-tabs{display:flex;border-bottom:1px solid #eee}
@@ -116,6 +121,9 @@
         .video-circle{width:120px;height:120px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000}
         .video-circle video{width:100%;height:100%;object-fit:cover}
         .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
+        
+        .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
+        .scroll-bottom-btn.active{display:flex}
         
         @media (max-width:480px){
             .bubble{max-width:85%;padding:5px 10px;font-size:15px}
@@ -165,9 +173,25 @@
             <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
         </div>
         
+        {% set last_date = None %}
         {% for m in msgs %}
+        {% set msg_date = m.timestamp.strftime('%Y-%m-%d') %}
+        {% if msg_date != last_date %}
+        <div class="date-separator">
+            <span>
+                {% if msg_date == today %}
+                    Сегодня
+                {% elif msg_date == yesterday %}
+                    Вчера
+                {% else %}
+                    {{ m.timestamp.strftime('%d.%m.%Y') }}
+                {% endif %}
+            </span>
+        </div>
+        {% set last_date = msg_date %}
+        {% endif %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
-            <div class="bubble">
+            <div class="bubble" onclick="copyMessageContent(this)">
                 {% if m.is_pinned %}
                 <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
                 {% endif %}
@@ -212,13 +236,6 @@
                     <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
-                    {% if m.sender_id == current_user.id %}
-                        {% if m.is_read %}
-                            <span style="color:#4cd964">✓✓</span>
-                        {% else %}
-                            <span>✓✓</span>
-                        {% endif %}
-                    {% endif %}
                 </div>
             </div>
             <div class="message-actions">
@@ -238,6 +255,8 @@
         {% endfor %}
     </div>
     
+    <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="document.getElementById('messages').scrollTo({top: document.getElementById('messages').scrollHeight, behavior: 'smooth'})">↓</button>
+    
     <div class="reply-bar" id="replyBar">
         <span>💬 Ответ:</span>
         <span id="replyText" style="flex:1;color:#888;font-size:11px"></span>
@@ -247,7 +266,7 @@
     <div class="input-area">
         <div class="input-wrapper">
             <textarea id="msgInput" placeholder="Сообщение..." rows="1"></textarea>
-            <button class="input-icon" id="plusBtn">➕</button>
+            <button class="input-icon" id="attachBtn">📎</button>
             <div class="input-menu" id="inputMenu">
                 <button class="menu-item" id="menuEmoji">😊 Эмодзи</button>
                 <button class="menu-item" id="menuStickers">🎨 Стикеры</button>
@@ -336,14 +355,11 @@ function startVideoCall() {
 }
 
 msgInput.addEventListener('input', function() {
-    // авто-расширение
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    // индикатор печати
     fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
     if(typingTimeout) clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})}), 1000);
-    // показывать кнопку отправки
     sendBtn.style.display = this.value.trim().length > 0 ? 'flex' : 'none';
 });
 
@@ -407,12 +423,11 @@ function addNewMessage(msg) {
     let voiceHtml = (msg.voice_duration && msg.file_type != 'video') ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
     let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
     let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
-    let check = msg.is_own ? (msg.is_read ? '<span style="color:#4cd964">✓✓</span>' : '✓✓') : '';
-    const timeStr = formatUTCTime(msg.timestamp);
-    div.innerHTML = `<div class="bubble">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}${check}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+    let timeStr = formatUTCTime(msg.timestamp);
+    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
     messagesDiv.appendChild(div);
     if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    updateScrollButton();
     lastMsgId = msg.id;
     if(msg.is_pinned) loadPinnedMessage();
 }
@@ -509,20 +524,20 @@ async function startVoiceRecording() {
                 });
             stream.getTracks().forEach(t => t.stop());
             isAudioRecording = false;
-            plusBtn.classList.remove('recording');
-            plusBtn.textContent = '➕';
+            attachBtn.classList.remove('recording');
+            attachBtn.innerHTML = '📎';
         };
         mediaRecorder.start();
         isAudioRecording = true;
-        plusBtn.classList.add('recording');
-        plusBtn.textContent = '⏹️';
+        attachBtn.classList.add('recording');
+        attachBtn.innerHTML = '⏹️';
         setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
     } catch(e) { alert('Микрофон не доступен'); }
 }
 function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
 
-// --- ВИДЕОСООБЩЕНИЯ (через меню) ---
+// --- ВИДЕОСООБЩЕНИЯ ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -556,18 +571,18 @@ async function startVideoRecording() {
                 });
             if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
             isVideoRecording = false;
-            plusBtn.classList.remove('recording');
-            plusBtn.textContent = '➕';
+            attachBtn.classList.remove('recording');
+            attachBtn.innerHTML = '📎';
         };
         videoRecorder.start();
         isVideoRecording = true;
-        plusBtn.classList.add('recording');
-        plusBtn.textContent = '⏺️';
+        attachBtn.classList.add('recording');
+        attachBtn.innerHTML = '⏺️';
         setTimeout(() => { if(isVideoRecording) stopVideoRecording(); }, 60000);
     } catch(e) {
         alert('Камера или микрофон не доступны');
-        plusBtn.classList.remove('recording');
-        plusBtn.textContent = '➕';
+        attachBtn.classList.remove('recording');
+        attachBtn.innerHTML = '📎';
         if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
         isVideoRecording = false;
     }
@@ -579,16 +594,16 @@ function stopVideoRecording() {
 }
 
 // --- МЕНЮ ВЛОЖЕНИЙ ---
-const plusBtn = document.getElementById('plusBtn');
+const attachBtn = document.getElementById('attachBtn');
 const inputMenu = document.getElementById('inputMenu');
 const sendBtn = document.getElementById('sendBtn');
 
-plusBtn.addEventListener('click', (e) => {
+attachBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     inputMenu.classList.toggle('active');
 });
 document.addEventListener('click', (e) => {
-    if (!inputMenu.contains(e.target) && e.target !== plusBtn) {
+    if (!inputMenu.contains(e.target) && e.target !== attachBtn) {
         inputMenu.classList.remove('active');
     }
 });
@@ -669,9 +684,36 @@ document.addEventListener('click', (e) => { if(!document.getElementById('emojiPi
 
 document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); });
 
+// --- КНОПКА "ВНИЗ" ---
+const messagesDiv = document.getElementById('messages');
+const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+function updateScrollButton() {
+    const atBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 100;
+    scrollBottomBtn.classList.toggle('active', !atBottom);
+}
+messagesDiv.addEventListener('scroll', updateScrollButton);
+updateScrollButton();
+
+// --- КОПИРОВАНИЕ ТЕКСТА ПО КЛИКУ ---
+function copyMessageContent(bubble) {
+    const text = bubble.querySelector('.time') ? bubble.cloneNode(true) : null;
+    if (!text) return;
+    const timeEl = text.querySelector('.time');
+    if (timeEl) timeEl.remove();
+    const content = text.innerText.trim();
+    if (!content) return;
+    navigator.clipboard.writeText(content).then(() => {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:6px 16px;border-radius:20px;font-size:13px;z-index:200;pointer-events:none';
+        toast.textContent = 'Скопировано';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+    }).catch(() => {});
+}
+
 loadPinnedMessage();
 setInterval(checkNewMessages, 1000);
-document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+messagesDiv.scrollTop = messagesDiv.scrollHeight;
 </script>
 </body>
 </html>
