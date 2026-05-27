@@ -27,7 +27,7 @@
         @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .message.sent{justify-content:flex-end}
         .message.received{justify-content:flex-start}
-        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:14px;word-wrap:break-word;position:relative}
+        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word;position:relative}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
@@ -52,20 +52,30 @@
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:2px;padding:2px 6px;position:relative}
-        .input-wrapper input{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 2px;outline:none}
-        .input-wrapper input::placeholder{color:#aaa;font-size:13px}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:16px;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:28px;height:28px;flex-shrink:0}
+        /* текстовое поле теперь textarea */
+        #msgInput{flex:1;background:none;border:none;color:#333;font-size:16px;padding:8px 2px;outline:none;resize:none;line-height:1.4;overflow-y:auto;max-height:120px;word-break:break-word}
+        #msgInput::placeholder{color:#aaa;font-size:15px}
+        
+        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
         .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer;display:none}
         .send-btn:hover{background:#ff5252;transform:scale(1.02)}
         .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
+        /* Меню вложений */
+        .input-menu{position:absolute;bottom:50px;right:10px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;gap:4px;padding:8px;z-index:150}
+        .input-menu.active{display:flex}
+        .menu-item{padding:10px 16px;background:none;border:none;text-align:left;font-size:16px;cursor:pointer;border-radius:12px;color:#333;white-space:nowrap}
+        .menu-item:hover{background:#f0f0f0}
+        
+        /* Эмодзи пикер */
         .emoji-picker{position:fixed;bottom:80px;left:8px;right:auto;max-width:calc(100vw - 16px);width:auto;min-width:280px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
         .emoji-picker.active{display:grid}
         .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
         
+        /* Панель стикеров */
         .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
         .sticker-panel.active{display:block}
         .panel-tabs{display:flex;border-bottom:1px solid #eee}
@@ -108,11 +118,11 @@
         .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
         
         @media (max-width:480px){
-            .bubble{max-width:85%;padding:5px 10px;font-size:13px}
-            .input-icon{width:22px;height:22px;font-size:13px;padding:2px}
-            .send-btn{width:30px;height:30px;font-size:15px}
+            .bubble{max-width:85%;padding:5px 10px;font-size:15px}
+            .input-icon{width:28px;height:28px;font-size:16px;padding:2px}
+            .send-btn{width:34px;height:34px;font-size:16px}
             .input-wrapper{padding:2px 3px;gap:1px}
-            .input-wrapper input{font-size:12px;padding:6px 1px}
+            #msgInput{font-size:15px;padding:6px 1px}
             .input-area{gap:3px}
             .header{padding:6px 10px}
             .avatar{width:30px;height:30px}
@@ -235,14 +245,16 @@
     </div>
     
     <div class="input-area">
-        <div class="input-wrapper" style="position:relative">
-            <input type="text" id="msgInput" placeholder="Сообщение...">
-            <div class="mention-suggestions" id="mentionSuggestions"></div>
-            <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-            <button class="input-icon" id="emojiBtn">😊</button>
-            <button class="input-icon" id="stickerPanelBtn">🎨</button>
-            <button class="input-icon voice-btn" id="voiceBtn">🎤</button>
-            <button class="input-icon video-btn" id="videoBtn">📹</button>
+        <div class="input-wrapper">
+            <textarea id="msgInput" placeholder="Сообщение..." rows="1"></textarea>
+            <button class="input-icon" id="plusBtn">➕</button>
+            <div class="input-menu" id="inputMenu">
+                <button class="menu-item" id="menuEmoji">😊 Эмодзи</button>
+                <button class="menu-item" id="menuStickers">🎨 Стикеры</button>
+                <button class="menu-item" id="menuVoice">🎤 Голосовое</button>
+                <button class="menu-item" id="menuVideo">📹 Видеосообщение</button>
+                <button class="menu-item" id="menuFile">📎 Файл</button>
+            </div>
         </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
@@ -324,9 +336,15 @@ function startVideoCall() {
 }
 
 msgInput.addEventListener('input', function() {
+    // авто-расширение
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    // индикатор печати
     fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
     if(typingTimeout) clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})}), 1000);
+    // показывать кнопку отправки
+    sendBtn.style.display = this.value.trim().length > 0 ? 'flex' : 'none';
 });
 
 function checkTyping() {
@@ -351,12 +369,18 @@ function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
 
 function searchUsers(query) { if(!query) { hideSuggestions(); return; } fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); }); }
 function showSuggestions(users) { const div = document.getElementById('mentionSuggestions'); div.innerHTML = ''; users.forEach(u => { const item = document.createElement('div'); item.className = 'mention-suggestion-item'; item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`; item.onclick = () => insertMention(u.username); div.appendChild(item); }); div.classList.add('active'); }
-function insertMention(username) { const val = msgInput.value, cursor = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); currentMentionStart = -1; }
+function insertMention(username) { const val = msgInput.value, cursor = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); currentMentionStart = -1; msgInput.dispatchEvent(new Event('input')); }
 function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
 
 let currentMentionStart = -1;
 let mentionSearchTimeout = null;
-msgInput.addEventListener('input', function() { const val = this.value, cursor = this.selectionStart; let lastAt = -1; for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; } if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); } else { hideSuggestions(); currentMentionStart = -1; } });
+msgInput.addEventListener('input', function() {
+    const val = this.value, cursor = this.selectionStart;
+    let lastAt = -1;
+    for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
+    if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); }
+    else { hideSuggestions(); currentMentionStart = -1; }
+});
 
 function addNewMessage(msg) {
     if(processedIds.has(msg.id)) return;
@@ -410,6 +434,8 @@ function sendMsg() {
         .then(data => {
             if(data.success) {
                 msgInput.value = '';
+                msgInput.style.height = 'auto';
+                sendBtn.style.display = 'none';
                 setTimeout(() => { checkNewMessages(); isSending = false; }, 300);
             } else {
                 alert(data.error || 'Ошибка отправки');
@@ -452,7 +478,7 @@ function forwardMessage(id, type) { let target = prompt('ID пользовате
 function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
-// --- ГОЛОСОВЫЕ СООБЩЕНИЯ (без изменений) ---
+// --- ГОЛОСОВЫЕ СООБЩЕНИЯ ---
 async function startVoiceRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -482,22 +508,21 @@ async function startVoiceRecording() {
                     }
                 });
             stream.getTracks().forEach(t => t.stop());
-            document.getElementById('voiceBtn').classList.remove('recording');
-            document.getElementById('voiceBtn').textContent = '🎤';
             isAudioRecording = false;
+            plusBtn.classList.remove('recording');
+            plusBtn.textContent = '➕';
         };
         mediaRecorder.start();
         isAudioRecording = true;
-        document.getElementById('voiceBtn').classList.add('recording');
-        document.getElementById('voiceBtn').textContent = '⏹️';
+        plusBtn.classList.add('recording');
+        plusBtn.textContent = '⏹️';
         setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
     } catch(e) { alert('Микрофон не доступен'); }
 }
 function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
-document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
 
-// --- ВИДЕО-КРУЖКИ (со звуком) ---
+// --- ВИДЕОСООБЩЕНИЯ (через меню) ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -530,19 +555,19 @@ async function startVideoRecording() {
                     }
                 });
             if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-            document.getElementById('videoBtn').classList.remove('recording');
-            document.getElementById('videoBtn').textContent = '📹';
             isVideoRecording = false;
+            plusBtn.classList.remove('recording');
+            plusBtn.textContent = '➕';
         };
         videoRecorder.start();
         isVideoRecording = true;
-        document.getElementById('videoBtn').classList.add('recording');
-        document.getElementById('videoBtn').textContent = '⏺️';
+        plusBtn.classList.add('recording');
+        plusBtn.textContent = '⏺️';
         setTimeout(() => { if(isVideoRecording) stopVideoRecording(); }, 60000);
     } catch(e) {
         alert('Камера или микрофон не доступны');
-        document.getElementById('videoBtn').classList.remove('recording');
-        document.getElementById('videoBtn').textContent = '📹';
+        plusBtn.classList.remove('recording');
+        plusBtn.textContent = '➕';
         if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
         isVideoRecording = false;
     }
@@ -552,33 +577,66 @@ function stopVideoRecording() {
         videoRecorder.stop();
     }
 }
-document.getElementById('videoBtn').addEventListener('mousedown', (e) => {
-    e.preventDefault();
+
+// --- МЕНЮ ВЛОЖЕНИЙ ---
+const plusBtn = document.getElementById('plusBtn');
+const inputMenu = document.getElementById('inputMenu');
+const sendBtn = document.getElementById('sendBtn');
+
+plusBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    inputMenu.classList.toggle('active');
+});
+document.addEventListener('click', (e) => {
+    if (!inputMenu.contains(e.target) && e.target !== plusBtn) {
+        inputMenu.classList.remove('active');
+    }
+});
+document.getElementById('menuEmoji').addEventListener('click', () => {
+    inputMenu.classList.remove('active');
+    document.getElementById('emojiPicker').classList.toggle('active');
+});
+document.getElementById('menuStickers').addEventListener('click', () => {
+    inputMenu.classList.remove('active');
+    document.getElementById('stickerPanel').classList.toggle('active');
+    if(document.getElementById('stickerPanel').classList.contains('active')) {
+        loadMyStickers();
+        loadAILimits();
+    }
+});
+document.getElementById('menuVoice').addEventListener('click', () => {
+    inputMenu.classList.remove('active');
+    toggleVoiceRecording();
+});
+document.getElementById('menuVideo').addEventListener('click', () => {
+    inputMenu.classList.remove('active');
     startVideoRecording();
 });
-document.getElementById('videoBtn').addEventListener('mouseup', (e) => {
-    e.preventDefault();
-    if (isVideoRecording) stopVideoRecording();
-});
-document.getElementById('videoBtn').addEventListener('mouseleave', (e) => {
-    if (isVideoRecording) stopVideoRecording();
-});
-document.getElementById('videoBtn').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startVideoRecording();
-});
-document.getElementById('videoBtn').addEventListener('touchend', (e) => {
-    e.preventDefault();
-    if (isVideoRecording) stopVideoRecording();
+document.getElementById('menuFile').addEventListener('click', () => {
+    inputMenu.classList.remove('active');
+    document.getElementById('fileInput').click();
 });
 
-document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); document.getElementById('stickerPanel').classList.remove('active'); };
-document.querySelectorAll('.emoji-picker span').forEach(e => { e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); }; });
+// Эмодзи пикер
+document.querySelectorAll('.emoji-picker span').forEach(e => {
+    e.onclick = () => {
+        msgInput.value += e.textContent;
+        document.getElementById('emojiPicker').classList.remove('active');
+        msgInput.focus();
+        msgInput.dispatchEvent(new Event('input'));
+    };
+});
 
+// Стикеры
 const stickerPanel = document.getElementById('stickerPanel');
-const stickerBtn = document.getElementById('stickerPanelBtn');
-stickerBtn.onclick = () => { stickerPanel.classList.toggle('active'); document.getElementById('emojiPicker').classList.remove('active'); if(stickerPanel.classList.contains('active')) { loadMyStickers(); loadAILimits(); } };
-function switchStickerTab(tab) { document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active')); event.target.classList.add('active'); document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none'; document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none'; if(tab === 'my') loadMyStickers(); if(tab === 'ai') loadAILimits(); }
+function switchStickerTab(tab) {
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
+    document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none';
+    if(tab === 'my') loadMyStickers();
+    if(tab === 'ai') loadAILimits();
+}
 function loadMyStickers() {
     fetch('/api/stickers/all').then(r=>r.json()).then(data => {
         const container = document.getElementById('myStickers');
@@ -607,7 +665,8 @@ function saveAISticker(url) { const emoji = prompt('Эмодзи:', '🤖') || '
 function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
 
 msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
-document.addEventListener('click', (e) => { if(!document.getElementById('mentionSuggestions').contains(e.target) && e.target !== msgInput) hideSuggestions(); if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) document.getElementById('emojiPicker').classList.remove('active'); if(!stickerPanel.contains(e.target) && e.target !== stickerBtn) stickerPanel.classList.remove('active'); });
+document.addEventListener('click', (e) => { if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('menuEmoji')) document.getElementById('emojiPicker').classList.remove('active'); if(!stickerPanel.contains(e.target) && e.target !== document.getElementById('menuStickers')) stickerPanel.classList.remove('active'); });
+
 document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); });
 
 loadPinnedMessage();
