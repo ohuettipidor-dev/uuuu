@@ -263,11 +263,24 @@
             <button class="invite-tab" onclick="switchInviteTab('referral')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">💎 Бонусы</button>
         </div>
         <div id="inviteFriends" class="invite-content">
-            <button onclick="loadContacts()" style="width:100%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;margin-bottom:10px;">📇 Загрузить контакты</button>
-            <p style="color:#888;font-size:11px;text-align:center;margin-bottom:10px;">Выбери друзей и пригласи их в BearGram</p>
-            <div id="friendsList" style="max-height:250px;overflow-y:auto;margin-bottom:10px;"><p style="color:#888;text-align:center;">Нажми "Загрузить контакты"</p></div>
-            <div id="selectedCount" style="text-align:center;color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none;">Выбрано: <b id="countValue">0</b></div>
-            <button id="inviteSelectedBtn" onclick="inviteSelectedFriends()" style="width:100%;background:#ffd700;color:#000;border:none;padding:12px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;display:none;">📤 Пригласить выбранных</button>
+            <p style="color:#888;font-size:11px;text-align:center;margin-bottom:8px;">Введи номера через запятую или загрузи файл контактов</p>
+            <input type="text" id="phoneNumbersInput" placeholder="+79001234567, +79007654321" style="width:100%;padding:10px;border-radius:20px;border:1px solid #ddd;margin-bottom:8px;text-align:center;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button onclick="inviteSelectedFriends('manual')" style="flex:1;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Пригласить</button>
+                <label for="contactsFileInput" style="flex:1;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;text-align:center;">📂 Загрузить .vcf/.csv</label>
+                <input type="file" id="contactsFileInput" accept=".vcf,.csv" style="display:none" onchange="parseContactsFile(this)">
+            </div>
+            <p id="contactsInstructions" style="color:#aaa;font-size:10px;text-align:center;margin-bottom:8px;">
+                📱 <b>Android:</b> Контакты → Экспорт → .vcf<br>
+                📱 <b>iPhone:</b> iCloud → Экспорт vCard<br>
+                💻 <b>Google:</b> Google Контакты → Экспорт → vCard
+            </p>
+            <div id="contactsFileList" style="max-height:200px;overflow-y:auto;margin-bottom:8px;display:none;">
+                <div id="contactsFileItems"></div>
+                <div style="text-align:center;margin-top:8px;">
+                    <button id="inviteFileContactsBtn" onclick="inviteSelectedFriends('file')" style="background:#ffd700;color:#000;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;display:none;">📤 Пригласить выбранных</button>
+                </div>
+            </div>
         </div>
         <div id="inviteQR" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Покажи этот код другу!</p><div id="qrCode" style="width:180px;height:180px;margin:0 auto;background:white;border-radius:15px;display:flex;align-items:center;justify-content:center;"></div></div></div>
         <div id="inviteLink" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Отправь ссылку другу!</p><div style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:12px;color:#ff6b6b;" id="refLink">https://beargram.up.railway.app/register</div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button><button onclick="shareRefLink()" style="width:100%;background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Поделиться</button></div></div>
@@ -322,7 +335,7 @@
 function formatUTCTime(utcString){if(!utcString)return'';const m=utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);if(!m)return utcString;const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]));return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 document.querySelectorAll('.chat-time').forEach(el=>{const u=el.dataset.utc;if(u)el.textContent=formatUTCTime(u)});
 
-let selectedUserId=null,searchTimeout=null,selectedFriends=[];
+let selectedUserId=null,searchTimeout=null;
 function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 function openChat(t,i){if(t==='private')location.href='/messages/'+i;else if(t==='secret')location.href='/secret_chat/'+i;else location.href='/group/'+i}
 function showChatTypeModal(uid,uname){selectedUserId=uid;document.getElementById('chatTypeModal').classList.add('active');fetch('/check_contact/'+uid).then(r=>r.json()).then(d=>{document.getElementById('removeContactBtn').style.display=d.is_contact?'block':'none'})}
@@ -349,80 +362,113 @@ function openInviteModal(){document.getElementById('inviteModal').classList.add(
 function closeInviteModal(){document.getElementById('inviteModal').classList.remove('active')}
 function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
 
-async function loadContacts(){
-    const fl=document.getElementById('friendsList');
-    fl.innerHTML='<p style="color:#888;text-align:center;">📇 Запрашиваю доступ...</p>';
-    selectedFriends=[];
-    if('contacts' in navigator && 'ContactsManager' in window){
-        try{
-            const contacts=await navigator.contacts.select(['name','tel'],{multiple:true});
-            if(contacts.length===0){
-                fl.innerHTML='<p style="color:#888;text-align:center;">Ни один контакт не выбран</p>';
+let fileContacts = [];
+
+function parseContactsFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        fileContacts = [];
+        if (file.name.endsWith('.vcf')) {
+            const entries = content.split('BEGIN:VCARD');
+            entries.forEach(entry => {
+                if (!entry.includes('FN:') && !entry.includes('TEL:')) return;
+                const nameMatch = entry.match(/FN:(.+)/);
+                const phoneMatch = entry.match(/TEL[^:]*:(.+)/);
+                if (phoneMatch) {
+                    const name = nameMatch ? nameMatch[1].trim() : 'Без имени';
+                    const phone = phoneMatch[1].trim().replace(/[^0-9+]/g, '');
+                    fileContacts.push({ name, phone });
+                }
+            });
+        } else if (file.name.endsWith('.csv')) {
+            const lines = content.split('\n');
+            const headers = lines[0].split(',');
+            const nameIdx = headers.findIndex(h => h.trim().toLowerCase() === 'name');
+            const phoneIdx = headers.findIndex(h => h.trim().toLowerCase() === 'phone');
+            if (nameIdx === -1 || phoneIdx === -1) {
+                alert('CSV должен иметь столбцы Name и Phone');
                 return;
             }
-            let h='';
-            contacts.forEach((c,i)=>{
-                const name=c.name||'Без имени';
-                const phone=c.tel?c.tel[0]:'';
-                h+=`<div class="contact-row" data-index="${i}" data-name="${escapeHtml(name)}" data-phone="${phone}">
-                    <input type="checkbox" id="f_${i}">
-                    <label for="f_${i}" style="flex:1;font-size:12px;color:#333;"><b>${escapeHtml(name)}</b><br><span style="color:#888;font-size:10px;">${phone}</span></label>
-                </div>`;
-            });
-            fl.innerHTML=h;
-            document.querySelectorAll('.contact-row').forEach(row=>{
-                row.addEventListener('click',function(){
-                    const index=parseInt(this.dataset.index);
-                    const name=this.dataset.name;
-                    const phone=this.dataset.phone;
-                    toggleFriend(index,name,phone);
-                });
-            });
-        }catch(e){
-            fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ошибка доступа к контактам 😢<br>Убедитесь, что сайт открыт по HTTPS и вы используете Chrome на Android.</p>';
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (cols[phoneIdx]) {
+                    fileContacts.push({
+                        name: cols[nameIdx]?.trim() || 'Без имени',
+                        phone: cols[phoneIdx].trim().replace(/[^0-9+]/g, '')
+                    });
+                }
+            }
         }
-    }else{
-        fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ваш браузер не поддерживает доступ к контактам.<br>Откройте сайт в Chrome на Android.</p>';
-    }
+        renderFileContacts();
+    };
+    reader.readAsText(file);
 }
 
-function toggleFriend(i, name, phone) {
-    const existing = selectedFriends.find(f => f.index === i);
-    const checkbox = document.getElementById('f_' + i);
-    const row = checkbox ? checkbox.closest('.contact-row') : null;
-    if (existing) {
-        selectedFriends = selectedFriends.filter(f => f.index !== i);
-        if (checkbox) checkbox.checked = false;
-        if (row) row.classList.remove('selected');
-    } else {
-        selectedFriends.push({ index: i, name, phone });
-        if (checkbox) checkbox.checked = true;
-        if (row) row.classList.add('selected');
+function renderFileContacts() {
+    const container = document.getElementById('contactsFileItems');
+    const listDiv = document.getElementById('contactsFileList');
+    const inviteBtn = document.getElementById('inviteFileContactsBtn');
+    if (fileContacts.length === 0) {
+        container.innerHTML = '<p style="color:#888;text-align:center;">Не найдено контактов</p>';
+        listDiv.style.display = 'none';
+        return;
     }
-    document.getElementById('countValue').textContent = selectedFriends.length;
-    document.getElementById('selectedCount').style.display = selectedFriends.length > 0 ? 'block' : 'none';
-    document.getElementById('inviteSelectedBtn').style.display = selectedFriends.length > 0 ? 'block' : 'none';
+    listDiv.style.display = 'block';
+    inviteBtn.style.display = 'block';
+    let html = '';
+    fileContacts.forEach((c, i) => {
+        html += `<div class="contact-row" data-index="${i}" onclick="toggleFileContact(${i}, this)">
+            <input type="checkbox" id="fc_${i}">
+            <label for="fc_${i}" style="flex:1;font-size:12px;color:#333;"><b>${escapeHtml(c.name)}</b><br><span style="color:#888;font-size:10px;">${c.phone}</span></label>
+        </div>`;
+    });
+    container.innerHTML = html;
 }
 
-function inviteSelectedFriends() {
-    if (selectedFriends.length > 0) {
-        const link = document.getElementById('refLink').textContent.trim();
-        const msg = `Привет! Присоединяйся к BearGram: ${link}`;
-        selectedFriends.forEach(friend => {
-            if (friend.phone) {
-                const smsUrl = `sms:${friend.phone}?body=${encodeURIComponent(msg)}`;
+function toggleFileContact(index, row) {
+    const checkbox = document.getElementById(`fc_${index}`);
+    if (checkbox) checkbox.checked = !checkbox.checked;
+    row.classList.toggle('selected', checkbox?.checked);
+}
+
+function inviteSelectedFriends(mode) {
+    const link = document.getElementById('refLink').textContent.trim();
+    const msg = `Привет! Присоединяйся к BearGram: ${link}`;
+
+    if (mode === 'manual') {
+        const phoneNumbers = document.getElementById('phoneNumbersInput').value.trim();
+        if (!phoneNumbers) {
+            alert('Введите номера телефонов');
+            return;
+        }
+        phoneNumbers.split(',').forEach(phone => {
+            const cleanPhone = phone.trim();
+            if (cleanPhone) {
+                const smsUrl = `sms:${cleanPhone}?body=${encodeURIComponent(msg)}`;
                 window.open(smsUrl, '_blank');
             }
         });
-        closeInviteModal();
-        return;
+    } else if (mode === 'file') {
+        const selected = [];
+        document.querySelectorAll('#contactsFileItems .contact-row').forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            if (checkbox?.checked) {
+                const idx = parseInt(row.dataset.index);
+                if (fileContacts[idx]) selected.push(fileContacts[idx].phone);
+            }
+        });
+        if (selected.length === 0) {
+            alert('Выберите контакты');
+            return;
+        }
+        selected.forEach(phone => {
+            const smsUrl = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+            window.open(smsUrl, '_blank');
+        });
     }
-    const phone = prompt('Введите номер телефона получателя (в международном формате, например +79001234567):');
-    if (!phone) return;
-    const link = document.getElementById('refLink').textContent.trim();
-    const msg = `Привет! Присоединяйся к BearGram: ${link}`;
-    const smsUrl = `sms:${phone}?body=${encodeURIComponent(msg)}`;
-    window.open(smsUrl, '_blank');
     closeInviteModal();
 }
 
