@@ -405,23 +405,27 @@ function toggleFriend(i, name, phone) {
 }
 
 function inviteSelectedFriends() {
-    if (selectedFriends.length === 0) {
-        alert('Выбери друзей');
+    if (selectedFriends.length > 0) {
+        const link = document.getElementById('refLink').textContent.trim();
+        const msg = `Привет! Присоединяйся к BearGram: ${link}`;
+        selectedFriends.forEach(friend => {
+            if (friend.phone) {
+                const smsUrl = `sms:${friend.phone}?body=${encodeURIComponent(msg)}`;
+                window.open(smsUrl, '_blank');
+            }
+        });
+        closeInviteModal();
         return;
     }
+    const phone = prompt('Введите номер телефона получателя (в международном формате, например +79001234567):');
+    if (!phone) return;
     const link = document.getElementById('refLink').textContent.trim();
     const msg = `Привет! Присоединяйся к BearGram: ${link}`;
-    
-    // Открываем SMS для каждого выбранного контакта
-    selectedFriends.forEach(friend => {
-        if (friend.phone) {
-            const smsUrl = `sms:${friend.phone}?body=${encodeURIComponent(msg)}`;
-            window.open(smsUrl, '_blank');
-        }
-    });
-    
+    const smsUrl = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+    window.open(smsUrl, '_blank');
     closeInviteModal();
 }
+
 function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
 function copyRefLink(){const link=document.getElementById('refLink').textContent.trim();navigator.clipboard.writeText(link).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',link))}
 function shareRefLink(){const link=document.getElementById('refLink').textContent.trim();if(navigator.share)navigator.share({title:'🐻 BearGram',text:'Общайся, люби, зарабатывай!',url:link}).catch(()=>{});else copyRefLink()}
