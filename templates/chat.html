@@ -269,7 +269,7 @@
 <!-- FAB кнопка -->
 <button class="fab-btn" onclick="openGroupModal()">+</button>
 
-<!-- AI-помощник (перемещён в самый низ) -->
+<!-- AI-помощник (ПЕРЕМЕЩЁН ВНИЗ) -->
 <div style="position:fixed; bottom:20px; right:20px; z-index:999;">
     <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
 </div>
@@ -396,7 +396,35 @@ if(sessionStorage.getItem('openSearch')==='1'){sessionStorage.removeItem('openSe
 function openInviteModal(){document.getElementById('inviteModal').classList.add('active');generateQR();loadReferralStats()}
 function closeInviteModal(){document.getElementById('inviteModal').classList.remove('active')}
 function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
-async function loadContacts(){const fl=document.getElementById('friendsList');fl.innerHTML='<p style="color:#888;text-align:center;">📇 Запрашиваю доступ...</p>';selectedFriends=[];try{if('contacts' in navigator && 'ContactsManager' in window){const contacts=await navigator.contacts.select(['name','tel'],{multiple:true});if(contacts.length===0){fl.innerHTML='<p style="color:#888;">Не выбраны</p>';return}let h='';contacts.forEach((c,i)=>{const name=c.name||'Без имени';const phone=c.tel?c.tel[0]:'';h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;"><input type="checkbox" id="f_'+i+'" onchange="toggleFriend('+i+',\''+name.replace(/'/g,"\\'")+'\',\''+phone+'\')" style="width:18px;height:18px;"><label for="f_'+i+'" style="flex:1;font-size:12px;color:#333;"><b>'+name+'</b><br><span style="color:#888;font-size:10px;">'+phone+'</span></label></div>'});fl.innerHTML=h}else{fl.innerHTML='<p style="color:#888;">Доступно в мобильном приложении</p>'}}catch(e){fl.innerHTML='<p style="color:#ff6b6b;">Ошибка доступа</p>'}}
+async function loadContacts(){
+    const fl=document.getElementById('friendsList');
+    fl.innerHTML='<p style="color:#888;text-align:center;">📇 Запрашиваю доступ...</p>';
+    selectedFriends=[];
+
+    if('contacts' in navigator && 'ContactsManager' in window){
+        try{
+            const contacts=await navigator.contacts.select(['name','tel'],{multiple:true});
+            if(contacts.length===0){
+                fl.innerHTML='<p style="color:#888;text-align:center;">Ни один контакт не выбран</p>';
+                return;
+            }
+            let h='';
+            contacts.forEach((c,i)=>{
+                const name=c.name||'Без имени';
+                const phone=c.tel?c.tel[0]:'';
+                h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;">
+                    <input type="checkbox" id="f_${i}" onchange="toggleFriend(${i},'${name.replace(/'/g,"\\'")}','${phone}')" style="width:18px;height:18px;">
+                    <label for="f_${i}" style="flex:1;font-size:12px;color:#333;"><b>${name}</b><br><span style="color:#888;font-size:10px;">${phone}</span></label>
+                </div>`;
+            });
+            fl.innerHTML=h;
+        }catch(e){
+            fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ошибка доступа к контактам 😢<br>Убедитесь, что сайт открыт по HTTPS и вы используете Chrome на Android.</p>';
+        }
+    }else{
+        fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ваш браузер не поддерживает доступ к контактам.<br>Откройте сайт в Chrome на Android.</p>';
+    }
+}
 function toggleFriend(i,name,phone){const ex=selectedFriends.find(f=>f.index===i);if(ex)selectedFriends=selectedFriends.filter(f=>f.index!==i);else selectedFriends.push({index:i,name,phone});document.getElementById('countValue').textContent=selectedFriends.length;document.getElementById('selectedCount').style.display=selectedFriends.length>0?'block':'none';document.getElementById('inviteSelectedBtn').style.display=selectedFriends.length>0?'block':'none'}
 function inviteSelectedFriends(){if(selectedFriends.length===0){alert('Выбери друзей');return}const link=document.getElementById('refLink').textContent.trim();const msg='🐻 Присоединяйся к BearGram! Общайся, люби, зарабатывай! '+link;if(navigator.share){navigator.share({title:'🐻 BearGram',text:msg,url:link}).catch(()=>{})}else{navigator.clipboard.writeText(msg).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',msg))}closeInviteModal()}
 function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
