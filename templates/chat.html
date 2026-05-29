@@ -6,12 +6,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
-        /* ========== ГЛОБАЛЬНЫЕ СТИЛИ ========== */
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         html,body{height:100%;overflow:hidden;background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%)}
         .container{display:flex;flex-direction:column;height:100vh;max-width:700px;margin:0 auto;position:relative}
 
-        /* ХЕДЕР */
         .header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.75);backdrop-filter:blur(8px);border-bottom:2px solid rgba(255,255,255,0.3);flex-shrink:0;flex-wrap:wrap;gap:6px;z-index:10;position:relative}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
@@ -23,19 +21,8 @@
 
         .golden-btn{
             background:linear-gradient(135deg, #ffd700, #ffaa00);
-            padding:6px 12px;
-            border-radius:30px;
-            font-weight:bold;
-            font-size:15px;
-            text-decoration:none;
-            color:#000;
-            display:flex;
-            align-items:center;
-            gap:5px;
-            box-shadow:0 2px 8px rgba(255,170,0,0.4);
-            transition:all 0.2s;
-            flex-shrink:0;
-            white-space:nowrap;
+            padding:6px 12px;border-radius:30px;font-weight:bold;font-size:15px;text-decoration:none;color:#000;
+            display:flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(255,170,0,0.4);transition:all 0.2s;flex-shrink:0;white-space:nowrap;
         }
         .golden-btn:hover{background:linear-gradient(135deg, #ffe066, #ffbb33);transform:scale(1.03);}
         .golden-btn-icon{font-size:20px;}
@@ -146,10 +133,9 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
-        /* Стиль выделенного контакта */
         .contact-row{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;cursor:pointer;transition:background 0.2s;}
         .contact-row.selected{background:rgba(255,107,107,0.15);}
-        .contact-row input[type="checkbox"]{width:18px;height:18px;pointer-events:none;} /* чекбокс только для вида */
+        .contact-row input[type="checkbox"]{width:18px;height:18px;pointer-events:none;}
 
         @media (max-width:480px){
             .icon-btn{width:28px;height:28px;font-size:12px}
@@ -159,7 +145,6 @@
 </head>
 <body>
 <div class="container">
-    <!-- ХЕДЕР -->
     <div class="header">
         <div class="avatar" onclick="location.href='/profile'">
             {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
@@ -173,7 +158,6 @@
         </div>
     </div>
 
-    <!-- ПОИСК -->
     <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
@@ -181,10 +165,8 @@
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
 
-    <!-- ДВА СВАЙПА -->
     <div class="app" id="app">
         <div class="swiper" id="swiper">
-            <!-- ПАНЕЛЬ 1: ЧАТЫ -->
             <div class="panel" id="panel1">
                 <div class="panel-content" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
                     {% if convs|length == 0 %}
@@ -229,7 +211,6 @@
                 </div>
             </div>
 
-            <!-- ПАНЕЛЬ 2: ЛЕНТА -->
             <div class="panel" id="panel2">
                 <div class="panel-content" style="padding:12px;">
                     <div id="feedContainer" style="margin-top:10px;"></div>
@@ -238,7 +219,6 @@
         </div>
     </div>
 
-    <!-- НИЖНЯЯ ПАНЕЛЬ -->
     <div class="bottom-nav">
         <a href="/dating" class="nav-item"><span class="nav-icon">💕</span><span>Знакомства</span></a>
         <a href="/games" class="nav-item"><span class="nav-icon">🎮</span><span>Игры</span></a>
@@ -247,7 +227,6 @@
         <div class="nav-item" onclick="toggleFinanceMenu()"><span class="nav-icon">💰</span><span>Финансы</span></div>
     </div>
 
-    <!-- МЕНЮ ФИНАНСОВ -->
     <div class="finance-menu" id="financeMenu">
         <a href="/shop" class="finance-link">🛍️ Магазин</a>
         <a href="/grrr" class="finance-link">🐻 $GRRR</a>
@@ -257,27 +236,17 @@
     </div>
 </div>
 
-<!-- FAB кнопка -->
 <button class="fab-btn" onclick="openGroupModal()">+</button>
 
-<!-- AI-помощник -->
 <div style="position:fixed; bottom:20px; right:20px; z-index:999;">
     <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
 </div>
 <div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
-    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;">
-        <span>🐻 Мишка-поддержка</span><button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button>
-    </div>
-    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
-        <div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div>
-    </div>
-    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;">
-        <input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
-        <button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button>
-    </div>
+    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
+    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"><div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div></div>
+    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;"><input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;"><button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button></div>
 </div>
 
-<!-- Модальные окна (чат, группа, приглашение) -->
 <div class="modal" id="chatTypeModal"><div class="modal-content"><h3>📱 Выберите действие</h3><div class="modal-buttons"><button class="regular-chat" id="regularChatBtn">💬 Обычный чат</button><button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button><button class="remove-contact" id="removeContactBtn" style="display:none;">🗑️ Удалить из контактов</button><button class="cancel" onclick="closeChatTypeModal()">Отмена</button></div></div></div>
 <div class="group-modal" id="groupModal"><div class="group-modal-content"><h3>✨ Новая группа</h3><input type="text" id="groupName" placeholder="Название группы"><div class="group-modal-buttons"><button onclick="createGroup()">Создать</button><button onclick="closeGroupModal()">Отмена</button></div></div></div>
 
@@ -307,7 +276,6 @@
 </div>
 
 <script>
-// ========== 2-панельный свайп ==========
 (function() {
     const panels = 2;
     let current = 0;
@@ -317,7 +285,7 @@
         current = i;
         swiper.style.transition = anim ? 'transform 0.35s cubic-bezier(0.25,0.8,0.25,1)' : 'none';
         swiper.style.transform = `translateX(-${current * 100}%)`;
-        if (current === 1) loadFeed(); // загрузка ленты при переходе
+        if (current === 1) loadFeed();
     }
     const app = document.getElementById('app');
     let startX = 0, startY = 0, dragging = false, moved = false;
@@ -338,7 +306,6 @@
             else if (dx < 0 && current < panels - 1) goTo(current + 1);
         }
     });
-    // мышь
     app.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; dragging = true; moved = false; });
     window.addEventListener('mouseup', e => {
         if (!dragging || !moved) { dragging = false; return; }
@@ -349,13 +316,9 @@
             else if (dx < 0 && current < panels - 1) goTo(current + 1);
         }
     });
-    window.addEventListener('mousemove', e => {
-        if (dragging && (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)) moved = true;
-    });
     goTo(0, false);
 })();
 
-// ========== ОБЩИЕ ФУНКЦИИ ==========
 function formatUTCTime(utcString){if(!utcString)return'';const m=utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);if(!m)return utcString;const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]));return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 document.querySelectorAll('.chat-time').forEach(el=>{const u=el.dataset.utc;if(u)el.textContent=formatUTCTime(u)});
 
@@ -380,7 +343,6 @@ document.addEventListener('click',function(e){if(!sr.contains(e.target)&&e.targe
 function openGroupModal(){document.getElementById('groupModal').classList.add('active')}
 function closeGroupModal(){document.getElementById('groupModal').classList.remove('active');document.getElementById('groupName').value=''}
 function createGroup(){let n=document.getElementById('groupName').value.trim();if(n){let f=document.createElement('form');f.method='POST';f.action='/create_group';let i=document.createElement('input');i.name='name';i.value=n;f.appendChild(i);document.body.appendChild(f);f.submit()}else alert('Введите название')}
-
 if(sessionStorage.getItem('openSearch')==='1'){sessionStorage.removeItem('openSearch');document.getElementById('searchContainer').classList.add('active');document.getElementById('searchInput').focus()}
 
 function openInviteModal(){document.getElementById('inviteModal').classList.add('active');generateQR();loadReferralStats()}
@@ -391,7 +353,6 @@ async function loadContacts(){
     const fl=document.getElementById('friendsList');
     fl.innerHTML='<p style="color:#888;text-align:center;">📇 Запрашиваю доступ...</p>';
     selectedFriends=[];
-
     if('contacts' in navigator && 'ContactsManager' in window){
         try{
             const contacts=await navigator.contacts.select(['name','tel'],{multiple:true});
@@ -403,12 +364,20 @@ async function loadContacts(){
             contacts.forEach((c,i)=>{
                 const name=c.name||'Без имени';
                 const phone=c.tel?c.tel[0]:'';
-                h+=`<div class="contact-row" onclick="toggleFriend(${i}, '${name.replace(/'/g,"\\'")}', '${phone}')">
-                    <input type="checkbox" id="f_${i}" style="pointer-events:none;">
-                    <label for="f_${i}" style="flex:1;font-size:12px;color:#333;"><b>${name}</b><br><span style="color:#888;font-size:10px;">${phone}</span></label>
+                h+=`<div class="contact-row" data-index="${i}" data-name="${escapeHtml(name)}" data-phone="${phone}">
+                    <input type="checkbox" id="f_${i}">
+                    <label for="f_${i}" style="flex:1;font-size:12px;color:#333;"><b>${escapeHtml(name)}</b><br><span style="color:#888;font-size:10px;">${phone}</span></label>
                 </div>`;
             });
             fl.innerHTML=h;
+            document.querySelectorAll('.contact-row').forEach(row=>{
+                row.addEventListener('click',function(){
+                    const index=parseInt(this.dataset.index);
+                    const name=this.dataset.name;
+                    const phone=this.dataset.phone;
+                    toggleFriend(index,name,phone);
+                });
+            });
         }catch(e){
             fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ошибка доступа к контактам 😢<br>Убедитесь, что сайт открыт по HTTPS и вы используете Chrome на Android.</p>';
         }
@@ -421,7 +390,6 @@ function toggleFriend(i, name, phone) {
     const existing = selectedFriends.find(f => f.index === i);
     const checkbox = document.getElementById('f_' + i);
     const row = checkbox ? checkbox.closest('.contact-row') : null;
-
     if (existing) {
         selectedFriends = selectedFriends.filter(f => f.index !== i);
         if (checkbox) checkbox.checked = false;
@@ -431,7 +399,6 @@ function toggleFriend(i, name, phone) {
         if (checkbox) checkbox.checked = true;
         if (row) row.classList.add('selected');
     }
-
     document.getElementById('countValue').textContent = selectedFriends.length;
     document.getElementById('selectedCount').style.display = selectedFriends.length > 0 ? 'block' : 'none';
     document.getElementById('inviteSelectedBtn').style.display = selectedFriends.length > 0 ? 'block' : 'none';
@@ -461,7 +428,6 @@ setTimeout(()=>{typing.remove();const reply=random(replies[topic]||replies.fallb
 send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
 function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
-// ========== ЛЕНТА ==========
 let feedLoaded = false;
 async function loadFeed() {
     if (feedLoaded) return;
@@ -530,7 +496,6 @@ async function likeFeedPost(postId, el) {
     }
 }
 
-// ФИНАНСЫ МЕНЮ
 function toggleFinanceMenu() {
     document.getElementById('financeMenu').classList.toggle('active');
 }
