@@ -11,7 +11,7 @@
         html,body{height:100%;overflow:hidden;background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%)}
         .container{display:flex;flex-direction:column;height:100vh;max-width:700px;margin:0 auto;position:relative}
 
-        /* ХЕДЕР (оставлены только нужные элементы) */
+        /* ХЕДЕР */
         .header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.75);backdrop-filter:blur(8px);border-bottom:2px solid rgba(255,255,255,0.3);flex-shrink:0;flex-wrap:wrap;gap:6px;z-index:10;position:relative}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
@@ -21,7 +21,6 @@
         .icon-btn{background:rgba(255,255,255,0.9);padding:6px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none;flex-shrink:0}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
 
-        /* Выделенная иконка BearFlex (мишка + кино) */
         .golden-btn{
             background:linear-gradient(135deg, #ffd700, #ffaa00);
             padding:6px 12px;
@@ -38,16 +37,12 @@
             flex-shrink:0;
             white-space:nowrap;
         }
-        .golden-btn:hover{
-            background:linear-gradient(135deg, #ffe066, #ffbb33);
-            transform:scale(1.03);
-        }
+        .golden-btn:hover{background:linear-gradient(135deg, #ffe066, #ffbb33);transform:scale(1.03);}
         .golden-btn-icon{font-size:20px;}
 
         .premium-btn{background:gold;color:#333;font-weight:bold;border-radius:20px;padding:4px 12px;font-size:12px;text-decoration:none}
         .premium-active{color:gold;font-weight:bold;font-size:12px}
 
-        /* ПОИСК */
         .search-container{display:none;padding:8px 12px;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);flex-shrink:0;animation:slideDown 0.3s ease}
         .search-container.active{display:block}
         @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
@@ -66,13 +61,11 @@
         .search-close:hover{background:#f9f9f9}
         .search-invite-btn{display:block;width:100%;text-align:center;padding:10px;background:rgba(255,215,0,0.1);color:#ff8c00;border:none;border-radius:15px;font-weight:bold;font-size:12px;cursor:pointer;margin-top:8px}
 
-        /* СВАЙП-ПАНЕЛИ */
         .app{flex:1;position:relative;overflow:hidden;touch-action:pan-y pinch-zoom}
         .swiper{display:flex;height:100%;transition:transform 0.35s cubic-bezier(0.25,0.8,0.25,1);will-change:transform}
         .panel{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .panel-content{min-height:100%}
 
-        /* ЧАТЫ (из первого файла) */
         .welcome-block{background:rgba(255,255,255,0.95);border-radius:20px;padding:20px;margin-bottom:10px}
         .welcome-close{text-align:right;margin-bottom:5px}
         .welcome-close button{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa}
@@ -101,7 +94,6 @@
         .online{color:#4cd964;font-size:9px;margin-left:4px}
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
-        /* ЛЕНТА (из первого файла) */
         .feed-item{background:white;border-radius:20px;padding:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid rgba(255,255,255,0.5)}
         .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
@@ -122,21 +114,17 @@
         .donate-btn:hover{transform:scale(1.02)}
         .retry-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-weight:bold;margin-top:10px}
 
-        /* НИЖНЯЯ ПАНЕЛЬ */
         .bottom-nav{display:flex;justify-content:space-around;align-items:center;padding:8px 4px;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-top:2px solid rgba(255,107,107,0.2);flex-shrink:0}
         .nav-item{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:12px;gap:4px;cursor:pointer;transition:0.2s}
         .nav-item:hover{color:#ff8e8e}
         .nav-icon{font-size:26px}
 
-        /* МЕНЮ ФИНАНСОВ */
         .finance-menu{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:white;border-radius:20px;padding:16px;display:none;flex-wrap:wrap;gap:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
         .finance-menu.active{display:flex}
         .finance-link{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px}
 
-        /* FAB */
         .fab-btn{position:fixed;bottom:80px;right:20px;z-index:997;background:#ff6b6b;color:white;border:none;border-radius:50%;width:48px;height:48px;font-size:28px;box-shadow:0 6px 16px rgba(255,107,107,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-        /* МОДАЛЬНЫЕ ОКНА */
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
         .modal-content{background:white;border-radius:24px;padding:18px;width:260px;text-align:center}
@@ -158,6 +146,11 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
+        /* Стиль выделенного контакта */
+        .contact-row{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;cursor:pointer;transition:background 0.2s;}
+        .contact-row.selected{background:rgba(255,107,107,0.15);}
+        .contact-row input[type="checkbox"]{width:18px;height:18px;pointer-events:none;} /* чекбокс только для вида */
+
         @media (max-width:480px){
             .icon-btn{width:28px;height:28px;font-size:12px}
             .fab-btn{right:60px;width:44px;height:44px}
@@ -166,7 +159,7 @@
 </head>
 <body>
 <div class="container">
-    <!-- ХЕДЕР (только аватар, логотип, поиск, BearFlex, Premium, выход) -->
+    <!-- ХЕДЕР -->
     <div class="header">
         <div class="avatar" onclick="location.href='/profile'">
             {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
@@ -174,9 +167,7 @@
         <div class="logo-text"><span>🐻 Bear</span><span>Gram</span></div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
-            <a href="/golden" class="golden-btn">
-                <span class="golden-btn-icon">🐻🎬</span> BearFlex
-            </a>
+            <a href="/golden" class="golden-btn"><span class="golden-btn-icon">🐻🎬</span> BearFlex</a>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
@@ -269,7 +260,7 @@
 <!-- FAB кнопка -->
 <button class="fab-btn" onclick="openGroupModal()">+</button>
 
-<!-- AI-помощник (ПЕРЕМЕЩЁН ВНИЗ) -->
+<!-- AI-помощник -->
 <div style="position:fixed; bottom:20px; right:20px; z-index:999;">
     <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
 </div>
@@ -302,7 +293,6 @@
             <button class="invite-tab" onclick="switchInviteTab('link')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">🔗 Ссылка</button>
             <button class="invite-tab" onclick="switchInviteTab('referral')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">💎 Бонусы</button>
         </div>
-        <!-- Вкладки с реальным содержимым -->
         <div id="inviteFriends" class="invite-content">
             <button onclick="loadContacts()" style="width:100%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white;border:none;padding:12px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;margin-bottom:10px;">📇 Загрузить контакты</button>
             <p style="color:#888;font-size:11px;text-align:center;margin-bottom:10px;">Выбери друзей и пригласи их в BearGram</p>
@@ -365,7 +355,7 @@
     goTo(0, false);
 })();
 
-// ========== ОБЩИЕ ФУНКЦИИ (из первого файла) ==========
+// ========== ОБЩИЕ ФУНКЦИИ ==========
 function formatUTCTime(utcString){if(!utcString)return'';const m=utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);if(!m)return utcString;const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]));return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 document.querySelectorAll('.chat-time').forEach(el=>{const u=el.dataset.utc;if(u)el.textContent=formatUTCTime(u)});
 
@@ -396,6 +386,7 @@ if(sessionStorage.getItem('openSearch')==='1'){sessionStorage.removeItem('openSe
 function openInviteModal(){document.getElementById('inviteModal').classList.add('active');generateQR();loadReferralStats()}
 function closeInviteModal(){document.getElementById('inviteModal').classList.remove('active')}
 function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
+
 async function loadContacts(){
     const fl=document.getElementById('friendsList');
     fl.innerHTML='<p style="color:#888;text-align:center;">📇 Запрашиваю доступ...</p>';
@@ -412,8 +403,8 @@ async function loadContacts(){
             contacts.forEach((c,i)=>{
                 const name=c.name||'Без имени';
                 const phone=c.tel?c.tel[0]:'';
-                h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;">
-                    <input type="checkbox" id="f_${i}" onchange="toggleFriend(${i},'${name.replace(/'/g,"\\'")}','${phone}')" style="width:18px;height:18px;">
+                h+=`<div class="contact-row" onclick="toggleFriend(${i}, '${name.replace(/'/g,"\\'")}', '${phone}')">
+                    <input type="checkbox" id="f_${i}" style="pointer-events:none;">
                     <label for="f_${i}" style="flex:1;font-size:12px;color:#333;"><b>${name}</b><br><span style="color:#888;font-size:10px;">${phone}</span></label>
                 </div>`;
             });
@@ -425,7 +416,27 @@ async function loadContacts(){
         fl.innerHTML='<p style="color:#ff6b6b;text-align:center;">Ваш браузер не поддерживает доступ к контактам.<br>Откройте сайт в Chrome на Android.</p>';
     }
 }
-function toggleFriend(i,name,phone){const ex=selectedFriends.find(f=>f.index===i);if(ex)selectedFriends=selectedFriends.filter(f=>f.index!==i);else selectedFriends.push({index:i,name,phone});document.getElementById('countValue').textContent=selectedFriends.length;document.getElementById('selectedCount').style.display=selectedFriends.length>0?'block':'none';document.getElementById('inviteSelectedBtn').style.display=selectedFriends.length>0?'block':'none'}
+
+function toggleFriend(i, name, phone) {
+    const existing = selectedFriends.find(f => f.index === i);
+    const checkbox = document.getElementById('f_' + i);
+    const row = checkbox ? checkbox.closest('.contact-row') : null;
+
+    if (existing) {
+        selectedFriends = selectedFriends.filter(f => f.index !== i);
+        if (checkbox) checkbox.checked = false;
+        if (row) row.classList.remove('selected');
+    } else {
+        selectedFriends.push({ index: i, name, phone });
+        if (checkbox) checkbox.checked = true;
+        if (row) row.classList.add('selected');
+    }
+
+    document.getElementById('countValue').textContent = selectedFriends.length;
+    document.getElementById('selectedCount').style.display = selectedFriends.length > 0 ? 'block' : 'none';
+    document.getElementById('inviteSelectedBtn').style.display = selectedFriends.length > 0 ? 'block' : 'none';
+}
+
 function inviteSelectedFriends(){if(selectedFriends.length===0){alert('Выбери друзей');return}const link=document.getElementById('refLink').textContent.trim();const msg='🐻 Присоединяйся к BearGram! Общайся, люби, зарабатывай! '+link;if(navigator.share){navigator.share({title:'🐻 BearGram',text:msg,url:link}).catch(()=>{})}else{navigator.clipboard.writeText(msg).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',msg))}closeInviteModal()}
 function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
 function copyRefLink(){const link=document.getElementById('refLink').textContent.trim();navigator.clipboard.writeText(link).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',link))}
