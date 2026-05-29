@@ -133,10 +133,6 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
-        .contact-row{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin:5px 0;cursor:pointer;transition:background 0.2s;}
-        .contact-row.selected{background:rgba(255,107,107,0.15);}
-        .contact-row input[type="checkbox"]{width:18px;height:18px;pointer-events:none;}
-
         @media (max-width:480px){
             .icon-btn{width:28px;height:28px;font-size:12px}
             .fab-btn{right:60px;width:44px;height:44px}
@@ -363,7 +359,6 @@ function closeInviteModal(){document.getElementById('inviteModal').classList.rem
 function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
 
 let fileContacts = [];
-
 function parseContactsFile(input) {
     const file = input.files[0];
     if (!file) return;
@@ -388,10 +383,7 @@ function parseContactsFile(input) {
             const headers = lines[0].split(',');
             const nameIdx = headers.findIndex(h => h.trim().toLowerCase() === 'name');
             const phoneIdx = headers.findIndex(h => h.trim().toLowerCase() === 'phone');
-            if (nameIdx === -1 || phoneIdx === -1) {
-                alert('CSV должен иметь столбцы Name и Phone');
-                return;
-            }
+            if (nameIdx === -1 || phoneIdx === -1) { alert('CSV должен иметь столбцы Name и Phone'); return; }
             for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(',');
                 if (cols[phoneIdx]) {
@@ -406,7 +398,6 @@ function parseContactsFile(input) {
     };
     reader.readAsText(file);
 }
-
 function renderFileContacts() {
     const container = document.getElementById('contactsFileItems');
     const listDiv = document.getElementById('contactsFileList');
@@ -427,47 +418,29 @@ function renderFileContacts() {
     });
     container.innerHTML = html;
 }
-
 function toggleFileContact(index, row) {
     const checkbox = document.getElementById(`fc_${index}`);
     if (checkbox) checkbox.checked = !checkbox.checked;
     row.classList.toggle('selected', checkbox?.checked);
 }
-
 function inviteSelectedFriends(mode) {
     const link = document.getElementById('refLink').textContent.trim();
     const msg = `Привет! Присоединяйся к BearGram: ${link}`;
-
     if (mode === 'manual') {
         const phoneNumbers = document.getElementById('phoneNumbersInput').value.trim();
-        if (!phoneNumbers) {
-            alert('Введите номера телефонов');
-            return;
-        }
+        if (!phoneNumbers) { alert('Введите номера телефонов'); return; }
         phoneNumbers.split(',').forEach(phone => {
             const cleanPhone = phone.trim();
-            if (cleanPhone) {
-                const smsUrl = `sms:${cleanPhone}?body=${encodeURIComponent(msg)}`;
-                window.open(smsUrl, '_blank');
-            }
+            if (cleanPhone) { const smsUrl = `sms:${cleanPhone}?body=${encodeURIComponent(msg)}`; window.open(smsUrl, '_blank'); }
         });
     } else if (mode === 'file') {
         const selected = [];
         document.querySelectorAll('#contactsFileItems .contact-row').forEach(row => {
             const checkbox = row.querySelector('input[type="checkbox"]');
-            if (checkbox?.checked) {
-                const idx = parseInt(row.dataset.index);
-                if (fileContacts[idx]) selected.push(fileContacts[idx].phone);
-            }
+            if (checkbox?.checked) { const idx = parseInt(row.dataset.index); if (fileContacts[idx]) selected.push(fileContacts[idx].phone); }
         });
-        if (selected.length === 0) {
-            alert('Выберите контакты');
-            return;
-        }
-        selected.forEach(phone => {
-            const smsUrl = `sms:${phone}?body=${encodeURIComponent(msg)}`;
-            window.open(smsUrl, '_blank');
-        });
+        if (selected.length === 0) { alert('Выберите контакты'); return; }
+        selected.forEach(phone => { const smsUrl = `sms:${phone}?body=${encodeURIComponent(msg)}`; window.open(smsUrl, '_blank'); });
     }
     closeInviteModal();
 }
@@ -543,7 +516,7 @@ async function loadFeed() {
                     <span class="feed-action" onclick="likeFeedPost(${p.id}, this)">❤️ <span>${p.likes}</span></span>
                     <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
                     <span class="feed-action">👁️ ${p.views}</span>
-                    <a href="https://yoomoney.ru/quickpay/button-widget?receiver=4100119522166446&sum=100&label=donate_${p.channel_id}" target="_blank" class="donate-btn" onclick="event.stopPropagation();">💎 Донат</a>
+                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel('${p.channel_name}')">💎 Донат</a>
                 </div>
             </div>`;
         });
@@ -561,6 +534,13 @@ async function likeFeedPost(postId, el) {
         el.classList.toggle('liked', data.liked);
         el.querySelector('span').textContent = data.likes;
     }
+}
+
+function donateToChannel(channelName) {
+    const amount = prompt('Введите сумму доната (₽):', '100');
+    if (!amount || isNaN(amount) || amount <= 0) return;
+    const url = `https://yoomoney.ru/quickpay/button-widget?receiver=4100119522166446&sum=${amount}&label=donate_${encodeURIComponent(channelName)}`;
+    window.open(url, '_blank');
 }
 
 function toggleFinanceMenu() {
