@@ -226,6 +226,7 @@
             .user-name{font-size:12px}
             .live-preview-circle{width:220px;height:220px}
         }
+        .read-status{color:#53bdeb}.delivered-status{color:#aaa}.sent-status{color:#aaa}
     </style>
 </head>
 <body>
@@ -322,11 +323,11 @@
                     <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
                     {% if m.sender_id == current_user.id %}
                         {% if m.status == 'read' %}
-                            ✅✅
+                            <span class="read-status">✓✓</span>
                         {% elif m.status == 'delivered' %}
-                            ✅
+                            <span class="delivered-status">✓✓</span>
                         {% else %}
-                            ⏳
+                            <span class="sent-status">✓</span>
                         {% endif %}
                     {% endif %}
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
@@ -541,9 +542,9 @@ function addNewMessage(msg) {
     let timeStr = formatUTCTime(msg.timestamp);
     let statusIcon = '';
     if(msg.is_own) {
-        if(msg.status == 'read') statusIcon = '✅✅';
-        else if(msg.status == 'delivered') statusIcon = '✅';
-        else statusIcon = '⏳';
+        if(msg.status == 'read') statusIcon = '<span class="read-status">✓✓</span>';
+        else if(msg.status == 'delivered') statusIcon = '<span class="delivered-status">✓✓</span>';
+        else statusIcon = '<span class="sent-status">✓</span>';
     }
     div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span> ${statusIcon}${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
     messagesDiv.appendChild(div);
