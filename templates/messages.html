@@ -67,163 +67,82 @@
         
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:2px;padding:2px 6px;position:relative}
-        #msgInput{flex:1;background:none;border:none;color:#333;font-size:16px;padding:8px 2px;outline:none;resize:noneone;resize:none;line-height:1.4;overflow-y:auto;line-height:1.4;overflow-y:auto;max-height:120px;word-break:break-word}
-        #msg;max-height:120px;word-break:break-word}
+        #msgInput{flex:1;background:none;border:none;color:#333;font-size:16px;padding:8px 2px;outline:none;resize:none;line-height:1.4;overflow-y:auto;max-height:120px;word-break:break-word}
         #msgInput::placeholder{color:#aaa;font-size:15px}
         
-        .input-icon{background:none;border:none;cursorInput::placeholder{color:#aaa;font-size:15px}
-        
-        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:4px;border-radius:50:pointer;font-size:18px;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shr888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
-        .input-icon:hover{background:ink:0}
-        .input-icon:hover{background:rgba(0,0rgba(0,0,0,0.05,0,0.05);color:#ff);color:#ff6b6b}
-        .send-btn{background:#ff6b6b;6b6b}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;displaycolor:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none:0;border:none;cursor:pointer;display:none}
-        .send;cursor:pointer;display:none}
-        .send-btn:hover{background:#ff-btn:hover{background:#ff5252;transform:scale(1.02)}
-        .recording{background5252;transform:scale(1.02)}
-        .recording{background:#ff4444 !important;animation:pulse 1:#ff4444 !important;animation:pulse 1s infinite}
-        @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scales infinite}
+        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.2s;width:32px;height:32px;flex-shrink:0}
+        .input-icon:hover{background:rgba(0,0,0,0.05);color:#ff6b6b}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:none;cursor:pointer;display:none}
+        .send-btn:hover{background:#ff5252;transform:scale(1.02)}
+        .recording{background:#ff4444 !important;animation:pulse 1s infinite}
         @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
         
-       (1)}}
-        
-        .input-menu{position:absolute;bottom:50px;right:10 .input-menu{position:absolute;bottom:50px;right:10px;background:white;px;background:white;border-radius:16px;box-shadow:0 4border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:columnpx 12px rgba(0,0,0,0.15);display:none;flex-direction:column;gap:4px;padding:8px;z;gap:4px;padding:8px;z-index:150}
+        .input-menu{position:absolute;bottom:50px;right:10px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;gap:4px;padding:8px;z-index:150}
         .input-menu.active{display:flex}
-        .menu-item-index:150}
-        .input-menu.active{display:flex}
-        .menu-item{padding:10px {padding:10px 16px;background:none;border:none;text-align:left;font-size:16px;16px;background:none;border:none;text-align:left;font-size:16px;cursor:pointer;border-radius:12px;color:#333;white-space:nowrap}
-cursor:pointer;border-radius:12px;color:#333;white-space:nowrap}
+        .menu-item{padding:10px 16px;background:none;border:none;text-align:left;font-size:16px;cursor:pointer;border-radius:12px;color:#333;white-space:nowrap}
         .menu-item:hover{background:#f0f0f0}
         
-        .emoji-picker{position        .menu-item:hover{background:#f0f0f0}
-        
-        .emoji-picker{position:fixed;bottom:80px;left:8:fixed;bottom:80px;left:8px;right:auto;max-width:calc(100px;right:auto;max-width:calc(100vw - 16px);width:auto;min-width:280px;background:white;border-radius:24vw - 16px);width:auto;min-width:280px;background:px;padding:10px;display:none;grid-template-columns:repeatwhite;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-        .emoji-picker.active{display::0 4px 20px rgba(0,0,0,0.15)}
+        .emoji-picker{position:fixed;bottom:80px;left:8px;right:auto;max-width:calc(100vw - 16px);width:auto;min-width:280px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
         .emoji-picker.active{display:grid}
-        .emoji-picker span{font-sizegrid}
-        .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
-        .emoji-pickerborder-radius:10px}
+        .emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
         .emoji-picker span:hover{background:#f0f0f0}
         
-        .sticker span:hover{background:#f0f0f0}
-        
-        .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px; 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
-        .sticker-panel.active{overflow:hidden}
+        .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}
         .sticker-panel.active{display:block}
-        .panel-tabs{display:display:block}
         .panel-tabs{display:flex;border-bottom:1px solid #eee}
-        .panelflex;border-bottom:1px solid #eee}
-        .panel-tab{flex:1;padding:12-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:nonepx;text-align:center;cursor:pointer;background:none;border:none;font-size:14px}
-        .panel-tab;font-size:14px}
-        .panel-tab.active{color:#ff6b6b;border-bottom:2.active{color:#ff6b6b;border-bottom:2px solid #ff6b6b}
-        .panelpx solid #ff6b6b}
-        .panel-content{padding:12px-content{padding:12px;max-height:340px;overflow-y:auto}
-        .sticker-grid{;max-height:340px;overflow-y:auto}
+        .panel-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:none;font-size:14px}
+        .panel-tab.active{color:#ff6b6b;border-bottom:2px solid #ff6b6b}
+        .panel-content{padding:12px;max-height:340px;overflow-y:auto}
         .sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-        .sticker-item{background:#f5f5f5;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
         .sticker-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;text-align:center}
-        .stickerborder-radius:12px;padding:8px;cursor:pointer;text-align:center}
-        .sticker-item img{width:70-item img{width:70px;height:70px;object-fit:contain}
-        .sticker-item span{font-size:11px;height:70px;object-fit:contain}
+        .sticker-item img{width:70px;height:70px;object-fit:contain}
         .sticker-item span{font-size:11px;color:#888;display:block;margin-top:4px}
-       px;color:#888;display:block;margin-top:4px}
-        .ai-input{width:100%;padding:12px;border:1px solid #ddd;border-radius: .ai-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:25px;margin-bottom:10px;outline:none;font-size:14px}
-        .ai-btn25px;margin-bottom:10px;outline:none;font-size:14px}
-        .ai-btn{width:100%;padding:12px;background:#{width:100%;padding:12px;background:#ff6b6b;color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;marginff6b6b;color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;margin-bottom:10px}
-        .ai-btn:disabled{opacity:0.5}
-        .ai-info{font-size:12px;-bottom:10px}
+        .ai-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:25px;margin-bottom:10px;outline:none;font-size:14px}
+        .ai-btn{width:100%;padding:12px;background:#ff6b6b;color:white;border:none;border-radius:25px;cursor:pointer;font-weight:bold;margin-bottom:10px}
         .ai-btn:disabled{opacity:0.5}
         .ai-info{font-size:12px;color:#888;text-align:center;margin-bottom:10px}
-        .aicolor:#888;text-align:center;margin-bottom:10px}
         .ai-preview{text-align:center;margin-top:10px}
-        .ai-preview img{max-width:150px;max-height:-preview{text-align:center;margin-top:10px}
         .ai-preview img{max-width:150px;max-height:150px;border-radius:12px}
-        .ai-preview-actions{display:flex;gap:8150px;border-radius:12px}
         .ai-preview-actions{display:flex;gap:8px;margin-top:8px}
-        .aipx;margin-top:8px}
-        .ai-preview-actions button{flex-preview-actions button{flex:1;padding:8px;border:none;border-radius:20px;cursor:pointer;font-size:12px}
-        .ai-save-btn{background:1;padding:8px;border:none;border-radius:20px;cursor:pointer;font-size:12px}
+        .ai-preview-actions button{flex:1;padding:8px;border:none;border-radius:20px;cursor:pointer;font-size:12px}
         .ai-save-btn{background:#4cd964;color:white}
-        .ai-cancel-btn{background:#4cd964;color:white}
         .ai-cancel-btn{background:#f0f0f0;color:#888}
-        .ai-loading{text-align:center;padding:#f0f0f0;color:#888}
         .ai-loading{text-align:center;padding:20px;color:#888}
-        .upload-sticker-btn{background:#f0f0f0;:20px;color:#888}
-        .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-sizeborder:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;margin-bottom:10px}
-        .sticker:12px;margin-bottom:10px}
-        .sticker-actions{display:flex;justify-content:space-between;margin-bottom-actions{display:flex;justify-content:space-between;margin-bottom:10px}
+        .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;margin-bottom:10px}
+        .sticker-actions{display:flex;justify-content:space-between;margin-bottom:10px}
         
-        .mention-suggestions{:10px}
-        
-        .mention-suggestions{position:absolute;bottom:position:absolute;bottom:100%;left:0;right:0;background:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba4px 12px rgba(0,0,0,0.1);display:none}
-        .mention(0,0,0,0.1);display:none}
+        .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
         .mention-suggestions.active{display:block}
-        .mention-suggestions.active{display:block}
-        .mention-suggestion-item{padding:8px 12px;-suggestion-item{padding:8px 12px;display:flex;align-items:center;gap:10display:flex;align-items:center;gap:10px;cursor:pointer}
-        .mention-suggestion-item:hover{background:#px;cursor:pointer}
-f9f9f9}
-        .mention-suggestion-avatar{width:28px;height:28px        .mention-suggestion-item:hover{background:#f9f9f9}
-        .mention-suggestion-avatar{width:28px;height:28px;border-radius:50%;;border-radius:50%;background:#f0f0f0;display:flexbackground:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size;align-items:center;justify-content:center;overflow:hidden;font-size:12px}
-        .:12px}
+        .mention-suggestion-item{padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+        .mention-suggestion-item:hover{background:#f9f9f9}
+        .mention-suggestion-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px}
         .mention-suggestion-avatar img{width:100%;height:100%;object-fit:cover}
-        .mention-smention-suggestion-avatar img{width:100%;height:100%;object-fit:cover}
-        .mention-suggestion-name{font-size:13px;font-weight:uggestion-name{font-size:13px;font-weight:500;color:#333}
-        .mention-suggestion-link{font-size:10px500;color:#333}
+        .mention-suggestion-name{font-size:13px;font-weight:500;color:#333}
         .mention-suggestion-link{font-size:10px;color:#999}
         
-;color:#999}
-        
         .messages::-webkit-scrollbar{width:3px}
-        .messages::-webkit-scrollbar-track{        .messages::-webkit-scrollbar{width:3px}
         .messages::-webkit-scrollbar-track{background:transparent}
-        .messages::-webkit-scrollbackground:transparent}
-        .messages::-webkit-scrollbar-thumb{background:rgba(0,0bar-thumb{background:rgba(0,0,0,0.15,0,0.15);border-radius:3px}
+        .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
         
-        .video-circle{width:120px;height:120px;border-radius:50%;overflow:hidden;cursor:pointer;);border-radius:3px}
-        
-        .video-circle{width:120px;height:120px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:position:relative;display:inline-block;background:#000}
-        .video-circle video{width:100%;height:100%;object-fit:inline-block;background:#000}
+        .video-circle{width:120px;height:120px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000}
         .video-circle video{width:100%;height:100%;object-fit:cover}
-        .video-circle .duration-badge{cover}
-        .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
+        .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
         
-        .scroll-bottom-btnpx;padding:2px 6px;border-radius:10px}
-        
-        .scroll-bottom-btn{position:sticky;bottom:12{position:sticky;bottom:12px;right:12px;background:rgba(255,255,px;right:12px;background:rgba(255,255,255,0.9);255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;alignborder:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
-        .0,0,0.1);cursor:pointer;z-index:50;margin-left:autoscroll-bottom-btn.active{display:flex}
-
-        /* Живой превью}
+        .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
 
         /* Живой превью для видеозаписи */
-        .live-p для видеозаписи */
         .live-preview-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0review-overlay {
-            position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0; bottom: 0;
             background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content:.7);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 200;
         }
         .live-preview-circle {
- center;
-            z-index: 200;
-        }
-        .live-preview-circle {
-            width: 260px            width: 260px;
-            height: 260px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #000;
-            position: relative;
-            box-shadow: ;
+            width: 260px;
             height: 260px;
             border-radius: 50%;
             overflow: hidden;
@@ -232,44 +151,21 @@ f9f9f9}
             box-shadow: 0 0 0 4px white;
         }
         .live-preview-circle video {
-            width: 0 0 0 4px white;
-        }
-        .live-preview-circle video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-        .100%;
-            height: 100%;
-            object-fit:live-preview-stop {
-            position: absolute;
-            bottom cover;
         }
         .live-preview-stop {
             position: absolute;
             bottom: 20px;
             left: 50%;
-            transform: translateX(-50: 20px;
-            left: 50%;
             transform: translateX(-50%);
-            background: white;
-            color: #ff4444;
-            border: none;
-            border-radius:%);
             background: white;
             color: #ff4444;
             border: none;
             border-radius: 30px;
             padding: 10px 24px;
-            font-weight: 30px;
-            padding: 10px 24px;
             font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .preview-send-area {
-            display: none;
- bold;
             font-size: 16px;
             cursor: pointer;
         }
@@ -278,23 +174,10 @@ f9f9f9}
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-                       align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
             background: rgba(255,255,255,0.95);
             border-top: 1px solid #ffb3b3;
-        background: rgba(255,255,255,0.95);
-            border-top: 1px solid #ffb3b3;
         }
-        .preview-s }
         .preview-send-area video {
-            width: 80px;
-            height: 80px;
-            border-radius: 16px;
-            object-fit: cover;
-            background: #000;
-        }
-        .end-area video {
             width: 80px;
             height: 80px;
             border-radius: 16px;
@@ -303,13 +186,7 @@ f9f9f9}
         }
         .preview-send-area .actions {
             display: flex;
-            gap:preview-send-area .actions {
-            display: flex;
             gap: 8px;
-        }
-        .preview-send-area button {
-            padding: 8px 16px;
-            border-radius: 20px 8px;
         }
         .preview-send-area button {
             padding: 8px 16px;
@@ -318,60 +195,28 @@ f9f9f9}
             font-weight: bold;
             cursor: pointer;
         }
-        .preview-s;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .preview-send-area .send-previewend-area .send-preview {
-            background: #4cd964;
-            color: {
+        .preview-send-area .send-preview {
             background: #4cd964;
             color: white;
         }
         .preview-send-area .cancel-preview {
-            background white;
-        }
-        .preview-send-area .cancel-preview {
             background: #eee;
-            color: #eee;
             color: #333;
         }
         
         @media (max-width:480px){
-           : #333;
-        }
-        
-        @media (max-width:480px){
-            .bubble{max-width:85%;padding:5px 10px; .bubble{max-width:85%;padding:5px 10px;font-size:15px}
-            .input-icon{widthfont-size:15px}
+            .bubble{max-width:85%;padding:5px 10px;font-size:15px}
             .input-icon{width:28px;height:28px;font-size:16px;padding:2px}
-            .send-btn:28px;height:28px;font-size:16px;padding:2px}
-            .send-btn{width:34px;{width:34px;height:34px;font-size:16px}
+            .send-btn{width:34px;height:34px;font-size:16px}
             .input-wrapper{padding:2px 3px;gap:1px}
-           height:34px;font-size:16px}
-            .input-wrapper{padding:2px 3px;gap:1px}
-            #msgInput{font-size:15px;padding: #msgInput{font-size:15px;padding:6px 1px}
-            .input-area{gap:3px}
-            .header{padding:66px 1px}
+            #msgInput{font-size:15px;padding:6px 1px}
             .input-area{gap:3px}
             .header{padding:6px 10px}
             .avatar{width:30px;height:30px}
-            .back{paddingpx 10px}
-            .avatar{width:30px;height:30px}
             .back{padding:4px 8px;font-size:11px}
-            .profile-btn{p:4px 8px;font-size:11px}
             .profile-btn{padding:4px 8px;font-size:11px}
-            .call-btn{padding:4px 8px;font-size:adding:4px 8px;font-size:11px}
             .call-btn{padding:4px 8px;font-size:11px}
-            .user-name{font-size:1211px}
             .user-name{font-size:12px}
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="headerpx}
         }
     </style>
 </head>
@@ -379,158 +224,79 @@ f9f9f9}
 <div class="container">
     <div class="header">
         <a href="/chat" class="back">←</a>
-        <div class="avatar" onclick">
-        <a href="/chat" class="back">←</a>
-       ="location.href='/profile/{{ other.id }}'">
-            {% if other.avatar != 'default <div class="avatar" onclick="location.href='/profile/{{ other.id }}'">
+        <div class="avatar" onclick="location.href='/profile/{{ other.id }}'">
             {% if other.avatar != 'default.png' %}
-                <img.png' %}
                 <img src="/static/avatars/{{ other.avatar }}">
-            {% else %}
-                🐼
-            {% src="/static/avatars/{{ other.avatar }}">
             {% else %}
                 🐼
             {% endif %}
         </div>
-        <div class="user endif %}
-        </div>
-        <div class="user-info" onclick="location.href='/profile/{{ other-info" onclick="location.href='/profile/{{ other.id }}'">
-           .id }}'">
+        <div class="user-info" onclick="location.href='/profile/{{ other.id }}'">
             <div class="user-name">{{ other.username }}</div>
-            <div class="user-status <div class="user-name">{{ other.username }}</div>
             <div class="user-status" id="typingStatus">
-                {% if other.status" id="typingStatus">
                 {% if other.status == 'online' %}
-                    🟢 Онлайн
- == 'online' %}
                     🟢 Онлайн
                 {% else %}
                     🔵 Офлайн
                 {% endif %}
             </div>
         </div>
-        <button class="call-btn" onclick="startVideo                {% else %}
-                    🔵 Офлайн
-                {% endif %}
-            </div>
-        </div>
         <button class="call-btn" onclick="startVideoCall()">📹</button>
-        <a href="/profile" class="profileCall()">📹</button>
         <a href="/profile" class="profile-btn">🧸</a>
-    </div-btn">🧸</a>
     </div>
     
-    <div class="messages" id="messages>
-    
     <div class="messages" id="messages">
-        <div id="pinnedMessageBar" style="display:none;">
-        <div id="pinnedMessageBar" style="display:none; background:#f9f background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px;9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
-            <span>📌 Закреп font-size:12px; border-left:3px solid #ff6b6b;">
+        <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
             <span>📌 Закреплено: </span>
             <span id="pinnedMessageContent"></span>
-            <button onclick="scrollToлено: </span>
-            <span id="pinnedMessageContent"></span>
-            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white;Pinned()" style="background:#ff6b6b; color:white; border:none; border-radius border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
-        </div>
-        
-        {% set last:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
+            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px; cursor:pointer;">↓</button>
         </div>
         
         {% set last_date = None %}
         {% for m in msgs %}
         {% set msg_date = m.timestamp.strftime('%Y-%m-%d') %}
-        {% if msg_date_date = None %}
-        {% for m in msgs %}
-        {% set msg_date = m.timestamp.strftime('%Y-%m-%d') %}
         {% if msg_date != last_date %}
-        != last_date %}
         <div class="date-separator">
-            <span>
-                {% if msg_date == today %}
-                    Сегодня
-                {% elif msg_date == yesterday %}
-                    В <div class="date-separator">
             <span>
                 {% if msg_date == today %}
                     Сегодня
                 {% elif msg_date == yesterday %}
                     Вчера
                 {% else %}
-                    {{ m.timestamp.strftime('%d.%mчера
-                {% else %}
                     {{ m.timestamp.strftime('%d.%m.%Y') }}
-                {% endif %}
-            </span>
-        </div>
-        {%.%Y') }}
                 {% endif %}
             </span>
         </div>
         {% set last_date = msg_date %}
         {% endif %}
- set last_date = msg_date %}
-        {% endif %}
-        <div class="message {% if m.sender_id == current_user.id        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
-            <div class="bubble"="{{ m.id }}">
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble" onclick="copyMessageContent(this)">
                 {% if m.is_pinned %}
-                onclick="copyMessageContent(this)">
-                {% if m.is_pinned %}
-                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
-                {% endif %}
-                {% if m.forwarded_from_id %}
-                <div class=" }})">📌 Закреплено ✖</div>
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
                 {% endif %}
                 {% if m.forwarded_from_id %}
                 <div class="forward-badge">📎 Переслано</div>
                 {% endif %}
                 {% if m.reply_to_id %}
                 <div class="reply-preview">
-                    <span>📩 Ответforward-badge">📎 Переслано</div>
-                {% endif %}
-                {% if m.reply_to_id %}
-                <div class="reply-preview">
                     <span>📩 Ответ:</span><br>
-                    <span id="reply-p:</span><br>
                     <span id="reply-preview-{{ m.id }}">...</span>
-                </div>
-                {% endif %}
-                {% if m.file_type == 'sticker' %}
-                    <img src="{{ m.file_path }}" class="streview-{{ m.id }}">...</span>
                 </div>
                 {% endif %}
                 {% if m.file_type == 'sticker' %}
                     <img src="{{ m.file_path }}" class="sticker-img">
                 {% elif m.file_path %}
                     {% if m.file_type == 'image' %}
-                        <img src="{{ m.file_path }}" class="msg-image" onclickicker-img">
-                {% elif m.file_path %}
-                    {% if m.file_type == 'image' %}
                         <img src="{{ m.file_path }}" class="msg-image" onclick="window.open(this.src)">
-                    {% elif m.file_type == 'audio'="window.open(this.src)">
                     {% elif m.file_type == 'audio' %}
                         <audio controls src="{{ m.file_path }}"></audio>
-                    {% elif m.file_type == 'video' and m. %}
-                        <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}
-                        <div class="video-circle" onclick="const v=this.querySelector('video'); v.mvoice_duration and m.voice_duration > 0 %}
                         <div class="video-circle" onclick="const v=this.querySelector('video'); v.muted=false; v.play()">
-                            <video src="{{uted=false; v.play()">
                             <video src="{{ m.file_path }}" playsinline muted></video>
-                            <span class="duration-badge">{{ m.voice_duration m.file_path }}" playsinline muted></video>
-                            <span class="duration-badge">{{ m.voice }}″</span>
+                            <span class="duration-badge">{{ m.voice_duration }}″</span>
                         </div>
                     {% elif m.file_type == 'video' %}
-                        <video controls_duration }}″</span>
-                        </div>
-                    {% elif m.file_type == 'video' %}
-                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12 src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
-                    {% else %}
-                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#ff6b6b">📎 {{ m.file_name }}</a>
-                    {% endif %}
-                {% endif %}
-                {% ifpx"></video>
+                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
                     {% else %}
                         <a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#ff6b6b">📎 {{ m.file_name }}</a>
                     {% endif %}
@@ -539,173 +305,87 @@ f9f9f9}
                     <div>{{ m.content }}</div>
                 {% endif %}
                 {% if m.voice_duration and m.voice_duration > 0 and m.file_type != 'video' %}
-                    <div class="voice m.content %}
-                    <div>{{ m.content }}</div>
-                {% endif %}
-                {% if m.voice_duration and m.voice_duration > 0 and m.file_type != 'video' %}
-                    <div class="voice-msg" onclick="play-msg" onclick="playVoice(this)">
+                    <div class="voice-msg" onclick="playVoice(this)">
                         <span>🎤</span>
-                        <div class="voice-wave"><div></divVoice(this)">
-                        <span>🎤</span>
-                        <div class="voice-wave"><div></div><div></div><div></div><div></div></><div></div><div></div><div></div></div>
-                        <span>{{ m.voice_duration }}div>
+                        <div class="voice-wave"><div></div><div></div><div></div><div></div></div>
                         <span>{{ m.voice_duration }}″</span>
                     </div>
                 {% endif %}
-                <div class="time″</span>
-                    </div>
-                {% endif %}
                 <div class="time">
-                    <span class="message-time" data-utc="{{ m.t">
-                    <span class="message-time" data-utc="{{ m.timestamp.isoformat()imestamp.isoformat() }}Z">{{ }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
-                    {% m.timestamp.strftime('%H:%M') }}</span>
-                    {% if m if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
-                    {% if m.is_f.edited %}<span class="edited-badge">изменено</span>{% endif %}
+                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
-               avorite %}<span class="favorite-star">★</span>{% endif %}
                 </div>
             </div>
             <div class="message-actions">
-                <button class="action-btn" </div>
-            </div>
-            <div class="message-actions">
-                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('` onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
-                <button class="action-btn" onclick=" }}`)">💬</button>
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
                 <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐</button>
-               toggleFavorite({{ m.id }}, 'private')">⭐</button>
-                <button class="action-btn" onclick="forwardMessage({{ <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
-                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
-                m.id }}, 'private')">➡️</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
                 <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
                 {% if m.sender_id == current_user.id %}
-                    <button class="action-btn {% if m.sender_id == current_user.id %}
-                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
-                    <button class="action-btn" onclick="deleteMessage({{ m</button>
-                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️.id }}, 'private', false)">🗑️</button>
-                    <button</button>
-                    <button class="action-btn" onclick="deleteMessage({{ m class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️</.id }}, 'private', true)">⚠️</button>
-                {% else %}
-button>
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️</button>
                 {% else %}
                     <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🙈</button>
-                {% endif %}
-            </div>
-        </div>
-                           <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🙈</button>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     
-    <button {% endfor %}
-    </div>
-    
-    <button class="scroll-bottom-btn" id="scrollBottomBtn" class="scroll-bottom-btn" id="scrollBottomBtn" onclick="document.getElementById('messages onclick="document.getElementById('messages').scrollTo({top: document.getElementById('messages').scrollHeight, behavior: 'smooth'})">↓</button>
-    
-    <div class="reply-bar"').scrollTo({top: document.getElementById('messages').scrollHeight, behavior: 'smooth'})">↓</button>
+    <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="document.getElementById('messages').scrollTo({top: document.getElementById('messages').scrollHeight, behavior: 'smooth'})">↓</button>
     
     <div class="reply-bar" id="replyBar">
         <span>💬 Ответ:</span>
-        <span id="replyText" style="flex:1;color id="replyBar">
-        <span>💬 Ответ:</span>
         <span id="replyText" style="flex:1;color:#888;font-size:11px"></span>
-        <button class="cancel-reply" onclick="cancel:#888;font-size:11px"></span>
-        <button class="cancel-reply" onclick="cancelReply()">✖</Reply()">✖</button>
+        <button class="cancel-reply" onclick="cancelReply()">✖</button>
     </div>
     
     <div class="input-area">
         <div class="input-wrapper">
-            <textarea id="msgInputbutton>
-    </div>
-    
-    <div class="input-area">
-        <div class="input-wrapper">
-            <textarea id="msgInput" placeholder="Сообщение..." rows="1" placeholder="Сообщение..." rows="1"></textarea>
+            <textarea id="msgInput" placeholder="Сообщение..." rows="1"></textarea>
             <button class="input-icon" id="attachBtn">📎</button>
             <div class="input-menu" id="inputMenu">
-                <button class="menu-item" id="menuEmoji">"></textarea>
-            <button class="input-icon" id="attachBtn">📎</button>
-            <div class="input-menu" id="inputMenu">
-                <button class="menu-item" id="menuEmoji">😊😊 Эмодзи</button>
-                <button class="menu-item" id="menuStickers">🎨 Стикеры</button>
-                <button class="menu-item" id="menuVoice">🎤 Голосовое</button>
-                <button class="menu-item" id="menuVideo">📹 Видеосообщение</button>
-                <button class="menu-item" id="menu Эмодзи</button>
+                <button class="menu-item" id="menuEmoji">😊 Эмодзи</button>
                 <button class="menu-item" id="menuStickers">🎨 Стикеры</button>
                 <button class="menu-item" id="menuVoice">🎤 Голосовое</button>
                 <button class="menu-item" id="menuVideo">📹 Видеосообщение</button>
                 <button class="menu-item" id="menuFile">📎 Файл</button>
             </div>
         </div>
-        <button class="send-btn" id="sendBtn" onclickFile">📎 Файл</button>
-            </div>
-        </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
-        <input type="file" id="fileInput" style="display:none"="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" multiple onchange="handleMultipleFiles(this.files)">
-        <input type="file" id="custom multiple onchange="handleMultipleFiles(this.files)">
-        <input type="file" id="customStickerInput" style="display:none" accept="StickerInput" style="display:none" accept="image/png,image/jpeg,image/gif,image/png,image/jpeg,image/gif,image/webp" onchangeimage/webp" onchange="uploadCustomSticker(this.files[0])">
-    </div>
-    
-    <="uploadCustomSticker(this.files[0])">
+        <input type="file" id="customStickerInput" style="display:none" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadCustomSticker(this.files[0])">
     </div>
     
     <div class="emoji-picker" id="emojiPicker">
-        <spandiv class="emoji-picker" id="emojiPicker">
-        <span>😀</span><span>😍</span>😀</span><span>😍</span><span>🥰</span><span>😘><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span>
-</span><span>💕</span><span>❤️</span><span>💖</span>
-        <span>💗</span><span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</        <span>💗</span><span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span>
-        <span>😡</span><span>🤔</spanspan>
-        <span>😡</span><span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
-        <span>🤔</span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
-        <span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span>
-        <span>🐶</span><span>🦊</span><span>><span>🐼</span><span>🐨</span><span>🐱</span>
-        <span>🐶</span><span>🦊</span><span>🐰</span><span>🐰</span><span>🦝</span><span>🧸</span><span>🎈</span><span>🎀🦝</span><span>🧸</span><span>🎈</span><span>🎀</span>
-        <span>😎</span</span>
-        <span>😎</span><span>🥺</span><span>😈</><span>🥺</span><span>😈</span><span>💀</span><span>span><span>💀</span><span>🎂</span><span>🍕</span🎂</span><span>🍕</span><span>☕</span><span>☕</span>
-        <span>🚀</span><span>>
-        <span>🌈</span><span>🍀</span><span>🐝</span🚀</span><span>🌈</span><span>🍀</span><span>🐝</span><span>🦋</><span>🦋</span><span>🐞span><span>🐞</span><span>🐙</span>
-        <span>👑</span><span>💍</span><span>🎁</span><span>🏆</span><span>⚽</span><span</span><span>🐙</span>
-        <span>👑</span><span>💍</span><span>🎁</span><span>🏆</span><span>⚽</span><span>🎮</span>🎮</span><span>📱</span>
-    </div>
-    
-    <div class="sticker-panel" id="stickerPanel">
-        <div class="panel-tabs">
-            <button class="><span>📱</span>
+        <span>😀</span><span>😍</span><span>🥰</span><span>😘</span><span>💕</span><span>❤️</span><span>💖</span>
+        <span>💗</span><span>😊</span><span>😁</span><span>😂</span><span>🤣</span><span>😭</span><span>😢</span>
+        <span>😡</span><span>🤔</span><span>👍</span><span>👎</span><span>🙏</span><span>🎉</span><span>✨</span>
+        <span>🌟</span><span>⭐</span><span>💫</span><span>🐻</span><span>🐼</span><span>🐨</span><span>🐱</span>
+        <span>🐶</span><span>🦊</span><span>🐰</span><span>🦝</span><span>🧸</span><span>🎈</span><span>🎀</span>
+        <span>😎</span><span>🥺</span><span>😈</span><span>💀</span><span>🎂</span><span>🍕</span><span>☕</span>
+        <span>🚀</span><span>🌈</span><span>🍀</span><span>🐝</span><span>🦋</span><span>🐞</span><span>🐙</span>
+        <span>👑</span><span>💍</span><span>🎁</span><span>🏆</span><span>⚽</span><span>🎮</span><span>📱</span>
     </div>
     
     <div class="sticker-panel" id="stickerPanel">
         <div class="panel-tabs">
             <button class="panel-tab active" onclick="switchStickerTab('my')">🐻 Мои</button>
-            <button class="panelpanel-tab active" onclick="switchStickerTab('my')">🐻 Мои</button>
             <button class="panel-tab" onclick="switchStickerTab('ai')">🤖 AI</button>
         </div>
         <div class="panel-content">
             <div id="myStickersTab">
-                <div class="sticker-tab" onclick="switchStickerTab('ai')">🤖 AI</button>
-        </div>
-        <div class="panel-content">
-            <div id="myStickersTab">
                 <div class="sticker-actions">
-                    <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ За-actions">
                     <button class="upload-sticker-btn" onclick="document.getElementById('customStickerInput').click()">➕ Загрузить</button>
-                    <span id="stickerCount">0/грузить</button>
                     <span id="stickerCount">0/30</span>
                 </div>
-                <div id="myStickers"><div30</span>
-                </div>
-                <div id="myStickers"><div style="text-align:center;color:#888;padding style="text-align:center;color:#888;padding:20px">Загруз:20px">Загрузка...</div></div>
-            </div>
-            <div id="aiStка...</div></div>
+                <div id="myStickers"><div style="text-align:center;color:#888;padding:20px">Загрузка...</div></div>
             </div>
             <div id="aiStickersTab" style="display:none;">
-                <divickersTab" style="display:none;">
-                <div id="aiInfo" class="ai-info">Загруз id="aiInfo" class="ai-info">Загрузка...</div>
-                <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер...ка...</div>
+                <div id="aiInfo" class="ai-info">Загрузка...</div>
                 <input type="text" id="aiPrompt" class="ai-input" placeholder="Опиши стикер...">
-                <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать</button>
-                <div id="aiResult"></div">
                 <button class="ai-btn" id="aiGenerateBtn" onclick="generateAISticker()">✨ Сгенерировать</button>
                 <div id="aiResult"></div>
             </div>
@@ -713,44 +393,36 @@ button>
     </div>
 </div>
 
-<script>
-            </div>
-        </div>
+<div class="live-preview-overlay" id="livePreviewOverlay">
+    <div class="live-preview-circle">
+        <video id="livePreviewVideo" autoplay muted playsinline></video>
+        <button class="live-preview-stop" onclick="stopVideoRecording()">⏹️ Стоп</button>
+    </div>
+</div>
+
+<div class="preview-send-area" id="previewSendArea">
+    <video id="previewVideo" controls playsinline></video>
+    <div class="actions">
+        <button class="send-preview" onclick="sendRecordedVideo()">✅ Отправить</button>
+        <button class="cancel-preview" onclick="cancelVideoPreview()">❌ Отмена</button>
     </div>
 </div>
 
 <script>
 function formatUTCTime(utcString) {
     if (!utcString) return '';
-    const match = ut>
-function formatUTCTime(utcString) {
-    if (!utcString) return '';
-    const match = utcString.match(/(\d{4})-(\d{2})-(\d{cString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
-    if (!match) return utcString;
-2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
     if (!match) return utcString;
     const [_, year, month, day, hour, minute, second] = match.map(Number);
-    const utcDate = new Date    const [_, year, month, day, hour, minute, second] = match.map(Number);
     const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-(Date.UTC(year, month - 1, day, hour, minute, second));
-    return utcDate.toLocaleTimeString('ru-RU', { hour: '    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '22-digit', minute: '2-digit' });
-}
-document.querySelectorAll('.message-digit' });
+    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 document.querySelectorAll('.message-time').forEach(el => {
-    const utcStr-time').forEach(el => {
-    const utcStr = el.dataset.ut = el.dataset.utc;
-    if (utcStr) el.textContent = formatUTCTimec;
+    const utcStr = el.dataset.utc;
     if (utcStr) el.textContent = formatUTCTime(utcStr);
 });
 
-const receiver_id = {{(utcStr);
-});
-
 const receiver_id = {{ other.id }};
-const msgInput = document.getElementById('msgInput');
-let mediaRecorder = null;
-let audioCh other.id }};
 const msgInput = document.getElementById('msgInput');
 let mediaRecorder = null;
 let audioChunks = [];
@@ -759,134 +431,66 @@ let videoRecorder = null;
 let videoChunks = [];
 let isVideoRecording = false;
 let videoStream = null;
-unks = [];
-let isAudioRecording = false;
-let videoRecorder = null;
-let videoChunks = [];
-let isVideoRecording = false;
-let videoStream = null;
 let startTime = null;
 let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
-letlet startTime = null;
-let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
-let currentReplyToId = null;
-let typingTimeout = null;
-let isSending = false;
 let currentReplyToId = null;
 let typingTimeout = null;
 let isSending = false;
 let processedIds = new Set();
-let aiLimits = {is_premium: false, remaining: 3, limit processedIds = new Set();
 let aiLimits = {is_premium: false, remaining: 3, limit: 3};
 let pendingVideoBlob = null;
 
-function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if: 3};
-let pendingVideoBlob = null;
-
 function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
-function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div(audio) audio.play(); }
 function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
 
-function start.textContent = t; return div.innerHTML; }
-
 function startVideoCall() {
-    fetch('/start_call/'VideoCall() {
     fetch('/start_call/' + receiver_id, {method: 'POST'})
-        + receiver_id, {method: 'POST'})
-        .then(r => r.json .then(r => r.json())
-        .then(data =>())
-        .then(data => { window.open('/call { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
-}
-
-msgInput.addEventListener('input', function/' + data.room_id, '_blank', 'width=800,height=600'); });
+        .then(r => r.json())
+        .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
 }
 
 msgInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    fetch('/typing', {method:() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
+    fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: true})});
     if(typingTimeout) clearTimeout(typingTimeout);
-_id, is_typing: true})});
-    if(typingTimeout) clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver    typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})}), 1000);
-    sendBtn.style.display = this_id: receiver_id, is_typing: false})}), 1000);
+    typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({receiver_id: receiver_id, is_typing: false})}), 1000);
     sendBtn.style.display = this.value.trim().length > 0 ? 'flex' : 'none';
 });
 
 function checkTyping() {
-    fetch(`/get_typing/${receiver_id}`).then(r=>.value.trim().length > 0 ? 'flex' : 'none';
-});
-
-function checkTyping() {
-    fetch(`/get_typing/${receiver_idr.json()).then(data => {
+    fetch(`/get_typing/${receiver_id}`).then(r=>r.json()).then(data => {
         const statusDiv = document.getElementById('typingStatus');
         if(data.is_typing) { statusDiv.innerHTML = '✏️ Печатает...'; statusDiv.className = 'user-status typing'; }
-        else}`).then(r=>r.json()).then(data => {
-        const statusDiv = document.getElementById('typingStatus');
-        if(data.is_typing) { statusDiv.innerHTML = '✏️ Печатает...'; statusDiv.className = 'user-status typing'; }
-        else { const isOnline = '{{ other.status }}' === 'online'; statusDiv { const isOnline = '{{ other.status }}' === 'online'; statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Оф.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн'; statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`;лайн'; statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`; }
-    });
-}
- }
+        else { const isOnline = '{{ other.status }}' === 'online'; statusDiv.innerHTML = isOnline ? '🟢 Онлайн' : '🔵 Офлайн'; statusDiv.className = `user-status ${isOnline ? 'online' : 'offline'}`; }
     });
 }
 setInterval(checkTyping, 2000);
 
-function loadPinnedMessagesetInterval(checkTyping, 2000);
-
 function loadPinnedMessage() {
-    fetch(`() {
-    fetch(`/get_pinned_message/${receiver_id}/private`/get_pinned_message/${receiver_id}/private`).then(r=>r.json).then(r=>r.json()).then(data => {
-        if(data.id) {()).then(data => {
-        if(data.id) { document.getElementById('pinnedMessageBar document.getElementById('pinnedMessageBar').style.display = 'flex'; document.getElementById('pinnedMessageContent').innerHTML =').style.display = 'flex'; document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.s `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`; window.pinnedMsgId = data.id; }
-        else { document.getElementById('pinnedMessageBar').styleender_name)}</strong>`; window.pinnedMsgId = data.id; }
+    fetch(`/get_pinned_message/${receiver_id}/private`).then(r=>r.json()).then(data => {
+        if(data.id) { document.getElementById('pinnedMessageBar').style.display = 'flex'; document.getElementById('pinnedMessageContent').innerHTML = `${escapeHtml(data.content)} — <strong>${escapeHtml(data.sender_name)}</strong>`; window.pinnedMsgId = data.id; }
         else { document.getElementById('pinnedMessageBar').style.display = 'none'; window.pinnedMsgId = null; }
     });
 }
 
-function scrollToPinned() { if(window.pinned.display = 'none'; window.pinnedMsgId = null; }
-    });
-}
-
-function scrollToPinned() { if(window.pinnedMsgId) { const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`MsgId) { const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
-function pinMessage(msgId, type) { fetch('/pin_message', {method: 'POST', headers }
-function pinMessage(msgId, type) { fetch('/pin_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: msgId, type: type})}).then(() => { setTimeout(() => { check: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: msgId, type: type})}).then(() => { setTimeout(() => { checkNewMessages(); loadPinnedNewMessages(); loadPinnedMessage(); }, 300); }); }
+function scrollToPinned() { if(window.pinnedMsgId) { const el = document.querySelector(`.message[data-id="${window.pinnedMsgId}"]`); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+function pinMessage(msgId, type) { fetch('/pin_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: msgId, type: type})}).then(() => { setTimeout(() => { checkNewMessages(); loadPinnedMessage(); }, 300); }); }
 function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
 
-function searchMessage(); }, 300); }); }
-function unpinThisMessage(msgId) { pinMessage(msgId, 'private'); }
-
-function searchUsers(query) { if(!query) { hideSuggestions(); return; }Users(query) { if(!query) { hideSuggestions(); return; } fetch(`/search_users?q=${encodeURI fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).thenComponent(query)}`).then(r=>r.json()).then(users => { if((users => { if(users.length) showSuggestions(users); else hideSuggestusers.length) showSuggestions(users); else hideSuggestions(); }); }
-functionions(); }); }
-function showSuggestions(users) showSuggestions(users) { const div = document.getElementById('mentionSuggestions'); div { const div = document.getElementById('mentionSuggestions'); div.innerHTML = ''; users.forEach(u => { const item = document.createElement('div'); item.className = 'mention.innerHTML = ''; users.forEach(u => { const item = document.createElement('div'); item.className = 'mention-suggestion-item'; item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default-suggestion-item'; item.innerHTML = `<div class="mention-suggestion-avatar">${.png' ? `<img src="/static/avatars/${u.avatar}">` : uu.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`; item.onclick = class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`; item.onclick = () => insertMention(u () => insertMention(u.username); div.appendChild(item); }); div.classList.add('active'); }
-function insertMention(username) { const val.username); div.appendChild(item); }); div.classList.add('active'); }
-function insertMention(username) { const val = msgInput.value, cursor = msgInput.value, cursor = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); current.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); currentMentionStart = -1; msgInput.dispatchEvent(new Event('input'));MentionStart = -1; msgInput.dispatchEvent(new Event('input')); }
-function }
+function searchUsers(query) { if(!query) { hideSuggestions(); return; } fetch(`/search_users?q=${encodeURIComponent(query)}`).then(r=>r.json()).then(users => { if(users.length) showSuggestions(users); else hideSuggestions(); }); }
+function showSuggestions(users) { const div = document.getElementById('mentionSuggestions'); div.innerHTML = ''; users.forEach(u => { const item = document.createElement('div'); item.className = 'mention-suggestion-item'; item.innerHTML = `<div class="mention-suggestion-avatar">${u.avatar != 'default.png' ? `<img src="/static/avatars/${u.avatar}">` : u.username[0].toUpperCase()}</div><div><div class="mention-suggestion-name">${escapeHtml(u.username)}</div><div class="mention-suggestion-link">${escapeHtml(u.username_link)}</div></div>`; item.onclick = () => insertMention(u.username); div.appendChild(item); }); div.classList.add('active'); }
+function insertMention(username) { const val = msgInput.value, cursor = msgInput.selectionStart; const before = val.substring(0, currentMentionStart), after = val.substring(cursor); msgInput.value = before + '@' + username + ' ' + after; msgInput.focus(); msgInput.selectionStart = msgInput.selectionEnd = before.length + username.length + 2; hideSuggestions(); currentMentionStart = -1; msgInput.dispatchEvent(new Event('input')); }
 function hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
 
 let currentMentionStart = -1;
- hideSuggestions() { document.getElementById('mentionSuggestions').classList.remove('active'); }
-
-let currentMentionStart = -1;
 let mentionSearchTimeout = null;
-msgInputlet mentionSearchTimeout = null;
 msgInput.addEventListener('input', function() {
-    const val = this.value, cursor = this.selectionStart.addEventListener('input', function() {
     const val = this.value, cursor = this.selectionStart;
     let lastAt = -1;
-    for(let i = cursor-1; i >= 0; i--) { if;
-    let lastAt = -1;
-    for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n')(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
-    if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mention break; }
+    for(let i = cursor-1; i >= 0; i--) { if(val[i] === '@') { lastAt = i; break; } if(val[i] === ' ' || val[i] === '\n') break; }
     if(lastAt !== -1) { currentMentionStart = lastAt; const query = val.substring(lastAt + 1, cursor); if(mentionSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); }
-    else { hideSearchTimeout) clearTimeout(mentionSearchTimeout); mentionSearchTimeout = setTimeout(() => searchUsers(query), 300); }
     else { hideSuggestions(); currentMentionStart = -1; }
-});
-
-function addNewMessage(msgSuggestions(); currentMentionStart = -1; }
 });
 
 function addNewMessage(msg) {
@@ -894,108 +498,55 @@ function addNewMessage(msg) {
     processedIds.add(msg.id);
     const messagesDiv = document.getElementById('messages');
     const div = document.createElement('div');
-    div.className = `message ${msg.is_own) {
-    if(processedIds.has(msg.id)) return;
-    processedIds.add(msg.id);
-    const messagesDiv = document.getElementById('messages');
-    const div = document.createElement('div');
-    div.className = ` ? 'sent' : 'received'}`;
+    div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
     div.setAttribute('data-id', msg.id);
-    let forwardmessage ${msg.is_own ? 'sent' : 'received'}`;
-    div.setAttribute('data-id', msg.id);
-    let forward = msg.forwarded_from_name ? '<div class="forward-badge = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
-    let reply =">📎 Переслано</div>' : '';
-    let reply = msg.reply_to_id ? msg.reply_to_id ? '<div class="reply-p '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></divreview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
-    let pinned>' : '';
-    let pinnedBadge = msg.is_pinned ? '<div classBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
-   ="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
+    let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
+    let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
+    let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
     let fileHtml = '';
     if(msg.file_path) {
-        if(msg.file_type == 'sticker') fileHtml = `<img src="${msg.file_path}" class=" let fileHtml = '';
-    if(msg.file_path) {
         if(msg.file_type == 'sticker') fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
-        else if(msg.file_type ==sticker-img">`;
         else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" class="msg-image" onclick="window.open(this.src)">`;
-        else 'image') fileHtml = `<img src="${msg.file_path}" class="msg-image" onclick="window.open(this.src)">`;
-        else if(msg.file_type == ' if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-        else if(msg.file_typeaudio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
-        else if(msg.file_type == 'video' && msg == 'video' && msg.voice_duration && msg.voice_duration > 0) {
-            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" playsinline muted></video><span class=".voice_duration && msg.voice_duration > 0) {
+        else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+        else if(msg.file_type == 'video' && msg.voice_duration && msg.voice_duration > 0) {
             fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" playsinline muted></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
-duration-badge">${msg.voice_duration}″</span></div>`;
         }
-        else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}"        }
         else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
-        style="max-width:200px;border-radius:12 else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}"px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
     }
-    let contentHtml = (msg.content && class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
-    }
-    let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)} msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
-    let voiceHtml = (msg.voice_duration && msg.file_type != 'video') ? `<div class="voice</div>` : '';
-    let voiceHtml = (msg.voice_duration && msg.file_type != 'video') ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
-    let edited = msg.edited ? '<span class="edited-badge">изменено</span>' :</span></div>` : '';
+    let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
+    let voiceHtml = (msg.voice_duration && msg.file_type != 'video') ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
     let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
-    let star = msg '';
     let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
     let timeStr = formatUTCTime(msg.timestamp);
-    div.innerHTML = `<div class="bubble" onclick="copy.is_favorite ? '<span class="favorite-star">★</span>' : '';
-    let timeStr = formatUTCTime(msg.timestamp);
-    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>MessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \` || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, '${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclickprivate')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn"➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private') onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈 class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
-    messagesDiv.appendChild(div);
-    if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id</button>`}</div>`;
+    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
     messagesDiv.appendChild(div);
     if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
-    updateScrollButton();
-    last}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
     updateScrollButton();
     lastMsgId = msg.id;
     if(msg.is_pinned) loadPinnedMessage();
 }
 
 function sendMsg() {
-   MsgId = msg.id;
-    if(msg.is_pinned) loadPinnedMessage();
-}
-
-function sendMsg() {
     if(isSending) return;
     const content = msgInput.value.trim();
-    if(!content && !current if(isSending) return;
-    const content = msgInput.value.trim();
     if(!content && !currentReplyToId) return;
-    isSending = trueReplyToId) return;
     isSending = true;
-    const formData =;
     const formData = new FormData();
-    formData.append('re new FormData();
     formData.append('receiver_id', receiver_id);
-    if(content) formceiver_id', receiver_id);
     if(content) formData.append('content', content);
-    if(currentReplyToId) formData.append('Data.append('content', content);
     if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
-    formData.append('_from_reply_to_id', currentReplyToId);
     formData.append('_from_ajax', 'true');
     currentReplyToId = null;
-    document.getElementById('replyajax', 'true');
-    currentReplyToId = null;
     document.getElementById('replyBar').style.display = 'none';
-    fetch('/send', {method: 'POST', body: formData})
-        .then(r => r.json())
-        .then(data => {
-           Bar').style.display = 'none';
     fetch('/send', {method: 'POST', body: formData})
         .then(r => r.json())
         .then(data => {
             if(data.success) {
                 msgInput.value = '';
                 msgInput.style.height = 'auto';
-                sendBtn.style if(data.success) {
-                msgInput.value = '';
-                msgInput.style.height = 'auto';
                 sendBtn.style.display = 'none';
-                setTimeout(() => { checkNewMessages(); isSending =.display = 'none';
-                setTimeout(() => { checkNew false; }, 300);
+                setTimeout(() => { checkNewMessages(); isSending = false; }, 300);
             } else {
                 alert(data.error || 'Ошибка отправки');
                 isSending = false;
@@ -1017,58 +568,19 @@ function sendFile(file) {
                 formData2.append('file_path', data.path);
                 formData2.append('file_name', data.name);
                 formData2.append('file_type', data.type);
-                if(currentReplyToMessages(); isSending = false; }, 300);
-            } else {
-                alert(data.error || 'Ошибка отправки');
-                isSending = false;
-            }
-        })
-        .catch(e => { console.error('Send error:', e); isSending = false; });
-}
-
-function sendFile(file) {
-    if(!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    fetch('/upload', {method: 'POST', body: formData})
-        .then(r => r.json())
-        .then(data => {
-            if(data.path) {
-                const formData2 = new FormData();
-                formData2.append('receiver_id', receiver_id);
-                formData2.append('file_path', data.path);
-                formData2.append('file_name', data.name);
-                formData2.append('file_type', data.type);
-                if(currentReplyToId) formData2.append('reply_to_id', currentId) formData2.append('reply_to_id', currentReplyToId);
+                if(currentReplyToId) formData2.append('reply_to_id', currentReplyToId);
                 formData2.append('_from_ajax', 'true');
                 fetch('/send', {method: 'POST', body: formData2})
-                    .then(r => rReplyToId);
-                formData2.append('_from_ajax', 'true');
-                fetch('/send', {method: 'POST', body: formData2})
-                    .then(r => r.json.json())
-                    .then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
-           ())
+                    .then(r => r.json())
                     .then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
             }
-        });
-}
-
-function handleMultipleFiles(files) {
-    if (!files || files.length }
         });
 }
 
 function handleMultipleFiles(files) {
     if (!files || files.length === 0) return;
-    for (let i = 0; i === 0) return;
     for (let i = 0; i < files.length; i++) {
-        sendFile(files < files.length; i++) {
         sendFile(files[i]);
-    }
-}
-
-function checkNewMessages() {
-    fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>[i]);
     }
 }
 
@@ -1076,58 +588,29 @@ function checkNewMessages() {
     fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => { if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m)); });
 }
 
-function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText &&r.json()).then(msgs => { if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m)); });
-}
-
-function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText && newText.trim()) { fetch newText.trim()) { fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id:('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: new id, new_content: newText, type: type})}).then(() => setTimeout(checkNewMessages, 300)); } }
-function deleteMessageText, type: type})}).then(() => setTimeout(checkNewMessages, 300)); } }
-function deleteMessage(id, type, all) { if(confirm('Удалить сооб(id, type, all) { if(confirm('Удалить сообщение?')) { fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/jsonщение?')) { fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})}).then(() => {_all: all})}).then document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
-function toggleFavorite(id, type) { fetch('/toggle_favorite', {method: 'POST', headers: {'Content-Type); } }
+function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText && newText.trim()) { fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type})}).then(() => setTimeout(checkNewMessages, 300)); } }
+function deleteMessage(id, type, all) { if(confirm('Удалить сообщение?')) { fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})}).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
 function toggleFavorite(id, type) { fetch('/toggle_favorite', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})}).then(() => setTimeout(checkNewMessages, 300)); }
-function forwardMessage(id, type) { let target =': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})}).then(() => setTimeout(checkNew prompt('ID пользователя для пересылки:'); if(target) { fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'Messages, 300)); }
-function forwardMessage(id, type) { let target = prompt('ID пользователя для пересылки:'); if(target) { fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})}).then(() => alert('Переслано!')); } }
-function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').), msg_type: type})}).then(() => alert('Переслано!')); } }
-function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
-function cancelReply() { currentReplyToId = null; document.getElementById('').style.display = 'flex'; msgInput.focus(); }
+function forwardMessage(id, type) { let target = prompt('ID пользователя для пересылки:'); if(target) { fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})}).then(() => alert('Переслано!')); } }
+function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
-// ---replyBar').style.display = 'none'; }
-
 // --- Голосовые сообщения ---
-async function startVoiceRecording Голосовые сообщения ---
 async function startVoiceRecording() {
-    if (is() {
     if (isAudioRecording || isVideoRecording) return;
     try {
-AudioRecording || isVideoRecording) return;
-    try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        media        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        startTime = Date.now();
-        mediaRecorder.ondataorder(stream);
+        mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
         startTime = Date.now();
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop =available = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
-            const duration = Math.round((Date.now() - startTime) / 1000);
-            const blob = new Blob(audioChunks, { type () => {
             const duration = Math.round((Date.now() - startTime) / 1000);
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
             const fd = new FormData();
             fd.append('audio', blob);
-           : 'audio/webm' });
-            const fd = new FormData();
-            fd.append('audio', blob);
             fd.append('duration', duration);
-            fetch('/upload_voice', {method: 'POST', body: fd.append('duration', duration);
             fetch('/upload_voice', {method: 'POST', body: fd})
-                .then(r => r.json())
-                .then(d => {
-                    if(d.path) {
-                        const fd2 = new FormData fd})
                 .then(r => r.json())
                 .then(d => {
                     if(d.path) {
@@ -1135,58 +618,28 @@ AudioRecording || isVideoRecording) return;
                         fd2.append('receiver_id', receiver_id);
                         fd2.append('file_path', d.path);
                         fd2.append('file_name', 'Голосовое');
-                        fd2();
-                        fd2.append('receiver_id', receiver_id);
-                        fd2.append('file_path', d.path);
-                        fd2.append('file_name', 'Голосовое');
                         fd2.append('file_type', 'audio');
-                        fd2.append('voice_duration', duration);
-                        if(currentReplyToId) fd2.append('reply_to_id', current.append('file_type', 'audio');
                         fd2.append('voice_duration', duration);
                         if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
                         fd2.append('_from_ajax', 'true');
-                       ReplyToId);
-                        fd2.append('_from_ajax', 'true');
-                        fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = ' null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
-                    }
-                });
-            stream.getnone'; setTimeout(checkNewMessages, 200); });
+                        fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
                     }
                 });
             stream.getTracks().forEach(t => t.stop());
             isAudioRecording = false;
-            attachBtn.classList.remove('recordingTracks().forEach(t => t.stop());
-            isAudioRecording = false;
             attachBtn.classList.remove('recording');
-            attachBtn.innerHTML = '📎';
-        };
-');
             attachBtn.innerHTML = '📎';
         };
         mediaRecorder.start();
         isAudioRecording = true;
-        attachBtn.classList.add        mediaRecorder.start();
-        isAudioRecording = true;
         attachBtn.classList.add('recording');
-        attachBtn.innerHTML = '('recording');
         attachBtn.innerHTML = '⏹️';
-        setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
-    } catch(e) { alert('⏹️';
         setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
     } catch(e) { alert('Микрофон не доступен'); }
 }
-function stopVoiceRecording() { if(mediaRecorder && mediaМикрофон не доступен'); }
-}
 function stopVoiceRecording() { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
 
-// --- Видеосообщения (кружки) с превRecorder.state === 'recording') mediaRecorder.stop(); }
-
 // --- Видеосообщения (кружки) с превью ---
-async function startVideoRecording() {
-    if (isVideoRecording || isAudioRecording) return;
-    try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode:ью ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -1194,157 +647,76 @@ async function startVideoRecording() {
             video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
             audio: true
         });
-        const overlay "user", width: { ideal: 480 }, height: { ideal: 640 } },
-            audio: true
-        });
         const overlay = document.getElementById('livePreviewOverlay');
-        const liveVideo = document.getElementById('livePreviewVideo');
-        liveVideo = document.getElementById('livePreviewOverlay');
         const liveVideo = document.getElementById('livePreviewVideo');
         liveVideo.srcObject = videoStream;
         overlay.style.display = 'flex';
 
-        videoChunks.srcObject = videoStream;
-        overlay.style.display = 'flex';
-
         videoChunks = [];
         startTime = Date.now();
-        const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus') ? ' = [];
-        startTime = Date.now();
         const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus') ? 'video/webm; codecs=vp8,opus' : 'video/webm';
-video/webm; codecs=vp8,opus' : 'video/webm';
         videoRecorder = new MediaRecorder(videoStream, { mimeType });
-        videoRecorder.ond        videoRecorder = new MediaRecorder(videoStream, { mimeType });
-        videoRecorder.ondataavailable = e => { if(e.data.size > 0) videoChunks.pushataavailable = e => { if(e.data.size > 0) videoChunks.push(e.data); };
-        videoRecorder.onstop = () => {
-            const duration = Math.round((Date.now()(e.data); };
+        videoRecorder.ondataavailable = e => { if(e.data.size > 0) videoChunks.push(e.data); };
         videoRecorder.onstop = () => {
             const duration = Math.round((Date.now() - startTime) / 1000);
             const blob = new Blob(videoChunks, { type: mimeType });
-            overlay.style.display = ' - startTime) / 1000);
-            const blob = new Blob(videoChunks, { type: mimeType });
             overlay.style.display = 'none';
-            if (videoStream) { videoStream.getTracks().forEach(t =>none';
             if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-            isVideoRecording = false;
-            attachBtn.classList.remove('recording');
-            attachBtn.innerHTML = '📎';
-
-            pending t.stop()); videoStream = null; }
             isVideoRecording = false;
             attachBtn.classList.remove('recording');
             attachBtn.innerHTML = '📎';
 
             pendingVideoBlob = blob;
             const previewVideo = document.getElementById('previewVideo');
-            previewVideo.src = URL.createObjectURL(blobVideoBlob = blob;
-            const previewVideo = document.getElementById('previewVideo');
-            previewVideo.src = URL);
-            previewVideo.loop = false;
-            previewVideo.muted = true;
-            document.getElementById('previewSend.createObjectURL(blob);
+            previewVideo.src = URL.createObjectURL(blob);
             previewVideo.loop = false;
             previewVideo.muted = true;
             document.getElementById('previewSendArea').style.display = 'flex';
         };
-        videoArea').style.display = 'flex';
-        };
         videoRecorder.start();
         isVideoRecording = true;
-        attachBtn.classList.add('recRecorder.start();
-        isVideoRecording = true;
         attachBtn.classList.add('recording');
-        attachBtn.innerHTMLording');
-        attachBtn.innerHTML = '⏺ = '⏺️';
-        setTimeout(() => { if(isVideoRecording)️';
+        attachBtn.innerHTML = '⏺️';
         setTimeout(() => { if(isVideoRecording) stopVideoRecording(); }, 60000);
-    } catch stopVideoRecording(); }, (e) {
-        alert('Камера или микрофон не доступны');
-        attach60000);
     } catch(e) {
         alert('Камера или микрофон не доступны');
         attachBtn.classList.remove('recording');
-        attachBtn.innerHTML =Btn.classList.remove('recording');
         attachBtn.innerHTML = '📎';
-        document '📎';
         document.getElementById('livePreviewOverlay').style.display = 'none';
-        if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-        is.getElementById('livePreviewOverlay').style.display = 'none';
         if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
         isVideoRecording = false;
     }
 }
-function stopVideoRecording() { if(videoRecorder &&VideoRecording = false;
-    }
-}
-function stopVideoRecording() { videoRecorder.state === 'recording') videoRecorder.stop(); }
-
-function sendRecordedVideo() {
-    if (!pendingVideoBlob) return;
-    const if(videoRecorder && videoRecorder.state === 'recording') videoRecorder.stop(); }
+function stopVideoRecording() { if(videoRecorder && videoRecorder.state === 'recording') videoRecorder.stop(); }
 
 function sendRecordedVideo() {
     if (!pendingVideoBlob) return;
     const fd = new FormData();
-    fd.append('file', fd = new FormData();
     fd.append('file', pendingVideoBlob, `video_${Date.now()}.webm`);
-    fetch('/upload', {method: 'POST', body: fd})
-        .then(r => r.json())
-        .then pendingVideoBlob, `video_${Date.now()}.webm`);
     fetch('/upload', {method: 'POST', body: fd})
         .then(r => r.json())
         .then(d => {
             if(d.path) {
                 const fd2 = new FormData();
                 fd2.append('receiver_id', receiver_id);
-                fd2.append('(d => {
-            if(d.path) {
-                const fd2 = new FormData();
-                fd2.append('receiver_id', receiver_id);
                 fd2.append('file_path', d.path);
-                fd2.append('filefile_path', d.path);
-                fd2.append('file_name', 'Видеос_name', 'Видеосообщение');
-                fd2.append('file_type', 'video');
-                fd2.append('voice_duration', Math.round((Date.now()ообщение');
+                fd2.append('file_name', 'Видеосообщение');
                 fd2.append('file_type', 'video');
                 fd2.append('voice_duration', Math.round((Date.now() - startTime)/1000));
-                if(currentReplyTo - startTime)/1000));
                 if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
-                fd2Id) fd2.append('reply_to_id', currentReplyToId);
                 fd2.append('_from_ajax', 'true');
-                fetch('/send', {method.append('_from_ajax', 'true');
                 fetch('/send', {method: 'POST', body: fd2}).then(() => {
-                    currentReplyToId: 'POST', body: fd2}).then(() => {
                     currentReplyToId = null;
-                    document.getElementById('replyBar').style.display = 'none';
-                    setTimeout(checkNewMessages, = null;
                     document.getElementById('replyBar').style.display = 'none';
                     setTimeout(checkNewMessages, 200);
                 });
             }
         }).finally(() => { cancelVideoPreview(); });
 }
- 200);
-                });
-            }
-        }).finally(() => { cancelVideoPreview(); });
-}
 function cancelVideoPreview() {
     pendingVideoBlob = null;
-    document.getElementById('prefunction cancelVideoPreview() {
-    pendingVideoBlob = null;
     document.getElementById('previewVideo').src = '';
-    document.getElementById('previewSendArea').viewVideo').src = '';
     document.getElementById('previewSendArea').style.display = 'none';
-}
-
-window.addEventListener('beforeunload', () => {
-    if (isAudioRecording) stopVoiceRecording();
-    if (isVideoRecording) stopVideoRecording();
-});
-
-// --- Меню вложений ---
-const attachBtn = document.getElementById('attachstyle.display = 'none';
 }
 
 window.addEventListener('beforeunload', () => {
@@ -1358,32 +730,15 @@ const inputMenu = document.getElementById('inputMenu');
 const sendBtn = document.getElementById('sendBtn');
 
 attachBtn.addEventListener('click', (e) => {
-    e.stopBtn');
-const inputMenu = document.getElementById('inputMenu');
-const sendBtn = document.getElementById('sendBtn');
-
-attachBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (Propagation();
     if (isAudioRecording) { stopVoiceRecording(); return; }
-    if (isVideoRecordingisAudioRecording) { stopVoiceRecording(); return; }
-    if (isVideoRecording) { stopVideoRecording();) { stopVideoRecording(); return; }
-    inputMenu.classList.toggle('active');
-});
-document.addEventListener('click', (e) return; }
+    if (isVideoRecording) { stopVideoRecording(); return; }
     inputMenu.classList.toggle('active');
 });
 document.addEventListener('click', (e) => {
-    if (!inputMenu.contains(e => {
-    if (!inputMenu.contains(e.target) && e.target !==.target) && e.target !== attachBtn) {
-        inputMenu.classList.remove('active');
- attachBtn) {
+    if (!inputMenu.contains(e.target) && e.target !== attachBtn) {
         inputMenu.classList.remove('active');
     }
-});
-document.getElementById('menuEmoji').addEventListener('click', () => {
-    inputMenu.classList.remove('active');
-    document.getElementById('emojiPicker').classList.toggle    }
 });
 document.getElementById('menuEmoji').addEventListener('click', () => {
     inputMenu.classList.remove('active');
@@ -1391,21 +746,9 @@ document.getElementById('menuEmoji').addEventListener('click', () => {
 });
 document.getElementById('menuStickers').addEventListener('click', () => {
     inputMenu.classList.remove('active');
-    document.getElementById('stickerPanel').classList.toggle('active('active');
-});
-document.getElementById('menuStickers').addEventListener('click', () => {
-    inputMenu.classList.remove('active');
     document.getElementById('stickerPanel').classList.toggle('active');
     if(document.getElementById('stickerPanel').classList.contains('active')) {
-       ');
-    if(document.getElementById('stickerPanel').classList.contains('active')) {
         loadMyStickers();
-        loadAILimits();
-    }
-});
-document.getElementById('menuVoice').addEventListener('click', () => {
-    inputMenu.classList.remove('active');
-    if (isAudioRecording) { stopVoiceRecording(); } else { start loadMyStickers();
         loadAILimits();
     }
 });
@@ -1415,42 +758,20 @@ document.getElementById('menuVoice').addEventListener('click', () => {
 });
 document.getElementById('menuVideo').addEventListener('click', () => {
     inputMenu.classList.remove('active');
-    if (VoiceRecording(); }
-});
-document.getElementById('menuVideo').addEventListener('click', () => {
-    inputMenu.classList.remove('active');
-    if (isVideoRecording) {isVideoRecording) { stopVideoRecording(); } else { startVideoRecording(); }
-});
-document.getElementById('menuFile').addEventListener('click', () stopVideoRecording(); } else { startVideoRecording(); }
+    if (isVideoRecording) { stopVideoRecording(); } else { startVideoRecording(); }
 });
 document.getElementById('menuFile').addEventListener('click', () => {
     inputMenu.classList.remove('active');
     document.getElementById('fileInput').click();
 });
 
-// => {
-    inputMenu.classList.remove('active');
-    document.getElementById('fileInput').click();
-});
-
 // Эмодзи пикер
-document.querySelectorAll('. Эмодзи пикер
-document.querySelectorAll('.emoji-picker span').emoji-picker span').forEach(e => {
-    e.onclick = () => {
-forEach(e => {
+document.querySelectorAll('.emoji-picker span').forEach(e => {
     e.onclick = () => {
         msgInput.value += e.textContent;
-        document        msgInput.value += e.textContent;
-        document.getElementById('emo.getElementById('emojiPicker').classList.remove('active');
-        msgInput.focus();
-jiPicker').classList.remove('active');
+        document.getElementById('emojiPicker').classList.remove('active');
         msgInput.focus();
         msgInput.dispatchEvent(new Event('input'));
-    };
-});
-
-// Стикеры
-const stickerPanel = document.getElementById('sticker        msgInput.dispatchEvent(new Event('input'));
     };
 });
 
@@ -1458,105 +779,33 @@ const stickerPanel = document.getElementById('sticker        msgInput.dispatchEv
 const stickerPanel = document.getElementById('stickerPanel');
 function switchStickerTab(tab) {
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-    event.targetPanel');
-function switchStickerTab(tab) {
-    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
-    document.getElementById('.classList.add('active');
-    document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' :myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
-    document.getElementById('aiStickersTab').style.display = tab === ' 'none';
+    document.getElementById('myStickersTab').style.display = tab === 'my' ? 'block' : 'none';
     document.getElementById('aiStickersTab').style.display = tab === 'ai' ? 'block' : 'none';
-    if(tab === 'my')ai' ? 'block' : 'none';
     if(tab === 'my') loadMyStickers();
     if(tab === 'ai') loadAILimits();
 }
 function loadMyStickers() {
-    fetch('/api/stickers loadMyStickers();
-    if(tab === 'ai') loadAILimits();
-}
-function loadMyStickers() {
-    fetch('/api/stickers/all/all').then(r=>r.json()).then(data => {
-        const container = document.getElementById('myStickers');
-        let html = '';
-        if(data.custom && data.custom.length > 0) {
-            html += '<div class').then(r=>r.json()).then(data => {
+    fetch('/api/stickers/all').then(r=>r.json()).then(data => {
         const container = document.getElementById('myStickers');
         let html = '';
         if(data.custom && data.custom.length > 0) {
             html += '<div class="sticker-grid">';
-="sticker-grid">';
-            data.custom.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('            data.custom.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
-            html +=emoji}</span></div>`; });
+            data.custom.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
             html += '</div>';
-        } else html += '<div style="text-align:center; '</div>';
         } else html += '<div style="text-align:center;color:#888;padding:20px">Нет своих стикеров</div>';
-color:#888;padding:20px">Нет своих стикеров</div>';
         if(data.packs && data.packs.length > 0) {
             data.packs.forEach(pack => {
-                html += `<div        if(data.packs && data.packs.length > 0) {
-            data.packs.forEach(pack => {
-                html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div><div class="sticker-grid ''}</strong></div><div class="sticker-grid">`;
-                pack.stickers.forEach(s => { html += `<div class="sticker-item" onclick="send">`;
-                pack.stickers.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${Sticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
-s.url}"><span>${s.emoji}</span></div>`; });
+                html += `<div style="margin:16px 0 8px"><strong>${pack.title} ${pack.is_premium ? '⭐' : ''}</strong></div><div class="sticker-grid">`;
+                pack.stickers.forEach(s => { html += `<div class="sticker-item" onclick="sendSticker('${s.url}')"><img src="${s.url}"><span>${s.emoji}</span></div>`; });
                 html += '</div>';
             });
         }
-        container                html += '</div>';
-            });
-        }
         container.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
-        fetch('/api/coins/balance').then(r=>r.json()).then(d => { document.getElementById('st.innerHTML = html || '<div style="text-align:center;color:#888;padding:20px">Нет стикеров</div>';
-        fetch('/api/coins/balance').then(r=>r.json()).then(dickerCount').textContent = `${d.custom_st => { document.getElementById('stickerCount').textContent = `${d.custom_stickers_count}/${d.max_custom || '∞'}`; });
+        fetch('/api/coins/balance').then(r=>r.json()).then(d => { document.getElementById('stickerCount').textContent = `${d.custom_stickers_count}/${d.max_custom || '∞'}`; });
     });
 }
-function uploadCustomSticker(fileickers_count}/${d.max_custom || '∞'}`; });
-    });
-}
-function uploadCustomSticker(file) { if(!file) return; const emoji =) { if(!file) return; const emoji = prompt('Эмодзи для стикера:', ' prompt('Эмодзи для стикера:', '🐻') || '🐻'; const fd = new🐻') || '🐻'; const fd = new FormData(); fd.append('sticker', file); fd FormData(); fd.append('sticker', file); fd.append('emoji', emoji); fetch('/stickers/custom/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(data => { if(data.success) loadMyStickers(); else alert(data.error); }); document.getElementById('customStickerInput').value = ''; }
-function sendSticker(url) { fetch('/stickers/send', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})}).then(() => { stickerPanel.classList.remove('active'); setTimeout(checkNewMessages, 300); }); }
-function loadAILimits() { fetch('/stickers/ai/limits').then(r=>r.json()).then(data => { aiLimits = data; const info = document.getElementById('aiInfo'); const btn = document.getElementById('aiGenerateBtn'); if(data.is_premium) { info.innerHTML = '⭐ Premium — безлимит!'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; } else { info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`; btn.disabled = data.remaining <= 0; btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать'; } }); }
-function generateAISticker() { const prompt = document.getElementById('aiPrompt').value.trim(); if(!prompt) { alert('Введите описание'); return; } const resultDiv = document.getElementById('aiResult'); const btn = document.getElementById('aiGenerateBtn'); resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>'; btn.disabled = true; btn.textContent = '⏳ Ждите...'; fetch('/stickers/ai/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt: prompt})}).then(r=>r.json()).then(data => { if(data.success) { resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`; document.getElementById('aiPrompt').value = ''; loadAILimits(); } else { resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`; loadAILimits(); } }).catch(e => { console.error('AI error:', e); resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; }); }
-function saveAISticker(url) { const emoji = prompt('Эмодзи:', '🤖') || '🤖'; fetch(url).then(r=>r.blob()).then(blob => { const fd = new FormData(); fd.append('sticker', blob, 'ai_sticker.png'); fd.append('emoji', emoji); return fetch('/stickers/custom/upload', {method: 'POST', body: fd}); }).then(r=>r.json()).then(data => { if(data.success) { clearAIResult(); switchStickerTab('my'); loadMyStickers(); } else alert(data.error); }); }
-function clearAIResult() { document.getElementById('aiResult').innerHTML = ''; }
-
-msgInput.addEventListener('keypress', e => { if(e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
-document.addEventListener('click', (e) => { if(!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('menuEmoji')) document.getElementById('emojiPicker').classList.remove('active'); if(!stickerPanel.contains(e.target) && e.target !== document.getElementById('menuStickers')) stickerPanel.classList.remove('active'); });
-
-document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); });
-
-const messagesDiv = document.getElementById('messages');
-const scrollBottomBtn = document.getElementById('scrollBottomBtn');
-function updateScrollButton() {
-    const atBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 100;
-    scrollBottomBtn.classList.toggle('active', !atBottom);
-}
-messagesDiv.addEventListener('scroll', updateScrollButton);
-updateScrollButton();
-
-function copyMessageContent(bubble) {
-    const text = bubble.querySelector('.time') ? bubble.cloneNode(true) : null;
-    if (!text) return;
-    const timeEl = text.querySelector('.time');
-    if (timeEl) timeEl.remove();
-    const content = text.innerText.trim();
-    if (!content) return;
-    navigator.clipboard.writeText(content).then(() => {
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:6px 16px;border-radius:20px;font-size:13px;z-index:200;pointer-events:none';
-        toast.textContent = 'Скопировано';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
-    }).catch(() => {});
-}
-
-loadPinnedMessage();
-setInterval(checkNewMessages, 1000);
-messagesDiv.scrollTop = messagesDiv.scrollHeight;
-</script>
-</body>
-</html>
-```.append('emoji', emoji); fetch('/stickers/custom/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(data => { if(data.success) loadMyStickers(); else alert(data.error); }); document.getElementById('customStickerInput').value = ''; }
+function uploadCustomSticker(file) { if(!file) return; const emoji = prompt('Эмодзи для стикера:', '🐻') || '🐻'; const fd = new FormData(); fd.append('sticker', file); fd.append('emoji', emoji); fetch('/stickers/custom/upload', {method: 'POST', body: fd}).then(r=>r.json()).then(data => { if(data.success) loadMyStickers(); else alert(data.error); }); document.getElementById('customStickerInput').value = ''; }
 function sendSticker(url) { fetch('/stickers/send', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: url, chat_type: 'private', target_id: receiver_id})}).then(() => { stickerPanel.classList.remove('active'); setTimeout(checkNewMessages, 300); }); }
 function loadAILimits() { fetch('/stickers/ai/limits').then(r=>r.json()).then(data => { aiLimits = data; const info = document.getElementById('aiInfo'); const btn = document.getElementById('aiGenerateBtn'); if(data.is_premium) { info.innerHTML = '⭐ Premium — безлимит!'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; } else { info.innerHTML = `🤖 Осталось: ${data.remaining}/${data.limit}`; btn.disabled = data.remaining <= 0; btn.textContent = data.remaining <= 0 ? '🔒 Лимит' : '✨ Сгенерировать'; } }); }
 function generateAISticker() { const prompt = document.getElementById('aiPrompt').value.trim(); if(!prompt) { alert('Введите описание'); return; } const resultDiv = document.getElementById('aiResult'); const btn = document.getElementById('aiGenerateBtn'); resultDiv.innerHTML = '<div class="ai-loading">⏳ Генерация...</div>'; btn.disabled = true; btn.textContent = '⏳ Ждите...'; fetch('/stickers/ai/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt: prompt})}).then(r=>r.json()).then(data => { if(data.success) { resultDiv.innerHTML = `<div class="ai-preview"><img src="${data.sticker.url}"><div class="ai-preview-actions"><button class="ai-save-btn" onclick="saveAISticker('${data.sticker.url}')">💾 Сохранить</button><button class="ai-cancel-btn" onclick="clearAIResult()">✖</button></div></div>`; document.getElementById('aiPrompt').value = ''; loadAILimits(); } else { resultDiv.innerHTML = `<div style="color:#ff6b6b;text-align:center">❌ ${data.error}</div>`; loadAILimits(); } }).catch(e => { console.error('AI error:', e); resultDiv.innerHTML = '<div style="color:#ff6b6b;text-align:center">❌ Ошибка</div>'; btn.disabled = false; btn.textContent = '✨ Сгенерировать'; }); }
