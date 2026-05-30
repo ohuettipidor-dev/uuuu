@@ -490,8 +490,9 @@ function forwardMessage(id, type) { let target = prompt('ID пользовате
 function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
-// --- ГОЛОСОВЫЕ СООБЩЕНИЯ ---
+// --- ИСПРАВЛЕННЫЕ ГОЛОСОВЫЕ ---
 async function startVoiceRecording() {
+    if (isAudioRecording || isVideoRecording) return;
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
@@ -531,10 +532,9 @@ async function startVoiceRecording() {
         setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
     } catch(e) { alert('Микрофон не доступен'); }
 }
-function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
-function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
+function stopVoiceRecording() { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
 
-// --- ВИДЕОСООБЩЕНИЯ ---
+// --- ИСПРАВЛЕННЫЕ ВИДЕОСООБЩЕНИЯ (КРУЖКИ) ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -542,13 +542,14 @@ async function startVideoRecording() {
             video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
             audio: true
         });
-        videoRecorder = new MediaRecorder(videoStream, { mimeType: 'video/webm; codecs=vp8,opus' });
         videoChunks = [];
         startTime = Date.now();
+        const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus') ? 'video/webm; codecs=vp8,opus' : 'video/webm';
+        videoRecorder = new MediaRecorder(videoStream, { mimeType: mimeType });
         videoRecorder.ondataavailable = e => { if(e.data.size > 0) videoChunks.push(e.data); };
         videoRecorder.onstop = () => {
             const duration = Math.round((Date.now() - startTime) / 1000);
-            const blob = new Blob(videoChunks, { type: 'video/webm' });
+            const blob = new Blob(videoChunks, { type: mimeType });
             const fd = new FormData();
             fd.append('file', blob, `video_${Date.now()}.webm`);
             fetch('/upload', {method: 'POST', body: fd})
@@ -585,10 +586,14 @@ async function startVideoRecording() {
     }
 }
 function stopVideoRecording() {
-    if(videoRecorder && videoRecorder.state !== 'inactive') {
-        videoRecorder.stop();
-    }
+    if(videoRecorder && videoRecorder.state === 'recording') videoRecorder.stop();
 }
+
+// При закрытии окна останавливаем все записи и освобождаем камеру
+window.addEventListener('beforeunload', () => {
+    if (isAudioRecording) stopVoiceRecording();
+    if (isVideoRecording) stopVideoRecording();
+});
 
 // --- МЕНЮ ВЛОЖЕНИЙ ---
 const attachBtn = document.getElementById('attachBtn');
@@ -618,18 +623,26 @@ document.getElementById('menuStickers').addEventListener('click', () => {
 });
 document.getElementById('menuVoice').addEventListener('click', () => {
     inputMenu.classList.remove('active');
-    toggleVoiceRecording();
+    if (isAudioRecording) {
+        stopVoiceRecording();
+    } else {
+        startVoiceRecording();
+    }
 });
 document.getElementById('menuVideo').addEventListener('click', () => {
     inputMenu.classList.remove('active');
-    startVideoRecording();
+    if (isVideoRecording) {
+        stopVideoRecording();
+    } else {
+        startVideoRecording();
+    }
 });
 document.getElementById('menuFile').addEventListener('click', () => {
     inputMenu.classList.remove('active');
     document.getElementById('fileInput').click();
 });
 
-// Эмодзи пикер
+// Остальные функции (стикеры, эмодзи, копирование) без изменений
 document.querySelectorAll('.emoji-picker span').forEach(e => {
     e.onclick = () => {
         msgInput.value += e.textContent;
@@ -639,7 +652,6 @@ document.querySelectorAll('.emoji-picker span').forEach(e => {
     };
 });
 
-// Стикеры
 const stickerPanel = document.getElementById('stickerPanel');
 function switchStickerTab(tab) {
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
@@ -681,7 +693,6 @@ document.addEventListener('click', (e) => { if(!document.getElementById('emojiPi
 
 document.querySelectorAll('.reply-preview').forEach(el => { const msgId = el.closest('.message')?.getAttribute('data-id'); if(msgId) fetch(`/get_reply_preview/${msgId}/private`).then(r=>r.json()).then(data => { if(el) el.innerHTML = `<span>📩 Ответ:</span><br><span>${escapeHtml(data.content)}</span>`; }); });
 
-// --- КНОПКА "ВНИЗ" ---
 const messagesDiv = document.getElementById('messages');
 const scrollBottomBtn = document.getElementById('scrollBottomBtn');
 function updateScrollButton() {
@@ -691,7 +702,6 @@ function updateScrollButton() {
 messagesDiv.addEventListener('scroll', updateScrollButton);
 updateScrollButton();
 
-// --- КОПИРОВАНИЕ ТЕКСТА ПО КЛИКУ ---
 function copyMessageContent(bubble) {
     const text = bubble.querySelector('.time') ? bubble.cloneNode(true) : null;
     if (!text) return;
