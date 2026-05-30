@@ -36,7 +36,7 @@
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
-        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0}
+        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0;max-width:200px;overflow:hidden}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:6px}to{height:12px}}
@@ -124,9 +124,10 @@
         .messages::-webkit-scrollbar-track{background:transparent}
         .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
         
-        .video-circle{width:120px;height:120px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000}
+        /* Обновлённый кружок */
+        .video-circle{width:160px;height:160px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000;margin:4px 0}
         .video-circle video{width:100%;height:100%;object-fit:cover}
-        .video-circle .duration-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
+        .video-circle .duration-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:white;font-size:11px;padding:3px 8px;border-radius:12px}
         
         .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
@@ -202,6 +203,53 @@
         .preview-send-area .cancel-preview {
             background: #eee;
             color: #333;
+        }
+
+        /* Превью нескольких файлов (сетка) */
+        .multi-preview-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 12px;
+            z-index: 300;
+            display: none;
+        }
+        .multi-preview-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        .multi-preview-item img, .multi-preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .multi-preview-item .remove-file {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .send-multi {
+            flex: 1;
+            background: #4cd964;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
         }
         
         @media (max-width:480px){
@@ -292,7 +340,7 @@
                         <audio controls src="{{ m.file_path }}"></audio>
                     {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}
                         <div class="video-circle" onclick="const v=this.querySelector('video'); v.muted=false; v.play()">
-                            <video src="{{ m.file_path }}" playsinline muted></video>
+                            <video src="{{ m.file_path }}" playsinline></video>
                             <span class="duration-badge">{{ m.voice_duration }}″</span>
                         </div>
                     {% elif m.file_type == 'video' %}
@@ -393,6 +441,7 @@
     </div>
 </div>
 
+<!-- Живой превью видеозаписи -->
 <div class="live-preview-overlay" id="livePreviewOverlay">
     <div class="live-preview-circle">
         <video id="livePreviewVideo" autoplay muted playsinline></video>
@@ -400,11 +449,24 @@
     </div>
 </div>
 
+<!-- Превью для отправки записанного видео -->
 <div class="preview-send-area" id="previewSendArea">
     <video id="previewVideo" controls playsinline></video>
     <div class="actions">
         <button class="send-preview" onclick="sendRecordedVideo()">✅ Отправить</button>
         <button class="cancel-preview" onclick="cancelVideoPreview()">❌ Отмена</button>
+    </div>
+</div>
+
+<!-- Превью выбранных файлов (сетка) -->
+<div class="multi-preview-overlay" id="multiPreviewOverlay">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-weight:bold;">📎 Выбранные файлы (<span id="multiFileCount">0</span>)</span>
+        <button onclick="cancelMultiFiles()" style="background:none;border:none;font-size:20px;cursor:pointer;">✖</button>
+    </div>
+    <div id="multiFileGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:300px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="send-multi" onclick="sendMultiFiles()">✅ Отправить всё</button>
     </div>
 </div>
 
@@ -439,6 +501,7 @@ let isSending = false;
 let processedIds = new Set();
 let aiLimits = {is_premium: false, remaining: 3, limit: 3};
 let pendingVideoBlob = null;
+let multiFiles = []; // для множественной загрузки
 
 function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
 function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
@@ -509,7 +572,7 @@ function addNewMessage(msg) {
         else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" class="msg-image" onclick="window.open(this.src)">`;
         else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
         else if(msg.file_type == 'video' && msg.voice_duration && msg.voice_duration > 0) {
-            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" playsinline muted></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
+            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" playsinline></video><span class="duration-badge">${msg.voice_duration}″</span></div>`;
         }
         else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
@@ -577,11 +640,55 @@ function sendFile(file) {
         });
 }
 
+// Множественная загрузка с превью-сеткой
 function handleMultipleFiles(files) {
     if (!files || files.length === 0) return;
     for (let i = 0; i < files.length; i++) {
-        sendFile(files[i]);
+        const file = files[i];
+        const previewUrl = URL.createObjectURL(file);
+        multiFiles.push({ file, previewUrl, type: file.type.startsWith('image/') ? 'image' : 'video' });
     }
+    renderMultiPreview();
+}
+
+function renderMultiPreview() {
+    document.getElementById('multiPreviewOverlay').style.display = 'block';
+    document.getElementById('multiFileCount').textContent = multiFiles.length;
+    const grid = document.getElementById('multiFileGrid');
+    grid.innerHTML = '';
+    multiFiles.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'multi-preview-item';
+        if (item.type === 'image') {
+            div.innerHTML = `<img src="${item.previewUrl}"><button class="remove-file" onclick="removeMultiFile(${index})">✖</button>`;
+        } else {
+            div.innerHTML = `<video src="${item.previewUrl}" muted></video><button class="remove-file" onclick="removeMultiFile(${index})">✖</button>`;
+        }
+        grid.appendChild(div);
+    });
+}
+
+function removeMultiFile(index) {
+    multiFiles.splice(index, 1);
+    if (multiFiles.length === 0) {
+        document.getElementById('multiPreviewOverlay').style.display = 'none';
+    } else {
+        renderMultiPreview();
+    }
+}
+
+function sendMultiFiles() {
+    if (multiFiles.length === 0) return;
+    for (const item of multiFiles) {
+        sendFile(item.file);
+    }
+    cancelMultiFiles();
+}
+
+function cancelMultiFiles() {
+    multiFiles = [];
+    document.getElementById('multiPreviewOverlay').style.display = 'none';
+    document.getElementById('multiFileGrid').innerHTML = '';
 }
 
 function checkNewMessages() {
@@ -639,7 +746,7 @@ async function startVoiceRecording() {
 }
 function stopVoiceRecording() { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
 
-// --- Видеосообщения (кружки) с превью ---
+// --- Видеосообщения (кружки) с превью и звуком ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -670,7 +777,7 @@ async function startVideoRecording() {
             const previewVideo = document.getElementById('previewVideo');
             previewVideo.src = URL.createObjectURL(blob);
             previewVideo.loop = false;
-            previewVideo.muted = true;
+            previewVideo.muted = false;  // ЗВУК ЕСТЬ
             document.getElementById('previewSendArea').style.display = 'flex';
         };
         videoRecorder.start();
