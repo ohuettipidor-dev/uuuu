@@ -259,7 +259,6 @@
             <button class="invite-tab" onclick="switchInviteTab('referral')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">💎 Бонусы</button>
         </div>
         <div id="inviteFriends" class="invite-content">
-            <!-- НОВАЯ КНОПКА НАТИВНОГО ВЫБОРА КОНТАКТОВ -->
             <button onclick="inviteFromNativeContacts()" style="width:100%; background:#ffd700; color:#000; border:none; padding:12px; border-radius:25px; font-weight:bold; font-size:14px; cursor:pointer; margin-bottom:12px;">
                 📇 Выбрать из контактов телефона
             </button>
@@ -363,28 +362,41 @@ function openInviteModal(){document.getElementById('inviteModal').classList.add(
 function closeInviteModal(){document.getElementById('inviteModal').classList.remove('active')}
 function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
 
-// НОВАЯ ФУНКЦИЯ НАТИВНОГО ВЫБОРА КОНТАКТОВ
 async function inviteFromNativeContacts() {
-    if ('contacts' in navigator && 'select' in navigator.contacts) {
-        try {
-            const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
-            if (contacts.length === 0) return;
-            const link = document.getElementById('refLink').textContent.trim();
-            const msg = `Привет! Присоединяйся к BearGram: ${link}`;
-            for (const contact of contacts) {
-                if (contact.tel && contact.tel.length > 0) {
-                    const phone = contact.tel[0].replace(/\s+/g, '');
-                    window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`;
-                    await new Promise(r => setTimeout(r, 300));
-                }
-            }
-            closeInviteModal();
-        } catch (err) {
-            console.error('Ошибка выбора контактов:', err);
-            alert('Не удалось открыть контакты. Попробуйте вручную.');
-        }
-    } else {
+    if (!('contacts' in navigator && 'select' in navigator.contacts)) {
         alert('Ваш браузер не поддерживает выбор контактов. Используйте ручной ввод или загрузку файла.');
+        return;
+    }
+
+    try {
+        const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+        if (!contacts || contacts.length === 0) return;
+
+        const link = document.getElementById('refLink').textContent.trim();
+        const msg = `Привет! Присоединяйся к BearGram: ${link}`;
+        const encodedMsg = encodeURIComponent(msg);
+
+        for (const contact of contacts) {
+            if (contact.tel && contact.tel.length > 0) {
+                const phone = contact.tel[0].replace(/\s+/g, '');
+                const smsLink = document.createElement('a');
+                smsLink.href = `sms:${phone}?body=${encodedMsg}`;
+                smsLink.style.display = 'none';
+                document.body.appendChild(smsLink);
+                smsLink.click();
+                document.body.removeChild(smsLink);
+                
+                if (contacts.length > 1) {
+                    alert(`Открыто SMS для ${contact.name || phone}. Остальным отправьте вручную.`);
+                }
+                closeInviteModal();
+                return;
+            }
+        }
+        alert('Не найден номер телефона у выбранных контактов');
+    } catch (err) {
+        console.error('Ошибка выбора контактов:', err);
+        alert('Не удалось открыть контакты. Попробуйте вручную.');
     }
 }
 
