@@ -124,14 +124,12 @@
         .messages::-webkit-scrollbar-track{background:transparent}
         .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
         
-        /* Кружок — 200px, без цифр */
         .video-circle{width:200px;height:200px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000;margin:4px 0}
         .video-circle video{width:100%;height:100%;object-fit:cover}
         
         .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
 
-        /* Превью записи кружка */
         .live-preview-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -167,7 +165,6 @@
             cursor: pointer;
         }
 
-        /* Превью нескольких файлов (сетка) */
         .multi-preview-overlay {
             position: fixed;
             bottom: 0;
@@ -323,6 +320,15 @@
                 {% endif %}
                 <div class="time">
                     <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.sender_id == current_user.id %}
+                        {% if m.status == 'read' %}
+                            ✅✅
+                        {% elif m.status == 'delivered' %}
+                            ✅
+                        {% else %}
+                            ⏳
+                        {% endif %}
+                    {% endif %}
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                 </div>
@@ -403,7 +409,6 @@
     </div>
 </div>
 
-<!-- Живой превью кружка (запись) -->
 <div class="live-preview-overlay" id="livePreviewOverlay">
     <div class="live-preview-circle" id="livePreviewCircle">
         <video id="livePreviewVideo" autoplay muted playsinline></video>
@@ -411,7 +416,6 @@
     <button class="send-video-btn" id="sendRecordedVideoBtn" style="display:none;" onclick="sendRecordedVideo()">✅ Отправить</button>
 </div>
 
-<!-- Превью нескольких файлов (сетка) -->
 <div class="multi-preview-overlay" id="multiPreviewOverlay">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-weight:bold;">📎 Выбранные файлы (<span id="multiFileCount">0</span>)</span>
@@ -535,7 +539,13 @@ function addNewMessage(msg) {
     let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
     let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
     let timeStr = formatUTCTime(msg.timestamp);
-    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span>${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
+    let statusIcon = '';
+    if(msg.is_own) {
+        if(msg.status == 'read') statusIcon = '✅✅';
+        else if(msg.status == 'delivered') statusIcon = '✅';
+        else statusIcon = '⏳';
+    }
+    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span> ${statusIcon}${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'private')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'private')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'private')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'private')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'private', false)">🙈</button>`}</div>`;
     messagesDiv.appendChild(div);
     if(msg.reply_to_id) fetch(`/get_reply_preview/${msg.reply_to_id}/private`).then(r=>r.json()).then(data => { const p = div.querySelector('.reply-preview span:last-child'); if(p) p.textContent = data.content; });
     updateScrollButton();
@@ -593,7 +603,6 @@ function sendFile(file) {
         });
 }
 
-// ========== МНОЖЕСТВЕННАЯ ОТПРАВКА (ПО ОДНОЙ) ==========
 function handleMultipleFiles(files) {
     if (!files || files.length === 0) return;
     for (let i = 0; i < files.length; i++) {
@@ -632,7 +641,6 @@ function removeMultiFile(index) {
 
 function sendMultiFiles() {
     if (multiFiles.length === 0) return;
-    // Отправляем каждый файл по отдельности
     for (const item of multiFiles) {
         sendFile(item.file);
     }
@@ -656,7 +664,6 @@ function forwardMessage(id, type) { let target = prompt('ID пользовате
 function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
-// ========== ГОЛОСОВЫЕ ==========
 async function startVoiceRecording() {
     if (isAudioRecording || isVideoRecording) return;
     try {
@@ -700,7 +707,6 @@ async function startVoiceRecording() {
 }
 function stopVoiceRecording() { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
 
-// ========== ВИДЕОКРУЖКИ (ИСПРАВЛЕНЫ) ==========
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -806,7 +812,6 @@ window.addEventListener('beforeunload', () => {
     if (isVideoRecording) stopVideoRecording();
 });
 
-// ========== МЕНЮ ВЛОЖЕНИЙ ==========
 const attachBtn = document.getElementById('attachBtn');
 const inputMenu = document.getElementById('inputMenu');
 const sendBtn = document.getElementById('sendBtn');
@@ -847,7 +852,6 @@ document.getElementById('menuFile').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
 
-// Эмодзи
 document.querySelectorAll('.emoji-picker span').forEach(e => {
     e.onclick = () => {
         msgInput.value += e.textContent;
@@ -857,7 +861,6 @@ document.querySelectorAll('.emoji-picker span').forEach(e => {
     };
 });
 
-// Стикеры
 const stickerPanel = document.getElementById('stickerPanel');
 function switchStickerTab(tab) {
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
