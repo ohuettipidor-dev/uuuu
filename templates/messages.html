@@ -130,41 +130,6 @@
         .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
 
-        .live-preview-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            flex-direction: column;
-        }
-        .live-preview-circle {
-            width: 260px;
-            height: 260px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 0 0 4px white;
-        }
-        .live-preview-circle video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .send-video-btn {
-            margin-top: 20px;
-            background: #4cd964;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 12px 30px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
         .multi-preview-overlay {
             position: fixed;
             bottom: 0;
@@ -224,7 +189,6 @@
             .profile-btn{padding:4px 8px;font-size:11px}
             .call-btn{padding:4px 8px;font-size:11px}
             .user-name{font-size:12px}
-            .live-preview-circle{width:220px;height:220px}
         }
         .read-status{color:#53bdeb}.delivered-status{color:#aaa}.sent-status{color:#aaa}
     </style>
@@ -410,13 +374,6 @@
     </div>
 </div>
 
-<div class="live-preview-overlay" id="livePreviewOverlay">
-    <div class="live-preview-circle" id="livePreviewCircle">
-        <video id="livePreviewVideo" autoplay muted playsinline></video>
-    </div>
-    <button class="send-video-btn" id="sendRecordedVideoBtn" style="display:none;" onclick="sendRecordedVideo()">✅ Отправить</button>
-</div>
-
 <div class="multi-preview-overlay" id="multiPreviewOverlay">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-weight:bold;">📎 Выбранные файлы (<span id="multiFileCount">0</span>)</span>
@@ -451,14 +408,12 @@ let videoRecorder = null;
 let videoChunks = [];
 let isVideoRecording = false;
 let videoStream = null;
-let startTime = null;
 let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
 let currentReplyToId = null;
 let typingTimeout = null;
 let isSending = false;
 let processedIds = new Set();
 let aiLimits = {is_premium: false, remaining: 3, limit: 3};
-let pendingVideoBlob = null;
 let multiFiles = [];
 
 function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
@@ -671,10 +626,10 @@ async function startVoiceRecording() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
-        startTime = Date.now();
+        const audioStart = Date.now();
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
-            const duration = Math.round((Date.now() - startTime) / 1000);
+            const duration = Math.round((Date.now() - audioStart) / 1000);
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
             const fd = new FormData();
             fd.append('audio', blob);
@@ -715,14 +670,6 @@ async function startVideoRecording() {
             video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
             audio: true
         });
-        const overlay = document.getElementById('livePreviewOverlay');
-        const liveVideo = document.getElementById('livePreviewVideo');
-        const sendBtn = document.getElementById('sendRecordedVideoBtn');
-        liveVideo.srcObject = videoStream;
-        liveVideo.muted = true;
-        overlay.style.display = 'flex';
-        sendBtn.style.display = 'none';
-
         videoChunks = [];
         const recordStartTime = Date.now();
         const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus') ? 'video/webm; codecs=vp8,opus' : 'video/webm';
@@ -734,18 +681,27 @@ async function startVideoRecording() {
                 videoStream.getTracks().forEach(t => t.stop());
                 videoStream = null;
             }
-            liveVideo.srcObject = null;
-            liveVideo.src = URL.createObjectURL(blob);
-            liveVideo.muted = false;
-            liveVideo.loop = false;
-            liveVideo.controls = false;
-            sendBtn.style.display = 'block';
-            
+            const duration = Math.round((Date.now() - recordStartTime) / 1000);
+            const fd = new FormData();
+            fd.append('file', blob, `video_${Date.now()}.webm`);
+            fetch('/upload', {method: 'POST', body: fd})
+                .then(r => r.json())
+                .then(d => {
+                    if(d.path) {
+                        const fd2 = new FormData();
+                        fd2.append('receiver_id', receiver_id);
+                        fd2.append('file_path', d.path);
+                        fd2.append('file_name', 'Видеосообщение');
+                        fd2.append('file_type', 'video');
+                        fd2.append('voice_duration', duration);
+                        if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
+                        fd2.append('_from_ajax', 'true');
+                        fetch('/send', {method: 'POST', body: fd2}).then(() => { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; setTimeout(checkNewMessages, 200); });
+                    }
+                });
             isVideoRecording = false;
             attachBtn.classList.remove('recording');
             attachBtn.innerHTML = '📎';
-            pendingVideoBlob = blob;
-            window._videoRecordStartTime = recordStartTime;
         };
         videoRecorder.start();
         isVideoRecording = true;
@@ -756,57 +712,11 @@ async function startVideoRecording() {
         alert('Камера или микрофон не доступны');
         attachBtn.classList.remove('recording');
         attachBtn.innerHTML = '📎';
-        document.getElementById('livePreviewOverlay').style.display = 'none';
         if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
         isVideoRecording = false;
     }
 }
-function stopVideoRecording() {
-    if(videoRecorder && videoRecorder.state === 'recording') {
-        videoRecorder.stop();
-    }
-}
-
-function sendRecordedVideo() {
-    if (!pendingVideoBlob) return;
-    const fd = new FormData();
-    fd.append('file', pendingVideoBlob, `video_${Date.now()}.webm`);
-    const duration = Math.round((Date.now() - (window._videoRecordStartTime || startTime)) / 1000);
-    fetch('/upload', {method: 'POST', body: fd})
-        .then(r => r.json())
-        .then(d => {
-            if(d.path) {
-                const fd2 = new FormData();
-                fd2.append('receiver_id', receiver_id);
-                fd2.append('file_path', d.path);
-                fd2.append('file_name', 'Видеосообщение');
-                fd2.append('file_type', 'video');
-                fd2.append('voice_duration', duration);
-                if(currentReplyToId) fd2.append('reply_to_id', currentReplyToId);
-                fd2.append('_from_ajax', 'true');
-                return fetch('/send', {method: 'POST', body: fd2});
-            }
-        })
-        .then(() => {
-            cancelVideoPreview();
-            setTimeout(checkNewMessages, 300);
-        })
-        .catch(e => {
-            console.error(e);
-            cancelVideoPreview();
-        });
-}
-
-function cancelVideoPreview() {
-    pendingVideoBlob = null;
-    const overlay = document.getElementById('livePreviewOverlay');
-    const liveVideo = document.getElementById('livePreviewVideo');
-    const sendBtn = document.getElementById('sendRecordedVideoBtn');
-    liveVideo.src = '';
-    liveVideo.srcObject = null;
-    sendBtn.style.display = 'none';
-    overlay.style.display = 'none';
-}
+function stopVideoRecording() { if(videoRecorder && videoRecorder.state === 'recording') videoRecorder.stop(); }
 
 window.addEventListener('beforeunload', () => {
     if (isAudioRecording) stopVoiceRecording();
