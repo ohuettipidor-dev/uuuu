@@ -30,13 +30,13 @@
         @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .message.sent{justify-content:flex-end}
         .message.received{justify-content:flex-start}
-        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word;position:relative}
+        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word;position:relative;overflow:hidden} /* overflow скроет вылезания */
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
         .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
         .sent .time{justify-content:flex-end}
         .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
-        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0;max-width:200px;overflow:hidden}
+        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0;max-width:100%;overflow:hidden}
         .voice-wave{display:flex;align-items:center;gap:2px}
         .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
         @keyframes wave{from{height:6px}to{height:12px}}
@@ -48,6 +48,34 @@
             border-radius: 12px;
             cursor: pointer;
             margin: 4px 0;
+        }
+        
+        /* Сетка для альбома */
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            margin: 4px 0;
+        }
+        .album-grid img, .album-grid video {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .album-grid .album-item {
+            position: relative;
+        }
+        .album-item .album-duration {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
         }
         
         .message-actions{position:absolute;top:-28px;right:0;background:white;border-radius:20px;display:none;gap:3px;padding:4px 8px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
@@ -124,7 +152,7 @@
         .messages::-webkit-scrollbar-track{background:transparent}
         .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
         
-        /* Обновлённый кружок */
+        /* Кружок */
         .video-circle{width:160px;height:160px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000;margin:4px 0}
         .video-circle video{width:100%;height:100%;object-fit:cover}
         .video-circle .duration-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:white;font-size:11px;padding:3px 8px;border-radius:12px}
@@ -132,7 +160,7 @@
         .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
 
-        /* Живой превью для видеозаписи */
+        /* Превью записи */
         .live-preview-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -158,16 +186,16 @@
         }
         .live-preview-stop {
             position: absolute;
-            bottom: 20px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             background: white;
             color: #ff4444;
             border: none;
             border-radius: 30px;
-            padding: 10px 24px;
+            padding: 8px 20px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
         }
         .preview-send-area {
@@ -177,6 +205,7 @@
             padding: 8px 12px;
             background: rgba(255,255,255,0.95);
             border-top: 1px solid #ffb3b3;
+            flex-wrap: wrap;
         }
         .preview-send-area video {
             width: 80px;
@@ -188,6 +217,7 @@
         .preview-send-area .actions {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .preview-send-area button {
             padding: 8px 16px;
@@ -195,6 +225,7 @@
             border: none;
             font-weight: bold;
             cursor: pointer;
+            white-space: nowrap;
         }
         .preview-send-area .send-preview {
             background: #4cd964;
@@ -265,6 +296,9 @@
             .profile-btn{padding:4px 8px;font-size:11px}
             .call-btn{padding:4px 8px;font-size:11px}
             .user-name{font-size:12px}
+            .live-preview-circle { width: 220px; height: 220px; }
+            .preview-send-area video { width: 60px; height: 60px; }
+            .preview-send-area button { padding: 6px 12px; font-size: 12px; }
         }
     </style>
 </head>
@@ -466,7 +500,7 @@
     </div>
     <div id="multiFileGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:300px;overflow-y:auto;"></div>
     <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="send-multi" onclick="sendMultiFiles()">✅ Отправить всё</button>
+        <button class="send-multi" onclick="sendAlbum()">✅ Отправить альбомом</button>
     </div>
 </div>
 
@@ -501,7 +535,7 @@ let isSending = false;
 let processedIds = new Set();
 let aiLimits = {is_premium: false, remaining: 3, limit: 3};
 let pendingVideoBlob = null;
-let multiFiles = []; // для множественной загрузки
+let multiFiles = []; // для альбома
 
 function playVoice(el) { const audio = el.closest('.bubble').querySelector('audio'); if(audio) audio.play(); }
 function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
@@ -568,6 +602,7 @@ function addNewMessage(msg) {
     let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
     let fileHtml = '';
     if(msg.file_path) {
+        // Одиночный файл
         if(msg.file_type == 'sticker') fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
         else if(msg.file_type == 'image') fileHtml = `<img src="${msg.file_path}" class="msg-image" onclick="window.open(this.src)">`;
         else if(msg.file_type == 'audio') fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
@@ -576,6 +611,20 @@ function addNewMessage(msg) {
         }
         else if(msg.file_type == 'video') fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
         else fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" class="file-link">📎 ${escapeHtml(msg.file_name)}</a>`;
+    } else if(msg.album && msg.album.length > 0) {
+        // Альбом (несколько файлов)
+        let albumHtml = '<div class="album-grid">';
+        msg.album.forEach(item => {
+            if(item.type.startsWith('image')) {
+                albumHtml += `<div class="album-item"><img src="${item.path}" onclick="window.open(this.src)"></div>`;
+            } else if(item.type.startsWith('video')) {
+                albumHtml += `<div class="album-item"><video src="${item.path}" controls></video>${item.duration ? '<span class="album-duration">'+item.duration+'″</span>' : ''}</div>`;
+            } else {
+                albumHtml += `<div class="album-item"><a href="${item.path}" download>📎 ${escapeHtml(item.name)}</a></div>`;
+            }
+        });
+        albumHtml += '</div>';
+        fileHtml = albumHtml;
     }
     let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
     let voiceHtml = (msg.voice_duration && msg.file_type != 'video') ? `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>` : '';
@@ -640,7 +689,7 @@ function sendFile(file) {
         });
 }
 
-// Множественная загрузка с превью-сеткой
+// ========== АЛЬБОМ (сетка) ==========
 function handleMultipleFiles(files) {
     if (!files || files.length === 0) return;
     for (let i = 0; i < files.length; i++) {
@@ -677,11 +726,42 @@ function removeMultiFile(index) {
     }
 }
 
-function sendMultiFiles() {
+async function sendAlbum() {
     if (multiFiles.length === 0) return;
+    const uploadedItems = [];
+    // Загружаем все файлы последовательно (можно параллельно, но для простоты так)
     for (const item of multiFiles) {
-        sendFile(item.file);
+        const formData = new FormData();
+        formData.append('file', item.file);
+        try {
+            const resp = await fetch('/upload', {method: 'POST', body: formData});
+            const data = await resp.json();
+            if (data.path) {
+                uploadedItems.push({
+                    path: data.path,
+                    name: data.name || item.file.name,
+                    type: item.type === 'image' ? 'image' : 'video'
+                });
+            }
+        } catch(e) { console.error(e); }
     }
+    if (uploadedItems.length === 0) return;
+    // Отправляем одно сообщение с альбомом
+    const formDataSend = new FormData();
+    formDataSend.append('receiver_id', receiver_id);
+    formDataSend.append('album', JSON.stringify(uploadedItems));
+    if(currentReplyToId) formDataSend.append('reply_to_id', currentReplyToId);
+    formDataSend.append('_from_ajax', 'true');
+    fetch('/send', {method: 'POST', body: formDataSend})
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                cancelMultiFiles();
+                setTimeout(checkNewMessages, 300);
+            } else {
+                alert(data.error || 'Ошибка отправки альбома');
+            }
+        });
     cancelMultiFiles();
 }
 
@@ -691,6 +771,7 @@ function cancelMultiFiles() {
     document.getElementById('multiFileGrid').innerHTML = '';
 }
 
+// ========== Остальные функции ==========
 function checkNewMessages() {
     fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => { if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m)); });
 }
@@ -702,7 +783,7 @@ function forwardMessage(id, type) { let target = prompt('ID пользовате
 function replyToMessage(id, content) { currentReplyToId = id; document.getElementById('replyText').innerText = content.substring(0, 50) + (content.length > 50 ? '...' : ''); document.getElementById('replyBar').style.display = 'flex'; msgInput.focus(); }
 function cancelReply() { currentReplyToId = null; document.getElementById('replyBar').style.display = 'none'; }
 
-// --- Голосовые сообщения ---
+// Голосовые
 async function startVoiceRecording() {
     if (isAudioRecording || isVideoRecording) return;
     try {
@@ -746,7 +827,7 @@ async function startVoiceRecording() {
 }
 function stopVoiceRecording() { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
 
-// --- Видеосообщения (кружки) с превью и звуком ---
+// Видеокружки
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -777,7 +858,7 @@ async function startVideoRecording() {
             const previewVideo = document.getElementById('previewVideo');
             previewVideo.src = URL.createObjectURL(blob);
             previewVideo.loop = false;
-            previewVideo.muted = false;  // ЗВУК ЕСТЬ
+            previewVideo.muted = false;
             document.getElementById('previewSendArea').style.display = 'flex';
         };
         videoRecorder.start();
@@ -831,7 +912,7 @@ window.addEventListener('beforeunload', () => {
     if (isVideoRecording) stopVideoRecording();
 });
 
-// --- Меню вложений ---
+// Меню вложений
 const attachBtn = document.getElementById('attachBtn');
 const inputMenu = document.getElementById('inputMenu');
 const sendBtn = document.getElementById('sendBtn');
@@ -872,7 +953,7 @@ document.getElementById('menuFile').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
 
-// Эмодзи пикер
+// Эмодзи
 document.querySelectorAll('.emoji-picker span').forEach(e => {
     e.onclick = () => {
         msgInput.value += e.textContent;
