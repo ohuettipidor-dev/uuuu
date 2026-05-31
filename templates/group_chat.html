@@ -16,7 +16,6 @@
         .group-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .member-count{font-size:10px;color:#888}
         .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;text-decoration:none;color:#ff6b6b;flex-shrink:0}
-        .settings-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;width:32px;height:32px}
         .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
         .message{display:flex;position:relative}
         .message.sent{justify-content:flex-end}
@@ -35,18 +34,14 @@
 <div class="container">
     <div class="header">
         <a href="/chat" class="back">←</a>
-        <div class="avatar" onclick="document.getElementById('avatarInput').click()">
+        <div class="avatar">
             {% if group.avatar != 'group_default.png' %}<img src="/static/avatars/{{ group.avatar }}">{% else %}👥{% endif %}
         </div>
-        <div class="group-info" onclick="location.href='/group/{{ group.id }}/info'">
+        <div class="group-info">
             <div class="group-name">{{ group.name }}</div>
             <div class="member-count">{{ members|length }} участников</div>
         </div>
-        <button class="settings-btn" onclick="location.href='/group/{{ group.id }}/info'">⚙️</button>
         <a href="/profile" class="profile-btn">🧸</a>
-        <form id="avatarForm" method="POST" action="/group/{{ group.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
-            <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
-        </form>
     </div>
 
     <div class="messages" id="messages">
