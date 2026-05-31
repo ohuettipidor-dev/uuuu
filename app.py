@@ -1638,36 +1638,6 @@ def group_chat(gid):
     return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
 
 @app.route('/send_group', methods=['POST'])
-@login_required
-def send_group():
-    group_id = request.form.get('group_id')
-    content = request.form.get('content', '')
-    reply_to_id = request.form.get('reply_to_id', type=int)
-    content, mentioned_ids = render_mentions(content, current_user.id)
-    file_path = request.form.get('file_path')
-    file_name = request.form.get('file_name')
-    file_type = request.form.get('file_type')
-    voice_duration = request.form.get('voice_duration', type=int)
-
-    group = Group.query.get(group_id)
-    if not group:
-        return jsonify({'error': 'Группа не найдена'}), 404
-
-    msg = Message(
-        sender_id=current_user.id,
-        receiver_id=group.id,
-        content=content,
-        file_path=file_path,
-        file_name=file_name,
-        file_type=file_type,
-        reply_to_id=reply_to_id,
-        voice_duration=voice_duration or 0,
-        mentions=','.join(str(mid) for mid in mentioned_ids) if mentioned_ids else ''
-    )
-    db.session.add(msg)
-    db.session.commit()
-
-    return jsonify({'success': True, 'message_id': msg.id})
 
 @app.route('/group/<int:gid>/info')
 @login_required
