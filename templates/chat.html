@@ -500,7 +500,9 @@ async function likeFeedPost(postId, el) {
 function donateToChannel(channelName) {
     const amount = prompt('Введите сумму доната (₽):', '100');
     if (!amount || isNaN(amount) || amount <= 0) return;
-    const url = `https://yoomoney.ru/quickpay/button-widget?receiver=4100119522166446&sum=${amount}&label=donate_${encodeURIComponent(channelName)}`;
+    const receiver = "4100119522166446";  // ТВОЙ ЮMONEY КОШЕЛЁК
+    const label = encodeURIComponent(`donate_${channelName}`);
+    const url = `https://yoomoney.ru/quickpay/button-widget?receiver=${receiver}&sum=${amount}&label=${label}`;
     window.open(url, '_blank');
 }
 
