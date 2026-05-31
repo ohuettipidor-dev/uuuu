@@ -208,10 +208,6 @@
             <input type="text" id="msgInput" placeholder="Сообщение...">
             <div class="mention-suggestions" id="mentionSuggestions"></div>
             <button class="input-icon attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-            <button class="input-icon" id="emojiBtn">😊</button>
-            <button class="input-icon" id="stickerPanelBtn">🎨</button>
-            <button class="input-icon voice-btn" id="voiceBtn">🎤</button>
-            <button class="input-icon video-btn" id="videoBtn">📹</button>
         </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
         <input type="file" id="fileInput" style="display:none" onchange="sendFile(this.files[0])">
@@ -277,7 +273,9 @@ function escapeHtml(t) { if(!t) return ''; const div = document.createElement('d
 
 const stickerPanel = document.getElementById('stickerPanel');
 const stickerBtn = document.getElementById('stickerPanelBtn');
-stickerBtn.onclick = () => { stickerPanel.classList.toggle('active'); document.getElementById('emojiPicker').classList.remove('active'); if(stickerPanel.classList.contains('active')) { loadMyStickers(); loadAILimits(); } };
+if(stickerBtn) {
+    stickerBtn.onclick = () => { stickerPanel.classList.toggle('active'); document.getElementById('emojiPicker').classList.remove('active'); if(stickerPanel.classList.contains('active')) { loadMyStickers(); loadAILimits(); } };
+}
 function switchStickerTab(tab) { document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active')); event.target.classList.add('active'); document.getElementById('myStickersTab').style.display = tab==='my'?'block':'none'; document.getElementById('aiStickersTab').style.display = tab==='ai'?'block':'none'; if(tab==='my') loadMyStickers(); else loadAILimits(); }
 function loadMyStickers() {
     fetch('/api/stickers/all').then(r=>r.json()).then(data => {
@@ -362,10 +360,11 @@ function scrollToPinned() { if(window.pinnedMsgId) { const el = document.querySe
 function unpinMessage() { if(window.pinnedMsgId) pinMessage(window.pinnedMsgId, 'group'); }
 function unpinThisMessage(id) { pinMessage(id, 'group'); }
 
-document.getElementById('emojiBtn').onclick = () => { document.getElementById('emojiPicker').classList.toggle('active'); stickerPanel.classList.remove('active'); };
+// Эмодзи и стикеры (скрытые)
+document.getElementById('emojiBtn')?.addEventListener('click', () => { document.getElementById('emojiPicker').classList.toggle('active'); stickerPanel.classList.remove('active'); });
 document.querySelectorAll('.emoji-picker span').forEach(e => e.onclick = () => { msgInput.value += e.textContent; document.getElementById('emojiPicker').classList.remove('active'); msgInput.focus(); });
 
-// --- ГОЛОСОВЫЕ (без изменений) ---
+// Голосовые и видео (опционально, можно оставить, но убрали из интерфейса)
 async function startVoiceRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -381,18 +380,17 @@ async function startVoiceRecording() {
                 }
             });
             stream.getTracks().forEach(t => t.stop());
-            document.getElementById('voiceBtn').classList.remove('recording'); document.getElementById('voiceBtn').textContent = '🎤'; isAudioRecording = false;
+            document.getElementById('voiceBtn')?.classList.remove('recording'); document.getElementById('voiceBtn')?.textContent = '🎤'; isAudioRecording = false;
         };
         mediaRecorder.start(); isAudioRecording = true;
-        document.getElementById('voiceBtn').classList.add('recording'); document.getElementById('voiceBtn').textContent = '⏹️';
+        document.getElementById('voiceBtn')?.classList.add('recording'); document.getElementById('voiceBtn')?.textContent = '⏹️';
         setTimeout(() => { if(isAudioRecording) stopVoiceRecording(); }, 30000);
     } catch(e) { alert('Микрофон не доступен'); }
 }
 function stopVoiceRecording() { if(mediaRecorder && isAudioRecording) mediaRecorder.stop(); }
 function toggleVoiceRecording() { isAudioRecording ? stopVoiceRecording() : startVoiceRecording(); }
-document.getElementById('voiceBtn').onclick = toggleVoiceRecording;
+document.getElementById('voiceBtn')?.addEventListener('click', toggleVoiceRecording);
 
-// --- ВИДЕО-КРУЖКИ (со звуком) ---
 async function startVideoRecording() {
     if (isVideoRecording || isAudioRecording) return;
     try {
@@ -415,24 +413,24 @@ async function startVideoRecording() {
                 }
             });
             if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-            document.getElementById('videoBtn').classList.remove('recording'); document.getElementById('videoBtn').textContent = '📹'; isVideoRecording = false;
+            document.getElementById('videoBtn')?.classList.remove('recording'); document.getElementById('videoBtn')?.textContent = '📹'; isVideoRecording = false;
         };
         videoRecorder.start(); isVideoRecording = true;
-        document.getElementById('videoBtn').classList.add('recording'); document.getElementById('videoBtn').textContent = '⏺️';
+        document.getElementById('videoBtn')?.classList.add('recording'); document.getElementById('videoBtn')?.textContent = '⏺️';
         setTimeout(() => { if(isVideoRecording) stopVideoRecording(); }, 60000);
     } catch(e) {
         alert('Камера или микрофон не доступны');
-        document.getElementById('videoBtn').classList.remove('recording'); document.getElementById('videoBtn').textContent = '📹';
+        document.getElementById('videoBtn')?.classList.remove('recording'); document.getElementById('videoBtn')?.textContent = '📹';
         if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
         isVideoRecording = false;
     }
 }
 function stopVideoRecording() { if(videoRecorder && videoRecorder.state !== 'inactive') { videoRecorder.stop(); } }
-document.getElementById('videoBtn').addEventListener('mousedown', (e) => { e.preventDefault(); startVideoRecording(); });
-document.getElementById('videoBtn').addEventListener('mouseup', (e) => { e.preventDefault(); if (isVideoRecording) stopVideoRecording(); });
-document.getElementById('videoBtn').addEventListener('mouseleave', (e) => { if (isVideoRecording) stopVideoRecording(); });
-document.getElementById('videoBtn').addEventListener('touchstart', (e) => { e.preventDefault(); startVideoRecording(); });
-document.getElementById('videoBtn').addEventListener('touchend', (e) => { e.preventDefault(); if (isVideoRecording) stopVideoRecording(); });
+document.getElementById('videoBtn')?.addEventListener('mousedown', (e) => { e.preventDefault(); startVideoRecording(); });
+document.getElementById('videoBtn')?.addEventListener('mouseup', (e) => { e.preventDefault(); if (isVideoRecording) stopVideoRecording(); });
+document.getElementById('videoBtn')?.addEventListener('mouseleave', (e) => { if (isVideoRecording) stopVideoRecording(); });
+document.getElementById('videoBtn')?.addEventListener('touchstart', (e) => { e.preventDefault(); startVideoRecording(); });
+document.getElementById('videoBtn')?.addEventListener('touchend', (e) => { e.preventDefault(); if (isVideoRecording) stopVideoRecording(); });
 
 let mentionSearchTimeout, currentMentionStart = -1;
 loadPinnedMessage();
