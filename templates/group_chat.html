@@ -1,200 +1,101 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 Чат группы {{ group.name }} | BearGram</title>
+    <title>🐻 {{ group.name }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
-        /* ВСЕ СТИЛИ ИЗ messages.html (кружки, стикеры, AI, эмодзи, галочки) */
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
+        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
-        
         .header{padding:8px 12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .back{background:#ff6b6b;padding:5px 12px;border-radius:25px;cursor:pointer;color:white;font-weight:500;text-decoration:none;font-size:13px}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0}
         .avatar img{width:100%;height:100%;object-fit:cover}
-        .user-info{flex:1;cursor:pointer;min-width:0}
-        .user-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .user-status{font-size:10px;color:#888}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
-        
-        .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px;position:relative}
-        .message{display:flex;animation:fadeInUp 0.2s ease;position:relative}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .group-info{flex:1;cursor:pointer;min-width:0}
+        .group-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .member-count{font-size:10px;color:#888}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;text-decoration:none;color:#ff6b6b;flex-shrink:0}
+        .settings-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#888;width:32px;height:32px}
+        .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px}
+        .message{display:flex;position:relative}
         .message.sent{justify-content:flex-end}
         .message.received{justify-content:flex-start}
-        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word;position:relative;overflow:hidden}
+        .bubble{max-width:75%;padding:6px 12px;border-radius:18px;font-size:14px;word-wrap:break-word}
         .sent .bubble{background:linear-gradient(135deg, #ff6b6b, #ff8e8e);color:white;border-bottom-right-radius:4px}
         .received .bubble{background:white;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-        .time{font-size:9px;color:#aaa;margin-top:2px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
-        .sent .time{justify-content:flex-end}
-        .sticker-img{width:120px;height:120px;object-fit:contain;cursor:pointer}
-        .voice-msg{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 0;max-width:100%;overflow:hidden}
-        .voice-wave{display:flex;align-items:center;gap:2px}
-        .voice-wave div{width:2px;height:6px;background:#ff6b6b;border-radius:1px;animation:wave 0.5s ease infinite alternate}
-        @keyframes wave{from{height:6px}to{height:12px}}
-        .msg-image{max-width:200px;height:auto;display:block;border-radius:12px;cursor:pointer;margin:4px 0}
-        
-        .message-actions{position:absolute;top:-28px;right:0;background:white;border-radius:20px;display:none;gap:3px;padding:4px 8px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-        .message:hover .message-actions{display:flex}
-        .action-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:3px 5px;border-radius:12px;color:#888}
-        .action-btn:hover{background:#f0f0f0;color:#ff6b6b}
-        .reply-preview{background:rgba(0,0,0,0.04);border-left:2px solid #ff6b6b;padding:4px 6px;margin-bottom:4px;border-radius:6px;font-size:10px;color:#888}
-        .reply-bar{background:#f9f9f9;border-radius:20px;padding:6px 12px;margin-bottom:6px;display:none;align-items:center;gap:8px;font-size:11px}
-        .reply-bar .cancel-reply{background:#ff6b6b;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px}
-        .edited-badge{font-size:8px;color:#aaa;margin-left:4px}.forward-badge{font-size:9px;color:#aaa;margin-bottom:2px}.favorite-star{color:gold;font-size:12px}.pinned-badge{background:#ff6b6b20;color:#ff6b6b;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:6px;cursor:pointer}
-        .date-separator{text-align:center;margin:16px 0 8px}.date-separator span{background:rgba(255,255,255,0.8);padding:4px 12px;border-radius:12px;font-size:12px;color:#888}
-        
+        .time{font-size:9px;color:#aaa;margin-top:2px}
         .input-area{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;gap:2px;padding:2px 6px;position:relative}
-        #msgInput{flex:1;background:none;border:none;color:#333;font-size:16px;padding:8px 2px;outline:none;resize:none;line-height:1.4;overflow-y:auto;max-height:120px;word-break:break-word}
-        #msgInput::placeholder{color:#aaa}
-        .input-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:4px;border-radius:50%;color:#888;width:32px;height:32px}
-        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;display:none;align-items:center;justify-content:center;border:none;cursor:pointer}
-        .recording{background:#ff4444!important;animation:pulse 1s infinite}
-        @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
-        .input-menu{position:absolute;bottom:50px;right:10px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;gap:4px;padding:8px;z-index:150}
-        .input-menu.active{display:flex}.menu-item{padding:10px 16px;background:none;border:none;text-align:left;font-size:16px;cursor:pointer;border-radius:12px;color:#333}
-        .emoji-picker{position:fixed;bottom:80px;left:8px;background:white;border-radius:24px;padding:10px;display:none;grid-template-columns:repeat(7,1fr);gap:6px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.15)}.emoji-picker.active{display:grid}.emoji-picker span{font-size:26px;cursor:pointer;padding:6px;text-align:center;border-radius:10px}
-        .sticker-panel{position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:101;display:none;max-height:400px;overflow:hidden}.sticker-panel.active{display:block}.panel-tabs{display:flex;border-bottom:1px solid #eee}.panel-tab{flex:1;padding:12px;text-align:center;cursor:pointer;background:none;border:none;font-size:14px}.panel-tab.active{color:#ff6b6b;border-bottom:2px solid #ff6b6b}.panel-content{padding:12px;max-height:340px;overflow-y:auto}.sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sticker-item{background:#f5f5f5;border-radius:12px;padding:8px;cursor:pointer;text-align:center}.sticker-item img{width:70px;height:70px;object-fit:contain}
-        .video-circle{width:200px;height:200px;border-radius:50%;overflow:hidden;cursor:pointer;background:#000;margin:4px 0;display:inline-block}.video-circle video{width:100%;height:100%;object-fit:cover}
-        .live-preview-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;flex-direction:column}.live-preview-circle{width:260px;height:260px;border-radius:50%;overflow:hidden;background:#000;box-shadow:0 0 0 4px white}.live-preview-circle video{width:100%;height:100%;object-fit:cover}.send-video-btn{margin-top:20px;background:#4cd964;color:white;border:none;border-radius:30px;padding:12px 30px;font-weight:bold;font-size:16px;cursor:pointer}
-        .multi-preview-overlay{position:fixed;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:12px;z-index:300;display:none}.multi-preview-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1}.multi-preview-item img,.multi-preview-item video{width:100%;height:100%;object-fit:cover}.multi-preview-item .remove-file{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer}.send-multi{flex:1;background:#4cd964;color:white;border:none;padding:12px;border-radius:20px;font-weight:bold;cursor:pointer}
-        @media (max-width:480px){.bubble{max-width:85%}.video-circle{width:160px;height:160px}.live-preview-circle{width:220px;height:220px}}
-        .read-status{color:#53bdeb}.delivered-status{color:#aaa}.sent-status{color:#aaa}
+        .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;padding:2px 6px}
+        #msgInput{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 2px;outline:none}
+        .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;border:none;cursor:pointer}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <a href="/chat" class="back">←</a>
-        <div class="avatar" onclick="location.href='/group/{{ group.id }}/info'">
+        <div class="avatar" onclick="document.getElementById('avatarInput').click()">
             {% if group.avatar != 'group_default.png' %}<img src="/static/avatars/{{ group.avatar }}">{% else %}👥{% endif %}
         </div>
-        <div class="user-info" onclick="location.href='/group/{{ group.id }}/info'">
-            <div class="user-name">{{ group.name }}</div>
-            <div class="user-status">{{ members|length }} участников</div>
+        <div class="group-info" onclick="location.href='/group/{{ group.id }}/info'">
+            <div class="group-name">{{ group.name }}</div>
+            <div class="member-count">{{ members|length }} участников</div>
         </div>
-        <a href="/group/{{ group.id }}/info" class="profile-btn">⚙️</a>
+        <button class="settings-btn" onclick="location.href='/group/{{ group.id }}/info'">⚙️</button>
+        <a href="/profile" class="profile-btn">🧸</a>
+        <form id="avatarForm" method="POST" action="/group/{{ group.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
+            <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
+        </form>
     </div>
 
     <div class="messages" id="messages">
-        <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
-            <span>📌 Закреплено: </span><span id="pinnedMessageContent"></span>
-            <button onclick="scrollToPinned()" style="background:#ff6b6b; color:white; border:none; border-radius:20px; padding:2px 10px; margin-left:8px">↓</button>
-        </div>
-        {% set last_date = None %}
         {% for m in messages %}
-        {% set msg_date = m.timestamp.strftime('%Y-%m-%d') %}
-        {% if msg_date != last_date %}
-        <div class="date-separator"><span>{% if msg_date == today %}Сегодня{% elif msg_date == yesterday %}Вчера{% else %}{{ m.timestamp.strftime('%d.%m.%Y') }}{% endif %}</span></div>
-        {% set last_date = msg_date %}
-        {% endif %}
-        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
-            <div class="bubble" onclick="copyMessageContent(this)">
-                {% if m.is_pinned %}<div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>{% endif %}
-                {% if m.forwarded_from_id %}<div class="forward-badge">📎 Переслано</div>{% endif %}
-                {% if m.reply_to_id %}<div class="reply-preview"><span>📩 Ответ:</span><br><span id="reply-preview-{{ m.id }}">...</span></div>{% endif %}
-                {% if m.file_type == 'sticker' %}<img src="{{ m.file_path }}" class="sticker-img">
-                {% elif m.file_path %}
-                    {% if m.file_type == 'image' %}<img src="{{ m.file_path }}" class="msg-image" onclick="window.open(this.src)">
-                    {% elif m.file_type == 'audio' %}<audio controls src="{{ m.file_path }}"></audio>
-                    {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}<div class="video-circle" onclick="const v=this.querySelector('video');v.muted=false;v.play()"><video src="{{ m.file_path }}" playsinline></video></div>
-                    {% elif m.file_type == 'video' %}<video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
-                    {% else %}<a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#ff6b6b">📎 {{ m.file_name }}</a>{% endif %}
-                {% endif %}
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+            <div class="bubble">
                 {% if m.content %}<div>{{ m.content }}</div>{% endif %}
-                {% if m.voice_duration and m.voice_duration > 0 and m.file_type != 'video' %}<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>{{ m.voice_duration }}″</span></div>{% endif %}
-                <div class="time">
-                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
-                    {% if m.sender_id == current_user.id %}{% if m.status == 'read' %}<span class="read-status">✓✓</span>{% elif m.status == 'delivered' %}<span class="delivered-status">✓✓</span>{% else %}<span class="sent-status">✓</span>{% endif %}{% endif %}
-                    {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}{% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
-                </div>
-            </div>
-            <div class="message-actions">
-                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
-                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'group')">⭐</button>
-                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'group')">➡️</button>
-                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'group')">📌</button>
-                {% if m.sender_id == current_user.id %}<button class="action-btn" onclick="editMessage({{ m.id }}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', false)">🗑️</button>{% endif %}
+                <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="document.getElementById('messages').scrollTo({top:document.getElementById('messages').scrollHeight,behavior:'smooth'})">↓</button>
-    <div class="reply-bar" id="replyBar"><span>💬 Ответ:</span><span id="replyText" style="flex:1;color:#888;font-size:11px"></span><button class="cancel-reply" onclick="cancelReply()">✖</button></div>
-
     <div class="input-area">
         <div class="input-wrapper">
-            <textarea id="msgInput" placeholder="Сообщение..." rows="1"></textarea>
-            <button class="input-icon" id="attachBtn">📎</button>
-            <div class="input-menu" id="inputMenu">
-                <button class="menu-item" id="menuEmoji">😊 Эмодзи</button>
-                <button class="menu-item" id="menuStickers">🎨 Стикеры</button>
-                <button class="menu-item" id="menuVoice">🎤 Голосовое</button>
-                <button class="menu-item" id="menuVideo">📹 Видеосообщение</button>
-                <button class="menu-item" id="menuFile">📎 Файл</button>
-            </div>
+            <input type="text" id="msgInput" placeholder="Сообщение...">
         </div>
         <button class="send-btn" id="sendBtn" onclick="sendMsg()">🐻</button>
-        <input type="file" id="fileInput" style="display:none" multiple onchange="handleMultipleFiles(this.files)">
-        <input type="file" id="customStickerInput" style="display:none" accept="image/*" onchange="uploadCustomSticker(this.files[0])">
     </div>
-
-    <div class="emoji-picker" id="emojiPicker"><span>😀</span><span>😍</span>...</div>
-    <div class="sticker-panel" id="stickerPanel">...</div>
-    <div class="live-preview-overlay" id="livePreviewOverlay">...</div>
-    <div class="multi-preview-overlay" id="multiPreviewOverlay">...</div>
 </div>
 
 <script>
 const group_id = {{ group.id }};
-const msgInput = document.getElementById('msgInput'), attachBtn = document.getElementById('attachBtn'), sendBtn = document.getElementById('sendBtn');
-let mediaRecorder, audioChunks = [], isAudioRecording = false, videoRecorder, videoChunks = [], isVideoRecording = false, videoStream, lastMsgId = {{ messages[-1].id if messages else 0 }}, currentReplyToId = null, isSending = false, pendingVideoBlob = null, multiFiles = [], processedIds = new Set();
-
-// Весь JavaScript (sendMsg, sendFile, стикеры, AI, голосовые, кружки) такой же, как в messages.html,
-// но с вызовом /send_group и /get_new_group_messages.
-// Здесь для краткости приведу только изменённые функции.
-// Полный код идентичен messages.html, просто замени вызовы API.
+const msgInput = document.getElementById('msgInput');
 
 async function sendMsg() {
-    if(isSending) return;
     const content = msgInput.value.trim();
-    if(!content && !currentReplyToId) return;
-    isSending = true;
+    if (!content) return;
+
     const formData = new FormData();
     formData.append('group_id', group_id);
-    if(content) formData.append('content', content);
-    if(currentReplyToId) formData.append('reply_to_id', currentReplyToId);
-    formData.append('_from_ajax', 'true');
-    currentReplyToId = null;
-    document.getElementById('replyBar').style.display = 'none';
-    fetch('/send_group', {method:'POST', body:formData})
-        .then(r => r.json())
-        .then(data => {
-            if(data.success) {
-                msgInput.value = '';
-                msgInput.style.height = 'auto';
-                sendBtn.style.display = 'none';
-                setTimeout(() => { checkNewMessages(); isSending = false; }, 300);
-            } else {
-                alert(data.error || 'Ошибка отправки');
-                isSending = false;
-            }
-        })
-        .catch(e => { console.error(e); isSending = false; });
-}
+    formData.append('content', content);
 
-function checkNewMessages() {
-    fetch(`/get_new_group_messages/${lastMsgId}/${group_id}`).then(r=>r.json()).then(msgs => {
-        if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m));
-    });
+    try {
+        const response = await fetch('/send_group', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+            msgInput.value = '';
+            location.reload();
+        } else {
+            alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+        }
+    } catch (error) {
+        alert('Ошибка сети: ' + error.message);
+    }
 }
-
-// Остальные функции (sendFile, addNewMessage, стикеры, AI, голосовые, кружки) без изменений.
-// Просто скопируй их из последнего рабочего messages.html.
 </script>
 </body>
 </html>
