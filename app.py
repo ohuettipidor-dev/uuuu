@@ -1640,31 +1640,39 @@ def group_chat(gid):
 @app.route('/send_group', methods=['POST'])
 @login_required
 def send_group():
+    group_id = request.form.get('group_id')
     content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     content, mentioned_ids = render_mentions(content, current_user.id)
     file_path = request.form.get('file_path')
     file_name = request.form.get('file_name')
     file_type = request.form.get('file_type')
-    
-    # 🔥 ВОТ ЭТА ПРАВКА — принудительно ставим 'sticker' для всех стикеров
-    if file_path and ('sticker' in file_path.lower() or file_path.endswith('.png') or file_path.endswith('.webp')):
-        file_type = 'sticker'
-    
-    if not content and file_path:
-        content = '📎 Файл'
-    msg = GroupMessage(
+    voice_duration = request.form.get('voice_duration', type=int)
+
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+
+    # Проверяем, является ли пользователь участником
+    member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if not member:
+        return jsonify({'error': 'Вы не состоите в этой группе'}), 403
+
+    msg = Message(
+        sender_id=current_user.id,
+        receiver_id=group.id,   # вместо group_id, которого нет в модели
         content=content,
         file_path=file_path,
         file_name=file_name,
         file_type=file_type,
-        sender_id=current_user.id,
-        group_id=request.form['group_id'],
-        voice_duration=request.form.get('voice_duration', 0),
         reply_to_id=reply_to_id,
-        mentions=json.dumps(mentioned_ids)
+        voice_duration=voice_duration or 0,
+        mentions=','.join(str(mid) for mid in mentioned_ids) if mentioned_ids else ''
     )
     db.session.add(msg)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message_id': msg.id})
 
 @app.route('/group/<int:gid>/info')
 @login_required
