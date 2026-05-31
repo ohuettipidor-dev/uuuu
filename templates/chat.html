@@ -7,66 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        :root {
-            --bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);
-            --header-bg: rgba(255,255,255,0.75);
-            --header-border: rgba(255,107,107,0.2);
-            --icon-color: #ff6b6b;
-            --welcome-bg: rgba(255,255,255,0.95);
-            --welcome-text: #333;
-            --welcome-sub: #888;
-            --chat-bg: rgba(255,255,255,0.9);
-            --chat-border: rgba(255,255,255,0.5);
-            --chat-name: #333;
-            --chat-last: #888;
-            --chat-time: #aaa;
-            --feed-bg: white;
-            --feed-text: #333;
-            --feed-actions: #888;
-            --bottom-nav-bg: rgba(255,255,255,0.9);
-            --bottom-nav-border: rgba(255,107,107,0.2);
-            --finance-bg: white;
-            --modal-bg: white;
-            --modal-overlay: rgba(0,0,0,0.5);
-            --input-bg: #f0f0f0;
-            --input-text: #333;
-            --input-placeholder: #aaa;
-        }
-        body.dark {
-            --bg: linear-gradient(135deg, #1a1a2e, #16213e);
-            --header-bg: rgba(30,30,45,0.85);
-            --header-border: rgba(255,255,255,0.1);
-            --icon-color: #ff9a9e;
-            --welcome-bg: rgba(30,30,45,0.95);
-            --welcome-text: #ddd;
-            --welcome-sub: #aaa;
-            --chat-bg: rgba(40,40,55,0.9);
-            --chat-border: rgba(255,255,255,0.05);
-            --chat-name: #eee;
-            --chat-last: #aaa;
-            --chat-time: #888;
-            --feed-bg: #2a2a3e;
-            --feed-text: #ddd;
-            --feed-actions: #aaa;
-            --bottom-nav-bg: rgba(30,30,45,0.9);
-            --bottom-nav-border: rgba(255,255,255,0.1);
-            --finance-bg: #2a2a3e;
-            --modal-bg: #2a2a3e;
-            --modal-overlay: rgba(0,0,0,0.7);
-            --input-bg: #333;
-            --input-text: #fff;
-            --input-placeholder: #888;
-        }
-        html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--welcome-text)}
+        html,body{height:100%;overflow:hidden;background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%)}
         .container{display:flex;flex-direction:column;height:100vh;max-width:700px;margin:0 auto;position:relative}
 
-        .header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--header-bg);backdrop-filter:blur(8px);border-bottom:2px solid var(--header-border);flex-shrink:0;flex-wrap:wrap;gap:6px;z-index:10;position:relative}
+        .header{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.75);backdrop-filter:blur(8px);border-bottom:2px solid rgba(255,255,255,0.3);flex-shrink:0;flex-wrap:wrap;gap:6px;z-index:10;position:relative}
         .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-        .logo-text{font-weight:bold;font-size:16px;color:var(--welcome-text)}
+        .logo-text{font-weight:bold;font-size:16px}
         .logo-text span:first-child{color:#ff6b6b}.logo-text span:last-child{color:#ff8e8e}
         .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .icon-btn{background:rgba(255,255,255,0.9);padding:6px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;text-decoration:none;color:var(--icon-color);cursor:pointer;border:none;flex-shrink:0}
+        .icon-btn{background:rgba(255,255,255,0.9);padding:6px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none;flex-shrink:0}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
 
         .golden-btn{
@@ -80,21 +30,21 @@
         .premium-btn{background:gold;color:#333;font-weight:bold;border-radius:20px;padding:4px 12px;font-size:12px;text-decoration:none}
         .premium-active{color:gold;font-weight:bold;font-size:12px}
 
-        .search-container{display:none;padding:8px 12px;background:var(--header-bg);backdrop-filter:blur(4px);flex-shrink:0;animation:slideDown 0.3s ease}
+        .search-container{display:none;padding:8px 12px;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);flex-shrink:0;animation:slideDown 0.3s ease}
         .search-container.active{display:block}
         @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
         .search-input{width:100%;padding:10px 14px;border-radius:30px;border:1px solid rgba(255,107,107,0.3);background:rgba(255,255,255,0.9);font-size:14px;outline:none;transition:all 0.2s}
         .search-input:focus{border-color:#ff6b6b;background:white}
-        .search-results{background:var(--modal-bg);border-radius:20px;margin-top:8px;max-height:250px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+        .search-results{background:white;border-radius:20px;margin-top:8px;max-height:250px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
         .search-results.active{display:block}
         .search-result-item{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f0f0f0}
         .search-result-item:hover{background:#f9f9f9}
         .search-result-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0}
         .search-result-avatar img{width:100%;height:100%;object-fit:cover}
         .search-result-info{flex:1;min-width:0}
-        .search-result-name{font-weight:600;color:var(--welcome-text);font-size:14px}
-        .search-result-link{font-size:10px;color:var(--welcome-sub)}
-        .search-close{text-align:center;padding:8px;color:var(--welcome-sub);cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
+        .search-result-name{font-weight:600;color:#333;font-size:14px}
+        .search-result-link{font-size:10px;color:#888}
+        .search-close{text-align:center;padding:8px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:13px}
         .search-close:hover{background:#f9f9f9}
         .search-invite-btn{display:block;width:100%;text-align:center;padding:10px;background:rgba(255,215,0,0.1);color:#ff8c00;border:none;border-radius:15px;font-weight:bold;font-size:12px;cursor:pointer;margin-top:8px}
 
@@ -103,47 +53,47 @@
         .panel{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .panel-content{min-height:100%}
 
-        .welcome-block{background:var(--welcome-bg);border-radius:20px;padding:20px;margin-bottom:10px}
+        .welcome-block{background:rgba(255,255,255,0.95);border-radius:20px;padding:20px;margin-bottom:10px}
         .welcome-close{text-align:right;margin-bottom:5px}
-        .welcome-close button{background:none;border:none;font-size:20px;cursor:pointer;color:var(--welcome-sub)}
+        .welcome-close button{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa}
         .welcome-devil{text-align:center;font-size:13px;color:#ff6b6b;font-weight:bold;margin-bottom:15px;padding:10px;background:rgba(255,107,107,0.1);border-radius:15px}
         .welcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}
-        .welcome-card{background:rgba(255,240,240,0.8);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:0.2s;text-decoration:none;color:var(--welcome-text)}
+        .welcome-card{background:rgba(255,240,240,0.8);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:0.2s;text-decoration:none;color:#333}
         .welcome-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,107,107,0.15)}
         .welcome-card .card-icon{font-size:24px;margin-bottom:5px}
         .welcome-card .card-title{font-weight:bold;font-size:11px;color:#ff6b6b;margin-bottom:3px}
-        .welcome-card .card-desc{font-size:9px;color:var(--welcome-sub)}
+        .welcome-card .card-desc{font-size:9px;color:#888}
         .welcome-btn{display:block;width:100%;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;text-align:center}
         .welcome-invite{background:rgba(255,215,0,0.15);border:1px dashed #ffd700;border-radius:12px;padding:12px;margin-bottom:15px;text-align:center}
         .welcome-invite p{font-size:12px;color:#ff8c00;margin:3px 0}
         .welcome-invite .invite-btn{background:#ffd700;color:#000;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;font-size:12px;cursor:pointer;margin-top:8px}
 
-        .chat-item{background:var(--chat-bg);backdrop-filter:blur(10px);border-radius:18px;padding:10px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid var(--chat-border);margin-bottom:8px}
+        .chat-item{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-radius:18px;padding:10px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.5);margin-bottom:8px}
         .chat-item:hover{transform:translateX(3px);background:white}
         .chat-avatar{width:44px;height:44px;border-radius:50%;margin-right:10px;background:linear-gradient(135deg, #ff9a9e, #fecfef);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#ff6b6b;cursor:pointer;flex-shrink:0;overflow:hidden}
         .chat-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
         .chat-info{flex:1;min-width:0}
-        .chat-name{font-weight:600;margin-bottom:2px;color:var(--chat-name);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
-        .chat-last{font-size:11px;color:var(--chat-last);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .chat-name{font-weight:600;margin-bottom:2px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+        .chat-last{font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .chat-meta{text-align:right;flex-shrink:0;margin-left:8px}
-        .chat-time{font-size:9px;color:var(--chat-time);margin-bottom:2px}
+        .chat-time{font-size:9px;color:#aaa;margin-bottom:2px}
         .badge{background:#ff6b6b;color:white;border-radius:20px;padding:2px 6px;font-size:9px;font-weight:bold;display:inline-block}
         .online{color:#4cd964;font-size:9px;margin-left:4px}
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
-        .feed-item{background:var(--feed-bg);border-radius:20px;padding:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid rgba(255,255,255,0.5)}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:var(--welcome-text)}
+        .feed-item{background:white;border-radius:20px;padding:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid rgba(255,255,255,0.5)}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px}
-        .feed-date{font-size:10px;color:var(--chat-time);margin-left:auto}
-        .feed-content{font-size:14px;color:var(--feed-text);margin-bottom:10px;line-height:1.4}
+        .feed-date{font-size:10px;color:#888;margin-left:auto}
+        .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
         .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
         .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
         .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
-        .feed-actions{display:flex;gap:16px;font-size:13px;color:var(--feed-actions);flex-wrap:wrap}
+        .feed-actions{display:flex;gap:16px;font-size:13px;color:#888;flex-wrap:wrap}
         .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
@@ -156,9 +106,9 @@
             justify-content:space-around;
             align-items:center;
             padding:8px 4px;
-            background:var(--bottom-nav-bg);
+            background:rgba(255,255,255,0.9);
             backdrop-filter:blur(10px);
-            border-top:2px solid var(--bottom-nav-border);
+            border-top:2px solid rgba(255,107,107,0.2);
             flex-shrink:0;
             position: fixed;
             bottom: 0;
@@ -173,15 +123,15 @@
         .nav-item:hover{color:#ff8e8e}
         .nav-icon{font-size:26px}
 
-        .finance-menu{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--finance-bg);border-radius:20px;padding:16px;display:none;flex-wrap:wrap;gap:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
+        .finance-menu{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:white;border-radius:20px;padding:16px;display:none;flex-wrap:wrap;gap:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
         .finance-menu.active{display:flex}
         .finance-link{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px}
 
         .fab-btn{position:fixed;bottom:80px;right:20px;z-index:997;background:#ff6b6b;color:white;border:none;border-radius:50%;width:48px;height:48px;font-size:28px;box-shadow:0 6px 16px rgba(255,107,107,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--modal-overlay);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
-        .modal-content{background:var(--modal-bg);border-radius:24px;padding:18px;width:260px;text-align:center}
+        .modal-content{background:white;border-radius:24px;padding:18px;width:260px;text-align:center}
         .modal-content h3{color:#ff6b6b;margin-bottom:14px;font-size:16px}
         .modal-buttons{display:flex;flex-direction:column;gap:8px}
         .modal-buttons button{padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer;font-size:13px}
@@ -190,9 +140,9 @@
         .modal-buttons .remove-contact{background:#ff4444;color:white}
         .modal-buttons .cancel{background:#f0f0f0;color:#888}
 
-        .group-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--modal-overlay);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .group-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .group-modal.active{opacity:1;visibility:visible}
-        .group-modal-content{background:var(--modal-bg);border-radius:24px;padding:18px;width:240px;text-align:center}
+        .group-modal-content{background:white;border-radius:24px;padding:18px;width:240px;text-align:center}
         .group-modal-content h3{color:#ff6b6b;margin-bottom:14px;font-size:16px}
         .group-modal-content input{width:100%;padding:10px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:14px;outline:none;font-size:14px}
         .group-modal-buttons{display:flex;gap:8px}
@@ -215,7 +165,6 @@
         <div class="logo-text"><span>🐻 Bear</span><span>Gram</span></div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
-            <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()">🌓</button>
             <a href="/golden" class="golden-btn"><span class="golden-btn-icon">🐻🎬</span> BearFlex</a>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
@@ -442,210 +391,105 @@ async function inviteFromNativeContacts() {
                     await new Promise(r => setTimeout(r, 300));
                 }
             }
-            closeInviteModal(r => setTimeout(r, 300));
-                }
-            }
-();
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось открыть контакты. Попробуйте вру            closeInviteModal();
+            closeInviteModal();
         } catch (err) {
             console.error(err);
             alert('Не удалось открыть контакты. Попробуйте вручную.');
         }
     } else {
-        alert('Ваш браузер не поддержичную.');
-        }
-    } else {
-        alert('Ваш браузер не поддерживает выбор контактов. Используйте ручной ввод или загрузкувает выбор контактов. Используйте ручной ввод или загрузку файла.');
-    }
-}
-
-let fileContacts = [];
-function файла.');
+        alert('Ваш браузер не поддерживает выбор контактов. Используйте ручной ввод или загрузку файла.');
     }
 }
 
 let fileContacts = [];
 function parseContactsFile(input) { /* ... */ }
-function renderFileContacts() { /* ... */ parseContactsFile(input) { /* ... */ }
 function renderFileContacts() { /* ... */ }
 function toggleFileContact(index, row) { /* ... */ }
-function inviteSelectedFriends }
-function toggleFileContact(index, row) { /* ... */ }
 function inviteSelectedFriends(mode) { /* ... */ }
-function generateQR(){const link=document.getElementById('refLink').(mode) { /* ... */ }
-function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qtextContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='httpsr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.bx150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻orderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
-function copyRefLink(){const link=document.getElementById('refLink').textContent.trim();navigator.clipboard.writeText(link).then(()=>alert('✅ Ск</span>'};qr.appendChild(img)}
+function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
 function copyRefLink(){const link=document.getElementById('refLink').textContent.trim();navigator.clipboard.writeText(link).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',link))}
-function shareRefLink(){const link=document.getElementById('refLink').textContent.trim();ifопировано!')).catch(()=>prompt('Скопируй:',link))}
-function shareRefLink(){const link=document.getElementById('refLink').textContent.trim();if(navigator.share)navigator.share({title:'🐻 BearGram',text:'Общайся, люби(navigator.share)navigator.share({title:'🐻 BearGram',text:'Общайся, люби, зарабатывай!',url:link}).catch(()=>{});else copyRefLink()}
-async function loadReferralStats(){try{const r=await fetch('/api/referral_stats');const d=await r.json();document, зарабатывай!',url:link}).catch(()=>{});else copyRefLink()}
-async function loadReferralStats(){try{const r=await fetch('/api/referral_stats');const d.getElementById('referralStats').innerHTML='<p style="font-size:14px;font-weight:bold;color:#ff=await r.json();document.getElementById('referralStats').innerHTML='<p style="font-size:14px;font-weight:bold;color:#ff6b6b;">6b6b;">👥 Приглашено: '+d.invited_count+'</p><p style="font-size:👥 Приглашено: '+d.invited_count+'</p><p style="font-size:12px;color:#888;">💎 Заработано: '+d.total_reward+'12px;color:#888;">💎 Заработано: '+</p>'+(d.top_referrers.length>0?'<p style="font-size:10px;">🏆 '+d.top_red.total_reward+'</p>'+(d.top_referrers.length>0?'<p style="font-size:10px;">🏆 '+d.top_referrers.slice(0,3).map(r=>ferrers.slice(0,3).map(r=>'@'+r.username+'('+r.count+')').join(', ')+'</p>':'');document.getElementById('ref'@'+r.username+'('+r.count+')').join(', ')+'</p>':'');document.getElementById('refStatsLink').textContent=d.referral_link;document.getElementById('refStatsLink').textContent=d.referral_link;document.getElementById('refLink').textContent=d.referral_link}catch(e){}}
-
-// AI-Link').textContent=d.referral_link}catch(e){}}
+function shareRefLink(){const link=document.getElementById('refLink').textContent.trim();if(navigator.share)navigator.share({title:'🐻 BearGram',text:'Общайся, люби, зарабатывай!',url:link}).catch(()=>{});else copyRefLink()}
+async function loadReferralStats(){try{const r=await fetch('/api/referral_stats');const d=await r.json();document.getElementById('referralStats').innerHTML='<p style="font-size:14px;font-weight:bold;color:#ff6b6b;">👥 Приглашено: '+d.invited_count+'</p><p style="font-size:12px;color:#888;">💎 Заработано: '+d.total_reward+'</p>'+(d.top_referrers.length>0?'<p style="font-size:10px;">🏆 '+d.top_referrers.slice(0,3).map(r=>'@'+r.username+'('+r.count+')').join(', ')+'</p>':'');document.getElementById('refStatsLink').textContent=d.referral_link;document.getElementById('refLink').textContent=d.referral_link}catch(e){}}
 
 // AI-помощник
 (function(){
-const btn=document.getElementById('aiAssistantBtn'),win=document.getElementById('aiChatWindow'),close=document.getElementByIdпомощник
-(function(){
 const btn=document.getElementById('aiAssistantBtn'),win=document.getElementById('aiChatWindow'),close=document.getElementById('closeAiChat'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
-const chatBrain={greetings:['привет','здравствуй','('closeAiChat'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
-const chatBrain={greetings:['привет','зхай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','кадравствуй','хай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','как жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],jк жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],joke:['шутка','анекдот','юмор','роoke:['шутка','анекдот','юмор','рофл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','моифл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','мои деньги','счёт'],rate:['курс','почём','цена'],exchange:['об деньги','счёт'],rate:['курс','почём','цена'],exchange:['обменять','обмен','конвертировать'],send_grrr:['отправить','переменять','обмен','конвертировать'],send_grrr:['отправить','перевести','пересвести','переслать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возвратлать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возврат','жалоба','мо','жалоба','мошенник','обман','кинули'],report:['пожаловаться','жалшенник','обман','кинули'],report:['пожаловаться','жаоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
-const replies={лоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
-const replies={greetings:['greetings:['🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b>'],howareyou:['🐻>'],howareyou:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что у него лапы!'],fact:['🐻 Медведи бегают до 40 км/ч! у него лапы!'],fact:['🐻 Медведи бегают до 40 км'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 /ч!'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 1 💎 = 1 ₽<br>🐻 1 $1 💎 = 1 ₽<br>🐻 1 $GRRR = 0GRRR = 0.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_grrr:['🐻 <b>Формат:</b> "Отправить 10 $GRgrrr:['🐻 <b>Формат:</b> "ОтRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bankправить 10 $GRRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bank'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть |'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть | Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 <b>Я слушаю!</b>']};
-function detectTopic <b>Я слушаю!</b>']};
-function detectTopic(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k}}return'fallback'}
-function random(a){return a[Math}}return'fallback'}
+const chatBrain={greetings:['привет','здравствуй','хай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','как жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],joke:['шутка','анекдот','юмор','рофл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','мои деньги','счёт'],rate:['курс','почём','цена'],exchange:['обменять','обмен','конвертировать'],send_grrr:['отправить','перевести','переслать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возврат','жалоба','мошенник','обман','кинули'],report:['пожаловаться','жалоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
+const replies={greetings:['🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b>'],howareyou:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что у него лапы!'],fact:['🐻 Медведи бегают до 40 км/ч!'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 1 💎 = 1 ₽<br>🐻 1 $GRRR = 0.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_grrr:['🐻 <b>Формат:</b> "Отправить 10 $GRRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bank'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть | Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 <b>Я слушаю!</b>']};
+function detectTopic(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k}}return'fallback'}
 function random(a){return a[Math.floor(Math.random()*a.length)]}
-function addMessage(t,isU,isH=false){const d.floor(Math.random()*a.length)]}
-function addMessage(t,isU,isH=false){const d=document.createElement('div');d.style.cssText=`background:${isU?'#=document.createElement('div');d.style.cssText=`background:${isU?'#ff6b6b':'#f0f0f0'};color:${ff6b6b':'#f0f0f0'};color:${isU?'whiteisU?'white':'#333'};padding:8px 12px;border-radius:12px;align-self:${isU':'#333'};padding:8px 12px;border-radius:12px;align-self:${isU?'flex-end':'flex-start'};max-width:?'flex-end':'flex-start'};max-width:80%;`;if(isH)d.innerHTML=t80%;`;if(isH)d.innerHTML=t;else d.textContent=t;msgDiv.appendChild(d);msgDiv.scrollTop=msgDiv.scrollHeight}
-btn.onclick=()=>win.style.display=(win.style.display==='flex;else d.textContent=t;msgDiv.appendChild(d);msgDiv.scrollTop=msgDiv.scrollHeight}
-btn.onclick=()=>win.style.display=('?'none':'flex');
+function addMessage(t,isU,isH=false){const d=document.createElement('div');d.style.cssText=`background:${isU?'#ff6b6b':'#f0f0f0'};color:${isU?'white':'#333'};padding:8px 12px;border-radius:12px;align-self:${isU?'flex-end':'flex-start'};max-width:80%;`;if(isH)d.innerHTML=t;else d.textContent=t;msgDiv.appendChild(d);msgDiv.scrollTop=msgDiv.scrollHeight}
+btn.onclick=()=>win.style.display=(win.style.display==='flex'?'none':'flex');
 close.onclick=()=>win.style.display='none';
-async function sendMessage(){const t=inputwin.style.display==='flex'?'none':'flex');
-close.onclick=()=>win.style.display='none';
-async function sendMessage(){const t=input.value.trim();if(!t)return;addMessage(t,true);input.value='';.value.trim();if(!t)return;addMessage(t,true);input.value='const topic=detectTopic(t.toLowerCase());const typing=document.createElement('div');typing.style.cssText='background:#f0f0';f0;color:#333;padding:8px 12px;border-radius:const topic=detectTopic(t.toLowerCase());const typing=document.createElement('div');typing.style.cssText='background:#f0f0f0;color:#333;padding:8px 12px;border-radius:12px;align-self:flex-start;';typing.innerHTML='🐻 Печатает12px;align-self:flex-start;';typing.innerHTML='🐻 Печатает...';msgDiv.appendChild(typing);msgDiv.scrollTop=msgDiv.scrollHeight;
-if...';msgDiv.appendChild(typing);msgDiv.scrollTop=msgDiv.scrollHeight;
-if(topic==(topic==='balance'){try{const r=await fetch('/api/my_balance');const d=await r.json();typing.remove='balance'){try{const r=await fetch('/api/my_balance');const d=await r.json();typing.remove();addMessage('🐻 <b>Баланс:</b><br>💎 '+d.coins+' 💎<br>();addMessage('🐻 <b>Баланс:</b><br>💎 '+d.coins+' 💎<br>🐻 '+d.grrr.toFixed(2)+🐻 '+d.grrr.toFixed(2)+' $GRRR',false,true)}catch(e){typing.remove();addMessage('' $GRRR',false,true)}catch(e){typing.remove();addMessage('🐻 ❌ Ошиб🐻 ❌ Ошибка',false,trueка',false,true)}return}
-if(topic==='support'||topic==='report'){typing)}return}
-if(topic==='support'||topic==='report'){typing.remove();if(t.includes('@')){const m=t.match(/@(\w+)/);if(m){try{const r=await fetch('/.remove();if(t.includes('@')){const m=t.match(/@(\w+)/);if(m){try{const r=await fetch('/api/report_user',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'usernameapi/report_user',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'username='+encodeURIComponent(m[1])+'&reason='+encodeURIComponent(t)});const d='+encodeURIComponent(m[1])+'&reason='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){add=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',falseMessage('🐻 ❌ Ошибка',false,true)}return}}if(t.includes('вернуть')||t.includes('возврат')||t.includes('обман')||t.includes('ки,true)}return}}if(t.includes('вернуть')||t.includes('возврат')||t.includes('обман')||t.includes('кинули')||t.includes('мошенник')){addMessage('🐻 <b>Создаюнули')||t.includes('мошенник')){addMessage('🐻 <b>Создаю заявку...</b>',false,true);try{const r=await fetch('/api/support/create',{method:' заявку...</b>',false,true);try{const r=await fetch('/api/support/create',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'subject=ВозPOST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'subject=Возврат&description='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻врат&description='+encodeURIComponent(t)});const d=await r ✅ Заявка #'+d.ticket_id:'🐻 ❌ '+.json();addMessage(d.success?'🐻 ✅ Заявка #'+d.ticket_id:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}typing.remove();addMessage(random(replies.support||replies.fallback),falsetyping.remove();addMessage(random(replies.support||replies.fallback),false,true);return}
-if(topic==='send_grrr'){const am=t,true);return}
-if(topic==='send_grrr'){const.match(/(\d+\.?\d*)/);const um=t.match(/@(\w+)/);if(am&&um){ am=t.match(/(\d+\.?\d*)/);const um=t.match(/@(\w+)/);if(am&&um){typing.remove();try{const r=await fetch('/api/styping.remove();try{const r=await fetch('/api/send_grrr',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amountend_grrr',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amount='+am[1]+'&username='+encodeURIComponent(um='+am[1]+'&username='+encode[1])});const d=await r.json();addMessage(d.success?'🐻URIComponent(um[1])});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}
-setTimeout(()=>{typing.remove();const reply=random(replies[topic]||re ❌ Ошибка',false,true)}return}}
+async function sendMessage(){const t=input.value.trim();if(!t)return;addMessage(t,true);input.value='';const topic=detectTopic(t.toLowerCase());const typing=document.createElement('div');typing.style.cssText='background:#f0f0f0;color:#333;padding:8px 12px;border-radius:12px;align-self:flex-start;';typing.innerHTML='🐻 Печатает...';msgDiv.appendChild(typing);msgDiv.scrollTop=msgDiv.scrollHeight;
+if(topic==='balance'){try{const r=await fetch('/api/my_balance');const d=await r.json();typing.remove();addMessage('🐻 <b>Баланс:</b><br>💎 '+d.coins+' 💎<br>🐻 '+d.grrr.toFixed(2)+' $GRRR',false,true)}catch(e){typing.remove();addMessage('🐻 ❌ Ошибка',false,true)}return}
+if(topic==='support'||topic==='report'){typing.remove();if(t.includes('@')){const m=t.match(/@(\w+)/);if(m){try{const r=await fetch('/api/report_user',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'username='+encodeURIComponent(m[1])+'&reason='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}if(t.includes('вернуть')||t.includes('возврат')||t.includes('обман')||t.includes('кинули')||t.includes('мошенник')){addMessage('🐻 <b>Создаю заявку...</b>',false,true);try{const r=await fetch('/api/support/create',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'subject=Возврат&description='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ Заявка #'+d.ticket_id:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}typing.remove();addMessage(random(replies.support||replies.fallback),false,true);return}
+if(topic==='send_grrr'){const am=t.match(/(\d+\.?\d*)/);const um=t.match(/@(\w+)/);if(am&&um){typing.remove();try{const r=await fetch('/api/send_grrr',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amount='+am[1]+'&username='+encodeURIComponent(um[1])});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}
 setTimeout(()=>{typing.remove();const reply=random(replies[topic]||replies.fallback);addMessage(reply,false,true)},500)}
-send.onclick=sendMessageplies.fallback);addMessage(reply,false,true)},500)}
 send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
-function save;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
-function saveFcmToken(token) { fetch('/api/fFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSONcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
-
-let feedLoaded = false;
-async function loadFeed() {
-    if (feedLoaded).stringify({token: token}) }); }
+function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
 let feedLoaded = false;
 async function loadFeed() {
     if (feedLoaded) return;
     feedLoaded = true;
     const container = document.getElementById('feedContainer');
-    return;
-    feedLoaded = true;
-    const container = document.getElementById('feedContainer');
-    container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;"> container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">🐻 Загружаем обсуждения...</div>';
-    try {
-        const resp = await fetch('/api/feed');
-        if (!resp.ok🐻 Загружаем обсуждения...</div>';
+    container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">🐻 Загружаем обсуждения...</div>';
     try {
         const resp = await fetch('/api/feed');
         if (!resp.ok) throw new Error('Ошибка сети');
         const data = await resp.json();
         if (data.posts.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">📢 Пока нет обсуждений. Под) throw new Error('Ошибка сети');
-        const data = await resp.json();
-        if (data.posts.length === 0) {
             container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">📢 Пока нет обсуждений. Подпишитесь на каналы!</div>';
-            return;
-        }
-        letпишитесь на каналы!</div>';
             return;
         }
         let html = '';
         data.posts.forEach(p => {
             let images = [], videos = [], audios = [], files = [];
-            if html = '';
-        data.posts.forEach(p => {
-            let images = [], videos = [], audios = [], files = [];
-            if (p.attachments) (p.attachments) {
-                p.attachments.forEach(att => {
-                    if (att.type === 'image') images.push(att {
+            if (p.attachments) {
                 p.attachments.forEach(att => {
                     if (att.type === 'image') images.push(att);
-                    else if (att.type === 'video') videos);
                     else if (att.type === 'video') videos.push(att);
-                    else if (att.type === 'audio') audios.push(.push(att);
                     else if (att.type === 'audio') audios.push(att);
                     else files.push(att);
                 });
-           att);
-                    else files.push(att);
-                });
             }
-            let imagesHtml = '';
-            if (images.length }
             let imagesHtml = '';
             if (images.length > 0) {
                 imagesHtml = '<div class="feed-images-grid">';
- > 0) {
-                imagesHtml = '<div class                images.forEach(img => { imagesHtml += `<img src="${img.path}" loading="lazy">`; });
-                imagesHtml += '</div>';
-            }
-            let="feed-images-grid">';
                 images.forEach(img => { imagesHtml += `<img src="${img.path}" loading="lazy">`; });
                 imagesHtml += '</div>';
             }
-            let videosHtml = ''; videos.forEach(v => { videosHtml += `<video class="feed-video" src videosHtml = ''; videos.forEach(v => { videosHtml += `<video class="feed-video" src="${v.path}" controls></video>`; });
-            let audiosHtml = ''; audios.forEach(a =>="${v.path}" controls></video>`; });
+            let videosHtml = ''; videos.forEach(v => { videosHtml += `<video class="feed-video" src="${v.path}" controls></video>`; });
             let audiosHtml = ''; audios.forEach(a => { audiosHtml += `<audio class="feed-audio" src="${a.path}" controls></audio>`; });
-            let filesHtml = ''; files.forEach(f => { filesHtml += `<a class="feed-file" href="${f.path}" target="_ { audiosHtml += `<audio class="feed-audio" src="${a.path}" controls></audio>`; });
             let filesHtml = ''; files.forEach(f => { filesHtml += `<a class="feed-file" href="${f.path}" target="_blank">📎 ${f.name || 'Файл'}</a>`; });
-
-blank">📎 ${f.name || 'Файл'}</a>`; });
 
             html += `
             <div class="feed-item" onclick="window.location.href='/channel/${p.channel_id}'" style="cursor:pointer;">
-                <a            html += `
-            <div class="feed-item" onclick="window.location.href='/channel/${p.channel_id}'" style="cursor:pointer;">
                 <a href="/channel/${p.channel_id}" class="feed-header" onclick="event.stopPropagation();">
-                    href="/channel/${p.channel_id}" class="feed-header" onclick="event.stopPropagation();">
-                    <div class="feed-avatar">${p.channel_avatar !== 'channel <div class="feed-avatar">${p.channel_avatar !== 'channel_default.png' ? `<img src="/static/_default.png' ? `<img src="/static/avatars/${p.channel_avatar}">` : '📢'}</div>
-                    <span class="avatars/${p.channel_avatar}">` : '📢'}</div>
+                    <div class="feed-avatar">${p.channel_avatar !== 'channel_default.png' ? `<img src="/static/avatars/${p.channel_avatar}">` : '📢'}</div>
                     <span class="feed-channel-name">${p.channel_name}</span>
-                    <span class="feed-date">${p.timestamp}</span>
-                </afeed-channel-name">${p.channel_name}</span>
                     <span class="feed-date">${p.timestamp}</span>
                 </a>
                 <div class="feed-content">${p.content}</div>
-                ${imagesHtml}${videosHtml}${audiosHtml>
-                <div class="feed-content">${p.content}</div>
                 ${imagesHtml}${videosHtml}${audiosHtml}${filesHtml}
-                <div class="feed-actions" onclick="event.stop}${filesHtml}
                 <div class="feed-actions" onclick="event.stopPropagation();">
-                    <span class="feed-action" onclick="likeFeedPost(${p.id}, this)">❤️ <span>${p.likes}</span></spanPropagation();">
                     <span class="feed-action" onclick="likeFeedPost(${p.id}, this)">❤️ <span>${p.likes}</span></span>
                     <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
-                    <span class="feed-action>
-                    <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
                     <span class="feed-action">👁️ ${p.views}</span>
-                   ">👁️ ${p.views}</span>
-                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel('${p.channel_name}')"> donateToChannel('${p.channel_name}')">💎 Донат</a>
-                </div>
-            </div>`;
-       💎 Донат</a>
+                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel('${p.channel_name}')">💎 Донат</a>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
     } catch (e) {
- });
-        container.innerHTML = html;
-    } catch (e) {
-        container.innerHTML = `<div style="text-align:center;        container.innerHTML = `<div style="text-align:center; color:#888; padding: color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Пов 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>`;
-        feedLoaded = false;
-    }
-торить</button></div>`;
+        container.innerHTML = `<div style="text-align:center; color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>`;
         feedLoaded = false;
     }
 }
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
-    const resp = await fetch('/}
-function retryLoadFeed() { feedLoaded = false; loadFeed(); }
-async function likeFeedPost(postId, el) {
-    const respapi/feed/like/' + postId, {method:'POST'});
-    const data = await resp.json();
-    if (data.success) {
-        el.classList.toggle('liked', data.liked);
-        el.querySelector(' = await fetch('/api/feed/like/' + postId, {method:'POST'});
+    const resp = await fetch('/api/feed/like/' + postId, {method:'POST'});
     const data = await resp.json();
     if (data.success) {
         el.classList.toggle('liked', data.liked);
@@ -653,51 +497,18 @@ async function likeFeedPost(postId, el) {
     }
 }
 
-function donateToChannel(channelNamespan').textContent = data.likes;
-    }
-}
-
 function donateToChannel(channelName) {
     const amount = prompt('Введите сумму доната (₽):', '100');
-    if (!amount) {
-    const amount = prompt('Введите сумму доната (₽):', '100');
-    if (!amount || isNaN(amount) || isNaN(amount) || amount <= 0) return;
-    const receiver = "4100119522166446";  // ТВО || amount <= 0) return;
-    const receiver = "4100119522166446";  // ТВОЙ ЮMONEY КОШЕЛЁК
-    const label = encodeURIComponent(`Й ЮMONEY КОШЕЛЁК
+    if (!amount || isNaN(amount) || amount <= 0) return;
+    const receiver = "4100119522166446";
     const label = encodeURIComponent(`donate_${channelName}`);
-    const url = `https://yoomoney.rudonate_${channelName}`);
-    const url = `https://yoomoney.ru/quickpay/button-widget?receiver=${receiver}&sum=${amount}&label=${label/quickpay/button-widget?receiver=${receiver}&sum=${amount}&label=${label}`;
+    const url = `https://yoomoney.ru/quickpay/button-widget?receiver=${receiver}&sum=${amount}&label=${label}`;
     window.location.href = url;
 }
 
 function toggleFinanceMenu() {
     document.getElementById('financeMenu').classList.toggle('active');
 }
-
-function toggleTheme() {
-    document}`;
-    window.location.href = url;
-}
-
-function toggleFinanceMenu() {
-    document.getElementById('financeMenu').classList.toggle('active');
-}
-
-function toggleTheme() {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('beargram_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-}
-(function() {
-    if (localStorage.body.classList.toggle('dark');
-    localStorage.setItem('beargram_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-}
-(function() {
-    if (localStorage.getItem('beargram_theme') === 'dark') {
-        document.body.classList.add('.getItem('beargram_theme') === 'dark') {
-        document.body.classList.add('dark');
-    }
-})();
 </script>
 </body>
 </html>
