@@ -1653,14 +1653,9 @@ def send_group():
     if not group:
         return jsonify({'error': 'Группа не найдена'}), 404
 
-    # Проверяем, является ли пользователь участником
-    member = GroupMember.query.filter_by(group_id=group.id, user_id=current_user.id).first()
-    if not member:
-        return jsonify({'error': 'Вы не состоите в этой группе'}), 403
-
     msg = Message(
         sender_id=current_user.id,
-        receiver_id=group.id,   # вместо group_id, которого нет в модели
+        receiver_id=group.id,
         content=content,
         file_path=file_path,
         file_name=file_name,
