@@ -48,7 +48,7 @@
         .search-close:hover{background:#f9f9f9}
         .search-invite-btn{display:block;width:100%;text-align:center;padding:10px;background:rgba(255,215,0,0.1);color:#ff8c00;border:none;border-radius:15px;font-weight:bold;font-size:12px;cursor:pointer;margin-top:8px}
 
-        .app{flex:1;position:relative;overflow:hidden;touch-action:pan-y pinch-zoom; padding-bottom: 70px;} /* отступ для нижнего бара */
+        .app{flex:1;position:relative;overflow:hidden;touch-action:pan-y pinch-zoom; padding-bottom: 70px;}
         .swiper{display:flex;height:100%;transition:transform 0.35s cubic-bezier(0.25,0.8,0.25,1);will-change:transform}
         .panel{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .panel-content{min-height:100%}
@@ -101,7 +101,6 @@
         .donate-btn:hover{transform:scale(1.02)}
         .retry-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-weight:bold;margin-top:10px}
 
-        /* Нижний бар — фиксирован */
         .bottom-nav{
             display:flex;
             justify-content:space-around;
@@ -252,7 +251,7 @@
 
 <button class="fab-btn" onclick="openGroupModal()">+</button>
 
-<div style="position:fixed; bottom:20px; right:20px; z-index:999;">
+<div style="position:fixed; bottom:140px; right:20px; z-index:998;">
     <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
 </div>
 <div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
@@ -403,7 +402,7 @@ async function inviteFromNativeContacts() {
 }
 
 let fileContacts = [];
-function parseContactsFile(input) { /* ... функция парсинга ... */ }
+function parseContactsFile(input) { /* ... */ }
 function renderFileContacts() { /* ... */ }
 function toggleFileContact(index, row) { /* ... */ }
 function inviteSelectedFriends(mode) { /* ... */ }
