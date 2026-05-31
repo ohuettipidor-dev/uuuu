@@ -233,25 +233,23 @@
 <div class="container">
     <div class="header">
         <a href="/chat" class="back">←</a>
-        <div class="avatar" onclick="location.href='/profile/{{ other.id }}'">
-            {% if other.avatar != 'default.png' %}
-                <img src="/static/avatars/{{ other.avatar }}">
+        <div class="avatar" onclick="document.getElementById('avatarInput').click()">
+            {% if group.avatar != 'group_default.png' %}
+                <img src="/static/avatars/{{ group.avatar }}">
             {% else %}
-                🐼
+                👥
             {% endif %}
+            <div class="avatar-overlay" style="position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white">📷</div>
         </div>
-        <div class="user-info" onclick="location.href='/profile/{{ other.id }}'">
-            <div class="user-name">{{ other.username }}</div>
-            <div class="user-status" id="typingStatus">
-                {% if other.status == 'online' %}
-                    🟢 Онлайн
-                {% else %}
-                    🔵 Офлайн
-                {% endif %}
-            </div>
+        <div class="user-info" onclick="location.href='/group/{{ group.id }}/info'">
+            <div class="user-name">{{ group.name }}</div>
+            <div class="user-status">{{ members|length }} участников</div>
         </div>
-        <button class="call-btn" onclick="startVideoCall()">📹</button>
+        <button class="settings-btn" onclick="location.href='/group/{{ group.id }}/info'" style="background:none;border:none;font-size:16px;padding:6px;border-radius:50%;cursor:pointer;color:#888;">⚙️</button>
         <a href="/profile" class="profile-btn">🧸</a>
+        <form id="avatarForm" method="POST" action="/group/{{ group.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
+            <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
+        </form>
     </div>
     
     <div class="messages" id="messages">
@@ -262,7 +260,7 @@
         </div>
         
         {% set last_date = None %}
-        {% for m in msgs %}
+        {% for m in messages %}
         {% set msg_date = m.timestamp.strftime('%Y-%m-%d') %}
         {% if msg_date != last_date %}
         <div class="date-separator">
@@ -336,15 +334,14 @@
             </div>
             <div class="message-actions">
                 <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
-                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'private')">⭐</button>
-                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'private')">➡️</button>
-                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'private')">📌</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'group')">⭐</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'group')">➡️</button>
+                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'group')">📌</button>
                 {% if m.sender_id == current_user.id %}
-                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'private')">✏️</button>
-                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🗑️</button>
-                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', true)">⚠️</button>
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'group')">✏️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', false)">🗑️</button>
                 {% else %}
-                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'private', false)">🙈</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', false)">🙈</button>
                 {% endif %}
             </div>
         </div>
@@ -452,7 +449,7 @@ let videoChunks = [];
 let isVideoRecording = false;
 let videoStream = null;
 let startTime = null;
-let lastMsgId = {{ msgs[-1].id if msgs else 0 }};
+let lastMsgId = {{ messages[-1].id if messages else 0 }};
 let currentReplyToId = null;
 let typingTimeout = null;
 let isSending = false;
@@ -465,19 +462,24 @@ function playVoice(el) { const audio = el.closest('.bubble').querySelector('audi
 function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
 
 function startVideoCall() {
-    // Групповые звонки пока не реализованы
     alert('Групповые звонки скоро появятся!');
 }
 
 msgInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    // Индикатор печатания в группе можно добавить позже
+    fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({group_id: group_id, is_typing: true})});
+    if(typingTimeout) clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => fetch('/typing', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({group_id: group_id, is_typing: false})}), 1000);
     sendBtn.style.display = this.value.trim().length > 0 ? 'flex' : 'none';
 });
 
 function checkTyping() {
-    // Для групп можно добавить индикатор позже
+    fetch(`/get_typing/${group_id}`).then(r=>r.json()).then(data => {
+        const statusDiv = document.getElementById('typingStatus');
+        if(data.is_typing) { statusDiv.innerHTML = '✏️ Печатает...'; statusDiv.className = 'user-status typing'; }
+        else { statusDiv.innerHTML = '{{ members|length }} участников'; statusDiv.className = 'user-status'; }
+    });
 }
 setInterval(checkTyping, 2000);
 
