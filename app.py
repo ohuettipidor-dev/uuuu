@@ -2013,10 +2013,10 @@ def chat():
             'last': last, 'unread': unread
         })
 
-    # Группы
+        Группы
     for g in groups:
         last = Message.query.filter_by(receiver_id=g.id).order_by(Message.timestamp.desc()).first()
-        unread = Message.query.filter_by(group_id=g.id, is_read=False).filter(Message.sender_id != current_user.id).count()
+        unread = Message.query.filter_by(receiver_id=g.id, is_read=False).filter(Message.sender_id != current_user.id).count()
         convs.append({
             'type': 'group', 'id': g.id, 'name': g.name,
             'avatar': getattr(g, 'avatar', 'group_default.png'),
