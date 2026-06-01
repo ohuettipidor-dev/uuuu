@@ -1861,49 +1861,6 @@ def pin_message():
     db.session.commit()
     return jsonify({'success': True, 'is_pinned': msg.is_pinned})
 
-
-@app.route('/get_pinned_message/<chat_id>/<chat_type>')
-@login_required
-def get_pinned_message(chat_id, chat_type):
-    if chat_type == 'private':
-        msg = Message.query.filter_by(
-            receiver_id=current_user.id,
-            is_pinned=True
-        ).filter(
-            (Message.sender_id == int(chat_id)) | (Message.receiver_id == int(chat_id))
-        ).order_by(Message.id.desc()).first()
-    elif chat_type == 'group':
-        msg = Message.query.filter_by(
-            group_id=int(chat_id),
-            is_pinned=True
-        ).order_by(Message.id.desc()).first()
-    else:
-        return jsonify({})
-
-    if msg:
-        return jsonify({
-            'id': msg.id,
-            'content': msg.content,
-            'sender_name': msg.sender.username
-        })
-    return jsonify({})
-
-
-@app.route('/get_reply_preview/<int:msg_id>/<msg_type>')
-@login_required
-def get_reply_preview(msg_id, msg_type):
-    msg = Message.query.get(msg_id)
-    if not msg:
-        return jsonify({'content': ''})
-    # Проверить доступ
-    if msg_type == 'group':
-        if not msg.group_id or not GroupMember.query.filter_by(group_id=msg.group_id, user_id=current_user.id).first():
-            return jsonify({'content': ''})
-    else:
-        if msg.sender_id != current_user.id and msg.receiver_id != current_user.id:
-            return jsonify({'content': ''})
-    return jsonify({'content': msg.content[:100]}) 
-
 @app.route('/group/<int:gid>/info')
 @login_required
 def group_info(gid):
