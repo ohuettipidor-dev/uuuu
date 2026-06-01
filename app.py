@@ -1617,6 +1617,44 @@ def available_private_rooms():
             'created_at': r.created_at.isoformat()
         })
     return jsonify(result)
+@app.route('/send_group', methods=['POST'])
+@login_required
+def send_group():
+    group_id = int(request.form['group_id'])
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+
+    # Проверка, что пользователь участник группы
+    if not GroupMember.query.filter_by(group_id=group_id, user_id=current_user.id).first():
+        return jsonify({'error': 'Вы не участник этой группы'}), 403
+
+    content = request.form.get('content', '')
+    reply_to_id = request.form.get('reply_to_id', type=int)
+    file_path = request.form.get('file_path')
+    file_name = request.form.get('file_name')
+    file_type = request.form.get('file_type')
+    voice_duration = request.form.get('voice_duration', 0, type=int)
+
+    if not content and file_path:
+        content = '📎 Файл'
+
+    msg = Message(
+        content=content,
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
+        sender_id=current_user.id,
+        group_id=group_id,
+        receiver_id=None,
+        voice_duration=voice_duration,
+        reply_to_id=reply_to_id,
+        status='sent'
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message_id': msg.id})
 
 @app.route('/group/<int:gid>')
 @login_required
@@ -1637,7 +1675,6 @@ def group_chat(gid):
         members_list.append(user)
     return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
 # ====================== ГРУППОВЫЕ ЧАТЫ ======================
-
 
 
 @app.route('/group/<int:gid>/info')
