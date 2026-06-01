@@ -29,6 +29,7 @@
         .input-wrapper{flex:1;background:#f0f0f0;border-radius:25px;display:flex;align-items:center;padding:2px 6px}
         #msgInput{flex:1;background:none;border:none;color:#333;font-size:14px;padding:8px 2px;outline:none}
         .send-btn{background:#ff6b6b;color:white;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;border:none;cursor:pointer}
+        /* Дополнительные стили для вложений, действий и т.д. — можешь добавить по аналогии с личным чатом, здесь для краткости убраны */
     </style>
 </head>
 <body>
@@ -51,11 +52,46 @@
 
     <div class="messages" id="messages">
         {% for m in messages %}
-        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+        <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
             <div class="bubble">
+                {% if m.sender_id != current_user.id %}<strong>{{ m.sender.username }}</strong><br>{% endif %}
                 {% if m.content %}<div>{{ m.content }}</div>{% endif %}
-                <div class="time">{{ m.timestamp.strftime('%H:%M') }}</div>
+                {% if m.file_type == 'sticker' %}
+                    <img src="{{ m.file_path }}" class="sticker-img">
+                {% elif m.file_path %}
+                    {% if m.file_type == 'image' %}
+                        <img src="{{ m.file_path }}" class="msg-image" onclick="window.open(this.src)">
+                    {% elif m.file_type == 'audio' %}
+                        <audio controls src="{{ m.file_path }}"></audio>
+                    {% elif m.file_type == 'video' and m.voice_duration and m.voice_duration > 0 %}
+                        <div class="video-circle" onclick="const v=this.querySelector('video'); v.muted=false; v.play()">
+                            <video src="{{ m.file_path }}" playsinline></video>
+                        </div>
+                    {% elif m.file_type == 'video' %}
+                        <video controls src="{{ m.file_path }}" style="max-width:200px;border-radius:12px"></video>
+                    {% else %}
+                        <a href="{{ m.file_path }}" download="{{ m.file_name }}" style="color:#ff6b6b">📎 {{ m.file_name }}</a>
+                    {% endif %}
+                {% endif %}
+                {% if m.voice_duration and m.voice_duration > 0 and m.file_type != 'video' %}
+                    <div class="voice-msg" onclick="playVoice(this)">
+                        <span>🎤</span>
+                        <div class="voice-wave"><div></div><div></div><div></div><div></div></div>
+                        <span>{{ m.voice_duration }}″</span>
+                    </div>
+                {% endif %}
+                <div class="time">
+                    <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
+                    {% if m.sender_id == current_user.id %}
+                        {% if m.status == 'read' %}<span class="read-status">✓✓</span>
+                        {% elif m.status == 'delivered' %}<span class="delivered-status">✓✓</span>
+                        {% else %}<span class="sent-status">✓</span>{% endif %}
+                    {% endif %}
+                    {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
+                    {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
+                </div>
             </div>
+            <!-- Действия с сообщением (reply, forward, delete, pin) – добавишь по желанию, аналогично личному -->
         </div>
         {% endfor %}
     </div>
@@ -71,6 +107,27 @@
 <script>
 const group_id = {{ group.id }};
 const msgInput = document.getElementById('msgInput');
+let lastGroupMsgId = {{ messages[-1].id if messages else 0 }};
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatUTCTime(utcString) {
+    if (!utcString) return '';
+    const match = utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (!match) return utcString;
+    const [_, year, month, day, hour, minute, second] = match.map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    return utcDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+document.querySelectorAll('.message-time').forEach(el => {
+    const utcStr = el.dataset.utc;
+    if (utcStr) el.textContent = formatUTCTime(utcStr);
+});
 
 async function sendMsg() {
     const content = msgInput.value.trim();
@@ -88,7 +145,9 @@ async function sendMsg() {
         const result = await response.json();
         if (result.success) {
             msgInput.value = '';
-            location.reload();
+            msgInput.style.height = 'auto';
+            // вместо перезагрузки подгрузим новые сообщения
+            setTimeout(() => checkGroupMessages(), 300);
         } else {
             alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
         }
@@ -96,6 +155,84 @@ async function sendMsg() {
         alert('Ошибка сети: ' + error.message);
     }
 }
+
+function addGroupMessage(msg) {
+    const messagesDiv = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `message ${msg.is_own ? 'sent' : 'received'}`;
+    div.setAttribute('data-id', msg.id);
+
+    let sender = '';
+    if (!msg.is_own) {
+        sender = `<strong>${escapeHtml(msg.sender_name)}</strong><br>`;
+    }
+
+    let fileHtml = '';
+    if (msg.file_path) {
+        if (msg.file_type === 'sticker') {
+            fileHtml = `<img src="${msg.file_path}" class="sticker-img">`;
+        } else if (msg.file_type === 'image') {
+            fileHtml = `<img src="${msg.file_path}" class="msg-image" onclick="window.open(this.src)">`;
+        } else if (msg.file_type === 'audio') {
+            fileHtml = `<audio controls src="${msg.file_path}"></audio>`;
+        } else if (msg.file_type === 'video' && msg.voice_duration && msg.voice_duration > 0) {
+            fileHtml = `<div class="video-circle" onclick="event.stopPropagation(); const v=this.querySelector('video'); v.muted=false; v.play()"><video src="${msg.file_path}" playsinline></video></div>`;
+        } else if (msg.file_type === 'video') {
+            fileHtml = `<video controls src="${msg.file_path}" style="max-width:200px;border-radius:12px"></video>`;
+        } else {
+            fileHtml = `<a href="${msg.file_path}" download="${msg.file_name}" style="color:#ff6b6b">📎 ${escapeHtml(msg.file_name)}</a>`;
+        }
+    }
+
+    let contentHtml = (msg.content && msg.file_type !== 'sticker') ? `<div>${escapeHtml(msg.content)}</div>` : '';
+    let voiceHtml = '';
+    if (msg.voice_duration && msg.voice_duration > 0 && msg.file_type !== 'video') {
+        voiceHtml = `<div class="voice-msg" onclick="playVoice(this)"><span>🎤</span><div class="voice-wave"><div></div><div></div><div></div><div></div></div><span>${msg.voice_duration}″</span></div>`;
+    }
+
+    let timeStr = formatUTCTime(msg.timestamp);
+    let statusIcon = '';
+    if (msg.is_own) {
+        if (msg.status === 'read') statusIcon = '<span class="read-status">✓✓</span>';
+        else if (msg.status === 'delivered') statusIcon = '<span class="delivered-status">✓✓</span>';
+        else statusIcon = '<span class="sent-status">✓</span>';
+    }
+    let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
+    let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
+
+    div.innerHTML = `<div class="bubble">${sender}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span> ${statusIcon}${edited}${star}</div></div>`;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function checkGroupMessages() {
+    fetch(`/get_new_group_messages/${group_id}/${lastGroupMsgId}`)
+        .then(r => r.json())
+        .then(msgs => {
+            if (msgs && msgs.length) {
+                msgs.forEach(m => {
+                    if (!document.querySelector(`.message[data-id="${m.id}"]`)) {
+                        addGroupMessage(m);
+                    }
+                });
+                lastGroupMsgId = msgs[msgs.length - 1].id;
+            }
+        });
+}
+
+// Автообновление каждые 2 секунды
+setInterval(checkGroupMessages, 2000);
+
+// Прокрутка вниз при загрузке
+document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+
+// Обработчик Enter
+msgInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMsg();
+    }
+});
 </script>
 </body>
 </html>
