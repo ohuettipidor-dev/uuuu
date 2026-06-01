@@ -1636,8 +1636,273 @@ def group_chat(gid):
         user = db.session.get(User, m.user_id)
         members_list.append(user)
     return render_template('group_chat.html', group=group, messages=messages, members=members_list, current_user=current_user)
+# ====================== ГРУППОВЫЕ ЧАТЫ ======================
 
 @app.route('/send_group', methods=['POST'])
+@login_required
+def send_group():
+    group_id = int(request.form['group_id'])
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'error': 'Группа не найдена'}), 404
+
+    # Проверка членства
+    if not group.is_member(current_user):
+        return jsonify({'error': 'Вы не участник этой группы'}), 403
+
+    content = request.form.get('content', '')
+    reply_to_id = request.form.get('reply_to_id', type=int)
+    file_path = request.form.get('file_path')
+    file_name = request.form.get('file_name')
+    file_type = request.form.get('file_type')
+    voice_duration = request.form.get('voice_duration', 0, type=int)
+
+    # Обработка упоминаний (если есть функция render_mentions)
+    # content, mentioned_ids = render_mentions(content, current_user.id)
+
+    if not content and file_path:
+        content = '📎 Файл'
+
+    msg = Message(
+        content=content,
+        file_path=file_path,
+        file_name=file_name,
+        file_type=file_type,
+        sender_id=current_user.id,
+        group_id=group_id,
+        receiver_id=None,
+        voice_duration=voice_duration,
+        reply_to_id=reply_to_id,
+        status='sent'
+        # mentions=json.dumps(mentioned_ids) если нужно
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message_id': msg.id})
+
+
+@app.route('/get_new_group_messages/<int:group_id>/<int:last_id>')
+@login_required
+def get_new_group_messages(group_id, last_id):
+    group = Group.query.get(group_id)
+    if not group or not group.is_member(current_user):
+        return jsonify([])
+
+    msgs = Message.query.filter(
+        Message.group_id == group_id,
+        Message.id > last_id
+    ).order_by(Message.id.asc()).all()
+
+    result = []
+    for m in msgs:
+        result.append({
+            'id': m.id,
+            'content': m.content,
+            'sender_id': m.sender_id,
+            'sender_name': m.sender.username,
+            'file_path': m.file_path,
+            'file_name': m.file_name,
+            'file_type': m.file_type,
+            'voice_duration': m.voice_duration,
+            'reply_to_id': m.reply_to_id,
+            'timestamp': m.timestamp.isoformat() + 'Z',
+            'is_own': m.sender_id == current_user.id,
+            'status': m.status,
+            'edited': m.edited,
+            'is_favorite': m.is_favorite,
+            'is_pinned': m.is_pinned,
+            'forwarded_from_id': m.forwarded_from_id,
+            'forwarded_from_name': m.forwarded_from.username if m.forwarded_from else None
+        })
+    return jsonify(result)
+
+
+# --- Универсальные действия с сообщениями (поддержка 'group') ---
+
+@app.route('/delete_message', methods=['POST'])
+@login_required
+def delete_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    delete_for_all = data.get('delete_for_all', False)
+    msg_type = data.get('type', 'private')  # 'private' или 'group'
+
+    msg = Message.query.get(msg_id)
+    if not msg:
+        return jsonify({'error': 'Сообщение не найдено'}), 404
+
+    if msg_type == 'group':
+        # Проверить, что пользователь участник группы
+        group = Group.query.get(msg.group_id)
+        if not group or not group.is_member(current_user):
+            return jsonify({'error': 'Нет доступа'}), 403
+    else:
+        if msg.sender_id != current_user.id and msg.receiver_id != current_user.id:
+            return jsonify({'error': 'Нет доступа'}), 403
+
+    if delete_for_all and msg_type == 'group':
+        # В группе удалить для всех может только автор или админ
+        if msg.sender_id != current_user.id:
+            member = GroupMember.query.filter_by(group_id=msg.group_id, user_id=current_user.id).first()
+            if not member or member.role not in ['owner', 'admin']:
+                return jsonify({'error': 'Недостаточно прав'}), 403
+        db.session.delete(msg)
+    elif delete_for_all and msg_type == 'private':
+        if msg.sender_id != current_user.id:
+            return jsonify({'error': 'Нельзя удалить чужое сообщение'}), 403
+        db.session.delete(msg)
+    else:
+        # Удалить только у себя (для личных и групп) – можно добавить поле deleted_for
+        # Пока просто удаляем сообщение (упрощённо)
+        db.session.delete(msg)
+
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/edit_message', methods=['POST'])
+@login_required
+def edit_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    new_content = data['new_content']
+    msg_type = data.get('type', 'private')
+
+    msg = Message.query.get(msg_id)
+    if not msg or msg.sender_id != current_user.id:
+        return jsonify({'error': 'Нельзя редактировать'}), 403
+
+    msg.content = new_content
+    msg.edited = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/toggle_favorite', methods=['POST'])
+@login_required
+def toggle_favorite():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    msg = Message.query.get(msg_id)
+    if not msg:
+        return jsonify({'error': 'Сообщение не найдено'}), 404
+    # можно добавить проверку, что пользователь имеет доступ к сообщению
+    msg.is_favorite = not msg.is_favorite
+    db.session.commit()
+    return jsonify({'success': True, 'is_favorite': msg.is_favorite})
+
+
+@app.route('/forward_message', methods=['POST'])
+@login_required
+def forward_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    target_type = data['target_type']  # 'private' или 'group'
+    target_id = int(data['target_id'])
+    msg_type = data.get('msg_type', 'private')  # тип исходного сообщения
+
+    original = Message.query.get(msg_id)
+    if not original:
+        return jsonify({'error': 'Исходное сообщение не найдено'}), 404
+
+    # Проверка доступа к исходному сообщению
+    if msg_type == 'private':
+        if original.sender_id != current_user.id and original.receiver_id != current_user.id:
+            return jsonify({'error': 'Нет доступа'}), 403
+    else:  # group
+        group = Group.query.get(original.group_id)
+        if not group or not group.is_member(current_user):
+            return jsonify({'error': 'Нет доступа'}), 403
+
+    new_msg = Message(
+        content=original.content,
+        file_path=original.file_path,
+        file_name=original.file_name,
+        file_type=original.file_type,
+        sender_id=current_user.id,
+        voice_duration=original.voice_duration,
+        forwarded_from_id=original.id
+    )
+
+    if target_type == 'private':
+        new_msg.receiver_id = target_id
+    elif target_type == 'group':
+        new_msg.group_id = target_id
+
+    db.session.add(new_msg)
+    db.session.commit()
+    return jsonify({'success': True, 'new_msg_id': new_msg.id})
+
+
+@app.route('/pin_message', methods=['POST'])
+@login_required
+def pin_message():
+    data = request.get_json()
+    msg_id = data['msg_id']
+    msg_type = data.get('type', 'private')  # 'group' или 'private'
+
+    msg = Message.query.get(msg_id)
+    if not msg:
+        return jsonify({'error': 'Сообщение не найдено'}), 404
+
+    # Проверка прав
+    if msg_type == 'group':
+        group = Group.query.get(msg.group_id)
+        if not group or not group.is_member(current_user):
+            return jsonify({'error': 'Нет доступа'}), 403
+        # Разрешить закреплять только админам/овнерам?
+        # Пока разрешим всем
+    else:
+        if msg.sender_id != current_user.id and msg.receiver_id != current_user.id:
+            return jsonify({'error': 'Нет доступа'}), 403
+
+    msg.is_pinned = not msg.is_pinned
+    db.session.commit()
+    return jsonify({'success': True, 'is_pinned': msg.is_pinned})
+
+
+@app.route('/get_pinned_message/<chat_id>/<chat_type>')
+@login_required
+def get_pinned_message(chat_id, chat_type):
+    if chat_type == 'private':
+        msg = Message.query.filter_by(
+            receiver_id=current_user.id,
+            is_pinned=True
+        ).filter(
+            (Message.sender_id == int(chat_id)) | (Message.receiver_id == int(chat_id))
+        ).order_by(Message.id.desc()).first()
+    elif chat_type == 'group':
+        msg = Message.query.filter_by(
+            group_id=int(chat_id),
+            is_pinned=True
+        ).order_by(Message.id.desc()).first()
+    else:
+        return jsonify({})
+
+    if msg:
+        return jsonify({
+            'id': msg.id,
+            'content': msg.content,
+            'sender_name': msg.sender.username
+        })
+    return jsonify({})
+
+
+@app.route('/get_reply_preview/<int:msg_id>/<msg_type>')
+@login_required
+def get_reply_preview(msg_id, msg_type):
+    msg = Message.query.get(msg_id)
+    if not msg:
+        return jsonify({'content': ''})
+    # Проверить доступ
+    if msg_type == 'group':
+        if not msg.group_id or not GroupMember.query.filter_by(group_id=msg.group_id, user_id=current_user.id).first():
+            return jsonify({'content': ''})
+    else:
+        if msg.sender_id != current_user.id and msg.receiver_id != current_user.id:
+            return jsonify({'content': ''})
+    return jsonify({'content': msg.content[:100]}) 
 
 @app.route('/group/<int:gid>/info')
 @login_required
