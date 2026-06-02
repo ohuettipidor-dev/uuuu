@@ -129,7 +129,7 @@
         .video-card video{
             width:100%;
             height:100%;
-            object-fit:contain;
+            object-fit:cover;          /* ← ИЗМЕНЕНО: теперь заполняет экран, как в TikTok */
             background:#000;
             display:block;
             pointer-events:none;
@@ -506,7 +506,6 @@
         {% for video in videos %}
         currentLikedState[{{ video.id }}] = {{ 'true' if video.liked else 'false' }};
         {% endfor %}
-        // Для заглушки, если видео нет
         if (!currentLikedState[0]) currentLikedState[0] = false;
         
         // Создаём плавающие сердечки на фоне
@@ -537,6 +536,7 @@
                     if(videoId&&videoId!=='0'){
                         countView(videoId);
                         updateCommentCount(videoId);
+                        updateLikeStatus(videoId);   // ← ДОБАВЛЕН ВЫЗОВ обновления лайков
                     }
                 }else{
                     video.pause();
@@ -627,6 +627,26 @@
             }catch(e){}
         }
         
+        // ✅ НОВАЯ ФУНКЦИЯ: Обновление статуса лайка и счётчика
+        async function updateLikeStatus(videoId){
+            try{
+                const res=await fetch(`/golden/likes_count/${videoId}`);
+                const data=await res.json();
+                const btn=document.getElementById(`likeBtn-${videoId}`);
+                const countEl=document.getElementById(`likes-${videoId}`);
+                if(countEl)countEl.innerText=data.count||0;
+                if(btn){
+                    if(data.liked){
+                        btn.classList.add('liked');
+                        currentLikedState[videoId]=true;
+                    }else{
+                        btn.classList.remove('liked');
+                        currentLikedState[videoId]=false;
+                    }
+                }
+            }catch(e){}
+        }
+        
         // Переключение лайка
         async function toggleLike(videoId, event){
             if(event){
@@ -637,6 +657,7 @@
             const btn=document.getElementById(`likeBtn-${videoId}`);
             if(!btn)return;
             
+            // Оптимистичное обновление UI
             if(currentLikedState[videoId]){
                 btn.classList.remove('liked');
                 currentLikedState[videoId]=false;
@@ -648,7 +669,18 @@
             
             try{
                 await fetch(`/golden/like/${videoId}`,{method:'POST'});
-            }catch(e){}
+                // ✅ После запроса синхронизируем точное значение с сервера
+                await updateLikeStatus(videoId);
+            }catch(e){
+                // Откат при ошибке
+                if(currentLikedState[videoId]){
+                    btn.classList.remove('liked');
+                    currentLikedState[videoId]=false;
+                }else{
+                    btn.classList.add('liked');
+                    currentLikedState[videoId]=true;
+                }
+            }
         }
         
         // Эффект частиц при лайке
