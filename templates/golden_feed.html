@@ -505,9 +505,6 @@
     <input type="file" id="uploadInput" accept="video/*" style="display:none" onchange="handleBearFlexUpload(this)">
 
     <script>
-        // ==========================================
-        // 1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И ХРАНИЛИЩА
-        // ==========================================
         let currentVideoId = null;
         let currentLikedState = {};
         let lastTapTime = {};
@@ -521,23 +518,8 @@
         if (!currentLikedState[0]) currentLikedState[0] = false;
         videoSoundUnlocked[0] = false;
 
-        const STORAGE_VIEWED = 'bg_viewed_videos';
+        // МЯГКИЕ АЛГОРИТМЫ (без агрессивного скрытия)
         const STORAGE_TAGS = 'bg_liked_tags';
-        
-        function getViewedVideos() {
-            const raw = sessionStorage.getItem(STORAGE_VIEWED);
-            return raw ? JSON.parse(raw) : [];
-        }
-        function addViewedVideo(videoId) {
-            const viewed = getViewedVideos();
-            if (!viewed.includes(videoId)) {
-                viewed.push(videoId);
-                sessionStorage.setItem(STORAGE_VIEWED, JSON.stringify(viewed));
-            }
-        }
-        function isVideoViewed(videoId) {
-            return getViewedVideos().includes(videoId);
-        }
         
         function getLikedTags() {
             const raw = localStorage.getItem(STORAGE_TAGS);
@@ -570,6 +552,7 @@
             return tags;
         }
         
+        // Только сортировка по интересам, без скрытия
         function applyLocalRecommendations() {
             const container = document.getElementById('swipeContainer');
             if (!container) return;
@@ -577,25 +560,17 @@
             if (cards.length < 2) return;
             
             const likedTags = getLikedTags();
+            if (likedTags.length === 0) return; // без интересов не пересортировываем
             
-            cards.forEach(card => {
-                const videoId = parseInt(card.dataset.videoId);
-                if (isVideoViewed(videoId)) {
-                    card.style.display = 'none';
-                } else {
-                    card.style.display = '';
-                }
+            // Просто сортируем: видео с совпадающими тегами — выше
+            cards.sort((a, b) => {
+                const scoreA = getVideoTags(a).filter(t => likedTags.includes(t)).length;
+                const scoreB = getVideoTags(b).filter(t => likedTags.includes(t)).length;
+                return scoreB - scoreA;
             });
             
-            if (likedTags.length > 0) {
-                const remainingCards = cards.filter(c => c.style.display !== 'none');
-                remainingCards.sort((a, b) => {
-                    const scoreA = getVideoTags(a).filter(t => likedTags.includes(t)).length;
-                    const scoreB = getVideoTags(b).filter(t => likedTags.includes(t)).length;
-                    return scoreB - scoreA;
-                });
-                remainingCards.forEach(card => container.appendChild(card));
-            }
+            // Перемещаем в DOM без пересоздания
+            cards.forEach(card => container.appendChild(card));
         }
         
         function createHearts(){
@@ -622,7 +597,6 @@
                     video.play().catch(()=>{});
                     const videoId=entry.target.dataset.videoId;
                     if(videoId&&videoId!=='0'){
-                        addViewedVideo(parseInt(videoId));
                         countView(videoId);
                         updateCommentCount(videoId);
                         updateLikeStatus(videoId);
@@ -653,7 +627,6 @@
             }
             
             card.addEventListener('click', function(e){
-                // Игнорируем клики по боковым кнопкам, нижней панели, ссылке на автора
                 if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar') || e.target.closest('.video-author')) {
                     return;
                 }
@@ -1032,7 +1005,12 @@
             }
         });
         
-        applyLocalRecommendations();
+        // Применяем сортировку без задержки, только если есть интересы
+        if (getLikedTags().length > 0) {
+            requestAnimationFrame(() => {
+                applyLocalRecommendations();
+            });
+        }
         
         updateFundProgress();
         setInterval(updateFundProgress,30000);
