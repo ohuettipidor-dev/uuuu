@@ -1,302 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>🏆 Золотой Контент | BearGram</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        
-        body{
-            background:linear-gradient(135deg, #fff5f5 0%, #ffe0e6 50%, #ffd6e0 100%);
-            color:#333;
-            height:100vh;
-            overflow:hidden;
-            touch-action:pan-y;
-        }
-        
-        .hearts-bg{
-            position:fixed;
-            top:0;left:0;width:100%;height:100%;
-            pointer-events:none;
-            z-index:0;
-            overflow:hidden;
-        }
-        .heart{
-            position:absolute;
-            font-size:20px;
-            animation:floatUp 8s infinite;
-            opacity:0;
-        }
-        @keyframes floatUp{
-            0%{transform:translateY(100vh) scale(0);opacity:0}
-            10%{opacity:0.15}
-            90%{opacity:0.15}
-            100%{transform:translateY(-10vh) scale(1);opacity:0}
-        }
-        
-        .app-container{
-            position:relative;
-            z-index:1;
-            height:100vh;
-            display:flex;
-            flex-direction:column;
-        }
-        
-        .top-bar{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:6px 15px;
-            background:rgba(255,255,255,0.75);
-            backdrop-filter:blur(8px);
-            position:absolute;
-            top:0;left:0;right:0;
-            z-index:10;
-            border-bottom:1px solid rgba(255,107,107,0.15);
-            gap:10px;
-        }
-        .back-btn{
-            background:none;
-            border:none;
-            color:#ff6b6b;
-            font-size:18px;
-            cursor:pointer;
-            padding:4px 8px;
-            text-decoration:none;
-            font-weight:bold;
-        }
-        .logo-text{
-            font-size:13px;
-            font-weight:bold;
-            color:#ff6b6b;
-            flex:1;
-        }
-        .fund-badge{
-            background:linear-gradient(135deg, #ffd700, #ffaa00);
-            color:#000;
-            border-radius:20px;
-            padding:4px 12px;
-            font-size:11px;
-            font-weight:bold;
-            box-shadow:0 2px 6px rgba(255,170,0,0.3);
-        }
-        
-        .swipe-container{
-            flex:1;
-            overflow-y:scroll;
-            scroll-snap-type:y mandatory;
-            -webkit-overflow-scrolling:touch;
-            padding-top:40px;
-            padding-bottom:60px;
-        }
-        .swipe-container::-webkit-scrollbar{display:none}
-        
-        .video-card{
-            height:100vh;
-            scroll-snap-align:start;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            position:relative;
-            background:transparent;
-        }
-        .video-card video{
-            width:100%;
-            height:100%;
-            object-fit:cover;
-            border-radius:0;
-            filter: contrast(1.1) saturate(1.2) brightness(1.05);
-            -webkit-filter: contrast(1.1) saturate(1.2) brightness(1.05);
-        }
-        
-        .video-overlay{
-            position:absolute;
-            bottom:60px;
-            left:12px;
-            z-index:5;
-            background:rgba(0,0,0,0.5);
-            backdrop-filter:blur(4px);
-            border-radius:10px;
-            padding:8px 12px;
-            max-width:70%;
-        }
-        .video-title{
-            font-weight:bold;
-            font-size:14px;
-            color:#fff;
-        }
-        .video-author{
-            font-size:11px;
-            color:rgba(255,255,255,0.9);
-            margin-top:2px;
-        }
-        
-        .side-actions{
-            position:absolute;
-            right:10px;
-            bottom:100px;
-            display:flex;
-            flex-direction:column;
-            gap:20px;
-            z-index:5;
-        }
-        .side-btn{
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:5px;
-            cursor:pointer;
-            transition:0.2s;
-        }
-        .side-btn:hover{transform:scale(1.1)}
-        .side-btn .icon{
-            width:40px;
-            height:40px;
-            border-radius:50%;
-            background:rgba(255,255,255,0.9);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:20px;
-            box-shadow:0 2px 6px rgba(0,0,0,0.12);
-        }
-        .side-btn .count{
-            font-size:11px;
-            font-weight:bold;
-            color:#fff;
-            text-shadow:0 1px 3px rgba(0,0,0,0.5);
-        }
-        .side-btn.liked .icon{background:#ff4444}
-        .side-btn.liked .count{color:#ff9999}
-        
-        @keyframes likePop{
-            0%{transform:scale(1)}
-            50%{transform:scale(1.3)}
-            100%{transform:scale(1)}
-        }
-        .side-btn.liked .icon{animation:likePop 0.3s ease}
-        
-        .bottom-bar{
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            padding:8px;
-            background:rgba(255,255,255,0.8);
-            backdrop-filter:blur(10px);
-            position:absolute;
-            bottom:0;left:0;right:0;
-            z-index:10;
-            border-top:1px solid rgba(255,107,107,0.12);
-        }
-        .bottom-btn.primary{
-            background:#ff6b6b;
-            color:white;
-            border:none;
-            padding:6px 20px;
-            border-radius:20px;
-            cursor:pointer;
-            font-size:12px;
-            font-weight:bold;
-        }
-        
-        .comments-panel{
-            position:fixed;
-            bottom:0;
-            left:0;
-            right:0;
-            background:white;
-            border-radius:20px 20px 0 0;
-            padding:20px;
-            z-index:20;
-            transform:translateY(100%);
-            transition:0.3s ease;
-            max-height:60vh;
-            display:flex;
-            flex-direction:column;
-        }
-        .comments-panel.active{transform:translateY(0)}
-        .comments-header{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:15px;
-        }
-        .comments-list{
-            flex:1;
-            overflow-y:auto;
-            margin-bottom:10px;
-        }
-        .comment-item{
-            display:flex;
-            gap:10px;
-            padding:10px 0;
-            border-bottom:1px solid #f0f0f0;
-            align-items:flex-start;
-        }
-        .comment-avatar{
-            width:32px;
-            height:32px;
-            border-radius:50%;
-            background:linear-gradient(135deg,#ff9a9e,#fecfef);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:14px;
-            flex-shrink:0;
-        }
-        .comment-content{flex:1}
-        .comment-name{font-weight:bold;font-size:13px}
-        .comment-text{font-size:13px;color:#666}
-        .comment-time{font-size:10px;color:#999}
-        .comment-input-row{
-            display:flex;
-            gap:10px;
-            align-items:center;
-        }
-        .comment-input-row input{
-            flex:1;
-            padding:10px;
-            border-radius:20px;
-            border:1px solid #ffb3b3;
-            outline:none;
-        }
-        .comment-input-row button{
-            background:#ff6b6b;
-            color:white;
-            border:none;
-            padding:10px 20px;
-            border-radius:20px;
-            cursor:pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="hearts-bg" id="heartsBg"></div>
-    
-    <div class="app-container">
-        <div class="top-bar">
-            <a href="/chat" class="back-btn">←</a>
-            <div class="logo-text">🏆 Золотой Контент</div>
-            <div class="fund-badge" id="fundBadge">75 000 💎</div>
-        </div>
-        
-        <div class="swipe-container" id="swipeContainer">
-            {% for video in videos %}
-            <div class="video-card" data-video-id="{{ video.id }}">
-                <video src="{{ video.file_path }}" preload="metadata" playsinline loop id="video-{{ video.id }}"></video>
-                
-                <div class="video-overlay">
-                    <div class="video-title">{{ video.title or 'Без названия' }}</div>
-                    <div class="video-author">@{{ video.author.username }}</div>
-                </div>
-                
-                <div class="side-actions">
-                    <div class="side-btn" id="likeBtn-{{ video.id }}" onclick="toggleLike({{ video.id }})">
-                        <div class="icon">❤️</div>
-                        <div class="count" id="likes-{{ video.id }}">0</div>
-                    </div>
-                    <div class="side-btn" onclick="showComments({{ video.id }})">
+   <div class="side-btn" onclick="showComments({{ video.id }})">
                         <div class="icon">💬</div>
                         <div class="count" id="commentCount-{{ video.id }}">0</div>
                     </div>
@@ -553,4 +255,894 @@
         setInterval(updateFundProgress,30000);
     </script>
 </body>
-</html>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>🏆 Золотой Контент | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+        
+        html,body{
+            height:100%;
+            overflow:hidden;
+            background:#000;
+        }
+        
+        body{
+            color:#333;
+            height:100%;
+            overflow:hidden;
+            touch-action:pan-y;
+            position:fixed;
+            top:0;left:0;right:0;bottom:0;
+            background:#000;
+            -webkit-tap-highlight-color:transparent;
+            -webkit-user-select:none;
+            user-select:none;
+        }
+        
+        .hearts-bg{
+            position:fixed;
+            top:0;left:0;width:100%;height:100%;
+            pointer-events:none;
+            z-index:1;
+            overflow:hidden;
+        }
+        .heart{
+            position:absolute;
+            font-size:20px;
+            animation:floatUp 8s infinite;
+            opacity:0;
+        }
+        @keyframes floatUp{
+            0%{transform:translateY(100vh) scale(0);opacity:0}
+            10%{opacity:0.18}
+            90%{opacity:0.18}
+            100%{transform:translateY(-10vh) scale(1);opacity:0}
+        }
+        
+        .app-container{
+            position:relative;
+            z-index:2;
+            height:100vh;
+            height:100dvh;
+            display:flex;
+            flex-direction:column;
+            background:#000;
+        }
+        
+        .top-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:14px 15px;
+            padding-top:max(14px,env(safe-area-inset-top));
+            background:linear-gradient(180deg,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0) 100%);
+            position:absolute;
+            top:0;left:0;right:0;
+            z-index:10;
+            gap:10px;
+        }
+        .back-btn{
+            background:none;
+            border:none;
+            color:#fff;
+            font-size:22px;
+            cursor:pointer;
+            padding:4px 8px;
+            text-decoration:none;
+            font-weight:bold;
+            text-shadow:0 1px 3px rgba(0,0,0,0.5);
+            width:40px;
+            height:40px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .logo-text{
+            font-size:14px;
+            font-weight:700;
+            color:#fff;
+            flex:1;
+            text-shadow:0 1px 3px rgba(0,0,0,0.5);
+        }
+        .fund-badge{
+            background:linear-gradient(135deg,#ffd700,#ffaa00);
+            color:#000;
+            border-radius:20px;
+            padding:7px 14px;
+            font-size:12px;
+            font-weight:700;
+            box-shadow:0 2px 8px rgba(255,170,0,0.4);
+        }
+        
+        .swipe-container{
+            flex:1;
+            overflow-y:scroll;
+            scroll-snap-type:y mandatory;
+            -webkit-overflow-scrolling:touch;
+            height:100%;
+            position:relative;
+            background:#000;
+            scroll-behavior:smooth;
+        }
+        .swipe-container::-webkit-scrollbar{display:none}
+        
+        .video-card{
+            height:100vh;
+            height:100dvh;
+            scroll-snap-align:start;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            position:relative;
+            background:#000;
+            overflow:hidden;
+        }
+        .video-card video{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+            background:#000;
+            display:block;
+            pointer-events:none;
+        }
+
+        /* Заглушка когда нет видео */
+        .video-placeholder{
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            text-align:center;
+            color:#fff;
+            z-index:3;
+            pointer-events:none;
+        }
+        .video-placeholder .icon{
+            font-size:64px;
+            display:block;
+            margin-bottom:16px;
+        }
+        .video-placeholder .text{
+            font-size:16px;
+            color:rgba(255,255,255,0.7);
+            font-weight:600;
+        }
+        
+        .video-overlay{
+            position:absolute;
+            bottom:100px;
+            left:16px;
+            z-index:5;
+            max-width:75%;
+            pointer-events:none;
+        }
+        .video-title{
+            font-weight:700;
+            font-size:15px;
+            color:#fff;
+            text-shadow:0 2px 8px rgba(0,0,0,0.9);
+            margin-bottom:4px;
+            letter-spacing:0.2px;
+            line-height:1.3;
+        }
+        .video-author{
+            font-size:13px;
+            color:rgba(255,255,255,0.95);
+            text-shadow:0 2px 8px rgba(0,0,0,0.9);
+            font-weight:600;
+        }
+        .video-music{
+            font-size:11px;
+            color:rgba(255,255,255,0.8);
+            text-shadow:0 1px 4px rgba(0,0,0,0.8);
+            margin-top:6px;
+            display:flex;
+            align-items:center;
+            gap:4px;
+        }
+        
+        .side-actions{
+            position:absolute;
+            right:12px;
+            bottom:130px;
+            display:flex;
+            flex-direction:column;
+            gap:26px;
+            z-index:5;
+            align-items:center;
+        }
+        .side-btn{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:4px;
+            cursor:pointer;
+            transition:0.15s;
+            user-select:none;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .side-btn:active{transform:scale(0.85)}
+        .side-btn .icon{
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.1);
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:26px;
+            box-shadow:0 2px 12px rgba(0,0,0,0.3);
+            transition:0.2s;
+        }
+        .side-btn .count{
+            font-size:11px;
+            font-weight:700;
+            color:#fff;
+            text-shadow:0 1px 4px rgba(0,0,0,0.8);
+        }
+        .side-btn.liked .icon{
+            background:#ff2d55;
+            animation:likePop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+        }
+        
+        @keyframes likePop{
+            0%{transform:scale(1)}
+            30%{transform:scale(1.3)}
+            60%{transform:scale(0.9)}
+            100%{transform:scale(1)}
+        }
+        
+        .like-heart-animation{
+            position:absolute;
+            z-index:15;
+            pointer-events:none;
+            animation:doubleTapLike 1s ease-out forwards;
+        }
+        @keyframes doubleTapLike{
+            0%{transform:scale(0) rotate(-15deg);opacity:0}
+            15%{transform:scale(1.3) rotate(0deg);opacity:1}
+            30%{transform:scale(1) rotate(0deg);opacity:1}
+            80%{transform:scale(1) rotate(0deg);opacity:0.8}
+            100%{transform:scale(1.5) rotate(10deg);opacity:0}
+        }
+        
+        .bottom-bar{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            padding:14px;
+            padding-bottom:max(14px,env(safe-area-inset-bottom));
+            background:linear-gradient(0deg,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0) 100%);
+            position:absolute;
+            bottom:0;left:0;right:0;
+            z-index:10;
+        }
+        .bottom-btn.primary{
+            background:linear-gradient(135deg,#ff2d55,#ff375f);
+            color:white;
+            border:none;
+            padding:12px 32px;
+            border-radius:24px;
+            cursor:pointer;
+            font-size:14px;
+            font-weight:700;
+            box-shadow:0 4px 20px rgba(255,45,85,0.5);
+            transition:0.2s;
+            letter-spacing:0.3px;
+            text-shadow:0 1px 2px rgba(0,0,0,0.2);
+        }
+        .bottom-btn.primary:active{
+            transform:scale(0.95);
+            opacity:0.9;
+        }
+        
+        .comments-panel{
+            position:fixed;
+            bottom:0;
+            left:0;
+            right:0;
+            background:rgba(20,20,20,0.98);
+            backdrop-filter:blur(30px);
+            -webkit-backdrop-filter:blur(30px);
+            border-radius:20px 20px 0 0;
+            padding:20px;
+            padding-bottom:max(20px,env(safe-area-inset-bottom));
+            z-index:20;
+            transform:translateY(100%);
+            transition:0.35s cubic-bezier(0.32,0.72,0,1);
+            max-height:65vh;
+            display:flex;
+            flex-direction:column;
+            border-top:1px solid rgba(255,255,255,0.1);
+        }
+        .comments-panel.active{transform:translateY(0)}
+        .comments-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:15px;
+            color:#fff;
+        }
+        .comments-header h3{
+            font-size:16px;
+            font-weight:700;
+        }
+        .comments-close{
+            color:#fff;
+            opacity:0.7;
+            transition:0.2s;
+            font-size:24px;
+            background:none;
+            border:none;
+            cursor:pointer;
+            padding:4px 8px;
+        }
+        .comments-close:hover{opacity:1}
+        .comments-list{
+            flex:1;
+            overflow-y:auto;
+            margin-bottom:10px;
+            -webkit-overflow-scrolling:touch;
+        }
+        .comments-list::-webkit-scrollbar{display:none}
+        .comment-item{
+            display:flex;
+            gap:10px;
+            padding:12px 0;
+            border-bottom:1px solid rgba(255,255,255,0.06);
+            align-items:flex-start;
+        }
+        .comment-avatar{
+            width:36px;
+            height:36px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:18px;
+            flex-shrink:0;
+            background:linear-gradient(135deg,#ff9a9e,#fecfef);
+        }
+        .comment-content{flex:1}
+        .comment-name{font-weight:700;font-size:13px;color:#fff}
+        .comment-text{font-size:13px;color:rgba(255,255,255,0.8);margin-top:3px;line-height:1.4}
+        .comment-time{font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px}
+        .comment-input-row{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .comment-input-row input{
+            flex:1;
+            padding:12px 16px;
+            border-radius:24px;
+            border:1px solid rgba(255,255,255,0.2);
+            outline:none;
+            background:rgba(255,255,255,0.08);
+            color:#fff;
+            font-size:14px;
+        }
+        .comment-input-row input::placeholder{
+            color:rgba(255,255,255,0.3);
+        }
+        .comment-input-row button{
+            background:#ff2d55;
+            color:white;
+            border:none;
+            padding:12px 24px;
+            border-radius:24px;
+            cursor:pointer;
+            font-weight:700;
+            font-size:14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hearts-bg" id="heartsBg"></div>
+    
+    <div class="app-container">
+        <div class="top-bar">
+            <a href="/chat" class="back-btn" aria-label="Назад">←</a>
+            <div class="logo-text">🏆 Золотой Контент</div>
+            <div class="fund-badge" id="fundBadge">75 000 💎</div>
+        </div>
+        
+        <div class="swipe-container" id="swipeContainer">
+            {% for video in videos %}
+            <div class="video-card" data-video-id="{{ video.id }}" id="card-{{ video.id }}">
+                {% if video.file_path %}
+                <video src="{{ video.file_path }}" 
+                       preload="metadata" 
+                       playsinline 
+                       loop 
+                       muted
+                       id="video-{{ video.id }}"></video>
+                {% else %}
+                <div class="video-placeholder">
+                    <span class="icon">🎬</span>
+                    <span class="text">Видео скоро появится</span>
+                </div>
+                {% endif %}
+                
+                <div class="video-overlay">
+                    <div class="video-title">{{ video.title or 'Без названия' }}</div>
+                    <div class="video-author">@{{ video.author.username if video.author else 'user' }}</div>
+                    {% if video.music %}
+                    <div class="video-music">🎵 {{ video.music }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="side-actions">
+                    <div class="side-btn" id="likeBtn-{{ video.id }}" onclick="toggleLike({{ video.id }}, event)">
+                        <div class="icon">❤️</div>
+                        <div class="count" id="likes-{{ video.id }}">{{ video.likes_count or 0 }}</div>
+                    </div>
+                    <div class="side-btn" onclick="showComments({{ video.id }})">
+                        <div class="icon">💬</div>
+                        <div class="count" id="commentCount-{{ video.id }}">{{ video.comments_count or 0 }}</div>
+                    </div>
+                    <div class="side-btn" onclick="donateToVideo({{ video.id }})">
+                        <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
+                        <div class="count" style="color:#ffd700;">Донат</div>
+                    </div>
+                    <div class="side-btn">
+                        <div class="icon">👁</div>
+                        <div class="count" id="views-{{ video.id }}">{{ video.views_count or 0 }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not videos %}
+            <!-- Если видео нет, показываем заглушку -->
+            <div class="video-card" data-video-id="0" id="card-0">
+                <div class="video-placeholder">
+                    <span class="icon">🎬</span>
+                    <span class="text">Загрузите первое видео!</span>
+                </div>
+                
+                <div class="video-overlay">
+                    <div class="video-title">Ваше первое видео</div>
+                    <div class="video-author">@you</div>
+                </div>
+                
+                <div class="side-actions">
+                    <div class="side-btn" id="likeBtn-0" onclick="toggleLike(0, event)">
+                        <div class="icon">❤️</div>
+                        <div class="count" id="likes-0">0</div>
+                    </div>
+                    <div class="side-btn" onclick="showComments(0)">
+                        <div class="icon">💬</div>
+                        <div class="count" id="commentCount-0">0</div>
+                    </div>
+                    <div class="side-btn" onclick="donateToVideo(0)">
+                        <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
+                        <div class="count" style="color:#ffd700;">Донат</div>
+                    </div>
+                    <div class="side-btn">
+                        <div class="icon">👁</div>
+                        <div class="count" id="views-0">0</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="bottom-bar">
+            <button class="bottom-btn primary" onclick="document.getElementById('uploadInput').click()">📤 Загрузить видео</button>
+        </div>
+    </div>
+    
+    <div class="comments-panel" id="commentsPanel">
+        <div class="comments-header">
+            <h3>💬 Комментарии</h3>
+            <button class="comments-close" onclick="closeComments()">✖</button>
+        </div>
+        <div class="comments-list" id="commentsList"></div>
+        <div class="comment-input-row">
+            <input type="text" id="commentInput" placeholder="Написать комментарий...">
+            <button onclick="addComment()">→</button>
+        </div>
+    </div>
+    
+    <input type="file" id="uploadInput" accept="video/*" style="display:none" onchange="handleBearFlexUpload(this)">
+
+    <script>
+        let currentVideoId = null;
+        let currentLikedState = {};
+        let lastTapTime = {};
+        const DOUBLE_TAP_DELAY = 300;
+        
+        // Инициализация состояний лайков из шаблона
+        {% for video in videos %}
+        currentLikedState[{{ video.id }}] = {{ 'true' if video.liked else 'false' }};
+        {% endfor %}
+        
+        // Создаём плавающие сердечки на фоне
+        function createHearts(){
+            const c=document.getElementById('heartsBg');
+            const e=['💕','❤️','💗','💖','💝','💘','💓','🩷','💞','💟'];
+            for(let i=0;i<12;i++){
+                const h=document.createElement('span');
+                h.className='heart';
+                h.innerHTML=e[Math.floor(Math.random()*e.length)];
+                h.style.left=Math.random()*100+'%';
+                h.style.animationDelay=Math.random()*8+'s';
+                h.style.fontSize=(14+Math.random()*20)+'px';
+                c.appendChild(h);
+            }
+        }
+        createHearts();
+        
+        // Наблюдатель за видимостью видео
+        const observer=new IntersectionObserver((entries)=>{
+            entries.forEach(entry=>{
+                const video=entry.target.querySelector('video');
+                if(!video)return;
+                
+                if(entry.isIntersecting){
+                    video.play().catch(()=>{});
+                    const videoId=entry.target.dataset.videoId;
+                    if(videoId&&videoId!=='0'){
+                        countView(videoId);
+                        updateCommentCount(videoId);
+                    }
+                }else{
+                    video.pause();
+                }
+            });
+        },{threshold:0.6});
+        
+        // Инициализация видеокарточек и обработка двойного тапа
+        document.querySelectorAll('.video-card').forEach(card=>{
+            observer.observe(card);
+            const video=card.querySelector('video');
+            const videoId=card.dataset.videoId;
+            
+            if(video){
+                video.addEventListener('click',(e)=>{
+                    e.stopPropagation();
+                    video.paused?video.play().catch(()=>{}):video.pause();
+                });
+            }
+            
+            // Обработка двойного тапа по карточке
+            card.addEventListener('click', function(e){
+                // Игнорируем клики по боковым кнопкам
+                if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar')) {
+                    return;
+                }
+                
+                const now = Date.now();
+                if(!lastTapTime[videoId]){
+                    lastTapTime[videoId] = now;
+                    setTimeout(()=>{
+                        if(lastTapTime[videoId] === now){
+                            // Одиночный тап - пауза/воспроизведение
+                            const vid = document.getElementById(`video-${videoId}`);
+                            if(vid){
+                                vid.paused?vid.play().catch(()=>{}):vid.pause();
+                            }
+                        }
+                        lastTapTime[videoId] = 0;
+                    }, DOUBLE_TAP_DELAY);
+                }else if(now - lastTapTime[videoId] < DOUBLE_TAP_DELAY){
+                    // Двойной тап - лайк
+                    lastTapTime[videoId] = 0;
+                    
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Анимация сердечка
+                    showDoubleTapHeart(card, x, y);
+                    
+                    // Ставим лайк если ещё не стоит
+                    if(!currentLikedState[videoId]){
+                        toggleLike(videoId, null);
+                    }
+                }
+            });
+        });
+        
+        // Анимация сердечка при двойном тапе
+        function showDoubleTapHeart(card, x, y){
+            const heart = document.createElement('div');
+            heart.className = 'like-heart-animation';
+            heart.innerHTML = '❤️';
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            heart.style.fontSize = '80px';
+            card.appendChild(heart);
+            
+            setTimeout(()=>heart.remove(), 1000);
+        }
+        
+        // Счётчик просмотров
+        async function countView(videoId){
+            try{
+                await fetch(`/golden/view/${videoId}`,{method:'POST'});
+                updateFundProgress();
+            }catch(e){}
+        }
+        
+        // Обновление счётчика комментариев
+        async function updateCommentCount(videoId){
+            try{
+                const res=await fetch(`/golden/comments_count/${videoId}`);
+                const data=await res.json();
+                const el=document.getElementById(`commentCount-${videoId}`);
+                if(el)el.innerText=data.count||0;
+            }catch(e){}
+        }
+        
+        // Переключение лайка
+        async function toggleLike(videoId, event){
+            if(event){
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            const btn=document.getElementById(`likeBtn-${videoId}`);
+            if(!btn)return;
+            
+            if(currentLikedState[videoId]){
+                btn.classList.remove('liked');
+                currentLikedState[videoId]=false;
+            }else{
+                btn.classList.add('liked');
+                currentLikedState[videoId]=true;
+                createLikeParticles(btn);
+            }
+            
+            try{
+                await fetch(`/golden/like/${videoId}`,{method:'POST'});
+            }catch(e){}
+        }
+        
+        // Эффект частиц при лайке
+        function createLikeParticles(btn){
+            const icon=btn.querySelector('.icon');
+            const rect=icon.getBoundingClientRect();
+            const centerX=rect.left+rect.width/2;
+            const centerY=rect.top+rect.height/2;
+            
+            for(let i=0;i<8;i++){
+                const particle=document.createElement('div');
+                particle.style.cssText=`
+                    position:fixed;
+                    left:${centerX}px;
+                    top:${centerY}px;
+                    width:6px;
+                    height:6px;
+                    background:#ff2d55;
+                    border-radius:50%;
+                    pointer-events:none;
+                    z-index:100;
+                    animation:particleBurst 0.6s ease-out forwards;
+                    animation-delay:${Math.random()*0.1}s;
+                `;
+                document.body.appendChild(particle);
+                
+                const angle=(Math.PI*2*i)/8;
+                const distance=20+Math.random()*20;
+                particle.style.setProperty('--tx',Math.cos(angle)*distance+'px');
+                particle.style.setProperty('--ty',Math.sin(angle)*distance+'px');
+                
+                setTimeout(()=>particle.remove(),700);
+            }
+        }
+        
+        // Стиль для анимации частиц
+        if(!document.getElementById('particleStyle')){
+            const particleStyle=document.createElement('style');
+            particleStyle.id='particleStyle';
+            particleStyle.textContent=`
+                @keyframes particleBurst{
+                    0%{transform:translate(0,0) scale(1);opacity:1}
+                    100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}
+                }
+            `;
+            document.head.appendChild(particleStyle);
+        }
+        
+        // Донат
+        async function donateToVideo(videoId){
+            const amount=prompt('Сумма доната (минимум 50 💎):','50');
+            if(!amount||parseInt(amount)<50)return;
+            
+            const formData=new FormData();
+            formData.append('amount',amount);
+            
+            try{
+                const res=await fetch(`/golden/donate_to_video/${videoId}`,{
+                    method:'POST',
+                    body:formData
+                });
+                const data=await res.json();
+                if(data.success){
+                    alert(`Спасибо! Вы поддержали автора на ${data.amount} 💎`);
+                    updateFundProgress();
+                }else{
+                    alert(data.error||'Ошибка');
+                }
+            }catch(e){
+                alert('Сетевая ошибка. Попробуйте позже.');
+            }
+        }
+        
+        // Показать комментарии
+        function showComments(videoId){
+            currentVideoId=videoId;
+            document.getElementById('commentsPanel').classList.add('active');
+            loadComments(videoId);
+        }
+        
+        // Закрыть комментарии
+        function closeComments(){
+            document.getElementById('commentsPanel').classList.remove('active');
+            currentVideoId=null;
+        }
+        
+        // Загрузить комментарии
+        async function loadComments(videoId){
+            const list=document.getElementById('commentsList');
+            
+            try{
+                const res=await fetch(`/golden/comments/${videoId}`);
+                const comments=await res.json();
+                if(comments.length===0){
+                    list.innerHTML='<p style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Пока нет комментариев. Будьте первым! 💬</p>';
+                    return;
+                }
+                list.innerHTML=comments.map(c=>`
+                    <div class="comment-item">
+                        <div class="comment-avatar">${c.avatar||'🐻'}</div>
+                        <div class="comment-content">
+                            <div class="comment-name">${escapeHtml(c.username)}</div>
+                            <div class="comment-text">${escapeHtml(c.text)}</div>
+                            <div class="comment-time">${escapeHtml(c.created_at)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }catch(e){
+                list.innerHTML='<p style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Не удалось загрузить комментарии</p>';
+            }
+        }
+        
+        // Добавить комментарий
+        async function addComment(){
+            const input=document.getElementById('commentInput');
+            const text=input.value.trim();
+            if(!text||!currentVideoId)return;
+            
+            const formData=new FormData();
+            formData.append('text',text);
+            
+            try{
+                const res=await fetch(`/golden/comment/${currentVideoId}`,{
+                    method:'POST',
+                    body:formData
+                });
+                const data=await res.json();
+                if(data.success){
+                    input.value='';
+                    loadComments(currentVideoId);
+                    updateCommentCount(currentVideoId);
+                }else{
+                    alert(data.error||'Ошибка');
+                }
+            }catch(e){
+                alert('Сетевая ошибка');
+            }
+        }
+        
+        // Экранирование HTML
+        function escapeHtml(t){
+            if(!t)return'';
+            const div=document.createElement('div');
+            div.textContent=t;
+            return div.innerHTML;
+        }
+        
+        // Загрузка видео
+        async function handleBearFlexUpload(input){
+            const file=input.files[0];
+            if(!file)return;
+
+            if(file.size>100*1024*1024){
+                alert('Видео слишком большое! Максимум 100 МБ.');
+                input.value='';
+                return;
+            }
+
+            const video=document.createElement('video');
+            video.preload='metadata';
+            video.src=URL.createObjectURL(file);
+
+            video.onloadedmetadata=async function(){
+                URL.revokeObjectURL(video.src);
+                if(video.duration>60){
+                    alert('Видео слишком длинное! Максимум 60 секунд.');
+                    input.value='';
+                    return;
+                }
+                if(video.videoWidth<1280||video.videoHeight<720){
+                    alert(`Минимальное разрешение 720p. Ваше: ${video.videoWidth}x${video.videoHeight}`);
+                    input.value='';
+                    return;
+                }
+
+                const title=prompt('Название видео:');
+                if(!title){
+                    alert('Название обязательно!');
+                    input.value='';
+                    return;
+                }
+
+                const fd=new FormData();
+                fd.append('video',file);
+                fd.append('title',title);
+                try{
+                    const res=await fetch('/golden/upload',{method:'POST',body:fd});
+                    const data=await res.json();
+                    if(data.success){
+                        alert('Видео загружено и будет обработано сервером до 720p.');
+                        location.reload();
+                    }else{
+                        alert(data.error||'Ошибка загрузки');
+                    }
+                }catch(e){
+                    alert('Сетевая ошибка');
+                }
+            };
+
+            video.onerror=()=>{
+                alert('Не удалось прочитать видео. Файл повреждён.');
+                input.value='';
+            };
+        }
+        
+        // Обновление фонда
+        async function updateFundProgress(){
+            try{
+                const res=await fetch('/golden/fund_status');
+                const data=await res.json();
+                if(data.active){
+                    document.getElementById('fundBadge').innerText=`💰 ${data.pool} 💎`;
+                }
+            }catch(e){}
+        }
+        
+        // Закрытие комментариев по Escape
+        document.addEventListener('keydown',(e)=>{
+            if(e.key==='Escape')closeComments();
+        });
+        
+        // Закрытие при свайпе вниз на панели комментариев
+        let touchStartY=0;
+        document.getElementById('commentsPanel').addEventListener('touchstart',function(e){
+            touchStartY=e.touches[0].clientY;
+        });
+        
+        document.getElementById('commentsPanel').addEventListener('touchmove',function(e){
+            const touchY=e.touches[0].clientY;
+            const list=document.getElementById('commentsList');
+            if(list.scrollTop===0&&touchY>touchStartY+50){
+                closeComments();
+            }
+        });
+        
+        updateFundProgress();
+        setInterval(updateFundProgress,30000);
+    </script>
+</body>
+    </html>
