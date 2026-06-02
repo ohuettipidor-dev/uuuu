@@ -2034,14 +2034,9 @@ def chat():
             'last': last, 'unread': unread
         })
 
-# Секретные чаты
-    for sc in secret_chats:
-        last = SecretMessage.query.filter_by(chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
-        unread = SecretMessage.query.filter_by(chat_id=sc.id, is_read=False).filter(SecretMessage.sender_id != current_user.id).count()
-        convs.append({
-            'type': 'secret', 'id': sc.id, 'name': sc.user1_id == current_user.id and sc.user2.username or sc.user1.username,
-            'last': last, 'unread': unread
-        })
+# Секретные чаты — временно не добавляем в общий список (нужно уточнить поле)
+for sc in secret_chats:
+    pass
 
     # Сортировка по дате последнего сообщения
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] else datetime.min, reverse=True)
