@@ -1,261 +1,4 @@
-   <div class="side-btn" onclick="showComments({{ video.id }})">
-                        <div class="icon">💬</div>
-                        <div class="count" id="commentCount-{{ video.id }}">0</div>
-                    </div>
-                    <div class="side-btn" onclick="donateToVideo({{ video.id }})">
-                        <div class="icon" style="background:#ffd700;">💎</div>
-                        <div class="count" style="color:#ffd700;">Донат</div>
-                    </div>
-                    <div class="side-btn">
-                        <div class="icon">👁</div>
-                        <div class="count" id="views-{{ video.id }}">{{ video.views_count }}</div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="bottom-bar">
-            <button class="bottom-btn primary" onclick="document.getElementById('uploadInput').click()">📤 Загрузить видео</button>
-        </div>
-    </div>
-    
-    <div class="comments-panel" id="commentsPanel">
-        <div class="comments-header">
-            <h3>💬 Комментарии</h3>
-            <button onclick="closeComments()" style="background:none;border:none;font-size:20px;cursor:pointer;">✖</button>
-        </div>
-        <div class="comments-list" id="commentsList">
-            <p style="color:#888;text-align:center;">Загрузка...</p>
-        </div>
-        <div class="comment-input-row">
-            <input type="text" id="commentInput" placeholder="Написать комментарий...">
-            <button onclick="addComment()">→</button>
-        </div>
-    </div>
-    
-    <input type="file" id="uploadInput" accept="video/*" style="display:none" onchange="handleBearFlexUpload(this)">
-
-    <script>
-        let currentVideoId = null;
-        
-        function createHearts(){
-            const c=document.getElementById('heartsBg');
-            const e=['💕','❤️','💗','💖','💝','💘','💓','🩷','💞','💟'];
-            for(let i=0;i<20;i++){
-                const h=document.createElement('span');
-                h.className='heart';
-                h.innerHTML=e[Math.floor(Math.random()*e.length)];
-                h.style.left=Math.random()*100+'%';
-                h.style.animationDelay=Math.random()*8+'s';
-                h.style.fontSize=(15+Math.random()*25)+'px';
-                c.appendChild(h);
-            }
-        }
-        createHearts();
-        
-        const observer=new IntersectionObserver((entries)=>{
-            entries.forEach(entry=>{
-                const video=entry.target.querySelector('video');
-                if(!video)return;
-                if(entry.isIntersecting){
-                    video.play().catch(()=>{});
-                    const videoId=entry.target.dataset.videoId;
-                    if(videoId){
-                        countView(videoId);
-                        updateCommentCount(videoId);
-                        updateLikeStatus(videoId);
-                    }
-                }else{
-                    video.pause();
-                }
-            });
-        },{threshold:0.7});
-        
-        document.querySelectorAll('.video-card').forEach(card=>{
-            observer.observe(card);
-            const video=card.querySelector('video');
-            if(video){
-                video.addEventListener('click',()=>{
-                    video.paused?video.play():video.pause();
-                });
-            }
-        });
-        
-        async function countView(videoId){
-            await fetch(`/golden/view/${videoId}`,{method:'POST'});
-            updateFundProgress();
-        }
-        
-        async function updateCommentCount(videoId){
-            const res=await fetch(`/golden/comments_count/${videoId}`);
-            const data=await res.json();
-            document.getElementById(`commentCount-${videoId}`).innerText=data.count||0;
-        }
-        
-        async function updateLikeStatus(videoId){
-            const res=await fetch(`/golden/likes_count/${videoId}`);
-            const data=await res.json();
-            const btn=document.getElementById(`likeBtn-${videoId}`);
-            const countEl=document.getElementById(`likes-${videoId}`);
-            countEl.innerText=data.count||0;
-            if(data.liked)btn.classList.add('liked');
-            else btn.classList.remove('liked');
-        }
-        
-        async function toggleLike(videoId){
-            await fetch(`/golden/like/${videoId}`,{method:'POST'});
-            updateLikeStatus(videoId);
-        }
-        
-        async function donateToVideo(videoId){
-            const amount=prompt('Сумма доната (минимум 50 💎):','50');
-            if(!amount||parseInt(amount)<50)return;
-            const formData=new FormData();
-            formData.append('amount',amount);
-            const res=await fetch(`/golden/donate_to_video/${videoId}`,{
-                method:'POST',
-                body:formData
-            });
-            const data=await res.json();
-            if(data.success){
-                alert(`Спасибо! Вы поддержали автора на ${data.amount} 💎`);
-                updateFundProgress();
-            }else{
-                alert(data.error||'Ошибка');
-            }
-        }
-        
-        function showComments(videoId){
-            currentVideoId=videoId;
-            document.getElementById('commentsPanel').classList.add('active');
-            loadComments(videoId);
-        }
-        
-        function closeComments(){
-            document.getElementById('commentsPanel').classList.remove('active');
-            currentVideoId=null;
-        }
-        
-        async function loadComments(videoId){
-            const list=document.getElementById('commentsList');
-            const res=await fetch(`/golden/comments/${videoId}`);
-            const comments=await res.json();
-            if(comments.length===0){
-                list.innerHTML='<p style="color:#888;text-align:center;">Пока нет комментариев</p>';
-                return;
-            }
-            list.innerHTML=comments.map(c=>`
-                <div class="comment-item">
-                    <div class="comment-avatar">🐻</div>
-                    <div class="comment-content">
-                        <div class="comment-name">${escapeHtml(c.username)}</div>
-                        <div class="comment-text">${escapeHtml(c.text)}</div>
-                        <div class="comment-time">${c.created_at}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        async function addComment(){
-            const input=document.getElementById('commentInput');
-            const text=input.value.trim();
-            if(!text||!currentVideoId)return;
-            
-            const formData=new FormData();
-            formData.append('text',text);
-            const res=await fetch(`/golden/comment/${currentVideoId}`,{
-                method:'POST',
-                body:formData
-            });
-            const data=await res.json();
-            if(data.success){
-                input.value='';
-                loadComments(currentVideoId);
-                updateCommentCount(currentVideoId);
-            }else{
-                alert(data.error||'Ошибка');
-            }
-        }
-        
-        function escapeHtml(t){
-            if(!t)return'';
-            const div=document.createElement('div');
-            div.textContent=t;
-            return div.innerHTML;
-        }
-        
-        // ===== НОВАЯ ЗАГРУЗКА КАК В TIKTOK =====
-        async function handleBearFlexUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            if (file.size > 100 * 1024 * 1024) {
-                alert('Видео слишком большое! Максимум 100 МБ.');
-                input.value = '';
-                return;
-            }
-
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.src = URL.createObjectURL(file);
-
-            video.onloadedmetadata = async function() {
-                URL.revokeObjectURL(video.src);
-                if (video.duration > 60) {
-                    alert('Видео слишком длинное! Максимум 60 секунд.');
-                    input.value = '';
-                    return;
-                }
-                if (video.videoWidth < 1280 || video.videoHeight < 720) {
-                    alert(`Минимальное разрешение 720p. Ваше: ${video.videoWidth}x${video.videoHeight}`);
-                    input.value = '';
-                    return;
-                }
-
-                const title = prompt('Название видео:');
-                if (!title) {
-                    alert('Название обязательно!');
-                    input.value = '';
-                    return;
-                }
-
-                const fd = new FormData();
-                fd.append('video', file);
-                fd.append('title', title);
-                try {
-                    const res = await fetch('/golden/upload', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert('Видео загружено и будет обработано сервером до 720p.');
-                        location.reload();
-                    } else {
-                        alert(data.error || 'Ошибка загрузки');
-                    }
-                } catch(e) {
-                    alert('Сетевая ошибка');
-                }
-            };
-
-            video.onerror = () => {
-                alert('Не удалось прочитать видео. Файл повреждён.');
-                input.value = '';
-            };
-        }
-        
-        async function updateFundProgress(){
-            const res=await fetch('/golden/fund_status');
-            const data=await res.json();
-            if(data.active){
-                document.getElementById('fundBadge').innerText=`💰 ${data.pool} 💎`;
-            }
-        }
-        
-        updateFundProgress();
-        setInterval(updateFundProgress,30000);
-    </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <title>🏆 Золотой Контент | BearGram</title>
@@ -652,87 +395,85 @@
         <div class="top-bar">
             <a href="/chat" class="back-btn" aria-label="Назад">←</a>
             <div class="logo-text">🏆 Золотой Контент</div>
-            <div class="fund-badge" id="fundBadge">75 000 💎</div>
+            <div class="fund-badge" id="fundBadge">{% if fund %}{{ fund.pool }}{% else %}75 000{% endif %} 💎</div>
         </div>
         
         <div class="swipe-container" id="swipeContainer">
-            {% for video in videos %}
-            <div class="video-card" data-video-id="{{ video.id }}" id="card-{{ video.id }}">
-                {% if video.file_path %}
-                <video src="{{ video.file_path }}" 
-                       preload="metadata" 
-                       playsinline 
-                       loop 
-                       muted
-                       id="video-{{ video.id }}"></video>
-                {% else %}
-                <div class="video-placeholder">
-                    <span class="icon">🎬</span>
-                    <span class="text">Видео скоро появится</span>
-                </div>
-                {% endif %}
-                
-                <div class="video-overlay">
-                    <div class="video-title">{{ video.title or 'Без названия' }}</div>
-                    <div class="video-author">@{{ video.author.username if video.author else 'user' }}</div>
-                    {% if video.music %}
-                    <div class="video-music">🎵 {{ video.music }}</div>
+            {% if videos %}
+                {% for video in videos %}
+                <div class="video-card" data-video-id="{{ video.id }}" id="card-{{ video.id }}">
+                    {% if video.file_path %}
+                    <video src="{{ video.file_path }}" 
+                           preload="metadata" 
+                           playsinline 
+                           loop 
+                           muted
+                           id="video-{{ video.id }}"></video>
+                    {% else %}
+                    <div class="video-placeholder">
+                        <span class="icon">🎬</span>
+                        <span class="text">Видео скоро появится</span>
+                    </div>
                     {% endif %}
-                </div>
-                
-                <div class="side-actions">
-                    <div class="side-btn" id="likeBtn-{{ video.id }}" onclick="toggleLike({{ video.id }}, event)">
-                        <div class="icon">❤️</div>
-                        <div class="count" id="likes-{{ video.id }}">{{ video.likes_count or 0 }}</div>
+
+                    <div class="video-overlay">
+                        <div class="video-title">{{ video.title or 'Без названия' }}</div>
+                        <div class="video-author">@{{ video.author.username if video.author else 'user' }}</div>
+                        {% if video.music %}
+                        <div class="video-music">🎵 {{ video.music }}</div>
+                        {% endif %}
                     </div>
-                    <div class="side-btn" onclick="showComments({{ video.id }})">
-                        <div class="icon">💬</div>
-                        <div class="count" id="commentCount-{{ video.id }}">{{ video.comments_count or 0 }}</div>
-                    </div>
-                    <div class="side-btn" onclick="donateToVideo({{ video.id }})">
-                        <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
-                        <div class="count" style="color:#ffd700;">Донат</div>
-                    </div>
-                    <div class="side-btn">
-                        <div class="icon">👁</div>
-                        <div class="count" id="views-{{ video.id }}">{{ video.views_count or 0 }}</div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            
-            {% if not videos %}
-            <!-- Если видео нет, показываем заглушку -->
-            <div class="video-card" data-video-id="0" id="card-0">
-                <div class="video-placeholder">
-                    <span class="icon">🎬</span>
-                    <span class="text">Загрузите первое видео!</span>
-                </div>
-                
-                <div class="video-overlay">
-                    <div class="video-title">Ваше первое видео</div>
-                    <div class="video-author">@you</div>
-                </div>
-                
-                <div class="side-actions">
-                    <div class="side-btn" id="likeBtn-0" onclick="toggleLike(0, event)">
-                        <div class="icon">❤️</div>
-                        <div class="count" id="likes-0">0</div>
-                    </div>
-                    <div class="side-btn" onclick="showComments(0)">
-                        <div class="icon">💬</div>
-                        <div class="count" id="commentCount-0">0</div>
-                    </div>
-                    <div class="side-btn" onclick="donateToVideo(0)">
-                        <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
-                        <div class="count" style="color:#ffd700;">Донат</div>
-                    </div>
-                    <div class="side-btn">
-                        <div class="icon">👁</div>
-                        <div class="count" id="views-0">0</div>
+
+                    <div class="side-actions">
+                        <div class="side-btn" id="likeBtn-{{ video.id }}" onclick="toggleLike({{ video.id }}, event)">
+                            <div class="icon">❤️</div>
+                            <div class="count" id="likes-{{ video.id }}">{{ video.likes_count or 0 }}</div>
+                        </div>
+                        <div class="side-btn" onclick="showComments({{ video.id }})">
+                            <div class="icon">💬</div>
+                            <div class="count" id="commentCount-{{ video.id }}">{{ video.comments_count or 0 }}</div>
+                        </div>
+                        <div class="side-btn" onclick="donateToVideo({{ video.id }})">
+                            <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
+                            <div class="count" style="color:#ffd700;">Донат</div>
+                        </div>
+                        <div class="side-btn">
+                            <div class="icon">👁</div>
+                            <div class="count" id="views-{{ video.id }}">{{ video.views_count or 0 }}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
+                {% endfor %}
+            {% else %}
+                <!-- Заглушка, если видео нет -->
+                <div class="video-card" data-video-id="0" id="card-0">
+                    <div class="video-placeholder">
+                        <span class="icon">🎬</span>
+                        <span class="text">Загрузите первое видео!</span>
+                    </div>
+                    <div class="video-overlay">
+                        <div class="video-title">Ваше первое видео</div>
+                        <div class="video-author">@you</div>
+                    </div>
+                    <div class="side-actions">
+                        <div class="side-btn" id="likeBtn-0" onclick="toggleLike(0, event)">
+                            <div class="icon">❤️</div>
+                            <div class="count" id="likes-0">0</div>
+                        </div>
+                        <div class="side-btn" onclick="showComments(0)">
+                            <div class="icon">💬</div>
+                            <div class="count" id="commentCount-0">0</div>
+                        </div>
+                        <div class="side-btn" onclick="donateToVideo(0)">
+                            <div class="icon" style="background:rgba(255,215,0,0.25);">💎</div>
+                            <div class="count" style="color:#ffd700;">Донат</div>
+                        </div>
+                        <div class="side-btn">
+                            <div class="icon">👁</div>
+                            <div class="count" id="views-0">0</div>
+                        </div>
+                    </div>
+                </div>
             {% endif %}
         </div>
         
@@ -765,6 +506,8 @@
         {% for video in videos %}
         currentLikedState[{{ video.id }}] = {{ 'true' if video.liked else 'false' }};
         {% endfor %}
+        // Для заглушки, если видео нет
+        if (!currentLikedState[0]) currentLikedState[0] = false;
         
         // Создаём плавающие сердечки на фоне
         function createHearts(){
@@ -1145,4 +888,4 @@
         setInterval(updateFundProgress,30000);
     </script>
 </body>
-    </html>
+</html>
