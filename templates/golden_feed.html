@@ -135,6 +135,31 @@
             pointer-events:none;
         }
 
+        /* Кнопка звука – новая */
+        .sound-btn{
+            position:absolute;
+            bottom:110px;
+            right:16px;
+            z-index:6;
+            width:40px;
+            height:40px;
+            border-radius:50%;
+            background:rgba(0,0,0,0.5);
+            backdrop-filter:blur(4px);
+            -webkit-backdrop-filter:blur(4px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:20px;
+            color:#fff;
+            cursor:pointer;
+            transition:0.2s;
+            border:none;
+            outline:none;
+        }
+        .sound-btn:active{transform:scale(0.9)}
+        .sound-btn.muted{opacity:0.7}
+
         .video-placeholder{
             position:absolute;
             top:50%;
@@ -406,8 +431,11 @@
                            preload="metadata" 
                            playsinline 
                            loop 
-                           muted
                            id="video-{{ video.id }}"></video>
+                    <!-- Кнопка звука -->
+                    <div class="sound-btn" id="soundBtn-{{ video.id }}" onclick="toggleSound({{ video.id }}, event)">
+                        🔊
+                    </div>
                     {% else %}
                     <div class="video-placeholder">
                         <span class="icon">🎬</span>
@@ -545,14 +573,22 @@
             const videoId=card.dataset.videoId;
             
             if(video){
+                // При клике на видео – не переключаем звук, это делает отдельная кнопка
                 video.addEventListener('click',(e)=>{
                     e.stopPropagation();
                     video.paused?video.play().catch(()=>{}):video.pause();
                 });
+                
+                // Синхронизируем кнопку звука с состоянием muted
+                const soundBtn = document.getElementById(`soundBtn-${videoId}`);
+                if(soundBtn){
+                    soundBtn.innerHTML = video.muted ? '🔇' : '🔊';
+                    soundBtn.classList.toggle('muted', video.muted);
+                }
             }
             
             card.addEventListener('click', function(e){
-                if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar')) {
+                if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar') || e.target.closest('.sound-btn')) {
                     return;
                 }
                 
@@ -583,6 +619,23 @@
                 }
             });
         });
+        
+        // Новая функция переключения звука
+        function toggleSound(videoId, event){
+            if(event) event.stopPropagation();
+            const video = document.getElementById(`video-${videoId}`);
+            const btn = document.getElementById(`soundBtn-${videoId}`);
+            if(!video || !btn) return;
+            
+            video.muted = !video.muted;
+            btn.innerHTML = video.muted ? '🔇' : '🔊';
+            btn.classList.toggle('muted', video.muted);
+            
+            // Если звук включён, пробуем воспроизвести (на случай блокировки автовоспроизведения)
+            if(!video.muted && video.paused){
+                video.play().catch(()=>{});
+            }
+        }
         
         function showDoubleTapHeart(card, x, y){
             const heart = document.createElement('div');
@@ -821,7 +874,6 @@
                     input.value='';
                     return;
                 }
-                // Исправленная проверка: минимум 720x1280 (вертикальное HD)
                 if(video.videoWidth < 720 || video.videoHeight < 1280){
                     alert(`Минимальное разрешение 720×1280 (вертикальное HD). Ваше: ${video.videoWidth}×${video.videoHeight}`);
                     input.value='';
