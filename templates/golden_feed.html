@@ -178,6 +178,12 @@
             color:rgba(255,255,255,0.95);
             text-shadow:0 2px 8px rgba(0,0,0,0.9);
             font-weight:600;
+            text-decoration:none;
+            pointer-events:auto;
+            display:inline-block;
+        }
+        .video-author:active{
+            opacity:0.8;
         }
         .video-music{
             font-size:11px;
@@ -419,7 +425,9 @@
 
                     <div class="video-overlay">
                         <div class="video-title">{{ video.title or 'Без названия' }}</div>
-                        <div class="video-author">@{{ video.author.username if video.author else 'user' }}</div>
+                        <a href="/profile/{{ video.author.id }}" class="video-author" onclick="event.stopPropagation();">
+                            @{{ video.author.username if video.author else 'user' }}
+                        </a>
                         {% if video.music %}
                         <div class="video-music">🎵 {{ video.music }}</div>
                         {% endif %}
@@ -506,7 +514,6 @@
         const DOUBLE_TAP_DELAY = 300;
         let videoSoundUnlocked = {};
         
-        // Инициализация состояний из шаблона
         {% for video in videos %}
         currentLikedState[{{ video.id }}] = {{ 'true' if video.liked else 'false' }};
         videoSoundUnlocked[{{ video.id }}] = false;
@@ -514,12 +521,9 @@
         if (!currentLikedState[0]) currentLikedState[0] = false;
         videoSoundUnlocked[0] = false;
 
-        // Локальные алгоритмы: просмотренные видео и интересы
-        const STORAGE_VIEWED = 'bg_viewed_videos';   // sessionStorage: ID просмотренных в сессии
-        const STORAGE_TAGS = 'bg_liked_tags';        // localStorage: накопленные теги из лайков
-        const STORAGE_LAST_UPDATE = 'bg_last_update';
+        const STORAGE_VIEWED = 'bg_viewed_videos';
+        const STORAGE_TAGS = 'bg_liked_tags';
         
-        // Получаем список просмотренных ID (сессия)
         function getViewedVideos() {
             const raw = sessionStorage.getItem(STORAGE_VIEWED);
             return raw ? JSON.parse(raw) : [];
@@ -535,7 +539,6 @@
             return getViewedVideos().includes(videoId);
         }
         
-        // Получаем накопленные теги интересов (localStorage)
         function getLikedTags() {
             const raw = localStorage.getItem(STORAGE_TAGS);
             return raw ? JSON.parse(raw) : [];
@@ -549,74 +552,52 @@
                 }
             });
             localStorage.setItem(STORAGE_TAGS, JSON.stringify(currentTags));
-            localStorage.setItem(STORAGE_LAST_UPDATE, Date.now());
         }
         
-        // Извлечение тегов из data-атрибута карточки (если нет - из названия)
         function getVideoTags(card) {
             let tags = [];
-            // Пытаемся распарсить data-tags (если сервер их передал)
             const tagsAttr = card.dataset.tags;
             if (tagsAttr && tagsAttr !== '[]') {
-                try {
-                    tags = JSON.parse(tagsAttr);
-                } catch(e) {}
+                try { tags = JSON.parse(tagsAttr); } catch(e) {}
             }
-            // Если тегов нет - извлекаем слова из названия как фолбэк
             if (tags.length === 0) {
                 const titleEl = card.querySelector('.video-title');
                 if (titleEl) {
                     const title = titleEl.innerText.toLowerCase();
-                    // Разбиваем на слова, убираем короткие и эмодзи
                     tags = title.split(/\s+/).filter(w => w.length > 2 && !w.match(/[^\wа-яё]/i));
                 }
             }
             return tags;
         }
         
-        // ==========================================
-        // 2. ПЕРЕСОРТИРОВКА ЛЕНТЫ (РЕКОМЕНДАЦИИ)
-        // ==========================================
         function applyLocalRecommendations() {
             const container = document.getElementById('swipeContainer');
             if (!container) return;
-            
             const cards = Array.from(container.querySelectorAll('.video-card'));
-            if (cards.length < 2) return; // нечего сортировать
+            if (cards.length < 2) return;
             
-            const viewedIds = getViewedVideos();
             const likedTags = getLikedTags();
             
-            // Удаляем карточки, которые уже просмотрены (скрываем)
             cards.forEach(card => {
                 const videoId = parseInt(card.dataset.videoId);
                 if (isVideoViewed(videoId)) {
                     card.style.display = 'none';
                 } else {
-                    card.style.display = ''; // показываем
+                    card.style.display = '';
                 }
             });
             
-            // Сортируем оставшиеся: карточки с совпадающими тегами - вверх
             if (likedTags.length > 0) {
                 const remainingCards = cards.filter(c => c.style.display !== 'none');
                 remainingCards.sort((a, b) => {
-                    const tagsA = getVideoTags(a);
-                    const tagsB = getVideoTags(b);
-                    const scoreA = tagsA.filter(t => likedTags.includes(t)).length;
-                    const scoreB = tagsB.filter(t => likedTags.includes(t)).length;
-                    // Чем больше совпадений, тем выше (первее)
+                    const scoreA = getVideoTags(a).filter(t => likedTags.includes(t)).length;
+                    const scoreB = getVideoTags(b).filter(t => likedTags.includes(t)).length;
                     return scoreB - scoreA;
                 });
-                
-                // Перестраиваем контейнер
                 remainingCards.forEach(card => container.appendChild(card));
             }
         }
         
-        // ==========================================
-        // 3. ОСНОВНАЯ ЛОГИКА (без изменений, кроме вызова алгоритмов)
-        // ==========================================
         function createHearts(){
             const c=document.getElementById('heartsBg');
             const e=['💕','❤️','💗','💖','💝','💘','💓','🩷','💞','💟'];
@@ -641,7 +622,6 @@
                     video.play().catch(()=>{});
                     const videoId=entry.target.dataset.videoId;
                     if(videoId&&videoId!=='0'){
-                        // Отмечаем как просмотренное
                         addViewedVideo(parseInt(videoId));
                         countView(videoId);
                         updateCommentCount(videoId);
@@ -673,7 +653,8 @@
             }
             
             card.addEventListener('click', function(e){
-                if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar')) {
+                // Игнорируем клики по боковым кнопкам, нижней панели, ссылке на автора
+                if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar') || e.target.closest('.video-author')) {
                     return;
                 }
                 
@@ -809,7 +790,6 @@
                 currentLikedState[videoId]=true;
                 createLikeParticles(btn);
                 
-                // Запоминаем теги этого видео как интерес
                 const card = document.getElementById(`card-${videoId}`);
                 if (card) {
                     const tags = getVideoTags(card);
@@ -1052,7 +1032,6 @@
             }
         });
         
-        // Применяем алгоритмы сразу после загрузки
         applyLocalRecommendations();
         
         updateFundProgress();
