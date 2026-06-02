@@ -129,13 +129,12 @@
         .video-card video{
             width:100%;
             height:100%;
-            object-fit:cover;          /* ← ИЗМЕНЕНО: теперь заполняет экран, как в TikTok */
+            object-fit:cover;
             background:#000;
             display:block;
             pointer-events:none;
         }
 
-        /* Заглушка когда нет видео */
         .video-placeholder{
             position:absolute;
             top:50%;
@@ -445,7 +444,6 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <!-- Заглушка, если видео нет -->
                 <div class="video-card" data-video-id="0" id="card-0">
                     <div class="video-placeholder">
                         <span class="icon">🎬</span>
@@ -502,13 +500,11 @@
         let lastTapTime = {};
         const DOUBLE_TAP_DELAY = 300;
         
-        // Инициализация состояний лайков из шаблона
         {% for video in videos %}
         currentLikedState[{{ video.id }}] = {{ 'true' if video.liked else 'false' }};
         {% endfor %}
         if (!currentLikedState[0]) currentLikedState[0] = false;
         
-        // Создаём плавающие сердечки на фоне
         function createHearts(){
             const c=document.getElementById('heartsBg');
             const e=['💕','❤️','💗','💖','💝','💘','💓','🩷','💞','💟'];
@@ -524,7 +520,6 @@
         }
         createHearts();
         
-        // Наблюдатель за видимостью видео
         const observer=new IntersectionObserver((entries)=>{
             entries.forEach(entry=>{
                 const video=entry.target.querySelector('video');
@@ -536,7 +531,7 @@
                     if(videoId&&videoId!=='0'){
                         countView(videoId);
                         updateCommentCount(videoId);
-                        updateLikeStatus(videoId);   // ← ДОБАВЛЕН ВЫЗОВ обновления лайков
+                        updateLikeStatus(videoId);
                     }
                 }else{
                     video.pause();
@@ -544,7 +539,6 @@
             });
         },{threshold:0.6});
         
-        // Инициализация видеокарточек и обработка двойного тапа
         document.querySelectorAll('.video-card').forEach(card=>{
             observer.observe(card);
             const video=card.querySelector('video');
@@ -557,9 +551,7 @@
                 });
             }
             
-            // Обработка двойного тапа по карточке
             card.addEventListener('click', function(e){
-                // Игнорируем клики по боковым кнопкам
                 if(e.target.closest('.side-btn') || e.target.closest('.bottom-bar')) {
                     return;
                 }
@@ -569,7 +561,6 @@
                     lastTapTime[videoId] = now;
                     setTimeout(()=>{
                         if(lastTapTime[videoId] === now){
-                            // Одиночный тап - пауза/воспроизведение
                             const vid = document.getElementById(`video-${videoId}`);
                             if(vid){
                                 vid.paused?vid.play().catch(()=>{}):vid.pause();
@@ -578,17 +569,14 @@
                         lastTapTime[videoId] = 0;
                     }, DOUBLE_TAP_DELAY);
                 }else if(now - lastTapTime[videoId] < DOUBLE_TAP_DELAY){
-                    // Двойной тап - лайк
                     lastTapTime[videoId] = 0;
                     
                     const rect = card.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
                     
-                    // Анимация сердечка
                     showDoubleTapHeart(card, x, y);
                     
-                    // Ставим лайк если ещё не стоит
                     if(!currentLikedState[videoId]){
                         toggleLike(videoId, null);
                     }
@@ -596,7 +584,6 @@
             });
         });
         
-        // Анимация сердечка при двойном тапе
         function showDoubleTapHeart(card, x, y){
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
@@ -609,7 +596,6 @@
             setTimeout(()=>heart.remove(), 1000);
         }
         
-        // Счётчик просмотров
         async function countView(videoId){
             try{
                 await fetch(`/golden/view/${videoId}`,{method:'POST'});
@@ -617,7 +603,6 @@
             }catch(e){}
         }
         
-        // Обновление счётчика комментариев
         async function updateCommentCount(videoId){
             try{
                 const res=await fetch(`/golden/comments_count/${videoId}`);
@@ -627,7 +612,6 @@
             }catch(e){}
         }
         
-        // ✅ НОВАЯ ФУНКЦИЯ: Обновление статуса лайка и счётчика
         async function updateLikeStatus(videoId){
             try{
                 const res=await fetch(`/golden/likes_count/${videoId}`);
@@ -647,7 +631,6 @@
             }catch(e){}
         }
         
-        // Переключение лайка
         async function toggleLike(videoId, event){
             if(event){
                 event.stopPropagation();
@@ -657,7 +640,6 @@
             const btn=document.getElementById(`likeBtn-${videoId}`);
             if(!btn)return;
             
-            // Оптимистичное обновление UI
             if(currentLikedState[videoId]){
                 btn.classList.remove('liked');
                 currentLikedState[videoId]=false;
@@ -669,10 +651,8 @@
             
             try{
                 await fetch(`/golden/like/${videoId}`,{method:'POST'});
-                // ✅ После запроса синхронизируем точное значение с сервера
                 await updateLikeStatus(videoId);
             }catch(e){
-                // Откат при ошибке
                 if(currentLikedState[videoId]){
                     btn.classList.remove('liked');
                     currentLikedState[videoId]=false;
@@ -683,7 +663,6 @@
             }
         }
         
-        // Эффект частиц при лайке
         function createLikeParticles(btn){
             const icon=btn.querySelector('.icon');
             const rect=icon.getBoundingClientRect();
@@ -716,7 +695,6 @@
             }
         }
         
-        // Стиль для анимации частиц
         if(!document.getElementById('particleStyle')){
             const particleStyle=document.createElement('style');
             particleStyle.id='particleStyle';
@@ -729,7 +707,6 @@
             document.head.appendChild(particleStyle);
         }
         
-        // Донат
         async function donateToVideo(videoId){
             const amount=prompt('Сумма доната (минимум 50 💎):','50');
             if(!amount||parseInt(amount)<50)return;
@@ -754,20 +731,17 @@
             }
         }
         
-        // Показать комментарии
         function showComments(videoId){
             currentVideoId=videoId;
             document.getElementById('commentsPanel').classList.add('active');
             loadComments(videoId);
         }
         
-        // Закрыть комментарии
         function closeComments(){
             document.getElementById('commentsPanel').classList.remove('active');
             currentVideoId=null;
         }
         
-        // Загрузить комментарии
         async function loadComments(videoId){
             const list=document.getElementById('commentsList');
             
@@ -793,7 +767,6 @@
             }
         }
         
-        // Добавить комментарий
         async function addComment(){
             const input=document.getElementById('commentInput');
             const text=input.value.trim();
@@ -820,7 +793,6 @@
             }
         }
         
-        // Экранирование HTML
         function escapeHtml(t){
             if(!t)return'';
             const div=document.createElement('div');
@@ -828,7 +800,6 @@
             return div.innerHTML;
         }
         
-        // Загрузка видео
         async function handleBearFlexUpload(input){
             const file=input.files[0];
             if(!file)return;
@@ -850,8 +821,9 @@
                     input.value='';
                     return;
                 }
-                if(video.videoWidth<1280||video.videoHeight<720){
-                    alert(`Минимальное разрешение 720p. Ваше: ${video.videoWidth}x${video.videoHeight}`);
+                // Исправленная проверка: минимум 720x1280 (вертикальное HD)
+                if(video.videoWidth < 720 || video.videoHeight < 1280){
+                    alert(`Минимальное разрешение 720×1280 (вертикальное HD). Ваше: ${video.videoWidth}×${video.videoHeight}`);
                     input.value='';
                     return;
                 }
@@ -886,7 +858,6 @@
             };
         }
         
-        // Обновление фонда
         async function updateFundProgress(){
             try{
                 const res=await fetch('/golden/fund_status');
@@ -897,12 +868,10 @@
             }catch(e){}
         }
         
-        // Закрытие комментариев по Escape
         document.addEventListener('keydown',(e)=>{
             if(e.key==='Escape')closeComments();
         });
         
-        // Закрытие при свайпе вниз на панели комментариев
         let touchStartY=0;
         document.getElementById('commentsPanel').addEventListener('touchstart',function(e){
             touchStartY=e.touches[0].clientY;
