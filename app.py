@@ -2035,13 +2035,13 @@ def chat():
         })
 
 # Секретные чаты
-    for sc in secret_chats:
-        last = Message.query.filter_by(secret_chat_id=sc.id).order_by(Message.timestamp.desc()).first()
-        unread = Message.query.filter_by(secret_chat_id=sc.id, is_read=False).filter(Message.sender_id != current_user.id).count()
-        convs.append({
-            'type': 'secret', 'id': sc.id, 'name': sc.user1_id == current_user.id and sc.user2.username or sc.user1.username,
-            'last': last, 'unread': unread
-        })
+for sc in secret_chats:
+    last = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
+    unread = SecretMessage.query.filter_by(secret_chat_id=sc.id, is_read=False).filter(SecretMessage.sender_id != current_user.id).count()
+    convs.append({
+        'type': 'secret', 'id': sc.id, 'name': sc.user1_id == current_user.id and sc.user2.username or sc.user1.username,
+        'last': last, 'unread': unread
+    })
 
     # Сортировка по дате последнего сообщения
     convs.sort(key=lambda x: x['last'].timestamp if x['last'] else datetime.min, reverse=True)
