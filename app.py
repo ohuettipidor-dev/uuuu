@@ -1861,11 +1861,13 @@ def delete_group(gid):
 def add_member_to_group(gid):
     group = db.session.get(Group, gid)
     if not group:
-        return jsonify({'error': 'Группа не найдена'}), 404
+        flash('Группа не найдена', 'danger')
+        return redirect(url_for('chat'))
     
     member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
     if not member or not member.is_admin:
-        return jsonify({'error': 'Нет прав'}), 403
+        flash('Нет прав', 'danger')
+        return redirect(url_for('group_info', gid=gid))
     
     username = request.form.get('username', '').strip()
     if not username:
