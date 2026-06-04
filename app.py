@@ -20,20 +20,20 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 import json
-import запросов
-import zip-файла
+import requests
+import zipfile
 import firebase_admin
 from firebase_admin import credentials, messaging
 
 
 YOOMONEY_WALLET = '4100119522166446'
-YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68 CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF 15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
+YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
 VAPID_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg_gjCYMlsnEqEwve9-aPTyOGeCr7FSMk8N1pyVjjr0LShRANCAARlre50Affy8pB2MI1Qu5sFIHVsdEbSMubEuYigcTXaW_e49z7UjMjggoRUody6Fbpuz_x3NngMjDlQSSApYIrE"
 VAPID_PUBLIC_KEY = "BGWt7nQB9_LykHYwjVC7mwUgdWx0RtIy5sS5iKBxNdpb97j3PtSMyOCChFSh3LoVum7P_Hc2eAyMOVBJIClgisQ="
-app = Flask ( __name__ )
-@ app.after_request
-def  allow_iframe ( response ) :
-    ответ. заголовки . pop ( 'X-Frame-Options' , None )   # убираем запрет
+app = Flask(__name__)
+@app.after_request
+def allow_iframe(response):
+    response.headers.pop('X-Frame-Options', None)  # убираем запрет
     response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *"
     return response
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
@@ -1625,30 +1625,31 @@ def send_group():
     if not group:
         return jsonify({'error': 'Группа не найдена'}), 404
 
+    # Проверка, что пользователь участник группы
     if not GroupMember.query.filter_by(group_id=group_id, user_id=current_user.id).first():
         return jsonify({'error': 'Вы не участник этой группы'}), 403
 
-    content = request.form.get('content', '').strip()
+    content = request.form.get('content', '')
     reply_to_id = request.form.get('reply_to_id', type=int)
     file_path = request.form.get('file_path')
     file_name = request.form.get('file_name')
     file_type = request.form.get('file_type')
     voice_duration = request.form.get('voice_duration', 0, type=int)
 
-    if not content and not file_path:
-        return jsonify({'error': 'Пустое сообщение'}), 400
-    if file_path and not content:
+    if not content and file_path:
         content = '📎 Файл'
 
-    msg = GroupMessage(
+    msg = Message(
         content=content,
         file_path=file_path,
         file_name=file_name,
         file_type=file_type,
         sender_id=current_user.id,
         group_id=group_id,
+        receiver_id=None,
         voice_duration=voice_duration,
-        reply_to_id=reply_to_id
+        reply_to_id=reply_to_id,
+        status='sent'
     )
     db.session.add(msg)
     db.session.commit()
@@ -1897,13 +1898,11 @@ def delete_group(gid):
 def add_member_to_group(gid):
     group = db.session.get(Group, gid)
     if not group:
-        flash('Группа не найдена', 'danger')
-        return redirect(url_for('chat'))
+        return jsonify({'error': 'Группа не найдена'}), 404
     
     member = GroupMember.query.filter_by(user_id=current_user.id, group_id=gid).first()
     if not member or not member.is_admin:
-        flash('Нет прав', 'danger')
-        return redirect(url_for('group_info', gid=gid))
+        return jsonify({'error': 'Нет прав'}), 403
     
     username = request.form.get('username', '').strip()
     if not username:
