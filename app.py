@@ -4578,37 +4578,18 @@ def golden_upload():
     f = request.files['video']
     if f.filename == '':
         return jsonify({'error': 'Файл не выбран'}), 400
-    title = request.form.get('title', '')
+
+    title = request.form.get('title', 'Без названия')
     ext = f.filename.rsplit('.', 1)[1].lower()
+    if ext not in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+        return jsonify({'error': 'Неподдерживаемый формат видео'}), 400
+
+    # Сохраняем оригинал (без конвертации)
     name = f"golden_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-    
-    # Сохраняем оригинал
     filepath = os.path.join(FILE_FOLDER, name)
     f.save(filepath)
-    
-    # Конвертируем в 720p минимум (если ffmpeg установлен)
-    try:
-        import subprocess
-        output_name = f"golden_{current_user.id}_{uuid.uuid4().hex}_720p.mp4"
-        output_path = os.path.join(FILE_FOLDER, output_name)
-        subprocess.run([
-            'ffmpeg', '-i', filepath,
-            '-vf', 'scale=-1:720',
-            '-c:v', 'libx264',
-            '-crf', '23',
-            '-preset', 'fast',
-            '-c:a', 'aac',
-            '-b:a', '128k',
-            '-movflags', '+faststart',
-            output_path
-        ], check=True, timeout=60)
-        # Удаляем оригинал, оставляем 720p версию
-        os.remove(filepath)
-        filepath = output_path
-        name = output_name
-    except:
-        pass  # Если ffmpeg нет, оставляем оригинал
-    
+
+    # Создаём запись в БД
     video = GoldenContent(
         author_id=current_user.id,
         file_path=f'/static/uploads/{name}',
@@ -4616,6 +4597,7 @@ def golden_upload():
     )
     db.session.add(video)
     db.session.commit()
+
     return jsonify({'success': True, 'id': video.id})
 @app.route('/golden/view/<int:content_id>', methods=['POST'])
 @login_required
