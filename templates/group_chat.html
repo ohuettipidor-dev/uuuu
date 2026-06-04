@@ -108,22 +108,6 @@
         .upload-sticker-btn{background:#f0f0f0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;margin-bottom:10px}
         .sticker-actions{display:flex;justify-content:space-between;margin-bottom:10px}
         
-        .mention-suggestions{position:absolute;bottom:100%;left:0;right:0;background:white;border-radius:16px;max-height:160px;overflow-y:auto;z-index:100;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none}
-        .mention-suggestions.active{display:block}
-        .mention-suggestion-item{padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
-        .mention-suggestion-item:hover{background:#f9f9f9}
-        .mention-suggestion-avatar{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px}
-        .mention-suggestion-avatar img{width:100%;height:100%;object-fit:cover}
-        .mention-suggestion-name{font-size:13px;font-weight:500;color:#333}
-        .mention-suggestion-link{font-size:10px;color:#999}
-        
-        .messages::-webkit-scrollbar{width:3px}
-        .messages::-webkit-scrollbar-track{background:transparent}
-        .messages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
-        
-        .video-circle{width:200px;height:200px;border-radius:50%;overflow:hidden;cursor:pointer;position:relative;display:inline-block;background:#000;margin:4px 0}
-        .video-circle video{width:100%;height:100%;object-fit:cover}
-        
         .scroll-bottom-btn{position:sticky;bottom:12px;right:12px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:36px;height:36px;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;z-index:50;margin-left:auto}
         .scroll-bottom-btn.active{display:flex}
 
@@ -211,7 +195,19 @@
     <div class="messages" id="messages">
         {% for m in messages %}
         <div class="message {% if m.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-id="{{ m.id }}">
-            <div class="bubble">
+            <div class="bubble" onclick="copyMessageContent(this)">
+                {% if m.is_pinned %}
+                <div class="pinned-badge" onclick="unpinThisMessage({{ m.id }})">📌 Закреплено ✖</div>
+                {% endif %}
+                {% if m.forwarded_from_id %}
+                <div class="forward-badge">📎 Переслано</div>
+                {% endif %}
+                {% if m.reply_to_id %}
+                <div class="reply-preview">
+                    <span>📩 Ответ:</span><br>
+                    <span id="reply-preview-{{ m.id }}">...</span>
+                </div>
+                {% endif %}
                 {% if m.sender_id != current_user.id %}<strong>{{ m.sender.username }}</strong><br>{% endif %}
                 {% if m.file_type == 'sticker' %}
                     <img src="{{ m.file_path }}" class="sticker-img">
@@ -242,14 +238,22 @@
                 {% endif %}
                 <div class="time">
                     <span class="message-time" data-utc="{{ m.timestamp.isoformat() }}Z">{{ m.timestamp.strftime('%H:%M') }}</span>
-                    {% if m.sender_id == current_user.id %}
-                        {% if m.status == 'read' %}<span class="read-status">✓✓</span>
-                        {% elif m.status == 'delivered' %}<span class="delivered-status">✓✓</span>
-                        {% else %}<span class="sent-status">✓</span>{% endif %}
-                    {% endif %}
                     {% if m.edited %}<span class="edited-badge">изменено</span>{% endif %}
                     {% if m.is_favorite %}<span class="favorite-star">★</span>{% endif %}
                 </div>
+            </div>
+            <div class="message-actions">
+                <button class="action-btn" onclick="replyToMessage({{ m.id }}, `{{ m.content|replace('`', '\\`')|replace('"', '&quot;')|safe }}`)">💬</button>
+                <button class="action-btn" onclick="toggleFavorite({{ m.id }}, 'group')">⭐</button>
+                <button class="action-btn" onclick="forwardMessage({{ m.id }}, 'group')">➡️</button>
+                <button class="action-btn" onclick="pinMessage({{ m.id }}, 'group')">📌</button>
+                {% if m.sender_id == current_user.id %}
+                    <button class="action-btn" onclick="editMessage({{ m.id }}, 'group')">✏️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', false)">🗑️</button>
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', true)">⚠️</button>
+                {% else %}
+                    <button class="action-btn" onclick="deleteMessage({{ m.id }}, 'group', false)">🙈</button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -646,6 +650,10 @@ function addGroupMessage(msg) {
         sender = `<strong>${escapeHtml(msg.sender_name)}</strong><br>`;
     }
 
+    let pinnedBadge = msg.is_pinned ? '<div class="pinned-badge" onclick="unpinThisMessage(' + msg.id + ')">📌 Закреплено ✖</div>' : '';
+    let forward = msg.forwarded_from_name ? '<div class="forward-badge">📎 Переслано</div>' : '';
+    let reply = msg.reply_to_id ? '<div class="reply-preview"><span>📩 Ответ:</span><br><span>...</span></div>' : '';
+
     let fileHtml = '';
     if (msg.file_path) {
         if (msg.file_type === 'sticker') {
@@ -670,16 +678,10 @@ function addGroupMessage(msg) {
     }
 
     let timeStr = formatUTCTime(msg.timestamp);
-    let statusIcon = '';
-    if (msg.is_own) {
-        if (msg.status === 'read') statusIcon = '<span class="read-status">✓✓</span>';
-        else if (msg.status === 'delivered') statusIcon = '<span class="delivered-status">✓✓</span>';
-        else statusIcon = '<span class="sent-status">✓</span>';
-    }
     let edited = msg.edited ? '<span class="edited-badge">изменено</span>' : '';
     let star = msg.is_favorite ? '<span class="favorite-star">★</span>' : '';
 
-    div.innerHTML = `<div class="bubble">${sender}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span> ${statusIcon}${edited}${star}</div></div>`;
+    div.innerHTML = `<div class="bubble" onclick="copyMessageContent(this)">${pinnedBadge}${forward}${reply}${sender}${fileHtml}${contentHtml}${voiceHtml}<div class="time"><span>${timeStr}</span> ${edited}${star}</div></div><div class="message-actions"><button class="action-btn" onclick="replyToMessage(${msg.id}, \`${escapeHtml(msg.content || '')}\`)">💬</button><button class="action-btn" onclick="toggleFavorite(${msg.id}, 'group')">⭐</button><button class="action-btn" onclick="forwardMessage(${msg.id}, 'group')">➡️</button><button class="action-btn" onclick="pinMessage(${msg.id}, 'group')">📌</button>${msg.is_own ? `<button class="action-btn" onclick="editMessage(${msg.id}, 'group')">✏️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group', false)">🗑️</button><button class="action-btn" onclick="deleteMessage(${msg.id}, 'group', true)">⚠️</button>` : `<button class="action-btn" onclick="deleteMessage(${msg.id}, 'group', false)">🙈</button>`}</div>`;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -714,6 +716,46 @@ function replyToMessage(id, content) {
 function cancelReply() {
     currentReplyToId = null;
     document.getElementById('replyBar').style.display = 'none';
+}
+
+// Заглушки для действий, чтобы не падало (можно доработать позже)
+function editMessage(id, type) {
+    let newText = prompt('Новый текст:');
+    if (newText && newText.trim()) {
+        fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type})}).then(() => setTimeout(checkGroupMessages, 300));
+    }
+}
+function deleteMessage(id, type, all) {
+    if (confirm('Удалить сообщение?')) {
+        fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})}).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); });
+    }
+}
+function toggleFavorite(id, type) {
+    fetch('/toggle_favorite', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})}).then(() => setTimeout(checkGroupMessages, 300));
+}
+function forwardMessage(id, type) {
+    let target = prompt('ID пользователя для пересылки:');
+    if (target) {
+        fetch('/forward_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, target_type: 'private', target_id: parseInt(target), msg_type: type})}).then(() => alert('Переслано!'));
+    }
+}
+function pinMessage(id, type) {
+    fetch('/pin_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type})}).then(() => { setTimeout(checkGroupMessages, 300); });
+}
+function copyMessageContent(bubble) {
+    const text = bubble.querySelector('.time') ? bubble.cloneNode(true) : null;
+    if (!text) return;
+    const timeEl = text.querySelector('.time');
+    if (timeEl) timeEl.remove();
+    const content = text.innerText.trim();
+    if (!content) return;
+    navigator.clipboard.writeText(content).then(() => {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:6px 16px;border-radius:20px;font-size:13px;z-index:200;pointer-events:none';
+        toast.textContent = 'Скопировано';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+    }).catch(() => {});
 }
 
 // Закрытие панелей при клике вне
