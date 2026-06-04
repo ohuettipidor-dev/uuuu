@@ -2561,7 +2561,35 @@ def pin_message():
             db.session.commit()
             return jsonify({'success': True, 'is_pinned': msg.is_pinned})
     return jsonify({'error': 'Сообщение не найдено'}), 404
+@app.route('/golden/upload', methods=['POST'])
+@login_required
+def golden_upload():
+    if 'video' not in request.files:
+        return jsonify({'error': 'Нет файла'}), 400
+    f = request.files['video']
+    if f.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
 
+    # Сохраняем оригинал (без конвертации, чтобы избежать проблем с ffmpeg)
+    ext = f.filename.rsplit('.', 1)[1].lower()
+    if ext not in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+        return jsonify({'error': 'Неподдерживаемый формат видео'}), 400
+
+    name = f"golden_{current_user.id}_{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(FILE_FOLDER, name)
+    f.save(filepath)
+
+    title = request.form.get('title', 'Без названия')
+
+    video = GoldenContent(
+        author_id=current_user.id,
+        file_path=f'/static/uploads/{name}',
+        title=title
+    )
+    db.session.add(video)
+    db.session.commit()
+
+    return jsonify({'success': True, 'id': video.id})
 @app.route('/get_pinned_message/<int:chat_id>/<string:chat_type>')
 @login_required
 def get_pinned_message(chat_id, chat_type):
