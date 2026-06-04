@@ -19,10 +19,10 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
-импорт json
-импорт запросов
-импорт zip-файла
-импорт firebase_admin
+import json
+import запросов
+import zip-файла
+import firebase_admin
 from firebase_admin import credentials, messaging
 
 
