@@ -1838,43 +1838,7 @@ def edit_group(gid):
     
     db.session.commit()
     return jsonify({'success': True})
-@app.route('/send_group', methods=['POST'])
-@login_required
-def send_group():
-    group_id = int(request.form['group_id'])
-    group = Group.query.get(group_id)
-    if not group:
-        return jsonify({'error': 'Группа не найдена'}), 404
 
-    if not GroupMember.query.filter_by(group_id=group_id, user_id=current_user.id).first():
-        return jsonify({'error': 'Вы не участник этой группы'}), 403
-
-    content = request.form.get('content', '').strip()
-    reply_to_id = request.form.get('reply_to_id', type=int)
-    file_path = request.form.get('file_path')
-    file_name = request.form.get('file_name')
-    file_type = request.form.get('file_type')
-    voice_duration = request.form.get('voice_duration', 0, type=int)
-
-    if not content and not file_path:
-        return jsonify({'error': 'Пустое сообщение'}), 400
-    if file_path and not content:
-        content = '📎 Файл'  # заглушка, чтобы не было пустого контента
-
-    msg = GroupMessage(
-        content=content,
-        file_path=file_path,
-        file_name=file_name,
-        file_type=file_type,
-        sender_id=current_user.id,
-        group_id=group_id,
-        voice_duration=voice_duration,
-        reply_to_id=reply_to_id
-    )
-    db.session.add(msg)
-    db.session.commit()
-
-    return jsonify({'success': True, 'message_id': msg.id})
 @app.route('/group/<int:gid>/delete', methods=['POST'])
 @login_required
 def delete_group(gid):
