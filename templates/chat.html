@@ -82,10 +82,10 @@
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
         .feed-item{background:white;border-radius:0;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:#333}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
-        .feed-channel-name{font-weight:600;font-size:14px}
+        .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
         .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
@@ -101,6 +101,34 @@
         .donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
         .donate-btn:hover{transform:scale(1.02)}
         .retry-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-weight:bold;margin-top:10px}
+
+        /* Полноэкранный просмотрщик изображений */
+        .image-viewer{
+            position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.95);z-index:2000;
+            display:none;align-items:center;justify-content:center;
+            flex-direction:column;
+        }
+        .image-viewer.active{display:flex}
+        .image-viewer img{max-width:95%;max-height:80vh;border-radius:12px;object-fit:contain}
+        .image-viewer .close-viewer{
+            position:absolute;top:20px;right:20px;color:white;font-size:32px;
+            cursor:pointer;z-index:10;background:rgba(0,0,0,0.5);
+            width:44px;height:44px;border-radius:50%;display:flex;
+            align-items:center;justify-content:center;
+        }
+        .image-viewer .nav-btn{
+            position:absolute;top:50%;transform:translateY(-50%);
+            background:rgba(255,255,255,0.2);color:white;
+            border:none;font-size:40px;padding:16px 12px;cursor:pointer;
+            z-index:10;border-radius:12px;
+        }
+        .image-viewer .prev-btn{left:10px}
+        .image-viewer .next-btn{right:10px}
+        .image-viewer .image-counter{
+            position:absolute;bottom:20px;color:white;font-size:14px;
+            background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:20px;
+        }
 
         .bottom-nav{
             display:flex;
@@ -151,7 +179,7 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
-        /* Анимация сердечка при одиночном тапе */
+        /* Анимация сердечка при тапе */
         .like-heart-animation{
             position:absolute;z-index:15;pointer-events:none;
             animation:doubleTapLike 1s ease-out forwards;
@@ -261,6 +289,15 @@
         <a href="/mining" class="finance-link">⛏️ Майнинг</a>
         <a href="/bearpay?tab=bank" class="finance-link">🏦 Банк</a>
     </div>
+</div>
+
+<!-- Полноэкранный просмотрщик изображений -->
+<div class="image-viewer" id="imageViewer">
+    <div class="close-viewer" onclick="closeImageViewer()">✖</div>
+    <button class="nav-btn prev-btn" onclick="navigateImage(-1)">‹</button>
+    <img id="viewerImage" src="" alt="">
+    <button class="nav-btn next-btn" onclick="navigateImage(1)">›</button>
+    <div class="image-counter" id="imageCounter"></div>
 </div>
 
 <button class="fab-btn" onclick="openGroupModal()">+</button>
@@ -445,6 +482,8 @@ function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', hea
 
 let feedLoaded = false;
 let feedTapTimer = null;
+let allFeedImages = [];
+let currentImageIndex = 0;
 
 async function loadFeed() {
     if (feedLoaded) return;
@@ -460,6 +499,7 @@ async function loadFeed() {
             return;
         }
         var html = '';
+        allFeedImages = [];
         data.posts.forEach(function(p) {
             var images = [], videos = [], audios = [], files = [];
             if (p.attachments) {
@@ -473,7 +513,11 @@ async function loadFeed() {
             var imagesHtml = '';
             if (images.length > 0) {
                 imagesHtml = '<div class="feed-images-grid">';
-                images.forEach(function(img) { imagesHtml += '<img src="' + img.path + '" loading="lazy">'; });
+                images.forEach(function(img, idx) {
+                    var imgId = 'feed-img-' + p.id + '-' + idx;
+                    allFeedImages.push({postId: p.id, index: idx, src: img.path});
+                    imagesHtml += '<img src="' + img.path + '" loading="lazy" onclick="openImageViewer(\'' + img.path + '\', ' + p.id + ', ' + idx + ')">';
+                });
                 imagesHtml += '</div>';
             }
             var videosHtml = ''; videos.forEach(function(v) { videosHtml += '<video class="feed-video" src="' + v.path + '" controls></video>'; });
@@ -481,12 +525,12 @@ async function loadFeed() {
             var filesHtml = ''; files.forEach(function(f) { filesHtml += '<a class="feed-file" href="' + f.path + '" target="_blank">📎 <span class="filename">' + (f.name || 'Файл') + '</span></a>'; });
 
             html += '<div class="feed-item" data-post-id="' + p.id + '">';
-            html += '<a href="/channel/' + p.channel_id + '" class="feed-header" onclick="event.stopPropagation();">';
+            html += '<div class="feed-header">';
             html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
             html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
             html += '<span class="feed-date">' + p.timestamp + '</span>';
-            html += '</a>';
-            html += '<div class="feed-content" onclick="event.stopPropagation();">' + p.content + '</div>';
+            html += '</div>';
+            html += '<div class="feed-content">' + p.content + '</div>';
             html += imagesHtml + videosHtml + audiosHtml + filesHtml;
             html += '<div class="feed-actions" onclick="event.stopPropagation();">';
             html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
@@ -502,8 +546,8 @@ async function loadFeed() {
         // Обработка тапов: один тап - лайк, двойной - переход в канал
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
-                // Игнорируем клики по кнопкам действий, заголовку, ссылкам, изображениям и видео
-                if (e.target.closest('.feed-actions') || e.target.closest('.feed-header') || e.target.closest('a') || e.target.closest('img') || e.target.closest('video')) {
+                // Игнорируем клики по кнопкам действий, изображениям, видео, файлам
+                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file')) {
                     return;
                 }
                 
@@ -545,6 +589,76 @@ async function loadFeed() {
         feedLoaded = false;
     }
 }
+
+// Полноэкранный просмотрщик изображений
+function openImageViewer(src, postId, imgIndex) {
+    // Собираем все изображения из этого поста
+    var postImages = [];
+    for (var i = 0; i < allFeedImages.length; i++) {
+        if (allFeedImages[i].postId == postId) {
+            postImages.push(allFeedImages[i]);
+        }
+    }
+    
+    if (postImages.length === 0) {
+        // Если массив пуст, просто показываем одно изображение
+        postImages = [{postId: postId, index: imgIndex, src: src}];
+    }
+    
+    // Сохраняем текущий набор изображений в глобальную переменную
+    window.currentViewerImages = postImages;
+    currentImageIndex = 0;
+    
+    // Находим индекс текущего изображения
+    for (var i = 0; i < postImages.length; i++) {
+        if (postImages[i].src === src) {
+            currentImageIndex = i;
+            break;
+        }
+    }
+    
+    showCurrentImage();
+    document.getElementById('imageViewer').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showCurrentImage() {
+    var images = window.currentViewerImages || [];
+    if (images.length === 0) return;
+    
+    document.getElementById('viewerImage').src = images[currentImageIndex].src;
+    document.getElementById('imageCounter').textContent = (currentImageIndex + 1) + ' / ' + images.length;
+    
+    // Показываем/скрываем кнопки навигации
+    var prevBtn = document.querySelector('.prev-btn');
+    var nextBtn = document.querySelector('.next-btn');
+    if (images.length <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+    } else {
+        prevBtn.style.display = 'block';
+        nextBtn.style.display = 'block';
+    }
+}
+
+function navigateImage(direction) {
+    var images = window.currentViewerImages || [];
+    if (images.length === 0) return;
+    
+    currentImageIndex += direction;
+    if (currentImageIndex < 0) currentImageIndex = images.length - 1;
+    if (currentImageIndex >= images.length) currentImageIndex = 0;
+    
+    showCurrentImage();
+}
+
+function closeImageViewer() {
+    document.getElementById('imageViewer').classList.remove('active');
+    document.body.style.overflow = '';
+    window.currentViewerImages = [];
+    currentImageIndex = 0;
+}
+
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
     if (!el) {
