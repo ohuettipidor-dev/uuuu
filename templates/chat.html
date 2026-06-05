@@ -81,7 +81,7 @@
         .online{color:#4cd964;font-size:9px;margin-left:4px}
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
-        .feed-item{background:white;border-radius:20px;padding:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid rgba(255,255,255,0.5)}
+        .feed-item{background:white;border-radius:0;padding:0;margin-bottom:0;box-shadow:none;border:none}
         .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
@@ -226,8 +226,8 @@
             </div>
 
             <div class="panel" id="panel2">
-                <div class="panel-content" style="padding:12px 12px 90px 12px;">
-                    <div id="feedContainer" style="margin-top:10px;"></div>
+                <div class="panel-content" style="padding:0;">
+                    <div id="feedContainer" style="margin-top:0;"></div>
                 </div>
             </div>
         </div>
@@ -498,7 +498,6 @@ async function likeFeedPost(postId, el) {
     }
 }
 
-// === ДОНАТ В КРИСТАЛЛАЙЗЕРАХ (как в каналах) ===
 async function donateToChannel(channelId) {
     const amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
     if (!amount || isNaN(amount) || amount < 10) return;
