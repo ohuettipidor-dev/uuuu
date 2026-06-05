@@ -23,10 +23,24 @@
         .finance-header-btn{
             background:linear-gradient(135deg, #4cd964, #2ecc71);
             padding:3px 10px;border-radius:20px;font-weight:bold;font-size:12px;text-decoration:none;color:#fff;
-            display:flex;align-items:center;gap:3px;box-shadow:0 2px 6px rgba(46,204,113,0.3);transition:all 0.2s;flex-shrink:0;white-space:nowrap;
+            display:flex;align-items:center;gap:3px;box-shadow:0 2px 6px rgba(46,204,113,0.3);transition:all 0.2s;flex-shrink:0;white-space:nowrap;cursor:pointer;
         }
         .finance-header-btn:hover{background:linear-gradient(135deg, #2ecc71, #27ae60);transform:scale(1.03);}
         .finance-header-icon{font-size:14px;}
+
+        /* Выпадающее меню финансов */
+        .finance-dropdown{
+            position:absolute;top:100%;right:8px;background:white;border-radius:16px;
+            padding:8px;display:none;flex-direction:column;gap:4px;z-index:200;
+            box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:140px;margin-top:4px;
+        }
+        .finance-dropdown.active{display:flex}
+        .finance-dropdown a{
+            text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;
+            background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px;
+            white-space:nowrap;
+        }
+        .finance-dropdown a:hover{background:rgba(255,107,107,0.2)}
 
         .premium-btn{background:gold;color:#333;font-weight:bold;border-radius:20px;padding:3px 8px;font-size:10px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
         .premium-active{color:gold;font-weight:bold;font-size:10px}
@@ -157,10 +171,6 @@
         .bearflex-nav{color:#000;background:linear-gradient(135deg, #ffd700, #ffaa00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
         .bearflex-nav .nav-icon{font-size:28px;text-shadow:0 2px 8px rgba(255,170,0,0.3)}
 
-        .finance-menu{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:white;border-radius:20px;padding:16px;display:none;flex-wrap:wrap;gap:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
-        .finance-menu.active{display:flex}
-        .finance-link{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px}
-
         .fab-btn{position:fixed;bottom:80px;right:20px;z-index:997;background:#ff6b6b;color:white;border:none;border-radius:50%;width:48px;height:48px;font-size:28px;box-shadow:0 6px 16px rgba(255,107,107,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
 
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
@@ -210,9 +220,18 @@
             {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
         </div>
         <div class="logo-text"><span>🐻 Bear</span><span>Gram</span></div>
-        <div class="header-actions">
+        <div class="header-actions" style="position:relative;">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
-            <a href="/bearpay?tab=bank" class="finance-header-btn"><span class="finance-header-icon">💰</span> Финансы</a>
+            <div class="finance-header-btn" onclick="toggleFinanceDropdown()">
+                <span class="finance-header-icon">💰</span> Финансы
+            </div>
+            <div class="finance-dropdown" id="financeDropdown">
+                <a href="/shop">🛍️ Магазин</a>
+                <a href="/grrr">🐻 $GRRR</a>
+                <a href="/bearpay">💳 Wallet</a>
+                <a href="/mining">⛏️ Майнинг</a>
+                <a href="/bearpay?tab=bank">🏦 Банк</a>
+            </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
@@ -285,14 +304,6 @@
         <a href="/voice_channels" class="nav-item"><span class="nav-icon">🎤</span><span>Голосовые</span></a>
         <a href="/channels" class="nav-item"><span class="nav-icon">📢</span><span>Каналы</span></a>
         <a href="/golden" class="nav-item bearlflex-nav"><span class="nav-icon">🐻🎬</span><span>BearFlex</span></a>
-    </div>
-
-    <div class="finance-menu" id="financeMenu">
-        <a href="/shop" class="finance-link">🛍️ Магазин</a>
-        <a href="/grrr" class="finance-link">🐻 $GRRR</a>
-        <a href="/bearpay" class="finance-link">💳 Wallet</a>
-        <a href="/mining" class="finance-link">⛏️ Майнинг</a>
-        <a href="/bearpay?tab=bank" class="finance-link">🏦 Банк</a>
     </div>
 </div>
 
@@ -485,6 +496,19 @@ setTimeout(()=>{typing.remove();const reply=random(replies[topic]||replies.fallb
 send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
 function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
+// Финансовое выпадающее меню
+function toggleFinanceDropdown() {
+    document.getElementById('financeDropdown').classList.toggle('active');
+}
+// Закрытие при клике вне
+document.addEventListener('click', function(e) {
+    var btn = document.querySelector('.finance-header-btn');
+    var dropdown = document.getElementById('financeDropdown');
+    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+    }
+});
+
 let feedLoaded = false;
 let feedTapTimer = null;
 let allFeedImages = [];
@@ -667,10 +691,6 @@ async function donateToChannel(channelId) {
         if (data.success) alert('✅ Донат отправлен! Ваш новый баланс: ' + data.new_balance + ' 💎');
         else alert('❌ ' + (data.error || 'Ошибка'));
     } catch (e) { alert('Ошибка сети'); }
-}
-
-function toggleFinanceMenu() {
-    document.getElementById('financeMenu').classList.toggle('active');
 }
 </script>
 </body>
