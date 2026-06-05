@@ -151,7 +151,7 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
-        /* Анимация сердечка при двойном тапе */
+        /* Анимация сердечка при одиночном тапе */
         .like-heart-animation{
             position:absolute;z-index:15;pointer-events:none;
             animation:doubleTapLike 1s ease-out forwards;
@@ -444,7 +444,7 @@ send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter
 function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
 let feedLoaded = false;
-let feedLastTapTime = 0;
+let feedTapTimer = null;
 
 async function loadFeed() {
     if (feedLoaded) return;
@@ -486,7 +486,7 @@ async function loadFeed() {
             html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
             html += '<span class="feed-date">' + p.timestamp + '</span>';
             html += '</a>';
-            html += '<div class="feed-content" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">' + p.content + '</div>';
+            html += '<div class="feed-content" onclick="event.stopPropagation();">' + p.content + '</div>';
             html += imagesHtml + videosHtml + audiosHtml + filesHtml;
             html += '<div class="feed-actions" onclick="event.stopPropagation();">';
             html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
@@ -499,21 +499,28 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
-        // Двойной тап для лайка
+        // Обработка тапов: один тап - лайк, двойной - переход в канал
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
                 // Игнорируем клики по кнопкам действий, заголовку, ссылкам, изображениям и видео
                 if (e.target.closest('.feed-actions') || e.target.closest('.feed-header') || e.target.closest('a') || e.target.closest('img') || e.target.closest('video')) {
                     return;
                 }
-                var now = Date.now();
-                if (now - feedLastTapTime < 300) {
-                    feedLastTapTime = 0;
+                
+                if (feedTapTimer) {
+                    // Двойной тап - переход в канал
+                    clearTimeout(feedTapTimer);
+                    feedTapTimer = null;
+                    var postId = this.dataset.postId;
+                    window.location.href = '/channel/' + postId;
+                } else {
+                    // Одиночный тап - лайк
                     var postId = this.dataset.postId;
                     var rect = this.getBoundingClientRect();
                     var x = e.clientX - rect.left;
                     var y = e.clientY - rect.top;
 
+                    // Анимация сердечка
                     var heart = document.createElement('div');
                     heart.className = 'like-heart-animation';
                     heart.innerHTML = '❤️';
@@ -523,9 +530,13 @@ async function loadFeed() {
                     this.appendChild(heart);
                     setTimeout(function() { heart.remove(); }, 1000);
 
+                    // Ставим лайк
                     likeFeedPost(postId, this.querySelector('.feed-action[onclick*="likeFeedPost"]'));
-                } else {
-                    feedLastTapTime = now;
+                    
+                    // Устанавливаем таймер для определения двойного тапа
+                    feedTapTimer = setTimeout(function() {
+                        feedTapTimer = null;
+                    }, 300);
                 }
             });
         });
