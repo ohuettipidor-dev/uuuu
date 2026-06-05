@@ -13,13 +13,12 @@
         .header{display:flex;justify-content:space-between;align-items:center;padding:2px 8px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;gap:4px;z-index:10;position:relative;min-height:38px}
         .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0;font-size:14px}
         .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-        .logo-text{font-weight:bold;font-size:13px}
+        .logo-text{font-weight:bold;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:2px}
         .logo-text span:first-child{color:#ff6b6b}.logo-text span:last-child{color:#ff8e8e}
-        .header-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+        .header-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;position:relative}
         .icon-btn{background:rgba(255,255,255,0.9);padding:3px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none;flex-shrink:0}
         .icon-btn:hover{background:white;transform:translateY(-1px)}
 
-        /* Финансы — заметная кнопка в хедере */
         .finance-header-btn{
             background:linear-gradient(135deg, #4cd964, #2ecc71);
             padding:3px 10px;border-radius:20px;font-weight:bold;font-size:12px;text-decoration:none;color:#fff;
@@ -28,7 +27,6 @@
         .finance-header-btn:hover{background:linear-gradient(135deg, #2ecc71, #27ae60);transform:scale(1.03);}
         .finance-header-icon{font-size:14px;}
 
-        /* Выпадающее меню финансов */
         .finance-dropdown{
             position:absolute;top:100%;right:8px;background:white;border-radius:16px;
             padding:8px;display:none;flex-direction:column;gap:4px;z-index:200;
@@ -62,6 +60,7 @@
         .search-close{text-align:center;padding:6px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:12px}
         .search-close:hover{background:#f9f9f9}
         .search-invite-btn{display:block;width:100%;text-align:center;padding:8px;background:rgba(255,215,0,0.1);color:#ff8c00;border:none;border-radius:15px;font-weight:bold;font-size:11px;cursor:pointer;margin-top:6px}
+        .search-create-group-btn{display:block;width:100%;text-align:center;padding:8px;background:rgba(255,107,107,0.1);color:#ff6b6b;border:none;border-radius:15px;font-weight:bold;font-size:11px;cursor:pointer;margin-top:6px}
 
         .app{flex:1;position:relative;overflow:hidden;touch-action:pan-y pinch-zoom; padding-bottom: 70px;}
         .swiper{display:flex;height:100%;transition:transform 0.35s cubic-bezier(0.25,0.8,0.25,1);will-change:transform}
@@ -171,8 +170,6 @@
         .bearflex-nav{color:#000;background:linear-gradient(135deg, #ffd700, #ffaa00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
         .bearflex-nav .nav-icon{font-size:28px;text-shadow:0 2px 8px rgba(255,170,0,0.3)}
 
-        .fab-btn{position:fixed;bottom:80px;right:20px;z-index:997;background:#ff6b6b;color:white;border:none;border-radius:50%;width:48px;height:48px;font-size:28px;box-shadow:0 6px 16px rgba(255,107,107,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
-
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
         .modal-content{background:white;border-radius:24px;padding:18px;width:260px;text-align:center}
@@ -209,7 +206,6 @@
 
         @media (max-width:480px){
             .icon-btn{width:24px;height:24px;font-size:12px}
-            .fab-btn{right:60px;width:44px;height:44px}
         }
     </style>
 </head>
@@ -219,8 +215,9 @@
         <div class="avatar" onclick="location.href='/profile'">
             {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
         </div>
-        <div class="logo-text"><span>🐻 Bear</span><span>Gram</span></div>
-        <div class="header-actions" style="position:relative;">
+        <!-- Логотип кликабелен - открывает AI-помощник -->
+        <div class="logo-text" onclick="toggleAiAssistant()"><span>🐻 Bear</span><span>Gram</span></div>
+        <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
             <div class="finance-header-btn" onclick="toggleFinanceDropdown()">
                 <span class="finance-header-icon">💰</span> Финансы
@@ -241,6 +238,7 @@
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
         <button class="search-invite-btn" onclick="openInviteModal();document.getElementById('searchContainer').classList.remove('active')">📱 Пригласить друзей из контактов</button>
+        <button class="search-create-group-btn" onclick="openGroupModal();document.getElementById('searchContainer').classList.remove('active')">👥 Создать группу</button>
         <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
 
@@ -316,13 +314,8 @@
     <div class="image-counter" id="imageCounter"></div>
 </div>
 
-<button class="fab-btn" onclick="openGroupModal()">+</button>
-
-<div style="position:fixed; bottom:140px; right:20px; z-index:998;">
-    <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
-</div>
 <div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
-    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
+    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button onclick="toggleAiAssistant()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
     <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"><div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div></div>
     <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;"><input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;"><button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button></div>
 </div>
@@ -479,28 +472,27 @@ function shareRefLink(){const link=document.getElementById('refLink').textConten
 async function loadReferralStats(){try{const r=await fetch('/api/referral_stats');const d=await r.json();document.getElementById('referralStats').innerHTML='<p style="font-size:14px;font-weight:bold;color:#ff6b6b;">👥 Приглашено: '+d.invited_count+'</p><p style="font-size:12px;color:#888;">💎 Заработано: '+d.total_reward+'</p>'+(d.top_referrers.length>0?'<p style="font-size:10px;">🏆 '+d.top_referrers.slice(0,3).map(r=>'@'+r.username+'('+r.count+')').join(', ')+'</p>':'');document.getElementById('refStatsLink').textContent=d.referral_link;document.getElementById('refLink').textContent=d.referral_link}catch(e){}}
 
 // AI-помощник
+function toggleAiAssistant() {
+    var win = document.getElementById('aiChatWindow');
+    win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+}
 (function(){
-const btn=document.getElementById('aiAssistantBtn'),win=document.getElementById('aiChatWindow'),close=document.getElementById('closeAiChat'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
+const win=document.getElementById('aiChatWindow'),close=document.getElementById('closeAiChat'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
 const chatBrain={greetings:['привет','здравствуй','хай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','как жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],joke:['шутка','анекдот','юмор','рофл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','мои деньги','счёт'],rate:['курс','почём','цена'],exchange:['обменять','обмен','конвертировать'],send_grrr:['отправить','перевести','переслать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возврат','жалоба','мошенник','обман','кинули'],report:['пожаловаться','жалоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
 const replies={greetings:['🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b>'],howareyou:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что у него лапы!'],fact:['🐻 Медведи бегают до 40 км/ч!'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 1 💎 = 1 ₽<br>🐻 1 $GRRR = 0.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_grrr:['🐻 <b>Формат:</b> "Отправить 10 $GRRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bank'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть | Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 <b>Я слушаю!</b>']};
 function detectTopic(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k}}return'fallback'}
 function random(a){return a[Math.floor(Math.random()*a.length)]}
 function addMessage(t,isU,isH=false){const d=document.createElement('div');d.style.cssText=`background:${isU?'#ff6b6b':'#f0f0f0'};color:${isU?'white':'#333'};padding:8px 12px;border-radius:12px;align-self:${isU?'flex-end':'flex-start'};max-width:80%;`;if(isH)d.innerHTML=t;else d.textContent=t;msgDiv.appendChild(d);msgDiv.scrollTop=msgDiv.scrollHeight}
-btn.onclick=()=>win.style.display=(win.style.display==='flex'?'none':'flex');
-close.onclick=()=>win.style.display='none';
 async function sendMessage(){const t=input.value.trim();if(!t)return;addMessage(t,true);input.value='';const topic=detectTopic(t.toLowerCase());const typing=document.createElement('div');typing.style.cssText='background:#f0f0f0;color:#333;padding:8px 12px;border-radius:12px;align-self:flex-start;';typing.innerHTML='🐻 Печатает...';msgDiv.appendChild(typing);msgDiv.scrollTop=msgDiv.scrollHeight;
 if(topic==='balance'){try{const r=await fetch('/api/my_balance');const d=await r.json();typing.remove();addMessage('🐻 <b>Баланс:</b><br>💎 '+d.coins+' 💎<br>🐻 '+d.grrr.toFixed(2)+' $GRRR',false,true)}catch(e){typing.remove();addMessage('🐻 ❌ Ошибка',false,true)}return}
 if(topic==='support'||topic==='report'){typing.remove();if(t.includes('@')){const m=t.match(/@(\w+)/);if(m){try{const r=await fetch('/api/report_user',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'username='+encodeURIComponent(m[1])+'&reason='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}if(t.includes('вернуть')||t.includes('возврат')||t.includes('обман')||t.includes('кинули')||t.includes('мошенник')){addMessage('🐻 <b>Создаю заявку...</b>',false,true);try{const r=await fetch('/api/support/create',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'subject=Возврат&description='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ Заявка #'+d.ticket_id:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}typing.remove();addMessage(random(replies.support||replies.fallback),false,true);return}
 if(topic==='send_grrr'){const am=t.match(/(\d+\.?\d*)/);const um=t.match(/@(\w+)/);if(am&&um){typing.remove();try{const r=await fetch('/api/send_grrr',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amount='+am[1]+'&username='+encodeURIComponent(um[1])});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}
 setTimeout(()=>{typing.remove();const reply=random(replies[topic]||replies.fallback);addMessage(reply,false,true)},500)}
 send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
-function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
-// Финансовое выпадающее меню
 function toggleFinanceDropdown() {
     document.getElementById('financeDropdown').classList.toggle('active');
 }
-// Закрытие при клике вне
 document.addEventListener('click', function(e) {
     var btn = document.querySelector('.finance-header-btn');
     var dropdown = document.getElementById('financeDropdown');
