@@ -2515,7 +2515,17 @@ def forward_message():
             db.session.add(new_msg)
     db.session.commit()
     return jsonify({'success': True, 'target_type': target_type, 'target_id': target_id})
-
+@app.route('/api/sync_grrr', methods=['POST'])
+@login_required
+def sync_grrr():
+    try:
+        amount = float(request.form.get('amount', 0))
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Неверная сумма'})
+    if amount <= 0:
+        return jsonify({'success': False, 'error': 'Сумма должна быть положительной'})
+    new_balance = add_grrr(current_user.id, amount)
+    return jsonify({'success': True, 'new_balance': new_balance})
 @app.route('/toggle_favorite', methods=['POST'])
 @login_required
 def toggle_favorite():
