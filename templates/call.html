@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>📹 Видеозвонок с {{ other_user.username }} | BearGram</title>
+    <title>📞 Звонок с {{ other_user.username }} | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
@@ -14,6 +14,13 @@
         .waiting-text{position:absolute;color:#888;font-size:16px;text-align:center}
         .local-video{position:absolute;bottom:20px;right:20px;width:120px;height:160px;background:#1a1a2e;border-radius:16px;overflow:hidden;border:2px solid #ff6b6b;z-index:10}
         .local-video video{width:100%;height:100%;object-fit:cover}
+        
+        /* Аудио-режим: аватар вместо видео */
+        .audio-only .remote-video{background:linear-gradient(135deg,#ff6b6b,#ff8e8e)}
+        .audio-only .remote-video .avatar-large{font-size:80px;color:white}
+        .audio-only .remote-video .caller-name{color:white;font-size:22px;font-weight:bold;margin-top:20px}
+        .audio-only .local-video{display:none}
+        
         .controls{display:flex;gap:20px;justify-content:center;padding:20px;background:#1e1e2e;flex-shrink:0}
         .control-btn{width:60px;height:60px;border-radius:50%;border:none;font-size:24px;cursor:pointer;transition:transform 0.2s}
         .control-btn:hover{transform:scale(1.05)}
@@ -28,17 +35,28 @@
     </style>
 </head>
 <body>
-<div class="call-container">
+<div class="call-container" id="callContainer">
     <div class="video-container">
         <div class="remote-video">
             <video id="remoteVideo" autoplay playsinline></video>
-            <div class="waiting-text" id="waitingText">⏳ Ожидание подключения...</div>
+            <div id="waitingText" class="waiting-text">⏳ Ожидание подключения...</div>
+            <!-- Аудио-режим: показываем аватар и имя -->
+            <div id="audioModeAvatar" style="display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;">
+                <div class="avatar-large" style="font-size:80px;">
+                    {% if other_user.avatar != 'default.png' %}
+                        <img src="/static/avatars/{{ other_user.avatar }}" style="width:120px;height:120px;border-radius:50%;object-fit:cover">
+                    {% else %}
+                        🐻
+                    {% endif %}
+                </div>
+                <div class="caller-name">{{ other_user.username }}</div>
+            </div>
         </div>
-        <div class="local-video">
+        <div class="local-video" id="localVideoContainer">
             <video id="localVideo" autoplay playsinline muted></video>
         </div>
     </div>
-    <div class="controls">
+    <div class="controls" id="controls">
         <button class="control-btn mic" id="micBtn" onclick="toggleMic()">🎤</button>
         <button class="control-btn camera" id="cameraBtn" onclick="toggleCamera()">📷</button>
         <button class="control-btn hangup" onclick="hangUp()">🔴</button>
@@ -48,10 +66,11 @@
 
 <script>
     const room_id = "{{ room_id }}";
+    const isAudioOnly = new URLSearchParams(window.location.search).get('audio') === '1';
     let localStream = null;
     let peerConnection = null;
     let isMicOn = true;
-    let isCameraOn = true;
+    let isCameraOn = !isAudioOnly;
     
     const configuration = {
         iceServers: [
@@ -61,24 +80,32 @@
         ]
     };
     
-    // Периодический опрос для сигнализации (polling)
     let pollInterval = null;
-    let lastOffer = null;
     
     async function init() {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            document.getElementById('localVideo').srcObject = localStream;
+            // Запрос медиа в зависимости от режима
+            if (isAudioOnly) {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                // Настройка интерфейса под аудио
+                document.getElementById('callContainer').classList.add('audio-only');
+                document.getElementById('audioModeAvatar').style.display = 'flex';
+                document.getElementById('localVideoContainer').style.display = 'none';
+                document.getElementById('cameraBtn').style.display = 'none'; // убираем кнопку камеры
+                document.getElementById('waitingText').innerText = '📞 Звоним...';
+            } else {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = localStream;
+            }
             document.getElementById('waitingText')?.remove();
             startPolling();
         } catch(e) {
-            document.getElementById('status').innerHTML = '❌ Нет доступа к камере/микрофону';
+            document.getElementById('status').innerHTML = '❌ Нет доступа к микрофону/камере';
             console.error(e);
         }
     }
     
     function startPolling() {
-        // Создаём offer если мы инициатор
         checkAndCreateOffer();
         pollInterval = setInterval(() => {
             checkSignaling();
@@ -95,7 +122,6 @@
     }
     
     async function checkSignaling() {
-        // Получаем сигнальные данные с сервера
         const response = await fetch(`/get_signaling/${room_id}`);
         const data = await response.json();
         
@@ -120,7 +146,9 @@
         });
         
         peerConnection.ontrack = (event) => {
-            document.getElementById('remoteVideo').srcObject = event.streams[0];
+            if (!isAudioOnly) {
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            }
             document.getElementById('status').innerHTML = '🟢 В звонке';
             document.getElementById('waitingText')?.remove();
         };
@@ -144,7 +172,9 @@
         });
         
         peerConnection.ontrack = (event) => {
-            document.getElementById('remoteVideo').srcObject = event.streams[0];
+            if (!isAudioOnly) {
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            }
             document.getElementById('status').innerHTML = '🟢 В звонке';
             document.getElementById('waitingText')?.remove();
         };
@@ -195,7 +225,7 @@
     }
     
     function toggleCamera() {
-        if(localStream) {
+        if(localStream && !isAudioOnly) {
             const videoTracks = localStream.getVideoTracks();
             videoTracks.forEach(track => track.enabled = !track.enabled);
             isCameraOn = !isCameraOn;
