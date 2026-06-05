@@ -4497,7 +4497,29 @@ def payment_webhook():
 @login_required
 def shop_coins():
     return render_template('shop_coins.html')
+@app.route('/api/donate_track/<int:track_id>', methods=['POST'])
+@login_required
+def donate_track(track_id):
+    track = MusicTrack.query.get_or_404(track_id)
+    data = request.get_json()
+    amount = int(data.get('amount', 0))
 
+    if amount < 10:
+        return jsonify({'error': 'Минимальная сумма 10 💎'}), 400
+
+    user_coins = get_user_coins(current_user.id)
+    if user_coins.balance < amount:
+        return jsonify({'error': 'Недостаточно 💎'}), 402
+
+    # Списываем с донатера
+    user_coins.balance -= amount
+
+    # Начисляем владельцу трека 80% (комиссия платформы 20%)
+    author_coins = get_user_coins(track.user_id)
+    author_coins.balance += int(amount * 0.8)
+
+    db.session.commit()
+    return jsonify({'success': True, 'new_balance': user_coins.balance})
 # ========== ХРАНИЛИЩЕ ==========
 @app.route('/storage')
 @login_required
