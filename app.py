@@ -1283,7 +1283,19 @@ def send_ice_candidate():
         signaling_store[f"{room_id}_candidates"] = []
     signaling_store[f"{room_id}_candidates"].append(candidate)
     return jsonify({'success': True})
+@app.route('/get_message_statuses/<int:receiver_id>')
+@login_required
+def get_message_statuses(receiver_id):
+    """Возвращает статусы последних 50 сообщений, отправленных текущим пользователем данному собеседнику"""
+    msgs = Message.query.filter(
+        Message.sender_id == current_user.id,
+        Message.receiver_id == receiver_id
+    ).order_by(Message.id.desc()).limit(50).all()
 
+    return jsonify([{
+        'id': m.id,
+        'status': m.status if hasattr(m, 'status') else ('read' if m.is_read else 'delivered')
+    } for m in msgs])
 @app.route('/get_signaling/<string:room_id>')
 @login_required
 def get_signaling(room_id):
