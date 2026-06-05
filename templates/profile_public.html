@@ -129,7 +129,7 @@
                         </div>
                         <div class="music-actions">
                             <a href="{{ track.file_path }}" download class="btn-music btn-download">⬇️</a>
-                            <a href="https://yoomoney.ru/quickpay/button-widget?receiver=4100119522166446&sum=100&label=music_{{ track.id }}" target="_blank" class="btn-music btn-donate-music">💎 Донат</a>
+                            <button class="btn-music btn-donate-music" onclick="donateTrack({{ track.id }})">💎 Донат</button>
                             <button class="btn-music btn-add-mine" onclick="addToMyMusic('{{ track.file_path }}', '{{ track.title }}')">➕</button>
                         </div>
                     </div>
@@ -213,6 +213,28 @@ async function addToMyMusic(url, title) {
 
 function countListen(trackId) {
     fetch('/api/music/listen/' + trackId, {method:'POST'});
+}
+
+// ========== ДОНАТ ЗА ТРЕК (кристаллайзеры, комиссия 20%) ==========
+async function donateTrack(trackId) {
+    const amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
+    if (!amount || isNaN(amount) || amount < 10) return;
+
+    try {
+        const resp = await fetch('/api/donate_track/' + trackId, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({amount: parseInt(amount)})
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert(`✅ Донат отправлен! Ваш новый баланс: ${data.new_balance} 💎`);
+        } else {
+            alert('❌ ' + (data.error || 'Ошибка'));
+        }
+    } catch (e) {
+        alert('Ошибка сети');
+    }
 }
 
 // ========== Лимит видимых треков ==========
