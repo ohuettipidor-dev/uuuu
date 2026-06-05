@@ -478,7 +478,7 @@ async function loadFeed() {
                     <span class="feed-action" onclick="likeFeedPost(${p.id}, this)">❤️ <span>${p.likes}</span></span>
                     <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
                     <span class="feed-action">👁️ ${p.views}</span>
-                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannelRub(${p.channel_id}, '${p.channel_name}')">💎 Донат (₽)</a>
+                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel(${p.channel_id})">💎 Донат</a>
                 </div>
             </div>`;
         });
@@ -498,26 +498,22 @@ async function likeFeedPost(postId, el) {
     }
 }
 
-// === НОВАЯ ФУНКЦИЯ ДОНАТА В РУБЛЯХ ===
-async function donateToChannelRub(channelId, channelName) {
-    const amount = prompt('Введите сумму доната в рублях (минимум 10₽):', '100');
+// === ДОНАТ В КРИСТАЛЛАЙЗЕРАХ (как в каналах) ===
+async function donateToChannel(channelId) {
+    const amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
     if (!amount || isNaN(amount) || amount < 10) return;
 
     try {
-        const resp = await fetch('/api/create_channel_donate_order', {
+        const resp = await fetch('/channel/donate/' + channelId, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                channel_id: channelId,
-                amount_rub: parseFloat(amount),
-                channel_name: channelName
-            })
+            body: JSON.stringify({amount: parseInt(amount)})
         });
         const data = await resp.json();
         if (data.success) {
-            window.open(data.payment_url, '_blank');
+            alert(`✅ Донат отправлен! Ваш новый баланс: ${data.new_balance} 💎`);
         } else {
-            alert('❌ ' + (data.error || 'Ошибка создания платежа'));
+            alert('❌ ' + (data.error || 'Ошибка'));
         }
     } catch (e) {
         alert('Ошибка сети');
