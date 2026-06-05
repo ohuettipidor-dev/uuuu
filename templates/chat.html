@@ -185,12 +185,40 @@
                 <div class="panel-content" style="padding:12px 12px 90px 12px; display:flex; flex-direction:column; gap:8px;">
                     {% if convs|length == 0 %}
                     <div class="welcome-block" id="welcomeBlock">
-                        <!-- приветственный блок без изменений -->
+                        <div class="welcome-close"><button onclick="document.getElementById('welcomeBlock').style.display='none'">✖</button></div>
+                        <div class="welcome-devil">🐻 <b>BearGram</b>: Общайся, люби, зарабатывай!<br>✅ Никаких VPN и рекламы!</div>
+                        <div class="welcome-invite">
+                            <p>📱 <b>Пригласи друзей</b> в BearGram!</p>
+                            <p style="font-size:11px;">Синхронизируй контакты телефона, чтобы найти знакомых</p>
+                            <button class="invite-btn" onclick="openInviteModal()">📇 Разрешить доступ к контактам</button>
+                            <p style="font-size:10px;color:#888;">Или найди их через 🔍 Поиск</p>
+                        </div>
+                        <p style="text-align:center;color:#888;font-size:12px;margin-bottom:12px;">Что ты можешь делать прямо сейчас:</p>
+                        <div class="welcome-grid">
+                            <a href="#" onclick="openInviteModal();return false;" class="welcome-card"><div class="card-icon">✍️</div><div class="card-title">Написать другу</div><div class="card-desc">Пригласи и начни общение</div></a>
+                            <a href="/dating" class="welcome-card"><div class="card-icon">💕</div><div class="card-title">Найти любовь</div><div class="card-desc">Дейтинг и знакомства</div></a>
+                            <a href="/bearpay?tab=bank" class="welcome-card"><div class="card-icon">🏦</div><div class="card-title">Зарабатывать</div><div class="card-desc">Банк, вклады, обменник</div></a>
+                            <a href="/grrr" class="welcome-card"><div class="card-icon">🐻</div><div class="card-title">Купить $GRRR</div><div class="card-desc">Крипта за секунду</div></a>
+                            <a href="/voice_channels" class="welcome-card"><div class="card-icon">🎤</div><div class="card-title">Стримы</div><div class="card-desc">Голосовые каналы</div></a>
+                            <a href="/golden" class="welcome-card"><div class="card-icon">🐻🎬</div><div class="card-title">BearFlex</div><div class="card-desc">Видео как в TikTok</div></a>
+                            <a href="/shop" class="welcome-card"><div class="card-icon">🛍️</div><div class="card-title">Продать товар</div><div class="card-desc">Цифровые и реальные</div></a>
+                            <a href="/channels" class="welcome-card"><div class="card-icon">📢</div><div class="card-title">Каналы</div><div class="card-desc">Создать свой блог</div></a>
+                        </div>
+                        <button class="welcome-btn" onclick="document.getElementById('searchToggleBtn').click()">✍️ Написать</button>
                     </div>
                     {% else %}
                     {% for c in convs %}
                     <div class="chat-item">
-                        <!-- элементы чата без изменений -->
+                        <div class="chat-avatar" onclick="event.stopPropagation(); {% if c.type == 'private' %}showChatTypeModal({{ c.id }}, '{{ c.name }}'){% elif c.type == 'secret' %}location.href='/secret_chat/{{ c.id }}'{% else %}location.href='/group/{{ c.id }}/info'{% endif %}">
+                            {% if c.type == 'private' %}{% if c.avatar != 'default.png' %}<img src="/static/avatars/{{ c.avatar }}">{% else %}{{ c.name[0].upper() }}{% endif %}
+                            {% elif c.type == 'secret' %}🔒
+                            {% else %}{% if c.avatar != 'group_default.png' %}<img src="/static/avatars/{{ c.avatar }}">{% else %}👥{% endif %}{% endif %}
+                        </div>
+                        <div class="chat-info" onclick="openChat('{{ c.type }}', {{ c.id }})">
+                            <div class="chat-name">{% if c.type == 'secret' %}🔒 {% endif %}{{ c.name }}{% if c.type == 'private' %}<span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">{% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}</span>{% elif c.type == 'secret' %}<span class="online" style="color:#4cd964">🔒 шифруется</span>{% else %}<span class="online">👥 группа</span>{% endif %}</div>
+                            <div class="chat-last">{% if c.last and c.last.content %}{{ c.last.content[:40]|striptags|safe }}{% else %}💬 Нет сообщений{% endif %}</div>
+                        </div>
+                        <div class="chat-meta" onclick="openChat('{{ c.type }}', {{ c.id }})"><div class="chat-time" {% if c.last and c.last.timestamp %}data-utc="{{ c.last.timestamp.isoformat() }}Z"{% endif %}>{% if c.last and c.last.timestamp %}{{ c.last.timestamp.strftime('%H:%M') }}{% endif %}</div>{% if c.unread > 0 %}<div class="badge">{{ c.unread }}</div>{% endif %}</div>
                     </div>
                     {% endfor %}
                     {% endif %}
@@ -224,7 +252,57 @@
 
 <button class="fab-btn" onclick="openGroupModal()">+</button>
 
-<!-- AI-помощник и модальные окна без изменений -->
+<div style="position:fixed; bottom:140px; right:20px; z-index:998;">
+    <button id="aiAssistantBtn" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:56px; height:56px; font-size:28px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">🐻❓</button>
+</div>
+<div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
+    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button id="closeAiChat" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
+    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"><div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div></div>
+    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;"><input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;"><button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button></div>
+</div>
+
+<div class="modal" id="chatTypeModal"><div class="modal-content"><h3>📱 Выберите действие</h3><div class="modal-buttons"><button class="regular-chat" id="regularChatBtn">💬 Обычный чат</button><button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button><button class="remove-contact" id="removeContactBtn" style="display:none;">🗑️ Удалить из контактов</button><button class="cancel" onclick="closeChatTypeModal()">Отмена</button></div></div></div>
+<div class="group-modal" id="groupModal"><div class="group-modal-content"><h3>✨ Новая группа</h3><input type="text" id="groupName" placeholder="Название группы"><div class="group-modal-buttons"><button onclick="createGroup()">Создать</button><button onclick="closeGroupModal()">Отмена</button></div></div></div>
+
+<div class="modal" id="inviteModal">
+    <div class="modal-content" style="width:340px;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="color:#ff6b6b;margin:0;">📱 Пригласить друзей</h3>
+            <button onclick="closeInviteModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;">✖</button>
+        </div>
+        <div class="invite-tabs" style="display:flex;gap:5px;margin-bottom:15px;">
+            <button class="invite-tab active" onclick="switchInviteTab('friends')" style="flex:1;padding:8px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:bold;font-size:11px;cursor:pointer;">👥 Друзья</button>
+            <button class="invite-tab" onclick="switchInviteTab('qr')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">📷 QR-код</button>
+            <button class="invite-tab" onclick="switchInviteTab('link')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">🔗 Ссылка</button>
+            <button class="invite-tab" onclick="switchInviteTab('referral')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">💎 Бонусы</button>
+        </div>
+        <div id="inviteFriends" class="invite-content">
+            <button onclick="inviteFromNativeContacts()" style="width:100%; background:#ffd700; color:#000; border:none; padding:12px; border-radius:25px; font-weight:bold; font-size:14px; cursor:pointer; margin-bottom:12px;">📇 Выбрать из контактов телефона</button>
+            <div style="text-align:center; color:#888; font-size:11px; margin-bottom:12px;">— или —</div>
+            <p style="color:#888;font-size:11px;text-align:center;margin-bottom:8px;">Введи номера через запятую или загрузи файл контактов</p>
+            <input type="text" id="phoneNumbersInput" placeholder="+79001234567, +79007654321" style="width:100%;padding:10px;border-radius:20px;border:1px solid #ddd;margin-bottom:8px;text-align:center;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button onclick="inviteSelectedFriends('manual')" style="flex:1;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Пригласить</button>
+                <label for="contactsFileInput" style="flex:1;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;text-align:center;">📂 Загрузить .vcf/.csv</label>
+                <input type="file" id="contactsFileInput" accept=".vcf,.csv" style="display:none" onchange="parseContactsFile(this)">
+            </div>
+            <p id="contactsInstructions" style="color:#aaa;font-size:10px;text-align:center;margin-bottom:8px;">
+                📱 <b>Android:</b> Контакты → Экспорт → .vcf<br>
+                📱 <b>iPhone:</b> iCloud → Экспорт vCard<br>
+                💻 <b>Google:</b> Google Контакты → Экспорт → vCard
+            </p>
+            <div id="contactsFileList" style="max-height:200px;overflow-y:auto;margin-bottom:8px;display:none;">
+                <div id="contactsFileItems"></div>
+                <div style="text-align:center;margin-top:8px;">
+                    <button id="inviteFileContactsBtn" onclick="inviteSelectedFriends('file')" style="background:#ffd700;color:#000;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;display:none;">📤 Пригласить выбранных</button>
+                </div>
+            </div>
+        </div>
+        <div id="inviteQR" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Покажи этот код другу!</p><div id="qrCode" style="width:180px;height:180px;margin:0 auto;background:white;border-radius:15px;display:flex;align-items:center;justify-content:center;"></div></div></div>
+        <div id="inviteLink" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Отправь ссылку другу!</p><div style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:12px;color:#ff6b6b;" id="refLink">https://beargram.up.railway.app/register</div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button><button onclick="shareRefLink()" style="width:100%;background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Поделиться</button></div></div>
+        <div id="inviteReferral" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><div style="font-size:48px;margin-bottom:10px;">💎</div><p style="color:#888;font-size:12px;">Пригласи друга — получи <b>+25 💎</b>!<br>Друг получит <b>+10 💎</b> на старт.</p><div id="referralStats" style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;"><p style="font-size:12px;color:#ff6b6b;">Загрузка...</p></div><div style="background:rgba(255,215,0,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:11px;color:#ff8c00;" id="refStatsLink"></div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button></div></div>
+    </div>
+</div>
 
 <script>
 (function() {
