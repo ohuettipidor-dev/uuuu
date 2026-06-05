@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
-        /* Все стили без изменений (те же, что в исходном файле) */
+        /* Все стили без изменений */
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{
             background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);
@@ -612,6 +612,32 @@ function cancelMultiFiles() {
 function checkNewMessages() {
     fetch(`/get_new_messages/${lastMsgId}/${receiver_id}`).then(r=>r.json()).then(msgs => { if(msgs && msgs.length) msgs.forEach(m => addNewMessage(m)); });
 }
+
+// Обновление статусов отправленных сообщений (галочки)
+function updateMessageStatuses() {
+    fetch(`/get_message_statuses/${receiver_id}`).then(r => r.json()).then(data => {
+        data.forEach(item => {
+            const msgDiv = document.querySelector(`.message[data-id="${item.id}"]`);
+            if (msgDiv) {
+                const timeDiv = msgDiv.querySelector('.time');
+                if (timeDiv) {
+                    // Удаляем старый статус
+                    const oldStatus = timeDiv.querySelector('.read-status, .delivered-status, .sent-status');
+                    if (oldStatus) oldStatus.remove();
+                    
+                    // Добавляем новый
+                    let statusHtml = '';
+                    if (item.status === 'read') statusHtml = '<span class="read-status">✓✓</span>';
+                    else if (item.status === 'delivered') statusHtml = '<span class="delivered-status">✓✓</span>';
+                    else statusHtml = '<span class="sent-status">✓</span>';
+                    
+                    timeDiv.insertAdjacentHTML('beforeend', statusHtml);
+                }
+            }
+        });
+    });
+}
+setInterval(updateMessageStatuses, 3000); // проверяем каждые 3 секунды
 
 function editMessage(id, type) { let newText = prompt('Новый текст:'); if(newText && newText.trim()) { fetch('/edit_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, new_content: newText, type: type})}).then(() => setTimeout(checkNewMessages, 300)); } }
 function deleteMessage(id, type, all) { if(confirm('Удалить сообщение?')) { fetch('/delete_message', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_id: id, type: type, delete_for_all: all})}).then(() => { document.querySelector(`.message[data-id="${id}"]`)?.remove(); if(window.pinnedMsgId == id) loadPinnedMessage(); }); } }
