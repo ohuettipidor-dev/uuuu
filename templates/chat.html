@@ -170,6 +170,14 @@
         .bearflex-nav{color:#000;background:linear-gradient(135deg, #ffd700, #ffaa00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
         .bearflex-nav .nav-icon{font-size:28px;text-shadow:0 2px 8px rgba(255,170,0,0.3)}
 
+        /* AI-помощник по центру */
+        #aiChatWindow{
+            position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+            width:350px;max-width:90vw;height:450px;max-height:80vh;
+            background:white;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.15);
+            display:none;flex-direction:column;z-index:1000;
+        }
+
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
         .modal-content{background:white;border-radius:24px;padding:18px;width:260px;text-align:center}
@@ -206,6 +214,7 @@
 
         @media (max-width:480px){
             .icon-btn{width:24px;height:24px;font-size:12px}
+            #aiChatWindow{width:90vw;height:60vh}
         }
     </style>
 </head>
@@ -263,7 +272,7 @@
                             <a href="/bearpay?tab=bank" class="welcome-card"><div class="card-icon">🏦</div><div class="card-title">Зарабатывать</div><div class="card-desc">Банк, вклады, обменник</div></a>
                             <a href="/grrr" class="welcome-card"><div class="card-icon">🐻</div><div class="card-title">Купить $GRRR</div><div class="card-desc">Крипта за секунду</div></a>
                             <a href="/voice_channels" class="welcome-card"><div class="card-icon">🎤</div><div class="card-title">Стримы</div><div class="card-desc">Голосовые каналы</div></a>
-                            <a href="/golden" class="welcome-card"><div class="card-icon">🐻🎬</div><div class="card-title">BearFlex</div><div class="card-desc">Видео как в TikTok</div></a>
+                            <a href="/golden" class="welcome-card"><div class="card-icon">🎬</div><div class="card-title">BearFlex</div><div class="card-desc">Видео как в TikTok</div></a>
                             <a href="/shop" class="welcome-card"><div class="card-icon">🛍️</div><div class="card-title">Продать товар</div><div class="card-desc">Цифровые и реальные</div></a>
                             <a href="/channels" class="welcome-card"><div class="card-icon">📢</div><div class="card-title">Каналы</div><div class="card-desc">Создать свой блог</div></a>
                         </div>
@@ -301,7 +310,7 @@
         <a href="/games" class="nav-item"><span class="nav-icon">🎮</span><span>Игры</span></a>
         <a href="/voice_channels" class="nav-item"><span class="nav-icon">🎤</span><span>Голосовые</span></a>
         <a href="/channels" class="nav-item"><span class="nav-icon">📢</span><span>Каналы</span></a>
-        <a href="/golden" class="nav-item bearlflex-nav"><span class="nav-icon">🐻🎬</span><span>BearFlex</span></a>
+        <a href="/golden" class="nav-item bearlflex-nav"><span class="nav-icon">🎬</span><span>BearFlex</span></a>
     </div>
 </div>
 
@@ -314,7 +323,8 @@
     <div class="image-counter" id="imageCounter"></div>
 </div>
 
-<div id="aiChatWindow" style="position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:white; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:1000;">
+<!-- AI-помощник (по центру) -->
+<div id="aiChatWindow">
     <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button onclick="toggleAiAssistant()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
     <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"><div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div></div>
     <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;"><input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;"><button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button></div>
@@ -477,7 +487,7 @@ function toggleAiAssistant() {
     win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
 }
 (function(){
-const win=document.getElementById('aiChatWindow'),close=document.getElementById('closeAiChat'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
+const win=document.getElementById('aiChatWindow'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
 const chatBrain={greetings:['привет','здравствуй','хай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','как жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],joke:['шутка','анекдот','юмор','рофл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','мои деньги','счёт'],rate:['курс','почём','цена'],exchange:['обменять','обмен','конвертировать'],send_grrr:['отправить','перевести','переслать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возврат','жалоба','мошенник','обман','кинули'],report:['пожаловаться','жалоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
 const replies={greetings:['🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b>'],howareyou:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что у него лапы!'],fact:['🐻 Медведи бегают до 40 км/ч!'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 1 💎 = 1 ₽<br>🐻 1 $GRRR = 0.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_grrr:['🐻 <b>Формат:</b> "Отправить 10 $GRRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bank'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть | Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 <b>Я слушаю!</b>']};
 function detectTopic(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k}}return'fallback'}
@@ -563,7 +573,6 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
-        // Обработка тапов: один тап - лайк, двойной - переход в канал
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
                 if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file')) {
