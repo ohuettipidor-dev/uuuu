@@ -449,103 +449,98 @@ let feedLastTapTime = 0;
 async function loadFeed() {
     if (feedLoaded) return;
     feedLoaded = true;
-    const container = document.getElementById('feedContainer');
+    var container = document.getElementById('feedContainer');
     container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">🐻 Загружаем обсуждения...</div>';
     try {
-        const resp = await fetch('/api/feed');
+        var resp = await fetch('/api/feed');
         if (!resp.ok) throw new Error('Ошибка сети');
-        const data = await resp.json();
+        var data = await resp.json();
         if (data.posts.length === 0) {
             container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">📢 Пока нет обсуждений. Подпишитесь на каналы!</div>';
             return;
         }
-        let html = '';
-        data.posts.forEach(p => {
-            let images = [], videos = [], audios = [], files = [];
+        var html = '';
+        data.posts.forEach(function(p) {
+            var images = [], videos = [], audios = [], files = [];
             if (p.attachments) {
-                p.attachments.forEach(att => {
+                p.attachments.forEach(function(att) {
                     if (att.type === 'image') images.push(att);
                     else if (att.type === 'video') videos.push(att);
                     else if (att.type === 'audio') audios.push(att);
                     else files.push(att);
                 });
             }
-            let imagesHtml = '';
+            var imagesHtml = '';
             if (images.length > 0) {
                 imagesHtml = '<div class="feed-images-grid">';
-                images.forEach(img => { imagesHtml += `<img src="${img.path}" loading="lazy">`; });
+                images.forEach(function(img) { imagesHtml += '<img src="' + img.path + '" loading="lazy">'; });
                 imagesHtml += '</div>';
             }
-            let videosHtml = ''; videos.forEach(v => { videosHtml += `<video class="feed-video" src="${v.path}" controls></video>`; });
-            let audiosHtml = ''; audios.forEach(a => { audiosHtml += `<audio class="feed-audio" src="${a.path}" controls></audio>`; });
-            let filesHtml = ''; files.forEach(f => { filesHtml += `<a class="feed-file" href="${f.path}" target="_blank">📎 <span class="filename">${f.name || 'Файл'}</span></a>`; });
+            var videosHtml = ''; videos.forEach(function(v) { videosHtml += '<video class="feed-video" src="' + v.path + '" controls></video>'; });
+            var audiosHtml = ''; audios.forEach(function(a) { audiosHtml += '<audio class="feed-audio" src="' + a.path + '" controls></audio>'; });
+            var filesHtml = ''; files.forEach(function(f) { filesHtml += '<a class="feed-file" href="' + f.path + '" target="_blank">📎 <span class="filename">' + (f.name || 'Файл') + '</span></a>'; });
 
-            html += `
-            <div class="feed-item" onclick="window.location.href='/channel/${p.channel_id}'" style="cursor:pointer;" data-post-id="${p.id}">
-                <a href="/channel/${p.channel_id}" class="feed-header" onclick="event.stopPropagation();">
-                    <div class="feed-avatar">${p.channel_avatar !== 'channel_default.png' ? `<img src="/static/avatars/${p.channel_avatar}">` : '📢'}</div>
-                    <span class="feed-channel-name">${p.channel_name}</span>
-                    <span class="feed-date">${p.timestamp}</span>
-                </a>
-                <div class="feed-content">${p.content}</div>
-                ${imagesHtml}${videosHtml}${audiosHtml}${filesHtml}
-                <div class="feed-actions" onclick="event.stopPropagation();">
-                    <span class="feed-action" onclick="likeFeedPost(${p.id}, this)">❤️ <span>${p.likes}</span></span>
-                    <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
-                    <span class="feed-action">👁️ ${p.views}</span>
-                    <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel(${p.channel_id})">💎 Донат</a>
-                    <span class="feed-action" onclick="sharePost(${p.id}, '${p.channel_name}', '${p.content.substring(0, 80)}')">🔗</span>
-                </div>
-            </div>`;
+            html += '<div class="feed-item" onclick="window.location.href=\'/channel/' + p.channel_id + '\'" style="cursor:pointer;" data-post-id="' + p.id + '">';
+            html += '<a href="/channel/' + p.channel_id + '" class="feed-header" onclick="event.stopPropagation();">';
+            html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
+            html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
+            html += '<span class="feed-date">' + p.timestamp + '</span>';
+            html += '</a>';
+            html += '<div class="feed-content">' + p.content + '</div>';
+            html += imagesHtml + videosHtml + audiosHtml + filesHtml;
+            html += '<div class="feed-actions" onclick="event.stopPropagation();">';
+            html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
+            html += '<span class="feed-action" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">💬 ' + p.comments + '</span>';
+            html += '<span class="feed-action">👁️ ' + p.views + '</span>';
+            html += '<a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel(' + p.channel_id + ')">💎 Донат</a>';
+            html += '<span class="feed-action" onclick="sharePost(' + p.id + ', \'' + p.channel_name.replace(/'/g, "\\'") + '\', \'' + (p.content ? p.content.substring(0, 80).replace(/'/g, "\\'") : '') + '\')">🔗</span>';
+            html += '</div>';
+            html += '</div>';
         });
         container.innerHTML = html;
 
-        // Добавляем обработчики двойного тапа для лайка
-        document.querySelectorAll('.feed-item').forEach(item => {
+        // Двойной тап для лайка
+        document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
-                // Игнорируем клики по кнопкам действий
                 if (e.target.closest('.feed-actions') || e.target.closest('.feed-header') || e.target.closest('a') || e.target.closest('img') || e.target.closest('video')) {
                     return;
                 }
-                const now = Date.now();
+                var now = Date.now();
                 if (now - feedLastTapTime < 300) {
-                    // Двойной тап
                     feedLastTapTime = 0;
-                    const postId = this.dataset.postId;
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
+                    var postId = this.dataset.postId;
+                    var rect = this.getBoundingClientRect();
+                    var x = e.clientX - rect.left;
+                    var y = e.clientY - rect.top;
 
-                    // Анимация сердечка
-                    const heart = document.createElement('div');
+                    var heart = document.createElement('div');
                     heart.className = 'like-heart-animation';
                     heart.innerHTML = '❤️';
                     heart.style.left = x + 'px';
                     heart.style.top = y + 'px';
                     heart.style.fontSize = '60px';
                     this.appendChild(heart);
-                    setTimeout(() => heart.remove(), 1000);
+                    setTimeout(function() { heart.remove(); }, 1000);
 
-                    // Ставим лайк
-                    likeFeedPost(postId, this.querySelector(`.feed-action[onclick*="likeFeedPost"]`));
+                    likeFeedPost(postId, this.querySelector('.feed-action[onclick*="likeFeedPost"]'));
                 } else {
                     feedLastTapTime = now;
                 }
             });
         });
     } catch (e) {
-        container.innerHTML = `<div style="text-align:center; color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>`;
+        container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>';
         feedLoaded = false;
     }
 }
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
     if (!el) {
-        el = document.querySelector(`.feed-action[onclick*="likeFeedPost(${postId}"]`);
+        el = document.querySelector('.feed-action[onclick*="likeFeedPost(' + postId + '"]');
     }
     if (!el) return;
-    const resp = await fetch('/api/feed/like/' + postId, {method:'POST'});
-    const data = await resp.json();
+    var resp = await fetch('/api/feed/like/' + postId, {method:'POST'});
+    var data = await resp.json();
     if (data.success) {
         el.classList.toggle('liked', data.liked);
         el.querySelector('span').textContent = data.likes;
@@ -554,38 +549,36 @@ async function likeFeedPost(postId, el) {
 
 // Поделиться постом
 function sharePost(postId, channelName, preview) {
-    // Открываем страницу пересылки сообщений (используем существующий функционал)
-    const link = `https://beargram.up.railway.app/channel/${postId}`;
-    const msg = `📢 ${channelName}: ${preview.substring(0, 80)}...\n${link}`;
+    var link = 'https://beargram.up.railway.app/channel/' + postId;
+    var msg = '📢 ' + channelName + ': ' + preview.substring(0, 80) + '...\n' + link;
     if (navigator.share) {
         navigator.share({
             title: channelName,
             text: msg,
             url: link
-        }).catch(() => {});
+        }).catch(function() {});
     } else {
-        // Копируем ссылку и показываем подсказку
-        navigator.clipboard.writeText(msg).then(() => {
+        navigator.clipboard.writeText(msg).then(function() {
             alert('📋 Ссылка скопирована! Можешь отправить её в любой чат.');
-        }).catch(() => {
+        }).catch(function() {
             prompt('Скопируй ссылку:', msg);
         });
     }
 }
 
 async function donateToChannel(channelId) {
-    const amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
+    var amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
     if (!amount || isNaN(amount) || amount < 10) return;
 
     try {
-        const resp = await fetch('/channel/donate/' + channelId, {
+        var resp = await fetch('/channel/donate/' + channelId, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({amount: parseInt(amount)})
         });
-        const data = await resp.json();
+        var data = await resp.json();
         if (data.success) {
-            alert(`✅ Донат отправлен! Ваш новый баланс: ${data.new_balance} 💎`);
+            alert('✅ Донат отправлен! Ваш новый баланс: ' + data.new_balance + ' 💎');
         } else {
             alert('❌ ' + (data.error || 'Ошибка'));
         }
