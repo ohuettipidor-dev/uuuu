@@ -480,13 +480,13 @@ async function loadFeed() {
             var audiosHtml = ''; audios.forEach(function(a) { audiosHtml += '<audio class="feed-audio" src="' + a.path + '" controls></audio>'; });
             var filesHtml = ''; files.forEach(function(f) { filesHtml += '<a class="feed-file" href="' + f.path + '" target="_blank">📎 <span class="filename">' + (f.name || 'Файл') + '</span></a>'; });
 
-            html += '<div class="feed-item" onclick="window.location.href=\'/channel/' + p.channel_id + '\'" style="cursor:pointer;" data-post-id="' + p.id + '">';
+            html += '<div class="feed-item" data-post-id="' + p.id + '">';
             html += '<a href="/channel/' + p.channel_id + '" class="feed-header" onclick="event.stopPropagation();">';
             html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
             html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
             html += '<span class="feed-date">' + p.timestamp + '</span>';
             html += '</a>';
-            html += '<div class="feed-content">' + p.content + '</div>';
+            html += '<div class="feed-content" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">' + p.content + '</div>';
             html += imagesHtml + videosHtml + audiosHtml + filesHtml;
             html += '<div class="feed-actions" onclick="event.stopPropagation();">';
             html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
@@ -502,6 +502,7 @@ async function loadFeed() {
         // Двойной тап для лайка
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
+                // Игнорируем клики по кнопкам действий, заголовку, ссылкам, изображениям и видео
                 if (e.target.closest('.feed-actions') || e.target.closest('.feed-header') || e.target.closest('a') || e.target.closest('img') || e.target.closest('video')) {
                     return;
                 }
