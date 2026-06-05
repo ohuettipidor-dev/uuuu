@@ -190,7 +190,6 @@
             .call-btn{padding:4px 8px;font-size:11px}
             .user-name{font-size:12px}
         }
-        /* Жирные зелёные галочки для прочитанных */
         .read-status{color:#2ecc71;font-weight:bold}
         .delivered-status{color:#95a5a6}
         .sent-status{color:#bdc3c7}
@@ -218,6 +217,7 @@
             </div>
         </div>
         <button class="call-btn" onclick="startVideoCall()">📹</button>
+        <button class="call-btn" onclick="startAudioCall()" style="background:#4cd964;color:white;">📞</button>
         <a href="/profile" class="profile-btn">🧸</a>
     </div>
     
@@ -426,6 +426,12 @@ function startVideoCall() {
     fetch('/start_call/' + receiver_id, {method: 'POST'})
         .then(r => r.json())
         .then(data => { window.open('/call/' + data.room_id, '_blank', 'width=800,height=600'); });
+}
+
+function startAudioCall() {
+    fetch('/start_call/' + receiver_id, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => { window.open('/call/' + data.room_id + '?audio=1', '_blank', 'width=400,height=600'); });
 }
 
 msgInput.addEventListener('input', function() {
