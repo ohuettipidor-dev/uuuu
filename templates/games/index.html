@@ -103,7 +103,34 @@
 </div>
 
 <script>
-const balance=localStorage.getItem('grrr_balance')||'0';document.getElementById('totalBalance').textContent=balance;
+// Отображение баланса из localStorage (и синхронизация с сервером)
+const balanceEl = document.getElementById('totalBalance');
+balanceEl.textContent = localStorage.getItem('grrr_balance') || '0';
+
+// Синхронизация GRRR с сервером
+(async function syncGameGRRR() {
+    const localBalance = parseInt(localStorage.getItem('grrr_balance') || '0');
+    const lastSynced = parseInt(localStorage.getItem('grrr_last_synced') || '0');
+    const toSend = localBalance - lastSynced;
+    if (toSend <= 0) return;
+
+    try {
+        const resp = await fetch('/api/sync_grrr', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'amount=' + toSend
+        });
+        const data = await resp.json();
+        if (data.success) {
+            localStorage.setItem('grrr_last_synced', localBalance);
+            console.log('GRRR синхронизированы, новый общий баланс:', data.new_balance);
+        }
+    } catch (e) {
+        console.log('Синхронизация GRRR отложена (нет сети)');
+    }
+})();
+
+// Бусты (без изменений)
 let currentBoost=localStorage.getItem('game_boost')||null,boostEndTime=localStorage.getItem('game_boost_end')||null;
 function updateBoostUI(){
     const now=Date.now();
