@@ -110,7 +110,7 @@
             flex-direction:column;
         }
         .image-viewer.active{display:flex}
-        .image-viewer img{max-width:95%;max-height:80vh;border-radius:12px;object-fit:contain}
+        .image-viewer img{max-width:100%;max-height:100vh;object-fit:contain;cursor:pointer}
         .image-viewer .close-viewer{
             position:absolute;top:20px;right:20px;color:white;font-size:32px;
             cursor:pointer;z-index:10;background:rgba(0,0,0,0.5);
@@ -119,15 +119,16 @@
         }
         .image-viewer .nav-btn{
             position:absolute;top:50%;transform:translateY(-50%);
-            background:rgba(255,255,255,0.2);color:white;
-            border:none;font-size:40px;padding:16px 12px;cursor:pointer;
-            z-index:10;border-radius:12px;
+            background:rgba(255,255,255,0.15);color:white;
+            border:none;font-size:48px;padding:20px 8px;cursor:pointer;
+            z-index:10;border-radius:8px;transition:background 0.2s;
         }
+        .image-viewer .nav-btn:hover{background:rgba(255,255,255,0.3)}
         .image-viewer .prev-btn{left:10px}
         .image-viewer .next-btn{right:10px}
         .image-viewer .image-counter{
-            position:absolute;bottom:20px;color:white;font-size:14px;
-            background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:20px;
+            position:absolute;bottom:30px;color:white;font-size:14px;
+            background:rgba(0,0,0,0.5);padding:8px 20px;border-radius:20px;
         }
 
         .bottom-nav{
@@ -295,7 +296,7 @@
 <div class="image-viewer" id="imageViewer">
     <div class="close-viewer" onclick="closeImageViewer()">✖</div>
     <button class="nav-btn prev-btn" onclick="navigateImage(-1)">‹</button>
-    <img id="viewerImage" src="" alt="">
+    <img id="viewerImage" src="" alt="" onclick="event.stopPropagation()">
     <button class="nav-btn next-btn" onclick="navigateImage(1)">›</button>
     <div class="image-counter" id="imageCounter"></div>
 </div>
@@ -514,7 +515,6 @@ async function loadFeed() {
             if (images.length > 0) {
                 imagesHtml = '<div class="feed-images-grid">';
                 images.forEach(function(img, idx) {
-                    var imgId = 'feed-img-' + p.id + '-' + idx;
                     allFeedImages.push({postId: p.id, index: idx, src: img.path});
                     imagesHtml += '<img src="' + img.path + '" loading="lazy" onclick="openImageViewer(\'' + img.path + '\', ' + p.id + ', ' + idx + ')">';
                 });
@@ -590,7 +590,7 @@ async function loadFeed() {
     }
 }
 
-// Полноэкранный просмотрщик изображений
+// Полноэкранный просмотрщик изображений (увеличенные фото)
 function openImageViewer(src, postId, imgIndex) {
     // Собираем все изображения из этого поста
     var postImages = [];
