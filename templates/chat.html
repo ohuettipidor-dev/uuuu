@@ -81,7 +81,7 @@
         .online{color:#4cd964;font-size:9px;margin-left:4px}
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
-        .feed-item{background:white;border-radius:0;padding:16px;margin-bottom:2px;box-shadow:none;border:none}
+        .feed-item{background:white;border-radius:0;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
         .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;text-decoration:none;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
@@ -150,6 +150,19 @@
         .group-modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer;font-size:13px}
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
+
+        /* Анимация сердечка при двойном тапе */
+        .like-heart-animation{
+            position:absolute;z-index:15;pointer-events:none;
+            animation:doubleTapLike 1s ease-out forwards;
+        }
+        @keyframes doubleTapLike{
+            0%{transform:scale(0) rotate(-15deg);opacity:0}
+            15%{transform:scale(1.3) rotate(0deg);opacity:1}
+            30%{transform:scale(1) rotate(0deg);opacity:1}
+            80%{transform:scale(1) rotate(0deg);opacity:0.8}
+            100%{transform:scale(1.5) rotate(10deg);opacity:0}
+        }
 
         @media (max-width:480px){
             .icon-btn{width:28px;height:28px;font-size:12px}
@@ -431,6 +444,8 @@ send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter
 function saveFcmToken(token) { fetch('/api/fcm/subscribe', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token: token}) }); }
 
 let feedLoaded = false;
+let feedLastTapTime = 0;
+
 async function loadFeed() {
     if (feedLoaded) return;
     feedLoaded = true;
@@ -466,7 +481,7 @@ async function loadFeed() {
             let filesHtml = ''; files.forEach(f => { filesHtml += `<a class="feed-file" href="${f.path}" target="_blank">📎 <span class="filename">${f.name || 'Файл'}</span></a>`; });
 
             html += `
-            <div class="feed-item" onclick="window.location.href='/channel/${p.channel_id}'" style="cursor:pointer;">
+            <div class="feed-item" onclick="window.location.href='/channel/${p.channel_id}'" style="cursor:pointer;" data-post-id="${p.id}">
                 <a href="/channel/${p.channel_id}" class="feed-header" onclick="event.stopPropagation();">
                     <div class="feed-avatar">${p.channel_avatar !== 'channel_default.png' ? `<img src="/static/avatars/${p.channel_avatar}">` : '📢'}</div>
                     <span class="feed-channel-name">${p.channel_name}</span>
@@ -479,10 +494,45 @@ async function loadFeed() {
                     <span class="feed-action" onclick="window.location.href='/channel/${p.channel_id}'">💬 ${p.comments}</span>
                     <span class="feed-action">👁️ ${p.views}</span>
                     <a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel(${p.channel_id})">💎 Донат</a>
+                    <span class="feed-action" onclick="sharePost(${p.id}, '${p.channel_name}', '${p.content.substring(0, 80)}')">🔗</span>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
+
+        // Добавляем обработчики двойного тапа для лайка
+        document.querySelectorAll('.feed-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Игнорируем клики по кнопкам действий
+                if (e.target.closest('.feed-actions') || e.target.closest('.feed-header') || e.target.closest('a') || e.target.closest('img') || e.target.closest('video')) {
+                    return;
+                }
+                const now = Date.now();
+                if (now - feedLastTapTime < 300) {
+                    // Двойной тап
+                    feedLastTapTime = 0;
+                    const postId = this.dataset.postId;
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // Анимация сердечка
+                    const heart = document.createElement('div');
+                    heart.className = 'like-heart-animation';
+                    heart.innerHTML = '❤️';
+                    heart.style.left = x + 'px';
+                    heart.style.top = y + 'px';
+                    heart.style.fontSize = '60px';
+                    this.appendChild(heart);
+                    setTimeout(() => heart.remove(), 1000);
+
+                    // Ставим лайк
+                    likeFeedPost(postId, this.querySelector(`.feed-action[onclick*="likeFeedPost"]`));
+                } else {
+                    feedLastTapTime = now;
+                }
+            });
+        });
     } catch (e) {
         container.innerHTML = `<div style="text-align:center; color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>`;
         feedLoaded = false;
@@ -490,11 +540,36 @@ async function loadFeed() {
 }
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
+    if (!el) {
+        el = document.querySelector(`.feed-action[onclick*="likeFeedPost(${postId}"]`);
+    }
+    if (!el) return;
     const resp = await fetch('/api/feed/like/' + postId, {method:'POST'});
     const data = await resp.json();
     if (data.success) {
         el.classList.toggle('liked', data.liked);
         el.querySelector('span').textContent = data.likes;
+    }
+}
+
+// Поделиться постом
+function sharePost(postId, channelName, preview) {
+    // Открываем страницу пересылки сообщений (используем существующий функционал)
+    const link = `https://beargram.up.railway.app/channel/${postId}`;
+    const msg = `📢 ${channelName}: ${preview.substring(0, 80)}...\n${link}`;
+    if (navigator.share) {
+        navigator.share({
+            title: channelName,
+            text: msg,
+            url: link
+        }).catch(() => {});
+    } else {
+        // Копируем ссылку и показываем подсказку
+        navigator.clipboard.writeText(msg).then(() => {
+            alert('📋 Ссылка скопирована! Можешь отправить её в любой чат.');
+        }).catch(() => {
+            prompt('Скопируй ссылку:', msg);
+        });
     }
 }
 
