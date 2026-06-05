@@ -14,13 +14,44 @@
         .waiting-text{position:absolute;color:#888;font-size:16px;text-align:center}
         .local-video{position:absolute;bottom:20px;right:20px;width:120px;height:160px;background:#1a1a2e;border-radius:16px;overflow:hidden;border:2px solid #ff6b6b;z-index:10}
         .local-video video{width:100%;height:100%;object-fit:cover}
-        
-        /* Аудио-режим: аватар вместо видео */
-        .audio-only .remote-video{background:linear-gradient(135deg,#ff6b6b,#ff8e8e)}
-        .audio-only .remote-video .avatar-large{font-size:80px;color:white}
-        .audio-only .remote-video .caller-name{color:white;font-size:22px;font-weight:bold;margin-top:20px}
+
+        /* Аудио-режим */
+        .audio-only .remote-video{background:linear-gradient(135deg,#1a1a2e,#0f0f1a)}
         .audio-only .local-video{display:none}
-        
+        .audio-avatar-container{
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            position:relative;width:100%;height:100%;
+        }
+        .audio-avatar{
+            width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);
+            display:flex;align-items:center;justify-content:center;font-size:60px;color:white;
+            overflow:hidden;z-index:2;position:relative;
+        }
+        .audio-avatar img{width:100%;height:100%;object-fit:cover}
+        .caller-name{color:white;font-size:24px;font-weight:bold;margin-top:20px;z-index:2}
+        .call-status{color:#aaa;font-size:14px;margin-top:8px;z-index:2}
+
+        /* Звуковые волны */
+        .voice-waves{
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            width:120px;height:120px;z-index:1;
+        }
+        .wave{
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            border-radius:50%;border:2px solid rgba(255,107,107,0.4);
+            animation:wavePulse 2s ease-out infinite;
+            opacity:0;
+        }
+        .wave:nth-child(1){width:120px;height:120px;animation-delay:0s}
+        .wave:nth-child(2){width:120px;height:120px;animation-delay:0.4s}
+        .wave:nth-child(3){width:120px;height:120px;animation-delay:0.8s}
+        @keyframes wavePulse{
+            0%{width:120px;height:120px;opacity:0.6;border-color:rgba(255,107,107,0.8)}
+            100%{width:220px;height:220px;opacity:0;border-color:rgba(255,107,107,0)}
+        }
+        .wave.active{animation-duration:0.8s}
+        .wave.inactive{animation-play-state:paused;opacity:0}
+
         .controls{display:flex;gap:20px;justify-content:center;padding:20px;background:#1e1e2e;flex-shrink:0}
         .control-btn{width:60px;height:60px;border-radius:50%;border:none;font-size:24px;cursor:pointer;transition:transform 0.2s}
         .control-btn:hover{transform:scale(1.05)}
@@ -31,6 +62,8 @@
         @media (max-width:480px){
             .local-video{width:90px;height:120px}
             .control-btn{width:50px;height:50px;font-size:20px}
+            .audio-avatar{width:100px;height:100px;font-size:50px}
+            .caller-name{font-size:20px}
         }
     </style>
 </head>
@@ -40,16 +73,24 @@
         <div class="remote-video">
             <video id="remoteVideo" autoplay playsinline></video>
             <div id="waitingText" class="waiting-text">⏳ Ожидание подключения...</div>
-            <!-- Аудио-режим: показываем аватар и имя -->
-            <div id="audioModeAvatar" style="display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;">
-                <div class="avatar-large" style="font-size:80px;">
-                    {% if other_user.avatar != 'default.png' %}
-                        <img src="/static/avatars/{{ other_user.avatar }}" style="width:120px;height:120px;border-radius:50%;object-fit:cover">
-                    {% else %}
-                        🐻
-                    {% endif %}
+            <!-- Аудио-режим -->
+            <div id="audioModeUI" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0;">
+                <div class="audio-avatar-container">
+                    <div class="voice-waves" id="voiceWaves">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                    <div class="audio-avatar">
+                        {% if other_user.avatar != 'default.png' %}
+                            <img src="/static/avatars/{{ other_user.avatar }}">
+                        {% else %}
+                            🐻
+                        {% endif %}
+                    </div>
+                    <div class="caller-name">{{ other_user.username }}</div>
+                    <div class="call-status" id="callStatus">📞 Звоним...</div>
                 </div>
-                <div class="caller-name">{{ other_user.username }}</div>
             </div>
         </div>
         <div class="local-video" id="localVideoContainer">
@@ -71,7 +112,10 @@
     let peerConnection = null;
     let isMicOn = true;
     let isCameraOn = !isAudioOnly;
-    
+    let audioContext = null;
+    let analyser = null;
+    let remoteAudioStream = null;
+
     const configuration = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -79,20 +123,22 @@
             { urls: 'stun:stun2.l.google.com:19302' }
         ]
     };
-    
+
     let pollInterval = null;
-    
+
     async function init() {
         try {
-            // Запрос медиа в зависимости от режима
             if (isAudioOnly) {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                // Настройка интерфейса под аудио
                 document.getElementById('callContainer').classList.add('audio-only');
-                document.getElementById('audioModeAvatar').style.display = 'flex';
+                document.getElementById('audioModeUI').style.display = 'block';
                 document.getElementById('localVideoContainer').style.display = 'none';
-                document.getElementById('cameraBtn').style.display = 'none'; // убираем кнопку камеры
+                document.getElementById('cameraBtn').style.display = 'none';
                 document.getElementById('waitingText').innerText = '📞 Звоним...';
+                // Инициализируем аудиоконтекст для визуализации волн
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) { console.log('AudioContext не поддерживается'); }
             } else {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
@@ -104,27 +150,27 @@
             console.error(e);
         }
     }
-    
+
     function startPolling() {
         checkAndCreateOffer();
         pollInterval = setInterval(() => {
             checkSignaling();
         }, 2000);
     }
-    
+
     async function checkAndCreateOffer() {
         const urlParams = new URLSearchParams(window.location.search);
         const isInitiator = !urlParams.has('existing');
-        
+
         if(isInitiator && !peerConnection) {
             await createOffer();
         }
     }
-    
+
     async function checkSignaling() {
         const response = await fetch(`/get_signaling/${room_id}`);
         const data = await response.json();
-        
+
         if(data.offer && !peerConnection) {
             await handleOffer(data.offer);
         }
@@ -137,60 +183,113 @@
             } catch(e) { console.log('ICE кандидат ошибка', e); }
         }
     }
-    
+
     async function createOffer() {
         peerConnection = new RTCPeerConnection(configuration);
-        
+
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
         });
-        
+
         peerConnection.ontrack = (event) => {
             if (!isAudioOnly) {
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
             }
             document.getElementById('status').innerHTML = '🟢 В звонке';
             document.getElementById('waitingText')?.remove();
+            if (isAudioOnly) {
+                document.getElementById('callStatus').innerText = '🟢 Говорите';
+                // Подключаем анализатор для волн
+                if (audioContext && event.streams[0]) {
+                    remoteAudioStream = event.streams[0];
+                    analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaStreamSource(remoteAudioStream);
+                    source.connect(analyser);
+                    analyser.fftSize = 256;
+                    startVoiceWaveDetection();
+                }
+            }
         };
-        
+
         peerConnection.onicecandidate = (event) => {
             if(event.candidate) {
                 sendIceCandidate(event.candidate);
             }
         };
-        
+
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
         sendOffer(offer);
     }
-    
+
     async function handleOffer(offer) {
         peerConnection = new RTCPeerConnection(configuration);
-        
+
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
         });
-        
+
         peerConnection.ontrack = (event) => {
             if (!isAudioOnly) {
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
             }
             document.getElementById('status').innerHTML = '🟢 В звонке';
             document.getElementById('waitingText')?.remove();
+            if (isAudioOnly) {
+                document.getElementById('callStatus').innerText = '🟢 Говорите';
+                if (audioContext && event.streams[0]) {
+                    remoteAudioStream = event.streams[0];
+                    analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaStreamSource(remoteAudioStream);
+                    source.connect(analyser);
+                    analyser.fftSize = 256;
+                    startVoiceWaveDetection();
+                }
+            }
         };
-        
+
         peerConnection.onicecandidate = (event) => {
             if(event.candidate) {
                 sendIceCandidate(event.candidate);
             }
         };
-        
+
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
         sendAnswer(answer);
     }
-    
+
+    // Визуализация голосовых волн
+    function startVoiceWaveDetection() {
+        if (!analyser) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const waves = document.querySelectorAll('.wave');
+
+        function updateWaves() {
+            if (!analyser) return;
+            analyser.getByteFrequencyData(dataArray);
+            // Считаем среднюю громкость
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            const avg = sum / dataArray.length;
+            // Если громкость выше порога, ускоряем анимацию
+            waves.forEach(w => {
+                if (avg > 20) {
+                    w.classList.add('active');
+                    w.classList.remove('inactive');
+                } else {
+                    w.classList.add('inactive');
+                    w.classList.remove('active');
+                }
+            });
+            requestAnimationFrame(updateWaves);
+        }
+        updateWaves();
+    }
+
     function sendOffer(offer) {
         fetch('/send_offer', {
             method: 'POST',
@@ -198,7 +297,7 @@
             body: JSON.stringify({room_id: room_id, offer: offer})
         });
     }
-    
+
     function sendAnswer(answer) {
         fetch('/send_answer', {
             method: 'POST',
@@ -206,7 +305,7 @@
             body: JSON.stringify({room_id: room_id, answer: answer})
         });
     }
-    
+
     function sendIceCandidate(candidate) {
         fetch('/send_ice_candidate', {
             method: 'POST',
@@ -214,7 +313,7 @@
             body: JSON.stringify({room_id: room_id, candidate: candidate})
         });
     }
-    
+
     function toggleMic() {
         if(localStream) {
             const audioTracks = localStream.getAudioTracks();
@@ -223,7 +322,7 @@
             document.getElementById('micBtn').style.background = isMicOn ? '#3a3a4e' : '#ff4444';
         }
     }
-    
+
     function toggleCamera() {
         if(localStream && !isAudioOnly) {
             const videoTracks = localStream.getVideoTracks();
@@ -232,15 +331,16 @@
             document.getElementById('cameraBtn').style.background = isCameraOn ? '#3a3a4e' : '#ff4444';
         }
     }
-    
+
     function hangUp() {
         fetch('/end_call/' + room_id, {method: 'POST'});
         if(pollInterval) clearInterval(pollInterval);
         if(peerConnection) peerConnection.close();
         if(localStream) localStream.getTracks().forEach(track => track.stop());
+        if(audioContext) audioContext.close();
         window.close();
     }
-    
+
     init();
 </script>
 </body>
