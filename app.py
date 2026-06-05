@@ -6324,7 +6324,34 @@ def add_music():
     db.session.add(track)
     db.session.commit()
     return jsonify({'success': True, 'track_id': track.id})
+@app.route('/api/create_channel_donate_order', methods=['POST'])
+@login_required
+def create_channel_donate_order():
+    data = request.get_json()
+    amount_rub = float(data.get('amount_rub', 0))
+    channel_id = int(data.get('channel_id', 0))
+    channel_name = data.get('channel_name', 'Канал')
 
+    if amount_rub < 10:
+        return jsonify({'error': 'Минимальная сумма 10 ₽'}), 400
+
+    order = Order(
+        user_id=current_user.id,
+        order_type='channel_donate',
+        amount_rub=amount_rub,
+        status='pending',
+        coins_amount=0
+    )
+    db.session.add(order)
+    db.session.commit()
+
+    payment_url = f"https://yoomoney.ru/to/4100119522166446?sum={amount_rub}&label=channel_donate_{order.id}_{channel_id}"
+
+    return jsonify({
+        'success': True,
+        'order_id': order.id,
+        'payment_url': payment_url
+    })
 @app.route('/api/music/listen/<int:track_id>', methods=['POST'])
 def listen_music(track_id):
     track = MusicTrack.query.get(track_id)
