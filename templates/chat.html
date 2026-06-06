@@ -90,15 +90,15 @@
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{padding:0 12px;font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
 
-        /* Слайдер фото */
-        .feed-slider{width:100%;overflow:hidden;cursor:pointer;position:relative;touch-action:pan-y}
-        .feed-slider-track{display:flex;transition:transform 0.3s ease;will-change:transform}
-        .feed-slider-track.dragging{transition:none}
-        .feed-slider-slide{flex:0 0 100%;width:100%}
-        .feed-slider-slide img{width:100%;height:auto;display:block;pointer-events:none;image-rendering:crisp-edges}
-        .feed-slider-slide img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
+        .feed-single-image-container{width:100%;overflow:hidden;cursor:pointer;position:relative}
+        .feed-single-image-container img{width:100%;height:auto;display:block}
 
         .photo-counter{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:white;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;z-index:2;pointer-events:none;backdrop-filter:blur(4px)}
+
+        .photo-nav-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.9);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.15);transition:0.2s;color:#333}
+        .photo-nav-btn:hover{background:white;transform:translateY(-50%) scale(1.05)}
+        .photo-nav-prev{left:8px}
+        .photo-nav-next{right:8px}
 
         .photo-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
         .photo-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.5);transition:0.2s}
@@ -121,7 +121,7 @@
 
         .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:10000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:0.2s}
         .image-viewer.active{opacity:1;visibility:visible}
-        .image-viewer img{max-width:100%;max-height:100%;object-fit:contain;image-rendering:crisp-edges}
+        .image-viewer img{max-width:100%;max-height:100%;object-fit:contain}
         .image-viewer-close{position:absolute;top:16px;right:16px;color:white;font-size:28px;cursor:pointer;z-index:10001;background:rgba(0,0,0,0.5);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
         .image-viewer-counter{position:absolute;top:16px;left:50%;transform:translateX(-50%);color:white;font-size:14px;z-index:10001;background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:20px}
         .image-viewer-prev,.image-viewer-next{position:absolute;top:50%;transform:translateY(-50%);color:white;font-size:24px;cursor:pointer;z-index:10001;background:rgba(0,0,0,0.5);width:44px;height:44px;border-radius:50%;display:none;align-items:center;justify-content:center;transition:0.2s}
@@ -403,13 +403,6 @@ let allFeedImages = [];
 let currentImageIndex = 0;
 let currentPostImages = [];
 
-// Слайдеры в ленте
-let feedSliders = {};
-
-function initFeedSlider(postId, totalSlides) {
-    feedSliders[postId] = { current: 0, total: totalSlides, startX: 0, offsetX: 0, dragging: false };
-}
-
 async function loadFeed() {
     if (feedLoaded) return;
     feedLoaded = true;
@@ -425,8 +418,6 @@ async function loadFeed() {
         }
         var html = '';
         allFeedImages = [];
-        feedSliders = {};
-
         data.posts.forEach(function(p) {
             var images = [], videos = [], audios = [], files = [];
             if (p.attachments) {
@@ -440,22 +431,19 @@ async function loadFeed() {
             var imagesHtml = '';
             if (images.length === 1) {
                 allFeedImages.push({postId: p.id, images: images});
-                imagesHtml = '<div class="feed-slider" onclick="openImageViewer(' + p.id + ', 0)">';
-                imagesHtml += '<div class="feed-slider-track"><div class="feed-slider-slide"><img src="' + images[0].path + '" loading="lazy"></div></div>';
+                imagesHtml = '<div class="feed-single-image-container" onclick="openImageViewer(' + p.id + ', 0)" style="position:relative">';
+                imagesHtml += '<img src="' + images[0].path + '" loading="lazy" style="width:100%;height:auto;display:block">';
                 imagesHtml += '</div>';
             } else if (images.length > 1) {
                 allFeedImages.push({postId: p.id, images: images});
-                initFeedSlider(p.id, images.length);
-                imagesHtml = '<div class="feed-slider" id="feedSlider_' + p.id + '">';
-                imagesHtml += '<div class="feed-slider-track" id="feedSliderTrack_' + p.id + '">';
-                for (var i = 0; i < images.length; i++) {
-                    imagesHtml += '<div class="feed-slider-slide"><img src="' + images[i].path + '" loading="lazy"></div>';
-                }
-                imagesHtml += '</div>';
+                imagesHtml = '<div class="feed-single-image-container" id="feedSlider_' + p.id + '" style="position:relative">';
+                imagesHtml += '<img src="' + images[0].path + '" loading="lazy" id="feedSliderImg_' + p.id + '" style="width:100%;height:auto;display:block">';
                 imagesHtml += '<div class="photo-counter" id="feedSliderCounter_' + p.id + '">1 / ' + images.length + '</div>';
+                imagesHtml += '<button class="photo-nav-btn photo-nav-prev" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', -1)">‹</button>';
+                imagesHtml += '<button class="photo-nav-btn photo-nav-next" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', 1)">›</button>';
                 imagesHtml += '<div class="photo-dots" id="feedSliderDots_' + p.id + '">';
-                for (var j = 0; j < images.length; j++) {
-                    imagesHtml += '<div class="photo-dot' + (j === 0 ? ' active' : '') + '" data-index="' + j + '"></div>';
+                for (var i = 0; i < images.length; i++) {
+                    imagesHtml += '<div class="photo-dot' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"></div>';
                 }
                 imagesHtml += '</div>';
                 imagesHtml += '</div>';
@@ -483,56 +471,16 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
-        // Навешиваем обработчики свайпов на слайдеры
-        setTimeout(function() {
-            for (var postId in feedSliders) {
-                if (feedSliders.hasOwnProperty(postId)) {
-                    (function(pid) {
-                        var slider = document.getElementById('feedSlider_' + pid);
-                        var track = document.getElementById('feedSliderTrack_' + pid);
-                        if (!slider || !track) return;
-
-                        slider.addEventListener('touchstart', function(e) {
-                            feedSliders[pid].startX = e.touches[0].clientX;
-                            feedSliders[pid].dragging = true;
-                            feedSliders[pid].offsetX = 0;
-                            track.classList.add('dragging');
-                        }, {passive: true});
-
-                        slider.addEventListener('touchmove', function(e) {
-                            if (!feedSliders[pid].dragging) return;
-                            feedSliders[pid].offsetX = e.touches[0].clientX - feedSliders[pid].startX;
-                            var baseOffset = -feedSliders[pid].current * slider.offsetWidth;
-                            track.style.transform = 'translateX(' + (baseOffset + feedSliders[pid].offsetX) + 'px)';
-                        }, {passive: true});
-
-                        slider.addEventListener('touchend', function(e) {
-                            if (!feedSliders[pid].dragging) return;
-                            feedSliders[pid].dragging = false;
-                            track.classList.remove('dragging');
-                            var total = feedSliders[pid].total;
-                            var idx = feedSliders[pid].current;
-
-                            if (feedSliders[pid].offsetX < -50 && idx < total - 1) idx++;
-                            else if (feedSliders[pid].offsetX > 50 && idx > 0) idx--;
-
-                            feedSliders[pid].current = idx;
-                            updateFeedSlider(pid);
-                        });
-
-                        slider.addEventListener('click', function(e) {
-                            if (Math.abs(feedSliders[pid].offsetX) < 10) {
-                                openImageViewer(parseInt(pid), feedSliders[pid].current);
-                            }
-                        });
-                    })(postId);
-                }
+        allFeedImages.forEach(function(item) {
+            if (item.images.length > 1) {
+                window['feedSliderIndex_' + item.postId] = 0;
             }
-        }, 100);
+        });
 
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
-                if (e.target.closest('.feed-actions') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.feed-slider')) return;
+                if (e.target.closest('.feed-actions') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.photo-nav-btn')) return;
+                if (e.target.closest('.feed-single-image-container')) return;
                 if (feedTapTimer) {
                     clearTimeout(feedTapTimer);
                     feedTapTimer = null;
@@ -561,18 +509,22 @@ async function loadFeed() {
     }
 }
 
-function updateFeedSlider(postId) {
-    var slider = document.getElementById('feedSlider_' + postId);
-    var track = document.getElementById('feedSliderTrack_' + postId);
+function feedSliderNav(postId, direction) {
+    var item = allFeedImages.find(function(x) { return x.postId == postId; });
+    if (!item) return;
+    var total = item.images.length;
+    var idx = window['feedSliderIndex_' + postId] || 0;
+    idx += direction;
+    if (idx < 0) idx = total - 1;
+    if (idx >= total) idx = 0;
+    window['feedSliderIndex_' + postId] = idx;
+
+    var img = document.getElementById('feedSliderImg_' + postId);
     var counter = document.getElementById('feedSliderCounter_' + postId);
     var dots = document.getElementById('feedSliderDots_' + postId);
-    if (!slider || !track) return;
 
-    var idx = feedSliders[postId].current;
-    track.style.transition = 'transform 0.3s ease';
-    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
-
-    if (counter) counter.textContent = (idx + 1) + ' / ' + feedSliders[postId].total;
+    if (img) img.src = item.images[idx].path;
+    if (counter) counter.textContent = (idx + 1) + ' / ' + total;
     if (dots) {
         dots.querySelectorAll('.photo-dot').forEach(function(d, i) {
             d.classList.toggle('active', i === idx);
@@ -613,7 +565,6 @@ function closeImageViewer() {
     currentImageIndex = 0;
 }
 
-// Свайпы в полноэкранном просмотрщике
 document.addEventListener('DOMContentLoaded', function() {
     var viewer = document.getElementById('imageViewer');
     var touchStartX = 0;
