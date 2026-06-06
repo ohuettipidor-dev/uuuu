@@ -28,7 +28,7 @@
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333;pointer-events:none}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
@@ -43,12 +43,13 @@
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
         .feed-actions{display:flex;gap:16px;font-size:13px;color:#888;flex-wrap:wrap}
-        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
+        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s;pointer-events:auto}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
-        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
+        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s;pointer-events:auto}
         .feed-donate-btn:hover{transform:scale(1.02)}
 
+        /* Три точки */
         .post-menu-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:12px;z-index:5}
         .post-menu-btn:hover{background:#f0f0f0}
         .post-dropdown{position:absolute;top:36px;right:12px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:10;min-width:160px;padding:4px}
@@ -57,6 +58,7 @@
         .post-dropdown button:hover{background:#f5f5f5}
         .post-dropdown button.danger{color:#ff4444}
 
+        /* Анимация сердечка */
         .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
         @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
 
@@ -295,6 +297,7 @@
     {% endif %}
 </div>
 
+<!-- Модалки -->
 <div class="modal" id="donateModal">
     <div class="modal-content">
         <h3>💎 Поддержать канал</h3>
@@ -355,7 +358,6 @@
     let existingAttachments = [];
     let deletedPaths = [];
 
-    // Загрузка баланса
     async function loadBalance() {
         try {
             const res = await fetch('/api/coins/balance');
@@ -365,7 +367,6 @@
     }
     loadBalance();
 
-    // Платная подписка
     async function subscribePaidChannel() {
         const errEl = document.getElementById('subscribeError');
         errEl.style.display = 'none';
@@ -377,7 +378,6 @@
         } catch(e) { errEl.innerText = 'Ошибка сети'; errEl.style.display = 'block'; }
     }
 
-    // Меню поста (админка)
     function togglePostMenu(event, postId) {
         event.stopPropagation();
         document.querySelectorAll('.post-dropdown.active').forEach(d => { if (d.id !== 'post-menu-' + postId) d.classList.remove('active'); });
@@ -390,20 +390,13 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    // ---- НАДЁЖНАЯ РАБОТА С ФАЙЛАМИ И ПУБЛИКАЦИЯ ----
     function addFiles() {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
-        input.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx';
-        input.style.display = 'none';
         input.onchange = function() {
-            const files = Array.from(input.files);
-            for (let file of files) {
-                if (selectedFiles.length >= MAX_FILES) {
-                    alert('Максимум ' + MAX_FILES + ' файлов');
-                    break;
-                }
+            for (let file of input.files) {
+                if (selectedFiles.length >= MAX_FILES) { alert('Максимум ' + MAX_FILES + ' файлов'); break; }
                 selectedFiles.push(file);
             }
             updateFileGrid();
@@ -412,19 +405,18 @@
         document.body.appendChild(input);
         input.click();
     }
-
     function updateFileGrid() {
         const gridDiv = document.getElementById('selectedFilesGrid');
-        if (!selectedFiles.length) {
-            gridDiv.innerHTML = '';
-            return;
-        }
+        if (selectedFiles.length === 0) { gridDiv.innerHTML = ''; return; }
         gridDiv.innerHTML = selectedFiles.map((file, idx) => {
-            const url = URL.createObjectURL(file);
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
             let previewHtml = '';
-            if (file.type.startsWith('image/')) {
+            if (isImage) {
+                const url = URL.createObjectURL(file);
                 previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
-            } else if (file.type.startsWith('video/')) {
+            } else if (isVideo) {
+                const url = URL.createObjectURL(file);
                 previewHtml = `<video src="${url}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
             } else {
                 previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
@@ -435,45 +427,18 @@
             </div>`;
         }).join('');
     }
+    function removeFileFromGrid(index) { selectedFiles.splice(index, 1); updateFileGrid(); }
+    document.getElementById('postForm').onsubmit = function(e) {
+        e.preventDefault();
+        const content = this.querySelector('textarea[name="content"]').value;
+        const formData = new FormData();
+        formData.append('content', content);
+        for (let f of selectedFiles) formData.append('files', f);
+        fetch(this.action, { method: 'POST', body: formData })
+            .then(r => r.ok ? location.reload() : alert('Ошибка при публикации'))
+            .catch(() => alert('Ошибка сети'));
+    };
 
-    function removeFileFromGrid(index) {
-        selectedFiles.splice(index, 1);
-        updateFileGrid();
-    }
-
-    // Форма публикации (только если существует)
-    const postForm = document.getElementById('postForm');
-    if (postForm) {
-        postForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const content = this.querySelector('textarea[name="content"]').value.trim();
-            if (!content && selectedFiles.length === 0) {
-                alert('Добавьте текст или хотя бы один файл');
-                return;
-            }
-            const formData = new FormData();
-            formData.append('content', content);
-            selectedFiles.forEach(f => formData.append('files', f));
-
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(r => {
-                if (r.ok) {
-                    selectedFiles = [];
-                    location.reload();
-                } else {
-                    return r.json().then(data => { throw new Error(data.error || 'Ошибка при публикации'); });
-                }
-            })
-            .catch(err => {
-                alert(err.message || 'Ошибка сети');
-            });
-        });
-    }
-
-    // Донаты
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
     async function submitDonate() {
@@ -494,7 +459,6 @@
     }
     function donateToChannel() { openDonateModal(); }
 
-    // Комментарии
     function toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
@@ -510,9 +474,11 @@
         }).then(() => location.reload());
     }
 
-    // Лайк поста с анимацией
+    // Лайк с анимацией сердечка по тапу в любом месте поста
     function likePost(postId, el) {
         const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
+        
+        // Анимация сердечка (как в ленте)
         if (feedItem) {
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
@@ -524,17 +490,7 @@
             feedItem.appendChild(heart);
             setTimeout(() => heart.remove(), 1000);
         }
-        if (el) {
-            const countSpan = el.querySelector('span');
-            let currentCount = parseInt(countSpan.textContent) || 0;
-            if (el.classList.contains('liked')) {
-                el.classList.remove('liked');
-                countSpan.textContent = Math.max(0, currentCount - 1);
-            } else {
-                el.classList.add('liked');
-                countSpan.textContent = currentCount + 1;
-            }
-        }
+
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
@@ -545,20 +501,23 @@
             }
         });
     }
-
-    // Двойной тап по посту
-    document.querySelectorAll('.feed-item').forEach(function(item) {
-        item.addEventListener('click', function(e) {
-            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
-                return;
-            }
-            const postId = this.dataset.postId;
-            const likeBtn = this.querySelector('.feed-action');
-            likePost(postId, likeBtn);
+    
+    // Обработчик тапа по посту (лайк)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.feed-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                // Игнорируем клики по кнопкам действий, изображениям, видео, файлам, ссылкам, меню
+                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
+                    return;
+                }
+                
+                const postId = this.dataset.postId;
+                const likeBtn = this.querySelector('.feed-action');
+                likePost(postId, likeBtn);
+            });
         });
     });
 
-    // Лайк комментария
     function likeComment(commentId, postId) {
         fetch(`/channel/like_comment/${commentId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
@@ -569,8 +528,6 @@
             }
         });
     }
-
-    // Переключение комментариев (админ)
     function togglePostComments(postId) {
         fetch(`/channel/post/edit/${postId}`, {
             method: 'POST',
@@ -579,7 +536,6 @@
         }).then(() => location.reload());
     }
 
-    // Поделиться
     function sharePost(postId, channelName, preview) {
         var link = 'https://beargram.up.railway.app/channel/' + postId;
         var msg = '📢 ' + channelName + ': ' + (preview || '').substring(0, 80) + '...\n' + link;
@@ -590,7 +546,6 @@
         }
     }
 
-    // Аватар
     function openAvatarModal() { document.getElementById('avatarModal').classList.add('active'); }
     function closeAvatarModal() { document.getElementById('avatarModal').classList.remove('active'); }
     function uploadAvatar() {
@@ -600,7 +555,6 @@
         fetch('/channel/{{ channel.id }}/upload_avatar', { method: 'POST', body: formData }).then(() => location.reload());
     }
 
-    // Настройки канала
     function openEditChannelModal() { document.getElementById('editChannelModal').classList.add('active'); }
     function closeEditChannelModal() { document.getElementById('editChannelModal').classList.remove('active'); }
     function saveChannelSettings() {
@@ -617,7 +571,6 @@
         }).then(() => location.reload());
     }
 
-    // Редактирование поста
     function editPost(postId) {
         editingPostId = postId;
         const postDiv = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
@@ -685,7 +638,6 @@
         }
     }
 
-    // Закрытие модалок по клику вне
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
     });
