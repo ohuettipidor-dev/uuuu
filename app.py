@@ -923,7 +923,7 @@ with app.app_context():
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
 def index():
-    return redirect(url_for('chat')) if current_user.is_authenticated else render_template('index.html')
+    return redirect(url_for('chat')) if current_user.is_authenticated else redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
