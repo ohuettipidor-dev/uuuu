@@ -16,7 +16,6 @@
         .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;cursor:pointer}
         .channel-info{flex:1;min-width:0}
         .channel-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .channel-username{font-size:10px;color:#888}
         .channel-stats{font-size:10px;color:#aaa}
         .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
         .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
@@ -37,8 +36,9 @@
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
         .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
         .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
-        .feed-images-grid video{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
-        .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
+        .feed-images-grid .grid-video-wrapper{position:relative;width:100%;height:150px;cursor:pointer}
+        .feed-images-grid .grid-video-wrapper video{width:100%;height:100%;object-fit:cover;border-radius:12px}
+        .grid-video-play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;pointer-events:none}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
@@ -57,11 +57,6 @@
         .post-dropdown button{background:none;border:none;padding:10px 14px;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#333}
         .post-dropdown button:hover{background:#f5f5f5}
         .post-dropdown button.danger{color:#ff4444}
-
-        /* Видео превью */
-        .inline-video-wrapper{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;margin-top:8px;cursor:pointer}
-        .inline-video-wrapper video{width:100%;display:block;max-height:400px;object-fit:contain}
-        .inline-video-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:0.2s;z-index:5;pointer-events:none}
 
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
@@ -90,9 +85,6 @@
         .paid-overlay .price{color:#ff6b6b;font-weight:bold}
         .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
 
-        .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
-        @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
-
         @media (max-width:480px){
             .container{padding:0}
             .feed-item{padding:12px}
@@ -100,7 +92,7 @@
             .channel-avatar{width:30px;height:30px;font-size:16px}
             .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
             .feed-images-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
-            .feed-images-grid img,.feed-images-grid video{height:120px}
+            .feed-images-grid img,.feed-images-grid .grid-video-wrapper{height:120px}
         }
     </style>
 </head>
@@ -183,40 +175,58 @@
 
             {% if post.attachments %}
                 {% set attachments_list = post.attachments|json_decode %}
-                {% set media_att = [] %}
-                {% set file_att = [] %}
+                {% set images = [] %}
+                {% set videos = [] %}
+                {% set audios = [] %}
+                {% set files = [] %}
                 {% for att in attachments_list %}
-                    {% if att.type in ('image', 'video') %}
-                        {% set _ = media_att.append(att) %}
+                    {% if att.type == 'image' %}
+                        {% set _ = images.append(att) %}
+                    {% elif att.type == 'video' %}
+                        {% set _ = videos.append(att) %}
+                    {% elif att.type == 'audio' %}
+                        {% set _ = audios.append(att) %}
                     {% else %}
-                        {% set _ = file_att.append(att) %}
+                        {% set _ = files.append(att) %}
                     {% endif %}
                 {% endfor %}
-                {% if media_att %}
+
+                <!-- Сетка фото и видео -->
+                {% if images or videos %}
                 <div class="feed-images-grid">
-                    {% for att in media_att %}
-                        {% if att.type == 'video' %}
-                            <video src="{{ att.path }}" preload="metadata" muted playsinline loop onclick="window.open('{{ att.path }}', '_blank')" style="cursor:pointer"></video>
-                        {% else %}
-                            <img src="{{ att.path }}" loading="lazy" onclick="window.open(this.src)">
-                        {% endif %}
+                    {% for img in images %}
+                        <img src="{{ img.path }}" loading="lazy" onclick="window.open(this.src)">
+                    {% endfor %}
+                    {% for vid in videos %}
+                        <div class="grid-video-wrapper" onclick="window.open('{{ vid.path }}', '_blank')">
+                            <video src="{{ vid.path }}" preload="metadata" muted playsinline loop></video>
+                            <div class="grid-video-play-icon">▶️</div>
+                        </div>
                     {% endfor %}
                 </div>
                 {% endif %}
-                {% if file_att %}
-                    {% for att in file_att %}
-                        <a class="feed-file" href="{{ att.path }}" target="_blank">
-                            📎 <span class="filename">{{ att.name }}</span>
-                        </a>
-                    {% endfor %}
-                {% endif %}
+
+                <!-- Аудио -->
+                {% for audio in audios %}
+                    <audio class="feed-audio" controls src="{{ audio.path }}" preload="metadata"></audio>
+                {% endfor %}
+
+                <!-- Файлы -->
+                {% for file in files %}
+                    <a class="feed-file" href="{{ file.path }}" target="_blank">
+                        📎 <span class="filename">{{ file.name }}</span>
+                    </a>
+                {% endfor %}
             {% elif post.file_path %}
                 {% if post.file_type == 'image' %}
                     <img src="{{ post.file_path }}" onclick="window.open(this.src)" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
-                    <audio controls src="{{ post.file_path }}" style="width:100%"></audio>
+                    <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
-                    <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop onclick="window.open('{{ post.file_path }}', '_blank')" style="width:100%;max-height:300px;border-radius:12px;cursor:pointer"></video>
+                    <div class="grid-video-wrapper" onclick="window.open('{{ post.file_path }}', '_blank')" style="height:200px;">
+                        <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop></video>
+                        <div class="grid-video-play-icon">▶️</div>
+                    </div>
                 {% else %}
                     <a href="{{ post.file_path }}" download="{{ post.file_name }}">📎 {{ post.file_name }}</a>
                 {% endif %}
@@ -367,10 +377,8 @@
         } catch(e) { errEl.innerText = 'Ошибка сети'; errEl.style.display = 'block'; }
     }
 
-    // Выпадающее меню поста
     function togglePostMenu(event, postId) {
         event.stopPropagation();
-        // Закрываем все другие меню
         document.querySelectorAll('.post-dropdown.active').forEach(d => { if (d.id !== 'post-menu-' + postId) d.classList.remove('active'); });
         document.getElementById('post-menu-' + postId).classList.toggle('active');
     }
@@ -381,7 +389,6 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    // Загрузка файлов
     function addFiles() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -431,7 +438,6 @@
             .catch(() => alert('Ошибка сети'));
     };
 
-    // Донаты
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
     async function submitDonate() {
@@ -452,7 +458,6 @@
     }
     function donateToChannel() { openDonateModal(); }
 
-    // Комментарии
     function toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
@@ -468,7 +473,6 @@
         }).then(() => location.reload());
     }
 
-    // Лайки
     function likePost(postId, el) {
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
@@ -498,7 +502,6 @@
         }).then(() => location.reload());
     }
 
-    // Поделиться постом
     function sharePost(postId, channelName, preview) {
         var link = 'https://beargram.up.railway.app/channel/' + postId;
         var msg = '📢 ' + channelName + ': ' + (preview || '').substring(0, 80) + '...\n' + link;
@@ -509,7 +512,6 @@
         }
     }
 
-    // Аватар
     function openAvatarModal() { document.getElementById('avatarModal').classList.add('active'); }
     function closeAvatarModal() { document.getElementById('avatarModal').classList.remove('active'); }
     function uploadAvatar() {
@@ -519,7 +521,6 @@
         fetch('/channel/{{ channel.id }}/upload_avatar', { method: 'POST', body: formData }).then(() => location.reload());
     }
 
-    // Настройки канала
     function openEditChannelModal() { document.getElementById('editChannelModal').classList.add('active'); }
     function closeEditChannelModal() { document.getElementById('editChannelModal').classList.remove('active'); }
     function saveChannelSettings() {
@@ -536,7 +537,6 @@
         }).then(() => location.reload());
     }
 
-    // Редактирование и удаление постов
     function editPost(postId) {
         editingPostId = postId;
         const postDiv = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
