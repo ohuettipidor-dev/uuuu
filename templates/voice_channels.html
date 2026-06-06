@@ -7,62 +7,62 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh}
-        .container{max-width:1200px;margin:0 auto;padding:16px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #ff6b6b;flex-wrap:wrap;gap:10px}
-        .logo{font-size:20px;font-weight:bold;color:white}
+        .container{max-width:1200px;margin:0 auto;padding:12px}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #ff6b6b;flex-wrap:wrap;gap:8px}
+        .logo{font-size:18px;font-weight:bold;color:white}
         .logo span{color:#ff6b6b}
-        .back-btn{background:#ff6b6b;padding:8px 16px;border-radius:25px;color:white;text-decoration:none;font-size:14px}
-        .create-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);border:none;color:white;padding:10px 20px;border-radius:30px;cursor:pointer;font-weight:bold}
+        .back-btn{background:#ff6b6b;padding:6px 12px;border-radius:20px;color:white;text-decoration:none;font-size:13px;white-space:nowrap}
+        .create-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);border:none;color:white;padding:8px 14px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px;white-space:nowrap}
 
-        .search-bar{display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end}
-        .search-bar input{flex:1;max-width:220px;padding:8px 14px;border-radius:25px;border:none;background:#2a2a3e;color:white;font-size:13px}
-        .search-bar button{padding:8px 14px;border-radius:25px;border:none;cursor:pointer;font-weight:bold;font-size:13px}
+        .search-bar{display:flex;gap:6px;align-items:center}
+        .search-bar input{width:140px;padding:6px 10px;border-radius:20px;border:none;background:#2a2a3e;color:white;font-size:12px}
+        .search-bar button{padding:6px 10px;border-radius:20px;border:none;cursor:pointer;font-weight:bold;font-size:12px;white-space:nowrap}
         .btn-popular{background:#ffd700;color:#000}
-        .btn-search{background:#ff6b6b;color:white;display:flex;align-items:center;gap:6px}
+        .btn-search{background:#ff6b6b;color:white}
 
-        .channels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:30px}
-        .channel-card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:16px;cursor:pointer;transition:0.2s;border:1px solid rgba(255,107,107,0.3)}
+        .channels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px}
+        .channel-card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:14px;cursor:pointer;transition:0.2s;border:1px solid rgba(255,107,107,0.3)}
         .channel-card:hover{transform:translateY(-2px);background:rgba(255,255,255,0.15)}
-        .channel-name{font-size:18px;font-weight:bold;color:white;margin-bottom:5px}
-        .channel-stats{font-size:12px;color:#aaa;margin-bottom:10px}
-        .member-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
-        .member-avatar{width:28px;height:28px;border-radius:50%;background:#ff6b6b;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;overflow:hidden}
+        .channel-name{font-size:16px;font-weight:bold;color:white;margin-bottom:4px}
+        .channel-stats{font-size:11px;color:#aaa;margin-bottom:8px}
+        .member-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+        .member-avatar{width:26px;height:26px;border-radius:50%;background:#ff6b6b;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;overflow:hidden}
         .member-avatar img{width:100%;height:100%;object-fit:cover}
-        .join-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:25px;margin-top:10px;cursor:pointer;width:100%}
+        .join-btn{background:#ff6b6b;color:white;border:none;padding:7px 14px;border-radius:20px;margin-top:8px;cursor:pointer;width:100%;font-size:13px}
 
         .channel-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center}
         .channel-modal.active{display:flex}
         .channel-room{background:#1a1a2e;width:100%;max-width:1300px;height:90vh;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
-        .channel-room-header{padding:12px 16px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ff6b6b;flex-wrap:wrap;gap:8px}
-        .channel-room-header h3{color:white}
-        .header-buttons{display:flex;gap:8px;align-items:center}
-        .leave-btn{background:#ff6b6b;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:13px}
-        .shop-btn{background:#ffd700;color:#000;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
-        .merch-btn{background:#ff8c00;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px}
-        .coins-balance{color:#ffd700;font-size:14px;font-weight:bold;margin-right:8px;display:flex;align-items:center;gap:4px}
+        .channel-room-header{padding:10px 14px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ff6b6b;flex-wrap:wrap;gap:6px}
+        .channel-room-header h3{color:white;font-size:16px}
+        .header-buttons{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+        .leave-btn{background:#ff6b6b;color:white;border:none;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:12px}
+        .shop-btn{background:#ffd700;color:#000;border:none;padding:5px 10px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+        .merch-btn{background:#ff8c00;color:white;border:none;padding:5px 10px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:11px}
+        .coins-balance{color:#ffd700;font-size:13px;font-weight:bold;margin-right:6px;display:flex;align-items:center;gap:3px}
 
-        .videos-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow-y:auto}
-        .local-video-container{margin-bottom:10px}
+        .videos-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;overflow-y:auto}
+        .local-video-container{margin-bottom:8px}
         .local-video-container video{width:640px;height:480px;background:#000;border-radius:16px;object-fit:cover}
-        .remote-videos-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;width:100%}
+        .remote-videos-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
         .remote-video-item{position:relative;width:400px;height:300px;background:#000;border-radius:16px;overflow:hidden}
         .remote-video-item video{width:100%;height:100%;object-fit:cover}
         .remote-video-label{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:10px}
 
-        .controls-bar{display:flex;gap:10px;justify-content:center;margin:10px 0}
-        .control-btn{background:#ff6b6b;border:none;padding:10px;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .controls-bar{display:flex;gap:8px;justify-content:center;margin:8px 0}
+        .control-btn{background:#ff6b6b;border:none;padding:8px;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
         .control-btn.muted{background:#888}
 
-        .bottom-panel{padding:8px 12px;background:rgba(15,15,26,0.95);border-top:1px solid #ff6b6b;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-        .donate-panel{display:flex;align-items:center;gap:8px;order:2}
-        .donate-panel input{flex:1;padding:6px 8px;border-radius:18px;border:none;background:#2a2a3e;color:white;font-size:12px}
-        .donate-btn-small{background:linear-gradient(135deg,#4caf50,#66bb6a);color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px}
-        .chat-area{display:flex;flex-direction:column;gap:6px;order:1}
-        .chat-messages{overflow-y:auto;padding:4px;background:rgba(0,0,0,0.2);border-radius:10px;min-height:30px;max-height:50px;color:#f5f5f5;font-size:12px}
-        .chat-messages div{color:#f5f5f5;margin:2px 0}
-        .chat-input-row{display:flex;gap:6px}
-        .chat-input-row input{flex:1;padding:6px 10px;border-radius:18px;border:none;background:#2a2a3e;color:white;font-size:12px}
-        .chat-input-row button{background:#ff6b6b;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;color:white;font-size:12px}
+        .bottom-panel{padding:6px 10px;background:rgba(15,15,26,0.95);border-top:1px solid #ff6b6b;max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+        .donate-panel{display:flex;align-items:center;gap:6px;order:2}
+        .donate-panel input{flex:1;padding:5px 8px;border-radius:16px;border:none;background:#2a2a3e;color:white;font-size:11px}
+        .donate-btn-small{background:linear-gradient(135deg,#4caf50,#66bb6a);color:white;border:none;padding:5px 12px;border-radius:16px;cursor:pointer;font-weight:bold;font-size:11px;white-space:nowrap}
+        .chat-area{display:flex;flex-direction:column;gap:4px;order:1}
+        .chat-messages{overflow-y:auto;padding:4px;background:rgba(0,0,0,0.2);border-radius:10px;min-height:25px;max-height:40px;color:#f5f5f5;font-size:11px}
+        .chat-messages div{color:#f5f5f5;margin:1px 0}
+        .chat-input-row{display:flex;gap:4px}
+        .chat-input-row input{flex:1;padding:5px 8px;border-radius:16px;border:none;background:#2a2a3e;color:white;font-size:11px}
+        .chat-input-row button{background:#ff6b6b;border:none;padding:5px 12px;border-radius:16px;cursor:pointer;color:white;font-size:11px}
 
         .donate-toast {
             position: fixed;
@@ -90,32 +90,31 @@
 
         .youtube-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:3000;display:none;flex-direction:column}
         .youtube-modal.active{display:flex}
-        .youtube-header{padding:12px 16px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center}
-        .youtube-header input{flex:1;padding:8px 12px;border-radius:25px;border:none;margin:0 10px}
-        .youtube-header button{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:25px;cursor:pointer}
+        .youtube-header{padding:10px 14px;background:#0f0f1a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+        .youtube-header input{flex:1;padding:6px 10px;border-radius:20px;border:none;margin:0 6px;min-width:120px}
+        .youtube-header button{background:#ff6b6b;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;white-space:nowrap}
         .youtube-iframe{flex:1;width:100%}
         .youtube-chat{width:300px;background:#0f0f1a;display:flex;flex-direction:column}
         .youtube-chat-messages{flex:1;overflow-y:auto;padding:10px}
         .youtube-chat-input{display:flex;padding:10px;gap:5px}
         .youtube-chat-input input{flex:1;padding:8px;border-radius:20px;border:none}
 
-        /* Панель мерча */
-       .merch-panel{
-    position:fixed;
-    bottom:120px; /* выше нижней панели */
-    left:50%;
-    transform:translateX(-50%);
-    width:90%;
-    max-width:500px;
-    background:#1a1a2e;
-    border-radius:20px;
-    padding:20px;
-    z-index:5000; /* выше всего */
-    max-height:60vh;
-    overflow-y:auto;
-    display:none;
-    box-shadow:0 10px 40px rgba(0,0,0,0.5);
-}
+        .merch-panel{
+            position:fixed;
+            bottom:120px;
+            left:50%;
+            transform:translateX(-50%);
+            width:90%;
+            max-width:500px;
+            background:#1a1a2e;
+            border-radius:20px;
+            padding:20px;
+            z-index:5000;
+            max-height:60vh;
+            overflow-y:auto;
+            display:none;
+            box-shadow:0 10px 40px rgba(0,0,0,0.5);
+        }
 
         @media (max-width:768px){
             .channels-grid{grid-template-columns:1fr}
@@ -123,7 +122,7 @@
             .local-video-container video{width:100%;height:auto}
             .remote-video-item{width:280px;height:210px}
             .donate-toast{right:10px;bottom:10px;max-width:240px}
-            .search-bar input{max-width:150px}
+            .search-bar input{width:100px}
         }
     </style>
 </head>
@@ -131,15 +130,13 @@
 <div class="container">
     <div class="header">
         <div class="logo">🐻 Bear<span>Gram</span> 🎤</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="🔍 Поиск каналов..." oninput="searchChannels()">
-                <button class="btn-search" onclick="searchChannels()">🔍</button>
-                <button class="btn-popular" onclick="loadPopular()">🔥 Популярное</button>
-            </div>
-            <button class="create-btn" onclick="openCreateChannelModal()">➕ Создать канал</button>
-            <a href="/chat" class="back-btn">← Назад</a>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Поиск..." oninput="searchChannels()">
+            <button class="btn-search" onclick="searchChannels()">🔍</button>
+            <button class="btn-popular" onclick="loadPopular()">🔥</button>
         </div>
+        <button class="create-btn" onclick="openCreateChannelModal()">➕ Создать</button>
+        <a href="/chat" class="back-btn">← Назад</a>
     </div>
 
     <div class="channels-grid" id="channelsGrid">
@@ -176,12 +173,12 @@
         <div class="channel-room-header">
             <h3 id="currentChannelName">Голосовой канал</h3>
             <div class="header-buttons">
-                <span id="premiumBadge" style="display:none; color:#ffd700; margin-right:6px; font-size:18px;">👑</span>
+                <span id="premiumBadge" style="display:none; color:#ffd700; margin-right:4px; font-size:16px;">👑</span>
                 <span class="coins-balance" id="userCoinsBalance">💎 0</span>
-                <button class="shop-btn" onclick="window.open('/shop/coins', '_blank')">💎 Магазин</button>
-                <button class="merch-btn" onclick="showStreamerShop()">🛍️ Мерч</button>
-                <button class="leave-btn" onclick="startYouTubeTogether()" style="background:#2ea6ff">🎬 YouTube</button>
-                <button class="leave-btn" onclick="leaveChannel()">🚪 Покинуть</button>
+                <button class="shop-btn" onclick="window.open('/shop/coins', '_blank')">💎</button>
+                <button class="merch-btn" onclick="showStreamerShop()">🛍️</button>
+                <button class="leave-btn" onclick="startYouTubeTogether()" style="background:#2ea6ff">🎬</button>
+                <button class="leave-btn" onclick="leaveChannel()">🚪</button>
             </div>
         </div>
         
@@ -205,14 +202,14 @@
                     <div style="color:#888;text-align:center">💬 Чат и донаты здесь</div>
                 </div>
                 <div class="chat-input-row">
-                    <input type="text" id="voiceChatInput" placeholder="Сообщение в чат...">
+                    <input type="text" id="voiceChatInput" placeholder="Сообщение...">
                     <button onclick="sendVoiceChatMessage()">📨</button>
                 </div>
             </div>
             <div class="donate-panel">
-                <span style="color:white;font-size:13px;white-space:nowrap">💎 Донат:</span>
-                <input type="number" id="donateAmount" placeholder="Сумма 💎" min="10" value="10" style="width:80px;font-weight:bold;text-align:center">
-                <input type="text" id="donateMessage" placeholder="Сообщение (необязательно)" style="flex:1">
+                <span style="color:white;font-size:12px;white-space:nowrap">💎</span>
+                <input type="number" id="donateAmount" placeholder="Сумма" min="10" value="10" style="width:70px;font-weight:bold;text-align:center">
+                <input type="text" id="donateMessage" placeholder="Сообщение">
                 <button class="donate-btn-small" onclick="sendDonate()">Поддержать</button>
             </div>
         </div>
@@ -233,17 +230,17 @@
 <!-- YOUTUBE TOGETHER -->
 <div id="youtubeModal" class="youtube-modal">
     <div class="youtube-header">
-        <span style="color:white">🎬 YouTube Together</span>
-        <input type="text" id="youtubeUrl" placeholder="Ссылка на YouTube видео или ID...">
-        <button onclick="loadYouTubeVideo()">▶ Загрузить</button>
-        <button onclick="syncYouTube()" style="background:#4cd964">🔄 Синхронизировать</button>
-        <button onclick="closeYouTubeTogether()" style="background:#ff6b6b">✖ Закрыть</button>
+        <span style="color:white">🎬 YouTube</span>
+        <input type="text" id="youtubeUrl" placeholder="Ссылка или ID видео...">
+        <button onclick="loadYouTubeVideo()">▶</button>
+        <button onclick="syncYouTube()" style="background:#4cd964">🔄</button>
+        <button onclick="closeYouTubeTogether()" style="background:#ff6b6b">✖</button>
     </div>
     <div style="display:flex;flex:1">
         <iframe id="youtubePlayer" class="youtube-iframe" src="" frameborder="0" allowfullscreen></iframe>
         <div class="youtube-chat">
             <div class="youtube-chat-messages" id="youtubeChatMessages">
-                <div style="color:#888;text-align:center">💬 Чат для обсуждения видео</div>
+                <div style="color:#888;text-align:center">💬 Чат</div>
             </div>
             <div class="youtube-chat-input">
                 <input type="text" id="youtubeChatInput" placeholder="Сообщение...">
@@ -275,24 +272,19 @@
             .then(r => r.json())
             .then(channels => {
                 allChannels = channels;
-                loadPopular(); // при первой загрузке показываем популярные
+                loadPopular();
             });
     }
 
     function loadPopular() {
         document.getElementById('searchInput').value = '';
-        // Сортируем по убыванию количества участников (самый надёжный показатель популярности)
         const popular = [...allChannels].sort((a, b) => b.member_count - a.member_count);
-        // Показываем все, без ограничения
         renderChannels(popular);
     }
 
     function searchChannels() {
         const query = document.getElementById('searchInput').value.trim().toLowerCase();
-        if (!query) {
-            loadPopular();
-            return;
-        }
+        if (!query) { loadPopular(); return; }
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(query));
         renderChannels(filtered);
     }
@@ -612,23 +604,15 @@
         } else { alert(data.error || 'Ошибка доната'); }
     }
 
-    // ===== МЕРЧ СТРИМЕРА =====
     async function showStreamerShop() {
         if (!currentChannelId) return;
-        
         const res = await fetch(`/voice/members/${currentChannelId}`);
         const members = await res.json();
         if (!members || members.length === 0) return;
-        
-        // Берём ID создателя канала (первый в списке)
         const creatorId = members[0].id;
-        
-        // Загружаем только дропы и мерч создателя
         const shopRes = await fetch(`/shop/author/${creatorId}`);
         const items = await shopRes.json();
-        
         const container = document.getElementById('streamerItems');
-        
         if (!items || items.length === 0) {
             container.innerHTML = '<p style="color:#888; text-align:center;">У стримера пока нет дропов или мерча</p>';
         } else {
@@ -646,7 +630,6 @@
                 </div>
             `).join('');
         }
-        
         document.getElementById('streamerShopPanel').style.display = 'block';
     }
 
@@ -657,9 +640,7 @@
             alert('Куплено! Новый баланс: ' + data.new_balance + ' 💎');
             showStreamerShop();
             loadUserBalance();
-        } else {
-            alert(data.error);
-        }
+        } else { alert(data.error); }
     }
 
     let lastDonationId = null;
