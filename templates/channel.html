@@ -14,9 +14,9 @@
         .channel-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
         .channel-avatar img{width:100%;height:100%;object-fit:cover}
         .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;cursor:pointer}
-        .channel-info{flex:1;min-width:0}
-        .channel-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .channel-stats{font-size:10px;color:#aaa}
+        .channel-info{flex:1;min-width:0;max-width:100%;overflow-wrap:break-word;word-break:break-word}
+        .channel-name{font-weight:600;font-size:14px;color:#333;line-height:1.2;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .channel-stats{font-size:10px;color:#aaa;margin-top:2px}
         .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
         .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
         .profile-btn{background:rgba(255,255,255,0.9);padding:4px 8px;border-radius:20px;text-decoration:none;color:#ff6b6b;font-size:12px}
@@ -28,7 +28,7 @@
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333;pointer-events:none}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
@@ -43,13 +43,12 @@
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
         .feed-actions{display:flex;gap:16px;font-size:13px;color:#888;flex-wrap:wrap}
-        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s;pointer-events:auto}
+        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
-        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s;pointer-events:auto}
+        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
         .feed-donate-btn:hover{transform:scale(1.02)}
 
-        /* Три точки */
         .post-menu-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:12px;z-index:5}
         .post-menu-btn:hover{background:#f0f0f0}
         .post-dropdown{position:absolute;top:36px;right:12px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:10;min-width:160px;padding:4px}
@@ -58,7 +57,6 @@
         .post-dropdown button:hover{background:#f5f5f5}
         .post-dropdown button.danger{color:#ff4444}
 
-        /* Анимация сердечка */
         .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
         @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
 
@@ -97,6 +95,7 @@
             .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
             .feed-images-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
             .feed-images-grid img,.feed-images-grid .grid-video-wrapper{height:120px}
+            .channel-name{font-size:13px}
         }
     </style>
 </head>
@@ -283,10 +282,11 @@
     {% if is_admin and has_access %}
     <div class="new-post-area">
         <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
+            <input type="file" id="postFileInput" multiple style="display:none" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
             <div class="new-post-input">
                 <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
                 <div style="margin-top:8px;">
-                    <button type="button" class="attach-btn" onclick="addFiles()">📎 Добавить файлы</button>
+                    <button type="button" class="attach-btn" onclick="document.getElementById('postFileInput').click()">📎 Добавить файлы</button>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
                 <div class="selected-files-grid" id="selectedFilesGrid"></div>
@@ -297,7 +297,6 @@
     {% endif %}
 </div>
 
-<!-- Модалки -->
 <div class="modal" id="donateModal">
     <div class="modal-content">
         <h3>💎 Поддержать канал</h3>
@@ -390,33 +389,35 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    function addFiles() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.onchange = function() {
-            for (let file of input.files) {
-                if (selectedFiles.length >= MAX_FILES) { alert('Максимум ' + MAX_FILES + ' файлов'); break; }
+    // ---------- РАБОТА С ФАЙЛАМИ (надёжный статический input) ----------
+    const fileInput = document.getElementById('postFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            for (let file of files) {
+                if (selectedFiles.length >= MAX_FILES) {
+                    alert('Максимум ' + MAX_FILES + ' файлов');
+                    break;
+                }
                 selectedFiles.push(file);
             }
             updateFileGrid();
-            input.remove();
-        };
-        document.body.appendChild(input);
-        input.click();
+            this.value = ''; // очищаем, чтобы можно было выбрать те же файлы повторно
+        });
     }
+
     function updateFileGrid() {
         const gridDiv = document.getElementById('selectedFilesGrid');
-        if (selectedFiles.length === 0) { gridDiv.innerHTML = ''; return; }
+        if (!selectedFiles.length) {
+            gridDiv.innerHTML = '';
+            return;
+        }
         gridDiv.innerHTML = selectedFiles.map((file, idx) => {
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
+            const url = URL.createObjectURL(file);
             let previewHtml = '';
-            if (isImage) {
-                const url = URL.createObjectURL(file);
+            if (file.type.startsWith('image/')) {
                 previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
-            } else if (isVideo) {
-                const url = URL.createObjectURL(file);
+            } else if (file.type.startsWith('video/')) {
                 previewHtml = `<video src="${url}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
             } else {
                 previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
@@ -427,18 +428,48 @@
             </div>`;
         }).join('');
     }
-    function removeFileFromGrid(index) { selectedFiles.splice(index, 1); updateFileGrid(); }
-    document.getElementById('postForm').onsubmit = function(e) {
-        e.preventDefault();
-        const content = this.querySelector('textarea[name="content"]').value;
-        const formData = new FormData();
-        formData.append('content', content);
-        for (let f of selectedFiles) formData.append('files', f);
-        fetch(this.action, { method: 'POST', body: formData })
-            .then(r => r.ok ? location.reload() : alert('Ошибка при публикации'))
-            .catch(() => alert('Ошибка сети'));
-    };
 
+    function removeFileFromGrid(index) {
+        selectedFiles.splice(index, 1);
+        updateFileGrid();
+    }
+
+    // ---------- ОТПРАВКА ПОСТА ----------
+    const postForm = document.getElementById('postForm');
+    if (postForm) {
+        postForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const textarea = this.querySelector('textarea[name="content"]');
+            const content = textarea.value.trim();
+
+            if (!content && selectedFiles.length === 0) {
+                alert('Добавьте текст или хотя бы один файл');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('content', content);
+            selectedFiles.forEach(f => formData.append('files', f));
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => {
+                if (r.ok) {
+                    selectedFiles = [];
+                    location.reload();
+                } else {
+                    return r.text().then(text => { throw new Error(text || 'Ошибка при публикации'); });
+                }
+            })
+            .catch(err => {
+                alert(err.message || 'Ошибка сети');
+            });
+        });
+    }
+
+    // Донаты
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
     async function submitDonate() {
@@ -474,11 +505,8 @@
         }).then(() => location.reload());
     }
 
-    // Лайк с анимацией сердечка по тапу в любом месте поста
     function likePost(postId, el) {
         const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        
-        // Анимация сердечка (как в ленте)
         if (feedItem) {
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
@@ -490,7 +518,17 @@
             feedItem.appendChild(heart);
             setTimeout(() => heart.remove(), 1000);
         }
-
+        if (el) {
+            const countSpan = el.querySelector('span');
+            let currentCount = parseInt(countSpan.textContent) || 0;
+            if (el.classList.contains('liked')) {
+                el.classList.remove('liked');
+                countSpan.textContent = Math.max(0, currentCount - 1);
+            } else {
+                el.classList.add('liked');
+                countSpan.textContent = currentCount + 1;
+            }
+        }
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
@@ -501,20 +539,15 @@
             }
         });
     }
-    
-    // Обработчик тапа по посту (лайк)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.feed-item').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                // Игнорируем клики по кнопкам действий, изображениям, видео, файлам, ссылкам, меню
-                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
-                    return;
-                }
-                
-                const postId = this.dataset.postId;
-                const likeBtn = this.querySelector('.feed-action');
-                likePost(postId, likeBtn);
-            });
+
+    document.querySelectorAll('.feed-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
+                return;
+            }
+            const postId = this.dataset.postId;
+            const likeBtn = this.querySelector('.feed-action');
+            likePost(postId, likeBtn);
         });
     });
 
