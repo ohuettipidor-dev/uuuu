@@ -281,10 +281,11 @@
     {% if is_admin and has_access %}
     <div class="new-post-area">
         <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
+            <input type="file" id="postFileInput" multiple style="display:none" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
             <div class="new-post-input">
                 <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
                 <div style="margin-top:8px;">
-                    <button type="button" class="attach-btn" onclick="addFiles()">📎 Добавить файлы</button>
+                    <button type="button" class="attach-btn" onclick="document.getElementById('postFileInput').click()">📎 Добавить файлы</button>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
                 <div class="selected-files-grid" id="selectedFilesGrid"></div>
@@ -387,33 +388,32 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    function addFiles() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.onchange = function() {
-            for (let file of input.files) {
-                if (selectedFiles.length >= MAX_FILES) { alert('Максимум ' + MAX_FILES + ' файлов'); break; }
-                selectedFiles.push(file);
+    // Обработчик выбора файлов через статический инпут
+    document.getElementById('postFileInput').addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        for (let file of files) {
+            if (selectedFiles.length >= MAX_FILES) {
+                alert('Максимум ' + MAX_FILES + ' файлов');
+                break;
             }
-            updateFileGrid();
-            input.remove();
-        };
-        document.body.appendChild(input);
-        input.click();
-    }
+            selectedFiles.push(file);
+        }
+        updateFileGrid();
+        this.value = ''; // очищаем инпут, чтобы можно было выбрать тот же файл повторно
+    });
+
     function updateFileGrid() {
         const gridDiv = document.getElementById('selectedFilesGrid');
-        if (selectedFiles.length === 0) { gridDiv.innerHTML = ''; return; }
+        if (!selectedFiles.length) {
+            gridDiv.innerHTML = '';
+            return;
+        }
         gridDiv.innerHTML = selectedFiles.map((file, idx) => {
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
+            const url = URL.createObjectURL(file);
             let previewHtml = '';
-            if (isImage) {
-                const url = URL.createObjectURL(file);
+            if (file.type.startsWith('image/')) {
                 previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
-            } else if (isVideo) {
-                const url = URL.createObjectURL(file);
+            } else if (file.type.startsWith('video/')) {
                 previewHtml = `<video src="${url}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
             } else {
                 previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
@@ -424,16 +424,39 @@
             </div>`;
         }).join('');
     }
-    function removeFileFromGrid(index) { selectedFiles.splice(index, 1); updateFileGrid(); }
+
+    function removeFileFromGrid(index) {
+        selectedFiles.splice(index, 1);
+        updateFileGrid();
+    }
+
+    // Отправка формы создания поста
     document.getElementById('postForm').onsubmit = function(e) {
         e.preventDefault();
-        const content = this.querySelector('textarea[name="content"]').value;
+        const content = this.querySelector('textarea[name="content"]').value.trim();
+        if (!content && selectedFiles.length === 0) {
+            alert('Добавьте текст или файлы');
+            return;
+        }
         const formData = new FormData();
         formData.append('content', content);
-        for (let f of selectedFiles) formData.append('files', f);
-        fetch(this.action, { method: 'POST', body: formData })
-            .then(r => r.ok ? location.reload() : alert('Ошибка при публикации'))
-            .catch(() => alert('Ошибка сети'));
+        selectedFiles.forEach(f => formData.append('files', f));
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => {
+            if (r.ok) {
+                selectedFiles = [];
+                location.reload();
+            } else {
+                return r.json().then(data => { throw new Error(data.error || 'Ошибка при публикации'); });
+            }
+        })
+        .catch(err => {
+            alert(err.message || 'Ошибка сети');
+        });
     };
 
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
