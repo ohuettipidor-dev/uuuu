@@ -90,29 +90,24 @@
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{padding:0 12px;font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
 
-        /* Кружок с фото - одиночное */
-        .feed-single-image-container{width:100%;aspect-ratio:1/1;overflow:hidden;cursor:pointer;position:relative}
-        .feed-single-image-container img{width:100%;height:100%;object-fit:cover;display:block}
+        .feed-single-image-container{width:100%;overflow:hidden;cursor:pointer;position:relative}
+        .feed-single-image-container img{width:100%;height:auto;display:block}
 
-        /* Счётчик фото */
         .photo-counter{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:white;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;z-index:2;pointer-events:none;backdrop-filter:blur(4px)}
 
-        /* Кнопки навигации */
         .photo-nav-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.9);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.15);transition:0.2s;color:#333}
         .photo-nav-btn:hover{background:white;transform:translateY(-50%) scale(1.05)}
         .photo-nav-prev{left:8px}
         .photo-nav-next{right:8px}
 
-        /* Точки-индикаторы */
         .photo-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
         .photo-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.5);transition:0.2s}
         .photo-dot.active{background:white;transform:scale(1.3)}
 
-        /* Лайк-анимация */
         .like-heart-animation{position:absolute;z-index:10;pointer-events:none;animation:likeBurst 1s ease-out forwards}
         @keyframes likeBurst{0%{opacity:1;transform:scale(0.5) translate(-50%,-50%)}50%{opacity:1;transform:scale(1.5) translate(-30%,-30%)}100%{opacity:0;transform:scale(2) translate(-25%,-25%)}}
 
-        .feed-video{width:100%;max-height:400px;border-radius:0;margin:8px 0}
+        .feed-video{width:100%;max-height:400px;margin:8px 0}
         .feed-audio{width:calc(100% - 24px);margin:8px 12px}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 12px}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
@@ -124,7 +119,6 @@
         .donate-btn:hover{transform:scale(1.02)}
         .retry-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-weight:bold;margin-top:10px}
 
-        /* Просмотрщик фото на весь экран */
         .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:10000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:0.2s}
         .image-viewer.active{opacity:1;visibility:visible}
         .image-viewer img{max-width:100%;max-height:100%;object-fit:contain}
@@ -265,7 +259,6 @@
     </div>
 </div>
 
-<!-- Фото-вьюер на весь экран -->
 <div class="image-viewer" id="imageViewer">
     <div class="image-viewer-close" onclick="closeImageViewer()">✕</div>
     <div class="image-viewer-counter" id="imageCounter">1 / 1</div>
@@ -408,7 +401,7 @@ let feedLoaded = false;
 let feedTapTimer = null;
 let allFeedImages = [];
 let currentImageIndex = 0;
-let currentPostImages = []; // фото текущего поста для слайдера
+let currentPostImages = [];
 
 async function loadFeed() {
     if (feedLoaded) return;
@@ -437,26 +430,22 @@ async function loadFeed() {
             }
             var imagesHtml = '';
             if (images.length === 1) {
-                // Одно фото — на весь экран
                 allFeedImages.push({postId: p.id, images: images});
                 imagesHtml = '<div class="feed-single-image-container" onclick="openImageViewer(' + p.id + ', 0)" style="position:relative">';
                 imagesHtml += '<img src="' + images[0].path + '" loading="lazy">';
                 imagesHtml += '</div>';
             } else if (images.length > 1) {
-                // Несколько фото — слайдер
                 allFeedImages.push({postId: p.id, images: images});
                 imagesHtml = '<div class="feed-single-image-container" id="feedSlider_' + p.id + '" style="position:relative">';
                 imagesHtml += '<img src="' + images[0].path + '" loading="lazy" id="feedSliderImg_' + p.id + '">';
                 imagesHtml += '<div class="photo-counter" id="feedSliderCounter_' + p.id + '">1 / ' + images.length + '</div>';
-                if (images.length > 1) {
-                    imagesHtml += '<button class="photo-nav-btn photo-nav-prev" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', -1)">‹</button>';
-                    imagesHtml += '<button class="photo-nav-btn photo-nav-next" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', 1)">›</button>';
-                    imagesHtml += '<div class="photo-dots" id="feedSliderDots_' + p.id + '">';
-                    for (var i = 0; i < images.length; i++) {
-                        imagesHtml += '<div class="photo-dot' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"></div>';
-                    }
-                    imagesHtml += '</div>';
+                imagesHtml += '<button class="photo-nav-btn photo-nav-prev" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', -1)">‹</button>';
+                imagesHtml += '<button class="photo-nav-btn photo-nav-next" onclick="event.stopPropagation();feedSliderNav(' + p.id + ', 1)">›</button>';
+                imagesHtml += '<div class="photo-dots" id="feedSliderDots_' + p.id + '">';
+                for (var i = 0; i < images.length; i++) {
+                    imagesHtml += '<div class="photo-dot' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"></div>';
                 }
+                imagesHtml += '</div>';
                 imagesHtml += '</div>';
             }
             var videosHtml = ''; videos.forEach(function(v) { videosHtml += '<video class="feed-video" src="' + v.path + '" controls></video>'; });
@@ -482,7 +471,6 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
-        // Инициализация слайдеров в ленте
         allFeedImages.forEach(function(item) {
             if (item.images.length > 1) {
                 window['feedSliderIndex_' + item.postId] = 0;
@@ -493,7 +481,6 @@ async function loadFeed() {
             item.addEventListener('click', function(e) {
                 if (e.target.closest('.feed-actions') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.photo-nav-btn')) return;
                 if (e.target.closest('.feed-single-image-container')) {
-                    // Клик по фото — открыть просмотрщик
                     return;
                 }
                 if (feedTapTimer) {
@@ -524,7 +511,6 @@ async function loadFeed() {
     }
 }
 
-// Навигация в слайдере ленты
 function feedSliderNav(postId, direction) {
     var item = allFeedImages.find(function(x) { return x.postId == postId; });
     if (!item) return;
@@ -548,7 +534,6 @@ function feedSliderNav(postId, direction) {
     }
 }
 
-// Открыть фото на весь экран
 function openImageViewer(postId, startIndex) {
     var item = allFeedImages.find(function(x) { return x.postId == postId; });
     if (!item) return;
@@ -589,7 +574,6 @@ function closeImageViewer() {
     currentImageIndex = 0;
 }
 
-// Свайпы в просмотрщике
 document.addEventListener('DOMContentLoaded', function() {
     var viewer = document.getElementById('imageViewer');
     var touchStartX = 0;
