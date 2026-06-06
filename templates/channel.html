@@ -28,7 +28,7 @@
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333;pointer-events:none}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
@@ -43,10 +43,10 @@
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
         .feed-actions{display:flex;gap:16px;font-size:13px;color:#888;flex-wrap:wrap}
-        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
+        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s;pointer-events:auto}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
-        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
+        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s;pointer-events:auto}
         .feed-donate-btn:hover{transform:scale(1.02)}
 
         /* Три точки */
@@ -234,11 +234,11 @@
             {% endif %}
 
             <div class="feed-actions" onclick="event.stopPropagation();">
-                <span class="feed-action" onclick="likePost({{ post.id }}, this, event)">❤️ <span>{{ post.likes_count|default(0) }}</span></span>
-                <span class="feed-action" onclick="toggleComments({{ post.id }})">💬 <span id="comments-count-{{ post.id }}">{{ post.comments|length }}</span></span>
+                <span class="feed-action" onclick="event.stopPropagation(); likePost({{ post.id }}, this)">❤️ <span>{{ post.likes_count|default(0) }}</span></span>
+                <span class="feed-action" onclick="event.stopPropagation(); toggleComments({{ post.id }})">💬 <span id="comments-count-{{ post.id }}">{{ post.comments|length }}</span></span>
                 <span class="feed-action">👁️ {{ post.views }}</span>
-                <a href="#" class="feed-donate-btn" onclick="donateToChannel()">💎 Донат</a>
-                <span class="feed-action" onclick="sharePost({{ post.id }}, '{{ channel.name }}', '{{ post.content[:80]|replace("'", "\\'")|safe }}')">🔗</span>
+                <a href="#" class="feed-donate-btn" onclick="event.stopPropagation(); donateToChannel()">💎 Донат</a>
+                <span class="feed-action" onclick="event.stopPropagation(); sharePost({{ post.id }}, '{{ channel.name }}', '{{ post.content[:80]|replace("'", "\\'")|safe }}')">🔗</span>
             </div>
 
             <div class="comment-section" id="comments-{{ post.id }}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #f0f0f0;">
@@ -474,13 +474,12 @@
         }).then(() => location.reload());
     }
 
-    // Лайк с анимацией сердечка
-    function likePost(postId, el, event) {
-        event.stopPropagation();
+    // Лайк с анимацией сердечка по тапу в любом месте поста
+    function likePost(postId, el) {
         const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         
         // Анимация сердечка (как в ленте)
-        if (feedItem && !el.classList.contains('liked')) {
+        if (feedItem) {
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
             heart.innerHTML = '❤️';
@@ -495,13 +494,30 @@
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
+            if (data.success && el) {
                 el.querySelector('span').textContent = data.likes_count;
                 if (data.liked) el.classList.add('liked');
                 else el.classList.remove('liked');
             }
         });
     }
+    
+    // Обработчик тапа по посту (лайк)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.feed-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                // Игнорируем клики по кнопкам действий, изображениям, видео, файлам, ссылкам, меню
+                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
+                    return;
+                }
+                
+                const postId = this.dataset.postId;
+                const likeBtn = this.querySelector('.feed-action');
+                likePost(postId, likeBtn);
+            });
+        });
+    });
+
     function likeComment(commentId, postId) {
         fetch(`/channel/like_comment/${commentId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
