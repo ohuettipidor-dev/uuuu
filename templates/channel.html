@@ -28,7 +28,7 @@
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
-        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333;pointer-events:none}
+        .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
@@ -43,13 +43,12 @@
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
         .feed-actions{display:flex;gap:16px;font-size:13px;color:#888;flex-wrap:wrap}
-        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s;pointer-events:auto}
+        .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
-        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s;pointer-events:auto}
+        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
         .feed-donate-btn:hover{transform:scale(1.02)}
 
-        /* Три точки */
         .post-menu-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:12px;z-index:5}
         .post-menu-btn:hover{background:#f0f0f0}
         .post-dropdown{position:absolute;top:36px;right:12px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:10;min-width:160px;padding:4px}
@@ -58,7 +57,6 @@
         .post-dropdown button:hover{background:#f5f5f5}
         .post-dropdown button.danger{color:#ff4444}
 
-        /* Анимация сердечка */
         .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
         @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
 
@@ -297,7 +295,6 @@
     {% endif %}
 </div>
 
-<!-- Модалки -->
 <div class="modal" id="donateModal">
     <div class="modal-content">
         <h3>💎 Поддержать канал</h3>
@@ -474,11 +471,11 @@
         }).then(() => location.reload());
     }
 
-    // Лайк с анимацией сердечка по тапу в любом месте поста
+    // Мгновенный лайк с анимацией
     function likePost(postId, el) {
         const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         
-        // Анимация сердечка (как в ленте)
+        // Анимация сердечка
         if (feedItem) {
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
@@ -491,6 +488,20 @@
             setTimeout(() => heart.remove(), 1000);
         }
 
+        // Мгновенное обновление счётчика (оптимистично)
+        if (el) {
+            const countSpan = el.querySelector('span');
+            let currentCount = parseInt(countSpan.textContent) || 0;
+            if (el.classList.contains('liked')) {
+                el.classList.remove('liked');
+                countSpan.textContent = Math.max(0, currentCount - 1);
+            } else {
+                el.classList.add('liked');
+                countSpan.textContent = currentCount + 1;
+            }
+        }
+
+        // Отправляем на сервер
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
@@ -503,18 +514,16 @@
     }
     
     // Обработчик тапа по посту (лайк)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.feed-item').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                // Игнорируем клики по кнопкам действий, изображениям, видео, файлам, ссылкам, меню
-                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
-                    return;
-                }
-                
-                const postId = this.dataset.postId;
-                const likeBtn = this.querySelector('.feed-action');
-                likePost(postId, likeBtn);
-            });
+    document.querySelectorAll('.feed-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            // Игнорируем клики по кнопкам действий, фото, видео, файлам, ссылкам, меню
+            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
+                return;
+            }
+            
+            const postId = this.dataset.postId;
+            const likeBtn = this.querySelector('.feed-action');
+            likePost(postId, likeBtn);
         });
     });
 
