@@ -7,25 +7,25 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
-        .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94);backdrop-filter:blur(10px)}
+        .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94)}
 
-        .header{padding:12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap}
-        .back{background:#ff6b6b;padding:6px 14px;border-radius:25px;cursor:pointer;color:white;text-decoration:none;font-size:13px}
-        .channel-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;cursor:pointer;position:relative}
+        .header{padding:6px 10px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;min-height:44px}
+        .back{background:#ff6b6b;padding:4px 10px;border-radius:20px;cursor:pointer;color:white;text-decoration:none;font-size:12px;white-space:nowrap}
+        .channel-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
         .channel-avatar img{width:100%;height:100%;object-fit:cover}
-        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;cursor:pointer}
-        .channel-info{flex:1}
-        .channel-name{font-weight:600;font-size:16px;color:#333}
-        .channel-username{font-size:11px;color:#888}
-        .channel-stats{font-size:11px;color:#aaa}
-        .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
-        .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:25px;text-decoration:none;color:#ff6b6b;font-size:13px;cursor:pointer;border:none}
-        .danger-btn{background:#ff4444;color:white;padding:6px 12px;border-radius:25px;text-decoration:none;font-size:13px;cursor:pointer;border:none}
-        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 12px;border-radius:25px;cursor:pointer;font-size:13px}
-        .donate-btn{background:#4caf50;color:white;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;border:none;text-decoration:none;font-size:13px}
-        .coins-balance{color:#ff6b6b;font-weight:600;font-size:14px;display:flex;align-items:center;gap:4px}
-        .shop-btn{background:#ffd700;color:#000;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;cursor:pointer}
+        .channel-info{flex:1;min-width:0}
+        .channel-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .channel-username{font-size:10px;color:#888}
+        .channel-stats{font-size:10px;color:#aaa}
+        .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
+        .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:4px 8px;border-radius:20px;text-decoration:none;color:#ff6b6b;font-size:12px}
+        .danger-btn{background:#ff4444;color:white;padding:4px 8px;border-radius:20px;text-decoration:none;font-size:11px;cursor:pointer;border:none}
+        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:4px 8px;border-radius:20px;cursor:pointer;font-size:11px}
+        .donate-btn{background:#4caf50;color:white;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;border:none;font-size:12px;white-space:nowrap}
+        .coins-balance{color:#ff6b6b;font-weight:600;font-size:12px;display:flex;align-items:center;gap:3px;white-space:nowrap}
+        .shop-btn{background:#ffd700;color:#000;padding:4px 8px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
@@ -37,6 +37,7 @@
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
         .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
         .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
+        .feed-images-grid video{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
         .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
@@ -48,11 +49,19 @@
         .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
         .feed-donate-btn:hover{transform:scale(1.02)}
 
+        /* Три точки */
+        .post-menu-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:12px;z-index:5}
+        .post-menu-btn:hover{background:#f0f0f0}
+        .post-dropdown{position:absolute;top:36px;right:12px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:10;min-width:160px;padding:4px}
+        .post-dropdown.active{display:flex}
+        .post-dropdown button{background:none;border:none;padding:10px 14px;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#333}
+        .post-dropdown button:hover{background:#f5f5f5}
+        .post-dropdown button.danger{color:#ff4444}
+
         /* Видео превью */
         .inline-video-wrapper{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;margin-top:8px;cursor:pointer}
         .inline-video-wrapper video{width:100%;display:block;max-height:400px;object-fit:contain}
         .inline-video-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:0.2s;z-index:5;pointer-events:none}
-        .inline-video-wrapper.playing .inline-video-play{display:none}
 
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
@@ -87,10 +96,11 @@
         @media (max-width:480px){
             .container{padding:0}
             .feed-item{padding:12px}
-            .header{padding:10px}
-            .channel-avatar{width:40px;height:40px;font-size:20px}
-            .subscribe-btn,.subscribed-btn{padding:6px 14px;font-size:12px}
+            .header{padding:4px 8px;min-height:40px}
+            .channel-avatar{width:30px;height:30px;font-size:16px}
+            .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
             .feed-images-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
+            .feed-images-grid img,.feed-images-grid video{height:120px}
         }
     </style>
 </head>
@@ -110,14 +120,11 @@
         </div>
         <div class="channel-info">
             <div class="channel-name">{{ channel.name }}</div>
-            {% if channel.username %}<div class="channel-username">@{{ channel.username }}</div>{% endif %}
-            <div class="channel-stats">👥 {{ channel.subscribers_count }} подписчиков</div>
+            <div class="channel-stats">👥 {{ channel.subscribers_count }}</div>
         </div>
         {% if is_admin %}
-            <div style="display:flex; gap:8px;">
-                <button class="edit-btn" onclick="openEditChannelModal()">✏️</button>
-                <button class="danger-btn" onclick="deleteChannel()">🗑️</button>
-            </div>
+            <button class="edit-btn" onclick="openEditChannelModal()">✏️</button>
+            <button class="danger-btn" onclick="deleteChannel()">🗑️</button>
         {% else %}
             <form method="POST" action="/channel/subscribe/{{ channel.id }}" style="margin:0">
                 <button type="submit" class="{% if is_subscribed %}subscribed-btn{% else %}subscribe-btn{% endif %}">
@@ -126,10 +133,10 @@
             </form>
         {% endif %}
         <a href="/profile" class="profile-btn">🧸</a>
-        <div class="coins-balance" id="userBalanceDisplay">💎 <span id="userBalance">0</span></div>
-        <button class="shop-btn" onclick="window.open('/shop/coins','_blank')">💎 Магазин</button>
+        <div class="coins-balance">💎 <span id="userBalance">0</span></div>
+        <button class="shop-btn" onclick="window.open('/shop/coins','_blank')">💎</button>
         {% if not is_admin %}
-            <button class="donate-btn" onclick="openDonateModal()">💎 Поддержать</button>
+            <button class="donate-btn" onclick="openDonateModal()">💎</button>
         {% endif %}
     </div>
 
@@ -148,6 +155,17 @@
     <div class="posts" id="posts">
         {% for post in posts %}
         <div class="feed-item" data-post-id="{{ post.id }}" data-attachments="{{ post.attachments }}">
+            {% if is_admin %}
+            <button class="post-menu-btn" onclick="togglePostMenu(event, {{ post.id }})">•••</button>
+            <div class="post-dropdown" id="post-menu-{{ post.id }}">
+                <button onclick="editPost({{ post.id }}); closePostMenu({{ post.id }})">✏️ Редактировать</button>
+                <button onclick="deletePost({{ post.id }}); closePostMenu({{ post.id }})" class="danger">🗑️ Удалить</button>
+                <button onclick="togglePostComments({{ post.id }}); closePostMenu({{ post.id }})">
+                    {% if post.comments_enabled %}💬 Отключить комм.{% else %}💬 Включить комм.{% endif %}
+                </button>
+            </div>
+            {% endif %}
+
             <div class="feed-header">
                 <div class="feed-avatar">
                     {% if post.author.avatar != 'default.png' %}
@@ -178,10 +196,7 @@
                 <div class="feed-images-grid">
                     {% for att in media_att %}
                         {% if att.type == 'video' %}
-                            <div class="inline-video-wrapper" onclick="window.open('{{ att.path }}', '_blank')">
-                                <video src="{{ att.path }}" preload="metadata" muted playsinline loop id="inline-video-{{ post.id }}-{{ loop.index }}" class="inline-video"></video>
-                                <div class="inline-video-play">▶️</div>
-                            </div>
+                            <video src="{{ att.path }}" preload="metadata" muted playsinline loop onclick="window.open('{{ att.path }}', '_blank')" style="cursor:pointer"></video>
                         {% else %}
                             <img src="{{ att.path }}" loading="lazy" onclick="window.open(this.src)">
                         {% endif %}
@@ -201,10 +216,7 @@
                 {% elif post.file_type == 'audio' %}
                     <audio controls src="{{ post.file_path }}" style="width:100%"></audio>
                 {% elif post.file_type == 'video' %}
-                    <div class="inline-video-wrapper" onclick="window.open('{{ post.file_path }}', '_blank')">
-                        <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop id="inline-video-{{ post.id }}-single" class="inline-video"></video>
-                        <div class="inline-video-play">▶️</div>
-                    </div>
+                    <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop onclick="window.open('{{ post.file_path }}', '_blank')" style="width:100%;max-height:300px;border-radius:12px;cursor:pointer"></video>
                 {% else %}
                     <a href="{{ post.file_path }}" download="{{ post.file_name }}">📎 {{ post.file_name }}</a>
                 {% endif %}
@@ -218,7 +230,6 @@
                 <span class="feed-action" onclick="sharePost({{ post.id }}, '{{ channel.name }}', '{{ post.content[:80]|replace("'", "\\'")|safe }}')">🔗</span>
             </div>
 
-            <!-- Комментарии -->
             <div class="comment-section" id="comments-{{ post.id }}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #f0f0f0;">
                 <div class="comment-input" style="display:flex; gap:8px; margin-bottom:12px;">
                     <input type="text" id="comment-input-{{ post.id }}" placeholder="Комментарий..." style="flex:1; padding:10px; border-radius:25px; border:1px solid #ffb3b3; outline:none;">
@@ -248,16 +259,6 @@
                     {% endfor %}
                 </div>
             </div>
-
-            {% if is_admin %}
-            <div style="display:flex; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid #f0f0f0;">
-                <button class="post-action-btn" onclick="editPost({{ post.id }})" style="background:#f0f0f0; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; font-size:12px;">✏️</button>
-                <button class="post-action-btn" onclick="deletePost({{ post.id }})" style="background:#ff4444; color:white; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; font-size:12px;">🗑️</button>
-                <button class="post-action-btn" onclick="togglePostComments({{ post.id }})" style="background:#f0f0f0; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; font-size:12px;">
-                    {% if post.comments_enabled %}💬 Выкл{% else %}💬 Вкл{% endif %}
-                </button>
-            </div>
-            {% endif %}
         </div>
         {% else %}
         <div style="text-align:center;padding:60px;color:#888">
@@ -366,6 +367,20 @@
         } catch(e) { errEl.innerText = 'Ошибка сети'; errEl.style.display = 'block'; }
     }
 
+    // Выпадающее меню поста
+    function togglePostMenu(event, postId) {
+        event.stopPropagation();
+        // Закрываем все другие меню
+        document.querySelectorAll('.post-dropdown.active').forEach(d => { if (d.id !== 'post-menu-' + postId) d.classList.remove('active'); });
+        document.getElementById('post-menu-' + postId).classList.toggle('active');
+    }
+    function closePostMenu(postId) {
+        document.getElementById('post-menu-' + postId).classList.remove('active');
+    }
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
+    });
+
     // Загрузка файлов
     function addFiles() {
         const input = document.createElement('input');
@@ -415,18 +430,6 @@
             .then(r => r.ok ? location.reload() : alert('Ошибка при публикации'))
             .catch(() => alert('Ошибка сети'));
     };
-
-    // Видео: при клике на превью открывается в новом окне со звуком
-    document.querySelectorAll('.inline-video-wrapper').forEach(wrapper => {
-        const video = wrapper.querySelector('video');
-        if (video) {
-            // При наведении запускаем превью без звука
-            wrapper.addEventListener('mouseenter', () => { video.play().catch(() => {}); });
-            wrapper.addEventListener('mouseleave', () => { video.pause(); });
-            // На мобильных устройствах запускаем превью при тапе, но окно открывается по onclick на wrapper
-            wrapper.addEventListener('touchstart', () => { video.play().catch(() => {}); }, {once: true});
-        }
-    });
 
     // Донаты
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
@@ -488,13 +491,10 @@
         });
     }
     function togglePostComments(postId) {
-        const commentSection = document.getElementById(`comments-${postId}`);
-        const isCurrentlyEnabled = commentSection.style.display !== 'none';
-        const newState = !isCurrentlyEnabled;
         fetch(`/channel/post/edit/${postId}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `content=keep&comments_enabled=${newState}`
+            body: 'content=keep&comments_enabled=' + (document.getElementById(`comments-${postId}`).style.display !== 'none' ? 'false' : 'true')
         }).then(() => location.reload());
     }
 
