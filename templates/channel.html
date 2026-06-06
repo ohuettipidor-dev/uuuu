@@ -9,22 +9,22 @@
         body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
         .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94)}
 
-        .header{padding:6px 10px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;min-height:44px}
-        .back{background:#ff6b6b;padding:4px 10px;border-radius:20px;cursor:pointer;color:white;text-decoration:none;font-size:12px;white-space:nowrap}
-        .channel-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
+        .header{padding:8px 12px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;min-height:52px}
+        .back{background:#ff6b6b;padding:5px 12px;border-radius:20px;cursor:pointer;color:white;text-decoration:none;font-size:13px;white-space:nowrap}
+        .channel-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
         .channel-avatar img{width:100%;height:100%;object-fit:cover}
-        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;cursor:pointer}
+        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;cursor:pointer}
         .channel-info{flex:1;min-width:0}
-        .channel-name{font-weight:600;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .channel-stats{font-size:10px;color:#aaa}
-        .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
-        .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:4px 8px;border-radius:20px;text-decoration:none;color:#ff6b6b;font-size:12px}
-        .danger-btn{background:#ff4444;color:white;padding:4px 8px;border-radius:20px;text-decoration:none;font-size:11px;cursor:pointer;border:none}
-        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:4px 8px;border-radius:20px;cursor:pointer;font-size:11px}
-        .donate-btn{background:#4caf50;color:white;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;border:none;font-size:12px;white-space:nowrap}
-        .coins-balance{color:#ff6b6b;font-weight:600;font-size:12px;display:flex;align-items:center;gap:3px;white-space:nowrap}
-        .shop-btn{background:#ffd700;color:#000;padding:4px 8px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+        .channel-name{font-weight:600;font-size:15px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .channel-stats{font-size:11px;color:#aaa}
+        .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:7px 16px;border-radius:20px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap}
+        .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:7px 16px;border-radius:20px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap}
+        .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:20px;text-decoration:none;color:#ff6b6b;font-size:13px}
+        .danger-btn{background:#ff4444;color:white;padding:5px 10px;border-radius:20px;text-decoration:none;font-size:12px;cursor:pointer;border:none}
+        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:12px}
+        .donate-btn{background:#4caf50;color:white;padding:7px 16px;border-radius:20px;cursor:pointer;font-weight:500;border:none;font-size:13px;white-space:nowrap}
+        .coins-balance{color:#ff6b6b;font-weight:600;font-size:13px;display:flex;align-items:center;gap:3px;white-space:nowrap}
+        .shop-btn{background:#ffd700;color:#000;padding:5px 10px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 
         .posts{flex:1;overflow-y:auto;padding:0}
         .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
@@ -58,6 +58,10 @@
         .post-dropdown button:hover{background:#f5f5f5}
         .post-dropdown button.danger{color:#ff4444}
 
+        /* Анимация сердечка при тапе */
+        .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
+        @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
+
         .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
         .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
         .new-post-input textarea:focus{border-color:#ff6b6b}
@@ -88,9 +92,9 @@
         @media (max-width:480px){
             .container{padding:0}
             .feed-item{padding:12px}
-            .header{padding:4px 8px;min-height:40px}
-            .channel-avatar{width:30px;height:30px;font-size:16px}
-            .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
+            .header{padding:6px 10px;min-height:46px}
+            .channel-avatar{width:36px;height:36px;font-size:18px}
+            .subscribe-btn,.subscribed-btn{padding:5px 12px;font-size:12px}
             .feed-images-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
             .feed-images-grid img,.feed-images-grid .grid-video-wrapper{height:120px}
         }
@@ -191,7 +195,6 @@
                     {% endif %}
                 {% endfor %}
 
-                <!-- Сетка фото и видео -->
                 {% if images or videos %}
                 <div class="feed-images-grid">
                     {% for img in images %}
@@ -206,12 +209,10 @@
                 </div>
                 {% endif %}
 
-                <!-- Аудио -->
                 {% for audio in audios %}
                     <audio class="feed-audio" controls src="{{ audio.path }}" preload="metadata"></audio>
                 {% endfor %}
 
-                <!-- Файлы -->
                 {% for file in files %}
                     <a class="feed-file" href="{{ file.path }}" target="_blank">
                         📎 <span class="filename">{{ file.name }}</span>
@@ -473,7 +474,21 @@
         }).then(() => location.reload());
     }
 
+    // Лайк с анимацией
     function likePost(postId, el) {
+        const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
+        if (feedItem && !el.closest('.feed-action').classList.contains('liked')) {
+            const rect = feedItem.getBoundingClientRect();
+            const heart = document.createElement('div');
+            heart.className = 'like-heart-animation';
+            heart.innerHTML = '❤️';
+            heart.style.left = '50%';
+            heart.style.top = '50%';
+            heart.style.fontSize = '60px';
+            feedItem.appendChild(heart);
+            setTimeout(() => heart.remove(), 1000);
+        }
+
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
