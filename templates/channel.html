@@ -281,11 +281,10 @@
     {% if is_admin and has_access %}
     <div class="new-post-area">
         <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
-            <input type="file" id="postFileInput" multiple style="display:none" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
             <div class="new-post-input">
                 <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
                 <div style="margin-top:8px;">
-                    <button type="button" class="attach-btn" onclick="document.getElementById('postFileInput').click()">📎 Добавить файлы</button>
+                    <button type="button" class="attach-btn" onclick="addFiles()">📎 Добавить файлы</button>
                     <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
                 </div>
                 <div class="selected-files-grid" id="selectedFilesGrid"></div>
@@ -356,6 +355,7 @@
     let existingAttachments = [];
     let deletedPaths = [];
 
+    // Загрузка баланса
     async function loadBalance() {
         try {
             const res = await fetch('/api/coins/balance');
@@ -365,6 +365,7 @@
     }
     loadBalance();
 
+    // Платная подписка
     async function subscribePaidChannel() {
         const errEl = document.getElementById('subscribeError');
         errEl.style.display = 'none';
@@ -376,6 +377,7 @@
         } catch(e) { errEl.innerText = 'Ошибка сети'; errEl.style.display = 'block'; }
     }
 
+    // Меню поста (админка)
     function togglePostMenu(event, postId) {
         event.stopPropagation();
         document.querySelectorAll('.post-dropdown.active').forEach(d => { if (d.id !== 'post-menu-' + postId) d.classList.remove('active'); });
@@ -388,19 +390,28 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    // Обработчик выбора файлов через статический инпут
-    document.getElementById('postFileInput').addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        for (let file of files) {
-            if (selectedFiles.length >= MAX_FILES) {
-                alert('Максимум ' + MAX_FILES + ' файлов');
-                break;
+    // ---- НАДЁЖНАЯ РАБОТА С ФАЙЛАМИ И ПУБЛИКАЦИЯ ----
+    function addFiles() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx';
+        input.style.display = 'none';
+        input.onchange = function() {
+            const files = Array.from(input.files);
+            for (let file of files) {
+                if (selectedFiles.length >= MAX_FILES) {
+                    alert('Максимум ' + MAX_FILES + ' файлов');
+                    break;
+                }
+                selectedFiles.push(file);
             }
-            selectedFiles.push(file);
-        }
-        updateFileGrid();
-        this.value = ''; // очищаем инпут, чтобы можно было выбрать тот же файл повторно
-    });
+            updateFileGrid();
+            input.remove();
+        };
+        document.body.appendChild(input);
+        input.click();
+    }
 
     function updateFileGrid() {
         const gridDiv = document.getElementById('selectedFilesGrid');
@@ -430,35 +441,39 @@
         updateFileGrid();
     }
 
-    // Отправка формы создания поста
-    document.getElementById('postForm').onsubmit = function(e) {
-        e.preventDefault();
-        const content = this.querySelector('textarea[name="content"]').value.trim();
-        if (!content && selectedFiles.length === 0) {
-            alert('Добавьте текст или файлы');
-            return;
-        }
-        const formData = new FormData();
-        formData.append('content', content);
-        selectedFiles.forEach(f => formData.append('files', f));
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(r => {
-            if (r.ok) {
-                selectedFiles = [];
-                location.reload();
-            } else {
-                return r.json().then(data => { throw new Error(data.error || 'Ошибка при публикации'); });
+    // Форма публикации (только если существует)
+    const postForm = document.getElementById('postForm');
+    if (postForm) {
+        postForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const content = this.querySelector('textarea[name="content"]').value.trim();
+            if (!content && selectedFiles.length === 0) {
+                alert('Добавьте текст или хотя бы один файл');
+                return;
             }
-        })
-        .catch(err => {
-            alert(err.message || 'Ошибка сети');
-        });
-    };
+            const formData = new FormData();
+            formData.append('content', content);
+            selectedFiles.forEach(f => formData.append('files', f));
 
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => {
+                if (r.ok) {
+                    selectedFiles = [];
+                    location.reload();
+                } else {
+                    return r.json().then(data => { throw new Error(data.error || 'Ошибка при публикации'); });
+                }
+            })
+            .catch(err => {
+                alert(err.message || 'Ошибка сети');
+            });
+        });
+    }
+
+    // Донаты
     function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
     function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
     async function submitDonate() {
@@ -479,6 +494,7 @@
     }
     function donateToChannel() { openDonateModal(); }
 
+    // Комментарии
     function toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
@@ -494,11 +510,9 @@
         }).then(() => location.reload());
     }
 
-    // Мгновенный лайк с анимацией
+    // Лайк поста с анимацией
     function likePost(postId, el) {
         const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        
-        // Анимация сердечка
         if (feedItem) {
             const heart = document.createElement('div');
             heart.className = 'like-heart-animation';
@@ -510,8 +524,6 @@
             feedItem.appendChild(heart);
             setTimeout(() => heart.remove(), 1000);
         }
-
-        // Мгновенное обновление счётчика (оптимистично)
         if (el) {
             const countSpan = el.querySelector('span');
             let currentCount = parseInt(countSpan.textContent) || 0;
@@ -523,8 +535,6 @@
                 countSpan.textContent = currentCount + 1;
             }
         }
-
-        // Отправляем на сервер
         fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
         .then(data => {
@@ -535,21 +545,20 @@
             }
         });
     }
-    
-    // Обработчик тапа по посту (лайк)
+
+    // Двойной тап по посту
     document.querySelectorAll('.feed-item').forEach(function(item) {
         item.addEventListener('click', function(e) {
-            // Игнорируем клики по кнопкам действий, фото, видео, файлам, ссылкам, меню
             if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
                 return;
             }
-            
             const postId = this.dataset.postId;
             const likeBtn = this.querySelector('.feed-action');
             likePost(postId, likeBtn);
         });
     });
 
+    // Лайк комментария
     function likeComment(commentId, postId) {
         fetch(`/channel/like_comment/${commentId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
         .then(r => r.json())
@@ -560,6 +569,8 @@
             }
         });
     }
+
+    // Переключение комментариев (админ)
     function togglePostComments(postId) {
         fetch(`/channel/post/edit/${postId}`, {
             method: 'POST',
@@ -568,6 +579,7 @@
         }).then(() => location.reload());
     }
 
+    // Поделиться
     function sharePost(postId, channelName, preview) {
         var link = 'https://beargram.up.railway.app/channel/' + postId;
         var msg = '📢 ' + channelName + ': ' + (preview || '').substring(0, 80) + '...\n' + link;
@@ -578,6 +590,7 @@
         }
     }
 
+    // Аватар
     function openAvatarModal() { document.getElementById('avatarModal').classList.add('active'); }
     function closeAvatarModal() { document.getElementById('avatarModal').classList.remove('active'); }
     function uploadAvatar() {
@@ -587,6 +600,7 @@
         fetch('/channel/{{ channel.id }}/upload_avatar', { method: 'POST', body: formData }).then(() => location.reload());
     }
 
+    // Настройки канала
     function openEditChannelModal() { document.getElementById('editChannelModal').classList.add('active'); }
     function closeEditChannelModal() { document.getElementById('editChannelModal').classList.remove('active'); }
     function saveChannelSettings() {
@@ -603,6 +617,7 @@
         }).then(() => location.reload());
     }
 
+    // Редактирование поста
     function editPost(postId) {
         editingPostId = postId;
         const postDiv = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
@@ -670,6 +685,7 @@
         }
     }
 
+    // Закрытие модалок по клику вне
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
     });
