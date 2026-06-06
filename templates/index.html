@@ -160,14 +160,20 @@
 <div class="container">
     <div class="header">
         <div class="avatar" onclick="location.href='/profile'">
-            {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
+            {% if current_user.is_authenticated %}
+                {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
+            {% else %}
+                🐼
+            {% endif %}
         </div>
         <div class="logo-text"><span>🐻 Bear</span><span>Gram</span></div>
         <div class="header-actions">
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
             <a href="/golden" class="golden-btn"><span class="golden-btn-icon">🐻🎬</span> BearFlex</a>
-            {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
-            <a href="/logout" class="icon-btn">🚪</a>
+            {% if current_user.is_authenticated %}
+                {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
+            {% endif %}
+            <button class="icon-btn" onclick="doLogout()" title="Выйти">🚪</button>
         </div>
     </div>
 
@@ -304,6 +310,37 @@
 </div>
 
 <script>
+// ======================= НАДЁЖНЫЙ ВЫХОД =======================
+function getCsrfToken() {
+    // Пытаемся взять из мета-тега (часто используется во Flask)
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) return meta.content;
+    // Пробуем из куки (Flask по умолчанию хранит в 'csrf_token')
+    const name = 'csrf_token=';
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(name) === 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return null;
+}
+
+async function doLogout() {
+    try {
+        const csrfToken = getCsrfToken();
+        const headers = csrfToken ? {'X-CSRFToken': csrfToken} : {};
+        await fetch('/logout', { method: 'POST', headers: headers });
+    } catch (e) {
+        console.error('Ошибка при логауте:', e);
+    }
+    // Принудительно уходим на страницу входа, даже если сервер не среагировал
+    window.location.href = '/login';
+}
+// =============================================================
+
 (function() {
     const panels = 2;
     let current = 0;
