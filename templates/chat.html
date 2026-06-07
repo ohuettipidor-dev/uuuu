@@ -133,6 +133,72 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
+        /* ПРОСМОТРЩИК ФОТО */
+        .image-viewer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+        .image-viewer.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .image-viewer img {
+            max-width: 95%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: default;
+        }
+        .image-viewer .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .image-viewer .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 36px;
+            padding: 10px 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            user-select: none;
+        }
+        .image-viewer .prev-btn { left: 15px; }
+        .image-viewer .next-btn { right: 15px; }
+        .image-viewer .counter {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
         @media (max-width:480px){
             .icon-btn{width:24px;height:24px;font-size:12px}
             #aiChatWindow{width:90vw;height:60vh}
@@ -281,6 +347,15 @@
         <div id="inviteLink" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Отправь ссылку другу!</p><div style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:12px;color:#ff6b6b;" id="refLink">https://beargram.up.railway.app/register</div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button><button onclick="shareRefLink()" style="width:100%;background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Поделиться</button></div></div>
         <div id="inviteReferral" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><div style="font-size:48px;margin-bottom:10px;">💎</div><p style="color:#888;font-size:12px;">Пригласи друга — получи <b>+25 💎</b>!<br>Друг получит <b>+10 💎</b> на старт.</p><div id="referralStats" style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;"><p style="font-size:12px;color:#ff6b6b;">Загрузка...</p></div><div style="background:rgba(255,215,0,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:11px;color:#ff8c00;" id="refStatsLink"></div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button></div></div>
     </div>
+</div>
+
+<!-- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ -->
+<div class="image-viewer" id="imageViewer">
+    <button class="close-btn" onclick="closeImageViewer()">✖</button>
+    <button class="nav-btn prev-btn" onclick="navigateImage(-1)">◀</button>
+    <img id="viewerImage" src="" alt="Просмотр фото" />
+    <button class="nav-btn next-btn" onclick="navigateImage(1)">▶</button>
+    <div class="counter" id="imageCounter">1 / 1</div>
 </div>
 
 <script>
@@ -492,6 +567,21 @@ function closeImageViewer() {
     window.currentViewerImages = [];
     currentImageIndex = 0;
 }
+
+// Поддержка свайпов в просмотрщике
+(function() {
+    const viewer = document.getElementById('imageViewer');
+    let touchStartX = 0;
+    viewer.addEventListener('touchstart', function(e) {
+        touchStartX = e.touches[0].clientX;
+    });
+    viewer.addEventListener('touchend', function(e) {
+        const diff = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(diff) > 50) {
+            navigateImage(diff > 0 ? -1 : 1);
+        }
+    });
+})();
 
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
