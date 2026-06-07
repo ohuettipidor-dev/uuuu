@@ -84,6 +84,16 @@
         .online{color:#4cd964;font-size:9px;margin-left:4px}
         .offline{color:#3a86ff;font-size:9px;margin-left:4px}
 
+        /* КАРУСЕЛЬ В ЛЕНТЕ */
+        .carousel-container{position:relative;margin:10px 0}
+        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:0}
+        .carousel-track::-webkit-scrollbar{display:none}
+        .carousel-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;cursor:pointer}
+        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:300px;object-fit:cover;border-radius:12px}
+        .carousel-indicators{display:flex;justify-content:center;gap:6px;margin-top:8px}
+        .carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,0.2);transition:background 0.3s}
+        .carousel-dot.active{background:#ff6b6b}
+
         .feed-item{background:white;padding:16px;margin-bottom:0;box-shadow:none;border:none;position:relative}
         .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
@@ -91,8 +101,6 @@
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
-        .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
-        .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
         .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
@@ -135,7 +143,7 @@
         .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
         .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
-        /* ПРОСМОТРЩИК ФОТО */
+        /* ПРОСМОТРЩИК ФОТО/ВИДЕО */
         .image-viewer {
             position: fixed;
             top: 0; left: 0;
@@ -154,7 +162,14 @@
             opacity: 1;
             visibility: visible;
         }
-        .image-viewer img {
+        .image-viewer .viewer-content {
+            max-width: 95%;
+            max-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-viewer img, .image-viewer video {
             max-width: 95%;
             max-height: 80vh;
             object-fit: contain;
@@ -185,6 +200,7 @@
             cursor: pointer;
             z-index: 10;
             user-select: none;
+            will-change: transform, opacity;
         }
         .image-viewer .prev-btn { left: 15px; }
         .image-viewer .next-btn { right: 15px; }
@@ -273,6 +289,7 @@
         @media (max-width:480px){
             .icon-btn{width:24px;height:24px;font-size:12px}
             #aiChatWindow{width:90vw;height:60vh}
+            .carousel-slide img,.carousel-slide video{max-height:250px}
         }
     </style>
 </head>
@@ -294,7 +311,6 @@
                 <a href="/bearpay">💳 Wallet</a>
                 <a href="/mining">⛏️ Майнинг</a>
                 <a href="/bearpay?tab=bank">🏦 Банк</a>
-                <!-- НОВЫЙ ПУНКТ: ТЕМА -->
                 <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
             </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
@@ -302,7 +318,6 @@
         </div>
     </div>
 
-    <!-- Остальная структура (поиск, чаты, лента, модалки) без изменений -->
     <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
@@ -423,13 +438,16 @@
     </div>
 </div>
 
-<!-- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ -->
-<div class="image-viewer" id="imageViewer">
-    <button class="close-btn" onclick="closeImageViewer()">✖</button>
-    <button class="nav-btn prev-btn" onclick="navigateImage(-1)">◀</button>
-    <img id="viewerImage" src="" alt="Просмотр фото" />
-    <button class="nav-btn next-btn" onclick="navigateImage(1)">▶</button>
-    <div class="counter" id="imageCounter">1 / 1</div>
+<!-- ПРОСМОТРЩИК МЕДИА -->
+<div class="image-viewer" id="mediaViewer">
+    <button class="close-btn" onclick="closeMediaViewer()">✖</button>
+    <button class="nav-btn prev-btn" onclick="navigateMedia(-1)">◀</button>
+    <div class="viewer-content" id="viewerContent">
+        <img id="viewerImage" src="" style="display:none;">
+        <video id="viewerVideo" controls style="display:none;"></video>
+    </div>
+    <button class="nav-btn next-btn" onclick="navigateMedia(1)">▶</button>
+    <div class="counter" id="mediaCounter">1 / 1</div>
 </div>
 
 <script>
@@ -446,11 +464,41 @@
     }
     const app = document.getElementById('app');
     let startX = 0, startY = 0, dragging = false, moved = false;
-    app.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true; moved = false; }, {passive: true});
-    app.addEventListener('touchmove', e => { if (!dragging) return; if (Math.abs(e.touches[0].clientY - startY) > Math.abs(e.touches[0].clientX - startX)) { dragging = false; return; } e.preventDefault(); moved = true; }, {passive: false});
-    app.addEventListener('touchend', e => { if (!dragging || !moved) { dragging = false; return; } dragging = false; const dx = e.changedTouches[0].clientX - startX; if (Math.abs(dx) > 60) { if (dx > 0 && current > 0) goTo(current - 1); else if (dx < 0 && current < panels - 1) goTo(current + 1); } });
-    app.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; dragging = true; moved = false; });
-    window.addEventListener('mouseup', e => { if (!dragging || !moved) { dragging = false; return; } dragging = false; const dx = e.clientX - startX; if (Math.abs(dx) > 60) { if (dx > 0 && current > 0) goTo(current - 1); else if (dx < 0 && current < panels - 1) goTo(current + 1); } });
+    app.addEventListener('touchstart', e => {
+        // Игнорируем, если касание началось на карусели
+        if (e.target.closest('.carousel-container')) {
+            dragging = false;
+            return;
+        }
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true; moved = false;
+    }, {passive: true});
+    app.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        if (Math.abs(e.touches[0].clientY - startY) > Math.abs(e.touches[0].clientX - startX)) { dragging = false; return; }
+        e.preventDefault(); moved = true;
+    }, {passive: false});
+    app.addEventListener('touchend', e => {
+        if (!dragging || !moved) { dragging = false; return; }
+        dragging = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 60) {
+            if (dx > 0 && current > 0) goTo(current - 1);
+            else if (dx < 0 && current < panels - 1) goTo(current + 1);
+        }
+    });
+    app.addEventListener('mousedown', e => {
+        if (e.target.closest('.carousel-container')) { dragging = false; return; }
+        startX = e.clientX; startY = e.clientY; dragging = true; moved = false;
+    });
+    window.addEventListener('mouseup', e => {
+        if (!dragging || !moved) { dragging = false; return; }
+        dragging = false;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 60) {
+            if (dx > 0 && current > 0) goTo(current - 1);
+            else if (dx < 0 && current < panels - 1) goTo(current + 1);
+        }
+    });
     goTo(0, false);
 })();
 
@@ -518,35 +566,24 @@ document.addEventListener('click', function(e) { var btn = document.querySelecto
     const body = document.body;
     const toggleBtn = document.getElementById('themeToggleDropdown');
     const STORAGE_KEY = 'beargram_theme';
-
     function updateToggleText() {
         if (!toggleBtn) return;
         const isDark = body.classList.contains('dark-theme');
         toggleBtn.textContent = isDark ? '🌓 Тема: Тёмная' : '🌓 Тема: Светлая';
     }
-
     function applyTheme(theme) {
-        if (theme === 'dark') {
-            body.classList.add('dark-theme');
-        } else {
-            body.classList.remove('dark-theme');
-        }
+        if (theme === 'dark') body.classList.add('dark-theme');
+        else body.classList.remove('dark-theme');
         updateToggleText();
     }
-
     function getSystemTheme() {
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-
     function loadTheme() {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved === 'dark' || saved === 'light') {
-            applyTheme(saved);
-        } else {
-            applyTheme(getSystemTheme());
-        }
+        if (saved === 'dark' || saved === 'light') applyTheme(saved);
+        else applyTheme(getSystemTheme());
     }
-
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             const isDark = body.classList.contains('dark-theme');
@@ -555,20 +592,16 @@ document.addEventListener('click', function(e) { var btn = document.querySelecto
             applyTheme(newTheme);
         });
     }
-
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem(STORAGE_KEY)) {
-            applyTheme(e.matches ? 'dark' : 'light');
-        }
+        if (!localStorage.getItem(STORAGE_KEY)) applyTheme(e.matches ? 'dark' : 'light');
     });
-
     loadTheme();
 })();
 
 let feedLoaded = false;
 let feedTapTimer = null;
-let allFeedImages = [];
-let currentImageIndex = 0;
+let currentMediaIndex = 0;
+let currentMediaItems = [];
 
 async function loadFeed() {
     if (feedLoaded) return;
@@ -584,7 +617,6 @@ async function loadFeed() {
             return;
         }
         var html = '';
-        allFeedImages = [];
         data.posts.forEach(function(p) {
             var images = [], videos = [], audios = [], files = [];
             if (p.attachments) {
@@ -595,30 +627,36 @@ async function loadFeed() {
                     else files.push(att);
                 });
             }
-            var imagesHtml = '';
-            if (images.length > 0) {
-                images.forEach(function(img, idx) {
-                    allFeedImages.push({postId: p.id, index: idx, src: img.path});
+            var mediaHtml = '';
+            var mediaItems = images.concat(videos);
+            if (mediaItems.length > 0) {
+                mediaHtml += '<div class="carousel-container" data-post-id="' + p.id + '">';
+                mediaHtml += '<div class="carousel-track" id="carousel-' + p.id + '">';
+                mediaItems.forEach(function(item, idx) {
+                    mediaHtml += '<div class="carousel-slide" onclick="openMediaViewer(' + p.id + ', ' + idx + ')">';
+                    if (item.type === 'image') {
+                        mediaHtml += '<img src="' + item.path + '" loading="lazy" decoding="async">';
+                    } else {
+                        mediaHtml += '<video src="' + item.path + '" muted preload="metadata" playsinline></video>';
+                    }
+                    mediaHtml += '</div>';
                 });
-                imagesHtml += '<div class="feed-images-grid" style="grid-template-columns:1fr; position:relative; cursor:pointer;" onclick="openImageViewer(\'' + images[0].path + '\', ' + p.id + ', 0)">';
-                imagesHtml += '<img src="' + images[0].path + '" loading="lazy" style="height:auto; max-height:300px;">';
-                if (images.length > 1) {
-                    imagesHtml += '<div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">1 из ' + images.length + '</div>';
-                }
-                imagesHtml += '</div>';
+                mediaHtml += '</div>';
+                mediaHtml += '<div class="carousel-indicators" id="indicators-' + p.id + '">';
+                mediaItems.forEach(function(_, idx) {
+                    mediaHtml += '<div class="carousel-dot' + (idx === 0 ? ' active' : '') + '"></div>';
+                });
+                mediaHtml += '</div>';
+                mediaHtml += '</div>';
             }
-            var videosHtml = ''; videos.forEach(function(v) { videosHtml += '<video class="feed-video" src="' + v.path + '" controls></video>'; });
-            var audiosHtml = ''; audios.forEach(function(a) { audiosHtml += '<audio class="feed-audio" src="' + a.path + '" controls></audio>'; });
-            var filesHtml = ''; files.forEach(function(f) { filesHtml += '<a class="feed-file" href="' + f.path + '" target="_blank">📎 <span class="filename">' + (f.name || 'Файл') + '</span></a>'; });
-
-            html += '<div class="feed-item" data-post-id="' + p.id + '">';
+            html += '<div class="feed-item" data-post-id="' + p.id + '" data-attachments=\'' + JSON.stringify(p.attachments || []) + '\'>';
             html += '<div class="feed-header">';
             html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
             html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
             html += '<span class="feed-date">' + p.timestamp + '</span>';
             html += '</div>';
             html += '<div class="feed-content">' + p.content + '</div>';
-            html += imagesHtml + videosHtml + audiosHtml + filesHtml;
+            html += mediaHtml;
             html += '<div class="feed-actions" onclick="event.stopPropagation();">';
             html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
             html += '<span class="feed-action" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">💬 ' + p.comments + '</span>';
@@ -630,9 +668,31 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
+        // Оживляем карусели
+        document.querySelectorAll('.carousel-track').forEach(track => {
+            track.addEventListener('scroll', function() {
+                const postId = this.id.replace('carousel-', '');
+                const slides = this.querySelectorAll('.carousel-slide');
+                const indicators = document.getElementById('indicators-' + postId);
+                if (!indicators) return;
+                let activeIndex = 0;
+                const scrollLeft = this.scrollLeft;
+                const trackWidth = this.clientWidth;
+                if (trackWidth > 0) {
+                    activeIndex = Math.round(scrollLeft / trackWidth);
+                    activeIndex = Math.min(activeIndex, slides.length - 1);
+                    activeIndex = Math.max(activeIndex, 0);
+                }
+                indicators.querySelectorAll('.carousel-dot').forEach((dot, idx) => {
+                    dot.classList.toggle('active', idx === activeIndex);
+                });
+            });
+        });
+
+        // Остальная логика (двойной тап, лайк) остаётся, но без изменения
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
-                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file')) return;
+                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.carousel-container')) return;
                 if (feedTapTimer) {
                     clearTimeout(feedTapTimer);
                     feedTapTimer = null;
@@ -661,57 +721,6 @@ async function loadFeed() {
     }
 }
 
-function openImageViewer(src, postId, imgIndex) {
-    var postImages = [];
-    for (var i = 0; i < allFeedImages.length; i++) { if (allFeedImages[i].postId == postId) postImages.push(allFeedImages[i]); }
-    if (postImages.length === 0) postImages = [{postId: postId, index: imgIndex, src: src}];
-    window.currentViewerImages = postImages;
-    currentImageIndex = 0;
-    for (var i = 0; i < postImages.length; i++) { if (postImages[i].src === src) { currentImageIndex = i; break; } }
-    showCurrentImage();
-    document.getElementById('imageViewer').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function showCurrentImage() {
-    var images = window.currentViewerImages || [];
-    if (images.length === 0) return;
-    document.getElementById('viewerImage').src = images[currentImageIndex].src;
-    document.getElementById('imageCounter').textContent = (currentImageIndex + 1) + ' / ' + images.length;
-    var prevBtn = document.querySelector('.prev-btn');
-    var nextBtn = document.querySelector('.next-btn');
-    if (images.length <= 1) { prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; }
-    else { prevBtn.style.display = 'block'; nextBtn.style.display = 'block'; }
-}
-function navigateImage(direction) {
-    var images = window.currentViewerImages || [];
-    if (images.length === 0) return;
-    currentImageIndex += direction;
-    if (currentImageIndex < 0) currentImageIndex = images.length - 1;
-    if (currentImageIndex >= images.length) currentImageIndex = 0;
-    showCurrentImage();
-}
-function closeImageViewer() {
-    document.getElementById('imageViewer').classList.remove('active');
-    document.body.style.overflow = '';
-    window.currentViewerImages = [];
-    currentImageIndex = 0;
-}
-
-// Поддержка свайпов в просмотрщике
-(function() {
-    const viewer = document.getElementById('imageViewer');
-    let touchStartX = 0;
-    viewer.addEventListener('touchstart', function(e) {
-        touchStartX = e.touches[0].clientX;
-    });
-    viewer.addEventListener('touchend', function(e) {
-        const diff = e.changedTouches[0].clientX - touchStartX;
-        if (Math.abs(diff) > 50) {
-            navigateImage(diff > 0 ? -1 : 1);
-        }
-    });
-})();
-
 function retryLoadFeed() { feedLoaded = false; loadFeed(); }
 async function likeFeedPost(postId, el) {
     if (!el) el = document.querySelector('.feed-action[onclick*="likeFeedPost(' + postId + '"]');
@@ -736,6 +745,86 @@ async function donateToChannel(channelId) {
         else alert('❌ ' + (data.error || 'Ошибка'));
     } catch (e) { alert('Ошибка сети'); }
 }
+
+// ПРОСМОТРЩИК МЕДИА
+function openMediaViewer(postId, startIndex) {
+    const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
+    if (!postEl) return;
+    const attr = postEl.getAttribute('data-attachments');
+    let items = [];
+    if (attr) {
+        try {
+            const all = JSON.parse(attr);
+            all.forEach(att => {
+                if (att.type === 'image' || att.type === 'video') {
+                    items.push({ type: att.type, path: att.path });
+                }
+            });
+        } catch(e) {}
+    }
+    if (items.length === 0) return;
+    currentMediaItems = items;
+    currentMediaIndex = startIndex || 0;
+    showCurrentMedia();
+    document.getElementById('mediaViewer').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showCurrentMedia() {
+    const img = document.getElementById('viewerImage');
+    const video = document.getElementById('viewerVideo');
+    img.style.display = 'none';
+    video.style.display = 'none';
+    video.pause();
+    video.src = '';
+    if (currentMediaItems.length === 0) return;
+    const item = currentMediaItems[currentMediaIndex];
+    if (item.type === 'image') {
+        img.src = item.path;
+        img.style.display = '';
+    } else {
+        video.src = item.path;
+        video.style.display = '';
+        video.play().catch(()=>{});
+    }
+    document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaItems.length;
+    if (currentMediaItems.length > 1) {
+        const next = (currentMediaIndex + 1) % currentMediaItems.length;
+        const prev = (currentMediaIndex - 1 + currentMediaItems.length) % currentMediaItems.length;
+        [next, prev].forEach(idx => {
+            const it = currentMediaItems[idx];
+            if (it.type === 'image') (new Image()).src = it.path;
+            else { const v = document.createElement('video'); v.src = it.path; v.load(); }
+        });
+    }
+}
+
+function navigateMedia(direction) {
+    if (currentMediaItems.length === 0) return;
+    currentMediaIndex += direction;
+    if (currentMediaIndex < 0) currentMediaIndex = currentMediaItems.length - 1;
+    if (currentMediaIndex >= currentMediaItems.length) currentMediaIndex = 0;
+    showCurrentMedia();
+}
+
+function closeMediaViewer() {
+    document.getElementById('mediaViewer').classList.remove('active');
+    document.body.style.overflow = '';
+    document.getElementById('viewerVideo').pause();
+    document.getElementById('viewerVideo').src = '';
+    currentMediaItems = [];
+}
+
+// свайпы в просмотрщике
+(function() {
+    const viewer = document.getElementById('mediaViewer');
+    let startX = 0;
+    viewer.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    viewer.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) navigateMedia(diff > 0 ? -1 : 1);
+    });
+})();
 </script>
 </body>
 </html>
