@@ -137,6 +137,7 @@
             cursor: pointer;
             z-index: 10;
             user-select: none;
+            will-change: transform, opacity;
         }
         .image-viewer .prev-btn { left: 15px; }
         .image-viewer .next-btn { right: 15px; }
@@ -442,8 +443,6 @@
     let existingAttachments = [];
     let deletedPaths = [];
     let currentImageIndex = 0;
-    // Предзагруженные изображения
-    let preloadedImages = [];
 
     async function loadBalance() {
         try {
@@ -846,28 +845,7 @@
         }
     }
 
-    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ (С ПРЕДЗАГРУЗКОЙ) ----------
-    function preloadImage(src) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = src;
-        });
-    }
-
-    async function preloadAdjacent() {
-        const images = window.currentViewerImages || [];
-        if (images.length <= 1) return;
-        // Предзагружаем следующее и предыдущее
-        const nextIdx = (currentImageIndex + 1) % images.length;
-        const prevIdx = (currentImageIndex - 1 + images.length) % images.length;
-        await Promise.all([
-            preloadImage(images[nextIdx].path),
-            preloadImage(images[prevIdx].path)
-        ]);
-    }
-
+    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ (МГНОВЕННОЕ ПЕРЕЛИСТЫВАНИЕ) ----------
     function openImageViewerFromAttachments(src, postId) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         if (!postEl) return;
@@ -887,11 +865,7 @@
         if (currentImageIndex === -1) currentImageIndex = 0;
         
         // Предзагружаем все изображения сразу
-        preloadedImages = images.map(img => {
-            const image = new Image();
-            image.src = img.path;
-            return image;
-        });
+        images.forEach(img => { (new Image()).src = img.path; });
         
         showCurrentImage();
         document.getElementById('imageViewer').classList.add('active');
@@ -901,8 +875,13 @@
     function showCurrentImage() {
         var images = window.currentViewerImages || [];
         if (images.length === 0) return;
-        document.getElementById('viewerImage').src = images[currentImageIndex].path;
+
+        requestAnimationFrame(() => {
+            document.getElementById('viewerImage').src = images[currentImageIndex].path;
+        });
+
         document.getElementById('imageCounter').textContent = (currentImageIndex + 1) + ' / ' + images.length;
+
         var prevBtn = document.querySelector('.prev-btn');
         var nextBtn = document.querySelector('.next-btn');
         if (images.length <= 1) {
@@ -912,17 +891,14 @@
             prevBtn.style.display = 'block';
             nextBtn.style.display = 'block';
         }
-        // После показа текущего, предзагружаем соседние
-        setTimeout(() => {
-            const img = document.getElementById('viewerImage');
-            if (img.complete && img.naturalWidth > 0) {
-                preloadAdjacent();
-            } else {
-                img.addEventListener('load', () => {
-                    preloadAdjacent();
-                }, { once: true });
-            }
-        }, 50);
+
+        // Предзагружаем соседей сразу
+        if (images.length > 1) {
+            var nextIdx = (currentImageIndex + 1) % images.length;
+            var prevIdx = (currentImageIndex - 1 + images.length) % images.length;
+            (new Image()).src = images[nextIdx].path;
+            (new Image()).src = images[prevIdx].path;
+        }
     }
 
     function navigateImage(direction) {
@@ -939,7 +915,6 @@
         document.body.style.overflow = '';
         window.currentViewerImages = [];
         currentImageIndex = 0;
-        preloadedImages = [];
     }
 
     // Поддержка свайпов в просмотрщике
