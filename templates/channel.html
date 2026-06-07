@@ -87,6 +87,72 @@
         .paid-overlay .price{color:#ff6b6b;font-weight:bold}
         .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
 
+        /* ПРОСМОТРЩИК ФОТО */
+        .image-viewer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+        .image-viewer.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .image-viewer img {
+            max-width: 95%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: default;
+        }
+        .image-viewer .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .image-viewer .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 36px;
+            padding: 10px 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            user-select: none;
+        }
+        .image-viewer .prev-btn { left: 15px; }
+        .image-viewer .next-btn { right: 15px; }
+        .image-viewer .counter {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
         @media (max-width:480px){
             .container{padding:0}
             .feed-item{padding:12px}
@@ -197,7 +263,7 @@
                 {% if images or videos %}
                 <div class="feed-images-grid">
                     {% for img in images %}
-                        <img src="{{ img.path }}" loading="lazy" onclick="window.open(this.src)">
+                        <img src="{{ img.path }}" loading="lazy" onclick="openImageViewer('{{ img.path }}', {{ post.id }}, {{ loop.index0 }})">
                     {% endfor %}
                     {% for vid in videos %}
                         <div class="grid-video-wrapper" onclick="window.open('{{ vid.path }}', '_blank')">
@@ -219,7 +285,7 @@
                 {% endfor %}
             {% elif post.file_path %}
                 {% if post.file_type == 'image' %}
-                    <img src="{{ post.file_path }}" onclick="window.open(this.src)" style="cursor:pointer; max-width:100%; border-radius:12px;">
+                    <img src="{{ post.file_path }}" onclick="openImageViewer('{{ post.file_path }}', {{ post.id }}, 0)" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
                     <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
@@ -296,6 +362,7 @@
     {% endif %}
 </div>
 
+<!-- МОДАЛКИ -->
 <div class="modal" id="donateModal">
     <div class="modal-content">
         <h3>💎 Поддержать канал</h3>
@@ -349,13 +416,115 @@
     </div>
 </div>
 
+<!-- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ -->
+<div class="image-viewer" id="imageViewer">
+    <button class="close-btn" onclick="closeImageViewer()">✖</button>
+    <button class="nav-btn prev-btn" onclick="navigateImage(-1)">◀</button>
+    <img id="viewerImage" src="" alt="Просмотр фото" />
+    <button class="nav-btn next-btn" onclick="navigateImage(1)">▶</button>
+    <div class="counter" id="imageCounter">1 / 1</div>
+</div>
+
 <script>
     const MAX_FILES = 10;
     let selectedFiles = [];
     let editingPostId = null;
     let existingAttachments = [];
     let deletedPaths = [];
+    let allFeedImages = [];
+    let currentImageIndex = 0;
 
+    // Собираем массив изображений из всех постов на странице
+    function collectAllImages() {
+        allFeedImages = [];
+        document.querySelectorAll('.feed-images-grid img').forEach(function(img, index) {
+            const src = img.src;
+            const postId = img.closest('.feed-item')?.dataset.postId;
+            if (postId) {
+                allFeedImages.push({postId: postId, index: index, src: src});
+            }
+        });
+        // Также одиночные изображения (старый формат)
+        document.querySelectorAll('.feed-item img[onclick*="openImageViewer"]').forEach(function(img) {
+            const src = img.src;
+            const postId = img.closest('.feed-item')?.dataset.postId;
+            if (postId && !allFeedImages.some(item => item.src === src)) {
+                allFeedImages.push({postId: postId, index: 0, src: src});
+            }
+        });
+    }
+
+    // Инициализация после загрузки страницы
+    window.addEventListener('load', collectAllImages);
+    // Также обновим коллекцию после динамической подгрузки (если есть)
+    const observer = new MutationObserver(collectAllImages);
+    observer.observe(document.getElementById('posts'), {childList: true, subtree: true});
+
+    function openImageViewer(src, postId, imgIndex) {
+        // Обновляем коллекцию на всякий случай
+        collectAllImages();
+        var postImages = allFeedImages.filter(img => img.postId == postId);
+        if (postImages.length === 0) {
+            // Если по какой-то причине не нашли, создаём фейковую запись
+            postImages = [{postId: postId, index: imgIndex, src: src}];
+        }
+        window.currentViewerImages = postImages;
+        // Находим индекс переданного изображения в массиве этого поста
+        currentImageIndex = postImages.findIndex(img => img.src === src);
+        if (currentImageIndex === -1) currentImageIndex = 0;
+        showCurrentImage();
+        document.getElementById('imageViewer').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function showCurrentImage() {
+        var images = window.currentViewerImages || [];
+        if (images.length === 0) return;
+        document.getElementById('viewerImage').src = images[currentImageIndex].src;
+        document.getElementById('imageCounter').textContent = (currentImageIndex + 1) + ' / ' + images.length;
+        var prevBtn = document.querySelector('.prev-btn');
+        var nextBtn = document.querySelector('.next-btn');
+        if (images.length <= 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'block';
+            nextBtn.style.display = 'block';
+        }
+    }
+
+    function navigateImage(direction) {
+        var images = window.currentViewerImages || [];
+        if (images.length === 0) return;
+        currentImageIndex += direction;
+        if (currentImageIndex < 0) currentImageIndex = images.length - 1;
+        if (currentImageIndex >= images.length) currentImageIndex = 0;
+        showCurrentImage();
+    }
+
+    function closeImageViewer() {
+        document.getElementById('imageViewer').classList.remove('active');
+        document.body.style.overflow = '';
+        window.currentViewerImages = [];
+        currentImageIndex = 0;
+    }
+
+    // Поддержка свайпов в просмотрщике
+    (function() {
+        const viewer = document.getElementById('imageViewer');
+        let touchStartX = 0;
+        viewer.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+        });
+        viewer.addEventListener('touchend', function(e) {
+            const diff = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(diff) > 50) {
+                navigateImage(diff > 0 ? -1 : 1);
+            }
+        });
+    })();
+
+    // Остальные функции (загрузка баланса, подписка, лайки, комментарии и т.д.) остаются без изменений
     async function loadBalance() {
         try {
             const res = await fetch('/api/coins/balance');
@@ -461,7 +630,7 @@
                         if (blob) {
                             resolve(new File([blob], file.name, { type: 'image/jpeg' }));
                         } else {
-                            resolve(file); // fallback to original
+                            resolve(file);
                         }
                     }, 'image/jpeg', quality);
                 };
@@ -493,7 +662,6 @@
             const formData = new FormData();
             formData.append('content', content);
 
-            // Сжимаем все изображения, остальные файлы — как есть
             for (let file of selectedFiles) {
                 if (file.type.startsWith('image/') && !file.type.includes('gif') && !file.type.includes('svg')) {
                     const compressed = await compressImage(file);
