@@ -295,7 +295,7 @@
                 {% endfor %}
             {% elif post.file_path %}
                 {% if post.file_type == 'image' %}
-                    <img src="{{ post.file_path }}" onclick="openImageViewerFromAttachments('{{ post.file_path }}', {{ post.id }})" style="cursor:pointer; max-width:100%; border-radius:12px;">
+                    <img src="{{ post.file_path }}" loading="lazy" onclick="openImageViewerFromAttachments('{{ post.file_path }}', {{ post.id }})" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
                     <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
