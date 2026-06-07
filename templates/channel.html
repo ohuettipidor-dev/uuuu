@@ -442,6 +442,8 @@
     let existingAttachments = [];
     let deletedPaths = [];
     let currentImageIndex = 0;
+    // Предзагруженные изображения
+    let preloadedImages = [];
 
     async function loadBalance() {
         try {
@@ -560,7 +562,7 @@
         });
     }
 
-    // ---------- МГНОВЕННАЯ ОТПРАВКА ПОСТА ----------
+    // ---------- МГНОВЕННАЯ ОТПРАВКА ПОСТА (как было, с оптимистичной вставкой) ----------
     const postForm = document.getElementById('postForm');
     if (postForm) {
         postForm.addEventListener('submit', async function(e) {
@@ -627,7 +629,6 @@
             try {
                 const response = await fetch(this.action, { method: 'POST', body: formData });
                 if (response.ok) {
-                    // Удаляем временный пост, сервер вернёт настоящий после reload
                     selectedFiles = [];
                     location.reload();
                 } else {
@@ -635,7 +636,6 @@
                     throw new Error(text || 'Ошибка сервера');
                 }
             } catch (err) {
-                // В случае ошибки убираем временный пост
                 if (tempPost.parentNode) tempPost.parentNode.removeChild(tempPost);
                 alert('Ошибка: ' + err.message);
                 submitBtn.textContent = originalText;
@@ -846,7 +846,28 @@
         }
     }
 
-    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ ----------
+    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ (С ПРЕДЗАГРУЗКОЙ) ----------
+    function preloadImage(src) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = src;
+        });
+    }
+
+    async function preloadAdjacent() {
+        const images = window.currentViewerImages || [];
+        if (images.length <= 1) return;
+        // Предзагружаем следующее и предыдущее
+        const nextIdx = (currentImageIndex + 1) % images.length;
+        const prevIdx = (currentImageIndex - 1 + images.length) % images.length;
+        await Promise.all([
+            preloadImage(images[nextIdx].path),
+            preloadImage(images[prevIdx].path)
+        ]);
+    }
+
     function openImageViewerFromAttachments(src, postId) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         if (!postEl) return;
@@ -864,6 +885,14 @@
         window.currentViewerImages = images;
         currentImageIndex = images.findIndex(img => img.path === src);
         if (currentImageIndex === -1) currentImageIndex = 0;
+        
+        // Предзагружаем все изображения сразу
+        preloadedImages = images.map(img => {
+            const image = new Image();
+            image.src = img.path;
+            return image;
+        });
+        
         showCurrentImage();
         document.getElementById('imageViewer').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -883,6 +912,17 @@
             prevBtn.style.display = 'block';
             nextBtn.style.display = 'block';
         }
+        // После показа текущего, предзагружаем соседние
+        setTimeout(() => {
+            const img = document.getElementById('viewerImage');
+            if (img.complete && img.naturalWidth > 0) {
+                preloadAdjacent();
+            } else {
+                img.addEventListener('load', () => {
+                    preloadAdjacent();
+                }, { once: true });
+            }
+        }, 50);
     }
 
     function navigateImage(direction) {
@@ -899,6 +939,7 @@
         document.body.style.overflow = '';
         window.currentViewerImages = [];
         currentImageIndex = 0;
+        preloadedImages = [];
     }
 
     // Поддержка свайпов в просмотрщике
