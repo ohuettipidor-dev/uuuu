@@ -1,4 +1,4 @@
-Бщ8<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -260,19 +260,21 @@
                     {% endif %}
                 {% endfor %}
 
-                {% if images or videos %}
-                <div class="feed-images-grid">
-                    {% if images %}
-                        <!-- Показываем только первую картинку -->
-                        <img src="{{ images[0].path }}" loading="lazy"
-                             onclick="openImageViewerFromAttachments('{{ images[0].path }}', {{ post.id }})"
-                             style="{% if images|length > 1 %}position:relative;{% endif %}">
-                        {% if images|length > 1 %}
-                        <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">
-                            1 из {{ images|length }}
-                        </div>
-                        {% endif %}
+                <!-- Отображение как в ленте: одно большое фото + плашка -->
+                {% if images %}
+                <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openImageViewerFromAttachments('{{ images[0].path }}', {{ post.id }})">
+                    <img src="{{ images[0].path }}" loading="lazy" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
+                    {% if images|length > 1 %}
+                    <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">
+                        1 из {{ images|length }}
+                    </div>
                     {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Видео сеткой -->
+                {% if videos %}
+                <div class="feed-images-grid">
                     {% for vid in videos %}
                         <div class="grid-video-wrapper" onclick="window.open('{{ vid.path }}', '_blank')">
                             <video src="{{ vid.path }}" preload="metadata" muted playsinline loop></video>
@@ -440,7 +442,6 @@
     let existingAttachments = [];
     let deletedPaths = [];
     let currentImageIndex = 0;
-    let allFeedImages = []; // используется для совместимости
 
     async function loadBalance() {
         try {
@@ -810,7 +811,7 @@
         }
     }
 
-    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ (новая логика) ----------
+    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ ----------
     function openImageViewerFromAttachments(src, postId) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         if (!postEl) return;
