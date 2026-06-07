@@ -37,7 +37,7 @@ def allow_iframe(response):
     response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *"
     return response
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/static/uploads/messenger.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/static/messenger.db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 import json
 
