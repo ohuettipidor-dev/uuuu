@@ -42,14 +42,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 import json
 
 @app.template_filter('json_decode')
+@app.template_filter('json_decode')
 def json_decode_filter(s):
     """Преобразует JSON-строку из базы в объект Python для шаблона"""
     return json.loads(s)
-AVATAR_FOLDER = 'static/avatars'
-FILE_FOLDER = 'static/uploads'
-VOICE_FOLDER = 'static/voices'
-STICKER_FOLDER = 'static/stickers'
-CUSTOM_STICKER_FOLDER = 'static/stickers/custom'
+
+VOLUME_ROOT = '/app/static/uploads'
+
+AVATAR_FOLDER = os.path.join(VOLUME_ROOT, 'avatars')
+FILE_FOLDER = os.path.join(VOLUME_ROOT, 'uploads')
+VOICE_FOLDER = os.path.join(VOLUME_ROOT, 'voices')
+STICKER_FOLDER = os.path.join(VOLUME_ROOT, 'stickers')
+CUSTOM_STICKER_FOLDER = os.path.join(VOLUME_ROOT, 'stickers', 'custom')
+
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
@@ -61,7 +66,6 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-os.makedirs('/app/data', exist_ok=True)
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
     'mp3', 'wav', 'ogg', 'flac', 'm4a',
