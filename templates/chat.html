@@ -199,6 +199,70 @@
             font-weight: bold;
         }
 
+        /* ТЁМНАЯ ТЕМА */
+        body.dark-theme {
+            background: #121212 !important;
+            color: #eee;
+        }
+        body.dark-theme .container {
+            background: rgba(25, 25, 25, 0.94) !important;
+        }
+        body.dark-theme .header {
+            background: rgba(35, 35, 35, 0.9) !important;
+            border-bottom-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme .feed-item,
+        body.dark-theme .chat-item,
+        body.dark-theme .card,
+        body.dark-theme .modal-content,
+        body.dark-theme .group-modal-content,
+        body.dark-theme .search-results,
+        body.dark-theme .welcome-block {
+            background: #1e1e1e !important;
+            color: #ddd;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme .feed-content,
+        body.dark-theme .feed-channel-name,
+        body.dark-theme .chat-name,
+        body.dark-theme .channel-name {
+            color: #eee !important;
+        }
+        body.dark-theme .feed-date,
+        body.dark-theme .feed-action,
+        body.dark-theme .chat-last,
+        body.dark-theme .chat-time {
+            color: #aaa !important;
+        }
+        body.dark-theme .comment-section {
+            border-top-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme input,
+        body.dark-theme textarea,
+        body.dark-theme select {
+            background: #2a2a2a !important;
+            color: #eee !important;
+            border-color: rgba(255,255,255,0.15) !important;
+        }
+        body.dark-theme .icon-btn {
+            background: rgba(255,255,255,0.1) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .finance-dropdown {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .finance-dropdown a {
+            color: #ff6b6b !important;
+            background: rgba(255,107,107,0.15) !important;
+        }
+        body.dark-theme .bottom-nav {
+            background: rgba(20,20,20,0.95) !important;
+            border-top-color: rgba(255,255,255,0.1) !important;
+        }
+        body.dark-theme .nav-item {
+            color: #ff6b6b !important;
+        }
+
         @media (max-width:480px){
             .icon-btn{width:24px;height:24px;font-size:12px}
             #aiChatWindow{width:90vw;height:60vh}
@@ -213,6 +277,8 @@
         </div>
         <div class="logo-text" onclick="toggleAiAssistant()"><span>🐻 Bear</span><span>Gram</span></div>
         <div class="header-actions">
+            <!-- ТЁМНАЯ ТЕМА (кнопка) -->
+            <button class="icon-btn theme-toggle-btn" id="themeToggle" title="Переключить тему">🌓</button>
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
             <div class="finance-header-btn" onclick="toggleFinanceDropdown()">
                 <span class="finance-header-icon">💰</span> Финансы
@@ -439,6 +505,53 @@ send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter
 function toggleFinanceDropdown() { document.getElementById('financeDropdown').classList.toggle('active'); }
 document.addEventListener('click', function(e) { var btn = document.querySelector('.finance-header-btn'); var dropdown = document.getElementById('financeDropdown'); if (!btn.contains(e.target) && !dropdown.contains(e.target)) { dropdown.classList.remove('active'); } });
 
+// ТЁМНАЯ ТЕМА
+(function() {
+    const body = document.body;
+    const toggleBtn = document.getElementById('themeToggle');
+    const STORAGE_KEY = 'beargram_theme';
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            body.classList.add('dark-theme');
+            if (toggleBtn) toggleBtn.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-theme');
+            if (toggleBtn) toggleBtn.textContent = '🌙';
+        }
+    }
+
+    function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function loadTheme() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === 'dark' || saved === 'light') {
+            applyTheme(saved);
+        } else {
+            applyTheme(getSystemTheme());
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const isDark = body.classList.contains('dark-theme');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem(STORAGE_KEY, newTheme);
+            applyTheme(newTheme);
+        });
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+
+    loadTheme();
+})();
+
 let feedLoaded = false;
 let feedTapTimer = null;
 let allFeedImages = [];
@@ -471,11 +584,9 @@ async function loadFeed() {
             }
             var imagesHtml = '';
             if (images.length > 0) {
-                // Запоминаем все изображения для просмотрщика
                 images.forEach(function(img, idx) {
                     allFeedImages.push({postId: p.id, index: idx, src: img.path});
                 });
-                // Показываем только первое изображение
                 imagesHtml += '<div class="feed-images-grid" style="grid-template-columns:1fr; position:relative; cursor:pointer;" onclick="openImageViewer(\'' + images[0].path + '\', ' + p.id + ', 0)">';
                 imagesHtml += '<img src="' + images[0].path + '" loading="lazy" style="height:auto; max-height:300px;">';
                 if (images.length > 1) {
