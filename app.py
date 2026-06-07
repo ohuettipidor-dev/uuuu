@@ -3212,6 +3212,7 @@ def edit_channel(channel_id):
     channel = Channel.query.get_or_404(channel_id)
     if channel.created_by != current_user.id:
         return jsonify({'error': 'Нет прав'}), 403
+
     data = request.get_json()
     if 'name' in data:
         channel.name = data['name']
@@ -3221,9 +3222,10 @@ def edit_channel(channel_id):
         channel.description = data['description']
     if 'yoomoney_wallet' in data:
         channel.yoomoney_wallet = data['yoomoney_wallet'] if data['yoomoney_wallet'] else None
+
+    # ЯВНО НЕ ТРОГАЕМ subscribers_count
     db.session.commit()
     return jsonify({'success': True})
-
 # ---- ДОНАТЫ ----
 
 @app.route('/api/yoomoney/hook', methods=['POST'])
