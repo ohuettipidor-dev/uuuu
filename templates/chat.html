@@ -1,49 +1,107 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <script src="/static/push.js"></script>
+    <title>🐻 BearGram | Уютный мессенджер</title>
     <meta charset="UTF-8">
-    <title>📢 {{ channel.name }} | BearGram</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%);min-height:100vh}
-        .container{max-width:700px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:rgba(255,255,255,0.94)}
+        html,body{height:100%;overflow:hidden;background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fbc2eb 100%)}
+        .container{display:flex;flex-direction:column;height:100vh;max-width:700px;margin:0 auto;position:relative}
 
-        .header{padding:6px 10px;background:rgba(255,255,255,0.96);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;min-height:44px}
-        .back{background:#ff6b6b;padding:4px 10px;border-radius:20px;cursor:pointer;color:white;text-decoration:none;font-size:12px;white-space:nowrap}
-        .channel-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ff8e8e);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
-        .channel-avatar img{width:100%;height:100%;object-fit:cover}
-        .avatar-overlay{position:absolute;bottom:-2px;right:-2px;background:#ff6b6b;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;cursor:pointer}
-        .channel-info{flex:1;min-width:0;max-width:100%}
-        .channel-name{font-weight:600;font-size:14px;color:#333;line-height:1.3;word-break:keep-all;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-        .channel-stats{font-size:10px;color:#aaa;margin-top:2px}
-        .subscribe-btn{background:#ff6b6b;color:white;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
-        .subscribed-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;font-size:12px;white-space:nowrap}
-        .profile-btn{background:rgba(255,255,255,0.9);padding:4px 8px;border-radius:20px;text-decoration:none;color:#ff6b6b;font-size:12px}
-        .danger-btn{background:#ff4444;color:white;padding:4px 8px;border-radius:20px;text-decoration:none;font-size:11px;cursor:pointer;border:none}
-        .edit-btn{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b;padding:4px 8px;border-radius:20px;cursor:pointer;font-size:11px}
-        .donate-btn{background:#4caf50;color:white;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;border:none;font-size:12px;white-space:nowrap}
-        .coins-balance{color:#ff6b6b;font-weight:600;font-size:12px;display:flex;align-items:center;gap:3px;white-space:nowrap}
-        .shop-btn{background:#ffd700;color:#000;padding:4px 8px;border-radius:20px;cursor:pointer;font-weight:bold;font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+        .header{display:flex;justify-content:space-between;align-items:center;padding:2px 8px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,107,107,0.2);flex-shrink:0;flex-wrap:wrap;gap:4px;z-index:10;position:relative;min-height:38px}
+        .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg, #ff6b6b, #ff8e8e);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;flex-shrink:0;font-size:14px}
+        .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+        .logo-text{font-weight:bold;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:2px}
+        .logo-text span:first-child{color:#ff6b6b}.logo-text span:last-child{color:#ff8e8e}
+        .header-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;position:relative}
+        .icon-btn{background:rgba(255,255,255,0.9);padding:3px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;cursor:pointer;border:none;flex-shrink:0}
+        .icon-btn:hover{background:white;transform:translateY(-1px)}
 
-        .posts{flex:1;overflow-y:auto;padding:0}
-        .feed-item{background:white;padding:16px;margin-bottom:2px;box-shadow:none;border:none;position:relative}
+        .finance-header-btn{background:linear-gradient(135deg, #4cd964, #2ecc71);padding:3px 10px;border-radius:20px;font-weight:bold;font-size:12px;text-decoration:none;color:#fff;display:flex;align-items:center;gap:3px;box-shadow:0 2px 6px rgba(46,204,113,0.3);transition:all 0.2s;flex-shrink:0;white-space:nowrap;cursor:pointer}
+        .finance-header-btn:hover{background:linear-gradient(135deg, #2ecc71, #27ae60);transform:scale(1.03)}
+        .finance-header-icon{font-size:14px}
+        .finance-dropdown{position:absolute;top:100%;right:8px;background:white;border-radius:16px;padding:8px;display:none;flex-direction:column;gap:4px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:140px;margin-top:4px}
+        .finance-dropdown.active{display:flex}
+        .finance-dropdown a,
+        .finance-dropdown button{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px;white-space:nowrap;border:none;cursor:pointer;text-align:left;width:100%}
+        .finance-dropdown a:hover,
+        .finance-dropdown button:hover{background:rgba(255,107,107,0.2)}
+
+        .premium-btn{background:gold;color:#333;font-weight:bold;border-radius:20px;padding:3px 8px;font-size:10px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+        .premium-active{color:gold;font-weight:bold;font-size:10px}
+
+        .search-container{display:none;padding:4px 8px;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);flex-shrink:0;animation:slideDown 0.3s ease}
+        .search-container.active{display:block}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+        .search-input{width:100%;padding:8px 12px;border-radius:30px;border:1px solid rgba(255,107,107,0.3);background:rgba(255,255,255,0.9);font-size:13px;outline:none;transition:all 0.2s}
+        .search-input:focus{border-color:#ff6b6b;background:white}
+        .search-results{background:white;border-radius:20px;margin-top:6px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+        .search-results.active{display:block}
+        .search-result-item{padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+        .search-result-item:hover{background:#f9f9f9}
+        .search-result-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0}
+        .search-result-avatar img{width:100%;height:100%;object-fit:cover}
+        .search-result-info{flex:1;min-width:0}
+        .search-result-name{font-weight:600;color:#333;font-size:13px}
+        .search-result-link{font-size:9px;color:#888}
+        .search-close{text-align:center;padding:6px;color:#888;cursor:pointer;border-top:1px solid #f0f0f0;font-size:12px}
+        .search-close:hover{background:#f9f9f9}
+        .search-invite-btn{display:block;width:100%;text-align:center;padding:8px;background:rgba(255,215,0,0.1);color:#ff8c00;border:none;border-radius:15px;font-weight:bold;font-size:11px;cursor:pointer;margin-top:6px}
+        .search-create-group-btn{display:block;width:100%;text-align:center;padding:8px;background:rgba(255,107,107,0.1);color:#ff6b6b;border:none;border-radius:15px;font-weight:bold;font-size:11px;cursor:pointer;margin-top:6px}
+
+        .app{flex:1;position:relative;overflow:hidden;touch-action:pan-y pinch-zoom; padding-bottom: 70px;}
+        .swiper{display:flex;height:100%;transition:transform 0.35s cubic-bezier(0.25,0.8,0.25,1);will-change:transform}
+        .panel{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .panel-content{min-height:100%}
+
+        .welcome-block{background:rgba(255,255,255,0.95);border-radius:20px;padding:20px;margin-bottom:10px}
+        .welcome-close{text-align:right;margin-bottom:5px}
+        .welcome-close button{background:none;border:none;font-size:20px;cursor:pointer;color:#aaa}
+        .welcome-devil{text-align:center;font-size:13px;color:#ff6b6b;font-weight:bold;margin-bottom:15px;padding:10px;background:rgba(255,107,107,0.1);border-radius:15px}
+        .welcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}
+        .welcome-card{background:rgba(255,240,240,0.8);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:0.2s;text-decoration:none;color:#333}
+        .welcome-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,107,107,0.15)}
+        .welcome-card .card-icon{font-size:24px;margin-bottom:5px}
+        .welcome-card .card-title{font-weight:bold;font-size:11px;color:#ff6b6b;margin-bottom:3px}
+        .welcome-card .card-desc{font-size:9px;color:#888}
+        .welcome-btn{display:block;width:100%;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;text-align:center}
+        .welcome-invite{background:rgba(255,215,0,0.15);border:1px dashed #ffd700;border-radius:12px;padding:12px;margin-bottom:15px;text-align:center}
+        .welcome-invite p{font-size:12px;color:#ff8c00;margin:3px 0}
+        .welcome-invite .invite-btn{background:#ffd700;color:#000;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;font-size:12px;cursor:pointer;margin-top:8px}
+
+        .chat-item{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-radius:18px;padding:10px;display:flex;align-items:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.5);margin-bottom:8px}
+        .chat-item:hover{transform:translateX(3px);background:white}
+        .chat-avatar{width:44px;height:44px;border-radius:50%;margin-right:10px;background:linear-gradient(135deg, #ff9a9e, #fecfef);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#ff6b6b;cursor:pointer;flex-shrink:0;overflow:hidden}
+        .chat-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+        .chat-info{flex:1;min-width:0}
+        .chat-name{font-weight:600;margin-bottom:2px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+        .chat-last{font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .chat-meta{text-align:right;flex-shrink:0;margin-left:8px}
+        .chat-time{font-size:9px;color:#aaa;margin-bottom:2px}
+        .badge{background:#ff6b6b;color:white;border-radius:20px;padding:2px 6px;font-size:9px;font-weight:bold;display:inline-block}
+        .online{color:#4cd964;font-size:9px;margin-left:4px}
+        .offline{color:#3a86ff;font-size:9px;margin-left:4px}
+
+        /* КАРУСЕЛЬ В ЛЕНТЕ */
+        .carousel-container{position:relative;margin:10px 0}
+        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:0}
+        .carousel-track::-webkit-scrollbar{display:none}
+        .carousel-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;cursor:pointer}
+        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:300px;object-fit:cover;border-radius:12px}
+        .carousel-indicators{display:flex;justify-content:center;gap:6px;margin-top:8px}
+        .carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,0.2);transition:background 0.3s}
+        .carousel-dot.active{background:#ff6b6b}
+
+        .feed-item{background:white;padding:16px;margin-bottom:0;box-shadow:none;border:none;position:relative}
         .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:#333}
         .feed-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden}
         .feed-avatar img{width:100%;height:100%;object-fit:cover}
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
-
-        /* КАРУСЕЛЬ */
-        .carousel-container{position:relative;margin:10px 0}
-        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:0}
-        .carousel-track::-webkit-scrollbar{display:none}
-        .carousel-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;cursor:pointer}
-        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:300px;object-fit:cover;border-radius:12px}
-        .carousel-counter{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:white;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;z-index:2;pointer-events:none}
-
-        .feed-images-grid{display:none}
+        .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
@@ -51,46 +109,39 @@
         .feed-action{cursor:pointer;display:flex;align-items:center;gap:4px;transition:0.2s}
         .feed-action:hover{color:#ff6b6b}
         .feed-action.liked{color:#ff4444}
-        .feed-donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
-        .feed-donate-btn:hover{transform:scale(1.02)}
+        .donate-btn{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;padding:6px 12px;border-radius:15px;font-weight:bold;text-decoration:none;font-size:12px;transition:0.2s}
+        .donate-btn:hover{transform:scale(1.02)}
+        .retry-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-weight:bold;margin-top:10px}
 
-        .post-menu-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:12px;z-index:5}
-        .post-menu-btn:hover{background:#f0f0f0}
-        .post-dropdown{position:absolute;top:36px;right:12px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:10;min-width:160px;padding:4px}
-        .post-dropdown.active{display:flex}
-        .post-dropdown button{background:none;border:none;padding:10px 14px;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#333}
-        .post-dropdown button:hover{background:#f5f5f5}
-        .post-dropdown button.danger{color:#ff4444}
+        .bottom-nav{display:flex;justify-content:space-around;align-items:center;padding:8px 4px 14px 4px;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-top:2px solid rgba(255,107,107,0.2);flex-shrink:0;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:700px;z-index:999;box-shadow:0 -2px 10px rgba(0,0,0,0.05)}
+        .nav-item{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:12px;gap:4px;cursor:pointer;transition:0.2s}
+        .nav-item:hover{color:#ff8e8e}
+        .nav-icon{font-size:26px}
+        .bearflex-nav{color:#000;background:linear-gradient(135deg, #ffd700, #ffaa00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .bearflex-nav .nav-icon{font-size:28px;text-shadow:0 2px 8px rgba(255,170,0,0.3)}
 
-        .like-heart-animation{position:absolute;z-index:15;pointer-events:none;animation:doubleTapLike 1s ease-out forwards}
-        @keyframes doubleTapLike{0%{transform:scale(0) rotate(-15deg);opacity:0}15%{transform:scale(1.3) rotate(0deg);opacity:1}30%{transform:scale(1) rotate(0deg);opacity:1}80%{transform:scale(1) rotate(0deg);opacity:0.8}100%{transform:scale(1.5) rotate(10deg);opacity:0}}
-
-        .new-post-area{padding:12px;background:rgba(255,255,255,0.96);border-top:1px solid rgba(255,107,107,0.2);flex-shrink:0}
-        .new-post-input textarea{width:100%;padding:12px;border-radius:20px;border:1px solid #ffb3b3;resize:none;font-size:14px;outline:none;font-family:inherit;margin-bottom:8px}
-        .new-post-input textarea:focus{border-color:#ff6b6b}
-        .post-submit-btn{background:#4cd964;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;margin-top:8px}
-        .attach-btn{background:#ff6b6b;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:500;margin-right:8px;display:inline-block}
-        .selected-files-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));gap:8px;margin-top:8px;margin-bottom:8px}
-        .selected-file-item{position:relative;background:#f0f0f0;border-radius:12px;overflow:hidden;aspect-ratio:1/1}
-        .selected-file-item img{width:100%;height:100%;object-fit:cover}
-        .selected-file-item .remove-file{position:absolute;top:4px;right:4px;background:#ff4444;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2}
+        #aiChatWindow{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:350px;max-width:90vw;height:450px;max-height:80vh;background:white;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:1000}
 
         .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
         .modal.active{opacity:1;visibility:visible}
-        .modal-content{background:white;border-radius:28px;padding:20px;width:360px;max-width:90%;max-height:80vh;overflow-y:auto}
-        .modal-content h3{color:#ff6b6b;margin-bottom:16px}
-        .modal-content input[type="number"],
-        .modal-content input[type="text"],
-        .modal-content textarea{width:100%;padding:12px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:16px;outline:none}
-        .modal-buttons{display:flex;gap:10px}
-        .modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer}
-        .modal-buttons .confirm-btn{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
-        .modal-buttons .cancel-btn{background:#f0f0f0;color:#888}
+        .modal-content{background:white;border-radius:24px;padding:18px;width:260px;text-align:center}
+        .modal-content h3{color:#ff6b6b;margin-bottom:14px;font-size:16px}
+        .modal-buttons{display:flex;flex-direction:column;gap:8px}
+        .modal-buttons button{padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer;font-size:13px}
+        .modal-buttons .regular-chat{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .modal-buttons .secret-chat{background:#2a2a3e;color:#ff6b6b;border:1px solid #ff6b6b}
+        .modal-buttons .remove-contact{background:#ff4444;color:white}
+        .modal-buttons .cancel{background:#f0f0f0;color:#888}
 
-        .paid-overlay{text-align:center;padding:40px 20px}
-        .paid-overlay p{font-size:20px;margin-bottom:15px}
-        .paid-overlay .price{color:#ff6b6b;font-weight:bold}
-        .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
+        .group-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.2s}
+        .group-modal.active{opacity:1;visibility:visible}
+        .group-modal-content{background:white;border-radius:24px;padding:18px;width:240px;text-align:center}
+        .group-modal-content h3{color:#ff6b6b;margin-bottom:14px;font-size:16px}
+        .group-modal-content input{width:100%;padding:10px;border-radius:30px;border:1px solid #ffb3b3;margin-bottom:14px;outline:none;font-size:14px}
+        .group-modal-buttons{display:flex;gap:8px}
+        .group-modal-buttons button{flex:1;padding:10px;border-radius:30px;border:none;font-weight:600;cursor:pointer;font-size:13px}
+        .group-modal-buttons button:first-child{background:linear-gradient(135deg,#ff6b6b,#ff8e8e);color:white}
+        .group-modal-buttons button:last-child{background:#f0f0f0;color:#888}
 
         /* ПРОСМОТРЩИК ФОТО/ВИДЕО */
         .image-viewer {
@@ -166,263 +217,228 @@
             font-weight: bold;
         }
 
+        /* ТЁМНАЯ ТЕМА */
+        body.dark-theme {
+            background: #121212 !important;
+            color: #eee;
+        }
+        body.dark-theme .container {
+            background: rgba(25, 25, 25, 0.94) !important;
+        }
+        body.dark-theme .header {
+            background: rgba(35, 35, 35, 0.9) !important;
+            border-bottom-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme .feed-item,
+        body.dark-theme .chat-item,
+        body.dark-theme .card,
+        body.dark-theme .modal-content,
+        body.dark-theme .group-modal-content,
+        body.dark-theme .search-results,
+        body.dark-theme .welcome-block {
+            background: #1e1e1e !important;
+            color: #ddd;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme .feed-content,
+        body.dark-theme .feed-channel-name,
+        body.dark-theme .chat-name,
+        body.dark-theme .channel-name {
+            color: #eee !important;
+        }
+        body.dark-theme .feed-date,
+        body.dark-theme .feed-action,
+        body.dark-theme .chat-last,
+        body.dark-theme .chat-time {
+            color: #aaa !important;
+        }
+        body.dark-theme .comment-section {
+            border-top-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark-theme input,
+        body.dark-theme textarea,
+        body.dark-theme select {
+            background: #2a2a2a !important;
+            color: #eee !important;
+            border-color: rgba(255,255,255,0.15) !important;
+        }
+        body.dark-theme .icon-btn {
+            background: rgba(255,255,255,0.1) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .finance-dropdown {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .finance-dropdown a,
+        body.dark-theme .finance-dropdown button {
+            color: #ff6b6b !important;
+            background: rgba(255,107,107,0.15) !important;
+        }
+        body.dark-theme .finance-dropdown a:hover,
+        body.dark-theme .finance-dropdown button:hover {
+            background: rgba(255,107,107,0.25) !important;
+        }
+        body.dark-theme .bottom-nav {
+            background: rgba(20,20,20,0.95) !important;
+            border-top-color: rgba(255,255,255,0.1) !important;
+        }
+        body.dark-theme .nav-item {
+            color: #ff6b6b !important;
+        }
+
         @media (max-width:480px){
-            .container{padding:0}
-            .feed-item{padding:12px}
-            .header{padding:4px 8px;min-height:40px}
-            .channel-avatar{width:30px;height:30px;font-size:16px}
-            .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
+            .icon-btn{width:24px;height:24px;font-size:12px}
+            #aiChatWindow{width:90vw;height:60vh}
             .carousel-slide img,.carousel-slide video{max-height:250px}
-            .channel-name{font-size:13px}
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <a href="/channels" class="back">←</a>
-        <div class="channel-avatar" onclick="openAvatarModal()">
-            {% if channel.avatar != 'channel_default.png' %}
-                <img src="/static/avatars/{{ channel.avatar }}">
-            {% else %}
-                📢
-            {% endif %}
-            {% if is_admin %}
-            <div class="avatar-overlay">📷</div>
-            {% endif %}
+        <div class="avatar" onclick="location.href='/profile'">
+            {% if current_user.avatar != 'default.png' %}<img src="/static/avatars/{{ current_user.avatar }}">{% else %}🐼{% endif %}
         </div>
-        <div class="channel-info">
-            <div class="channel-name">{{ channel.name }}</div>
-            <div class="channel-stats">👥 {{ channel.subscribers_count }}</div>
+        <div class="logo-text" onclick="toggleAiAssistant()"><span>🐻 Bear</span><span>Gram</span></div>
+        <div class="header-actions">
+            <button class="icon-btn" id="searchToggleBtn">🔍</button>
+            <div class="finance-header-btn" onclick="toggleFinanceDropdown()">
+                <span class="finance-header-icon">💰</span> Финансы
+            </div>
+            <div class="finance-dropdown" id="financeDropdown">
+                <a href="/shop">🛍️ Магазин</a>
+                <a href="/grrr">🐻 $GRRR</a>
+                <a href="/bearpay">💳 Wallet</a>
+                <a href="/mining">⛏️ Майнинг</a>
+                <a href="/bearpay?tab=bank">🏦 Банк</a>
+                <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
+            </div>
+            {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
+            <a href="/logout" class="icon-btn">🚪</a>
         </div>
-        {% if is_admin %}
-            <button class="edit-btn" onclick="openEditChannelModal()">✏️</button>
-            <button class="danger-btn" onclick="deleteChannel()">🗑️</button>
-        {% else %}
-            <form method="POST" action="/channel/subscribe/{{ channel.id }}" style="margin:0">
-                <button type="submit" class="{% if is_subscribed %}subscribed-btn{% else %}subscribe-btn{% endif %}">
-                    {% if is_subscribed %}✓{% else %}🔔{% endif %}
-                </button>
-            </form>
-        {% endif %}
-        <a href="/profile" class="profile-btn">🧸</a>
-        <div class="coins-balance">💎 <span id="userBalance">0</span></div>
-        <button class="shop-btn" onclick="window.open('/shop/coins','_blank')">💎</button>
-        {% if not is_admin %}
-            <button class="donate-btn" onclick="openDonateModal()">💎</button>
-        {% endif %}
     </div>
 
-    <form id="avatarForm" method="POST" action="/channel/{{ channel.id }}/upload_avatar" enctype="multipart/form-data" style="display:none">
-        <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="this.form.submit()">
-    </form>
-
-    {% if channel.is_paid and not has_access and not is_admin %}
-    <div class="paid-overlay">
-        <p>🔒 Этот канал доступен по подписке</p>
-        <p>Стоимость: <span class="price">{{ channel.price_coins }} 💎 / 30 дней</span></p>
-        <button class="paid-subscribe-btn" onclick="subscribePaidChannel()">💳 Подписаться за {{ channel.price_coins }} 💎</button>
-        <p class="error-message" id="subscribeError"></p>
+    <div class="search-container" id="searchContainer">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
+        <div class="search-results" id="searchResults"></div>
+        <button class="search-invite-btn" onclick="openInviteModal();document.getElementById('searchContainer').classList.remove('active')">📱 Пригласить друзей из контактов</button>
+        <button class="search-create-group-btn" onclick="openGroupModal();document.getElementById('searchContainer').classList.remove('active')">👥 Создать группу</button>
+        <div class="search-close" id="searchCloseBtn">✖ Закрыть поиск</div>
     </div>
-    {% else %}
-    <div class="posts" id="posts">
-        {% for post in posts %}
-        <div class="feed-item" data-post-id="{{ post.id }}" data-attachments="{{ post.attachments }}">
-            {% if is_admin %}
-            <button class="post-menu-btn" onclick="togglePostMenu(event, {{ post.id }})">•••</button>
-            <div class="post-dropdown" id="post-menu-{{ post.id }}">
-                <button onclick="editPost({{ post.id }}); closePostMenu({{ post.id }})">✏️ Редактировать</button>
-                <button onclick="deletePost({{ post.id }}); closePostMenu({{ post.id }})" class="danger">🗑️ Удалить</button>
-                <button onclick="togglePostComments({{ post.id }}); closePostMenu({{ post.id }})">
-                    {% if post.comments_enabled %}💬 Отключить комм.{% else %}💬 Включить комм.{% endif %}
-                </button>
-            </div>
-            {% endif %}
 
-            <div class="feed-header">
-                <div class="feed-avatar">
-                    {% if post.author.avatar != 'default.png' %}
-                        <img src="/static/avatars/{{ post.author.avatar }}" style="width:100%;height:100%;object-fit:cover">
-                    {% else %}
-                        🐻
-                    {% endif %}
-                </div>
-                <div>
-                    <div class="feed-channel-name">{{ post.author.username }}</div>
-                    <div class="feed-date">{{ post.timestamp.strftime('%d.%m %H:%M') }}</div>
-                </div>
-            </div>
-            <div class="feed-content">{{ post.content|safe }}</div>
-
-            {% if post.attachments %}
-                {% set attachments_list = post.attachments|json_decode %}
-                {% set carousel_slides = [] %}
-                {% set media_items = [] %}
-                {% set ns = namespace(skip=False) %}
-                {% for att in attachments_list %}
-                    {% set idx = loop.index0 %}
-                    {% if not ns.skip %}
-                        {% if att.type == 'video' %}
-                            {% set thumbnail = None %}
-                            {% if idx + 1 < attachments_list|length %}
-                                {% set next_att = attachments_list[idx + 1] %}
-                                {% if next_att.type == 'image' and '_preview.jpg' in next_att.name %}
-                                    {% set thumbnail = next_att.path %}
-                                    {% set ns.skip = True %}
-                                {% endif %}
-                            {% endif %}
-                            {% set _ = carousel_slides.append({'type': 'video', 'video': att.path, 'thumbnail': thumbnail}) %}
-                            {% set _ = media_items.append({'type': 'video', 'path': att.path}) %}
-                        {% elif att.type == 'image' and '_preview.jpg' not in att.name %}
-                            {% set _ = carousel_slides.append({'type': 'image', 'path': att.path}) %}
-                            {% set _ = media_items.append({'type': 'image', 'path': att.path}) %}
-                        {% endif %}
-                    {% else %}
-                        {% set ns.skip = False %}
-                    {% endif %}
-                {% endfor %}
-
-                {% if carousel_slides %}
-                <div class="carousel-container" data-post-id="{{ post.id }}">
-                    <div class="carousel-counter" id="counter-{{ post.id }}">1 / {{ carousel_slides|length }}</div>
-                    <div class="carousel-track" id="carousel-{{ post.id }}">
-                        {% for slide in carousel_slides %}
-                        <div class="carousel-slide" onclick="openMediaViewer({{ post.id }}, {{ loop.index0 }})">
-                            {% if slide.type == 'image' %}
-                                <img src="{{ slide.path }}" loading="lazy" decoding="async">
-                            {% elif slide.type == 'video' %}
-                                {% if slide.thumbnail %}
-                                    <img src="{{ slide.thumbnail }}" loading="lazy" decoding="async">
-                                {% else %}
-                                    <video src="{{ slide.video }}" muted preload="metadata" playsinline></video>
-                                {% endif %}
-                            {% endif %}
+    <div class="app" id="app">
+        <div class="swiper" id="swiper">
+            <div class="panel" id="panel1">
+                <div class="panel-content" style="padding:12px 12px 90px 12px; display:flex; flex-direction:column; gap:8px;">
+                    {% if convs|length == 0 %}
+                    <div class="welcome-block" id="welcomeBlock">
+                        <div class="welcome-close"><button onclick="document.getElementById('welcomeBlock').style.display='none'">✖</button></div>
+                        <div class="welcome-devil">🐻 <b>BearGram</b>: Общайся, люби, зарабатывай!<br>✅ Никаких VPN и рекламы!</div>
+                        <div class="welcome-invite">
+                            <p>📱 <b>Пригласи друзей</b> в BearGram!</p>
+                            <p style="font-size:11px;">Синхронизируй контакты телефона, чтобы найти знакомых</p>
+                            <button class="invite-btn" onclick="openInviteModal()">📇 Разрешить доступ к контактам</button>
+                            <p style="font-size:10px;color:#888;">Или найди их через 🔍 Поиск</p>
                         </div>
-                        {% endfor %}
+                        <p style="text-align:center;color:#888;font-size:12px;margin-bottom:12px;">Что ты можешь делать прямо сейчас:</p>
+                        <div class="welcome-grid">
+                            <a href="#" onclick="openInviteModal();return false;" class="welcome-card"><div class="card-icon">✍️</div><div class="card-title">Написать другу</div><div class="card-desc">Пригласи и начни общение</div></a>
+                            <a href="/dating" class="welcome-card"><div class="card-icon">💕</div><div class="card-title">Найти любовь</div><div class="card-desc">Дейтинг и знакомства</div></a>
+                            <a href="/bearpay?tab=bank" class="welcome-card"><div class="card-icon">🏦</div><div class="card-title">Зарабатывать</div><div class="card-desc">Банк, вклады, обменник</div></a>
+                            <a href="/grrr" class="welcome-card"><div class="card-icon">🐻</div><div class="card-title">Купить $GRRR</div><div class="card-desc">Крипта за секунду</div></a>
+                            <a href="/voice_channels" class="welcome-card"><div class="card-icon">🎤</div><div class="card-title">Стримы</div><div class="card-desc">Голосовые каналы</div></a>
+                            <a href="/golden" class="welcome-card"><div class="card-icon">🎬</div><div class="card-title">BearFlex</div><div class="card-desc">Видео как в TikTok</div></a>
+                            <a href="/shop" class="welcome-card"><div class="card-icon">🛍️</div><div class="card-title">Продать товар</div><div class="card-desc">Цифровые и реальные</div></a>
+                            <a href="/channels" class="welcome-card"><div class="card-icon">📢</div><div class="card-title">Каналы</div><div class="card-desc">Создать свой блог</div></a>
+                        </div>
+                        <button class="welcome-btn" onclick="document.getElementById('searchToggleBtn').click()">✍️ Написать</button>
                     </div>
-                </div>
-                {% endif %}
-            {% endif %}
-
-            <div class="feed-actions" onclick="event.stopPropagation();">
-                <span class="feed-action" onclick="event.stopPropagation(); likePost({{ post.id }}, this)">❤️ <span>{{ post.likes_count|default(0) }}</span></span>
-                <span class="feed-action" onclick="event.stopPropagation(); toggleComments({{ post.id }})">💬 <span id="comments-count-{{ post.id }}">{{ post.comments|length }}</span></span>
-                <span class="feed-action">👁️ {{ post.views }}</span>
-                <a href="#" class="feed-donate-btn" onclick="event.stopPropagation(); donateToChannel()">💎 Донат</a>
-                <span class="feed-action" onclick="event.stopPropagation(); sharePost({{ post.id }}, '{{ channel.name }}', '{{ post.content[:80]|replace("'", "\\'")|safe }}')">🔗</span>
-            </div>
-
-            <div class="comment-section" id="comments-{{ post.id }}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #f0f0f0;">
-                <div class="comment-input" style="display:flex; gap:8px; margin-bottom:12px;">
-                    <input type="text" id="comment-input-{{ post.id }}" placeholder="Комментарий..." style="flex:1; padding:10px; border-radius:25px; border:1px solid #ffb3b3; outline:none;">
-                    <button onclick="addComment({{ post.id }})" style="background:#ff6b6b; color:white; border:none; padding:8px 16px; border-radius:25px; cursor:pointer;">→</button>
-                </div>
-                <div id="comments-list-{{ post.id }}">
-                    {% for comment in post.comments %}
-                    <div class="comment" style="display:flex; gap:10px; margin-bottom:10px; padding:8px; background:#f9f9f9; border-radius:16px;">
-                        <div class="comment-avatar" style="width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;overflow:hidden;">
-                            {% if comment.user.avatar != 'default.png' %}
-                                <img src="/static/avatars/{{ comment.user.avatar }}" style="width:100%;height:100%;object-fit:cover">
-                            {% else %}
-                                🐻
-                            {% endif %}
+                    {% else %}
+                    {% for c in convs %}
+                    <div class="chat-item">
+                        <div class="chat-avatar" onclick="event.stopPropagation(); {% if c.type == 'private' %}showChatTypeModal({{ c.id }}, '{{ c.name }}'){% elif c.type == 'secret' %}location.href='/secret_chat/{{ c.id }}'{% else %}location.href='/group/{{ c.id }}/info'{% endif %}">
+                            {% if c.type == 'private' %}{% if c.avatar != 'default.png' %}<img src="/static/avatars/{{ c.avatar }}">{% else %}{{ c.name[0].upper() }}{% endif %}
+                            {% elif c.type == 'secret' %}🔒
+                            {% else %}{% if c.avatar != 'group_default.png' %}<img src="/static/avatars/{{ c.avatar }}">{% else %}👥{% endif %}{% endif %}
                         </div>
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-weight:500; font-size:12px; color:#333;">{{ comment.user.username }}</span>
-                                <span style="font-size:10px; color:#aaa; cursor:pointer;" onclick="likeComment({{ comment.id }}, {{ post.id }})">
-                                    ❤️ <span id="comment-likes-{{ comment.id }}">{{ comment.likes_count|default(0) }}</span>
-                                </span>
-                            </div>
-                            <div style="font-size:12px; color:#666;">{{ comment.content }}</div>
-                            <div style="font-size:9px; color:#aaa; margin-top:4px;">{{ comment.timestamp.strftime('%H:%M') }}</div>
+                        <div class="chat-info" onclick="openChat('{{ c.type }}', {{ c.id }})">
+                            <div class="chat-name">{% if c.type == 'secret' %}🔒 {% endif %}{{ c.name }}{% if c.type == 'private' %}<span class="{% if c.status == 'online' %}online{% else %}offline{% endif %}">{% if c.status == 'online' %}🟢 онлайн{% else %}🔵 офлайн{% endif %}</span>{% elif c.type == 'secret' %}<span class="online" style="color:#4cd964">🔒 шифруется</span>{% else %}<span class="online">👥 группа</span>{% endif %}</div>
+                            <div class="chat-last">{% if c.last and c.last.content %}{{ c.last.content[:40]|striptags|safe }}{% else %}💬 Нет сообщений{% endif %}</div>
                         </div>
+                        <div class="chat-meta" onclick="openChat('{{ c.type }}', {{ c.id }})"><div class="chat-time" {% if c.last and c.last.timestamp %}data-utc="{{ c.last.timestamp.isoformat() }}Z"{% endif %}>{% if c.last and c.last.timestamp %}{{ c.last.timestamp.strftime('%H:%M') }}{% endif %}</div>{% if c.unread > 0 %}<div class="badge">{{ c.unread }}</div>{% endif %}</div>
                     </div>
                     {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="panel" id="panel2">
+                <div class="panel-content" style="padding:0 0 80px 0;">
+                    <div id="feedContainer" style="margin-top:0;"></div>
                 </div>
             </div>
         </div>
-        {% else %}
-        <div style="text-align:center;padding:60px;color:#888">
-            <span style="font-size:48px">📢</span>
-            <p>Нет постов</p>
-            {% if is_admin %}<p style="font-size:13px;margin-top:8px">Создайте первый пост</p>{% endif %}
-        </div>
-        {% endfor %}
     </div>
 
-    {% if is_admin and has_access %}
-    <div class="new-post-area">
-        <form method="POST" action="/channel/post/{{ channel.id }}" enctype="multipart/form-data" id="postForm">
-            <div class="new-post-input">
-                <textarea name="content" rows="2" placeholder="📢 Текст поста..."></textarea>
-                <div style="margin-top:8px;">
-                    <button type="button" class="attach-btn" id="attachButton">📎 Добавить файлы</button>
-                    <button type="submit" class="post-submit-btn">📤 Опубликовать</button>
-                </div>
-                <div class="selected-files-grid" id="selectedFilesGrid"></div>
+    <div class="bottom-nav">
+        <a href="/dating" class="nav-item"><span class="nav-icon">💕</span><span>Знакомства</span></a>
+        <a href="/games" class="nav-item"><span class="nav-icon">🎮</span><span>Игры</span></a>
+        <a href="/voice_channels" class="nav-item"><span class="nav-icon">🎤</span><span>Голосовые</span></a>
+        <a href="/channels" class="nav-item"><span class="nav-icon">📢</span><span>Каналы</span></a>
+        <a href="/golden" class="nav-item bearlflex-nav"><span class="nav-icon">🎬</span><span>BearFlex</span></a>
+    </div>
+</div>
+
+<div id="aiChatWindow">
+    <div style="padding:12px; background:#ff6b6b; color:white; border-radius:20px 20px 0 0; display:flex; justify-content:space-between;"><span>🐻 Мишка-поддержка</span><button onclick="toggleAiAssistant()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">✖</button></div>
+    <div id="aiChatMessages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"><div style="background:#f0f0f0; padding:8px 12px; border-radius:12px;">🐻 Привет! Чем помочь?</div></div>
+    <div style="padding:12px; border-top:1px solid #eee; display:flex; gap:8px;"><input type="text" id="aiChatInput" placeholder="Спроси..." style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;"><button id="aiChatSend" style="background:#ff6b6b; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">➤</button></div>
+</div>
+
+<div class="modal" id="chatTypeModal"><div class="modal-content"><h3>📱 Выберите действие</h3><div class="modal-buttons"><button class="regular-chat" id="regularChatBtn">💬 Обычный чат</button><button class="secret-chat" id="secretChatBtn">🔒 Секретный чат (AES-256)</button><button class="remove-contact" id="removeContactBtn" style="display:none;">🗑️ Удалить из контактов</button><button class="cancel" onclick="closeChatTypeModal()">Отмена</button></div></div></div>
+<div class="group-modal" id="groupModal"><div class="group-modal-content"><h3>✨ Новая группа</h3><input type="text" id="groupName" placeholder="Название группы"><div class="group-modal-buttons"><button onclick="createGroup()">Создать</button><button onclick="closeGroupModal()">Отмена</button></div></div></div>
+
+<div class="modal" id="inviteModal">
+    <div class="modal-content" style="width:340px;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="color:#ff6b6b;margin:0;">📱 Пригласить друзей</h3>
+            <button onclick="closeInviteModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#aaa;">✖</button>
+        </div>
+        <div class="invite-tabs" style="display:flex;gap:5px;margin-bottom:15px;">
+            <button class="invite-tab active" onclick="switchInviteTab('friends')" style="flex:1;padding:8px;border:none;border-radius:15px;background:#ff6b6b;color:white;font-weight:bold;font-size:11px;cursor:pointer;">👥 Друзья</button>
+            <button class="invite-tab" onclick="switchInviteTab('qr')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">📷 QR-код</button>
+            <button class="invite-tab" onclick="switchInviteTab('link')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">🔗 Ссылка</button>
+            <button class="invite-tab" onclick="switchInviteTab('referral')" style="flex:1;padding:8px;border:none;border-radius:15px;background:rgba(255,255,255,0.7);color:#888;font-weight:bold;font-size:11px;cursor:pointer;">💎 Бонусы</button>
+        </div>
+        <div id="inviteFriends" class="invite-content">
+            <button onclick="inviteFromNativeContacts()" style="width:100%; background:#ffd700; color:#000; border:none; padding:12px; border-radius:25px; font-weight:bold; font-size:14px; cursor:pointer; margin-bottom:12px;">📇 Выбрать из контактов телефона</button>
+            <div style="text-align:center; color:#888; font-size:11px; margin-bottom:12px;">— или —</div>
+            <p style="color:#888;font-size:11px;text-align:center;margin-bottom:8px;">Введи номера через запятую или загрузи файл контактов</p>
+            <input type="text" id="phoneNumbersInput" placeholder="+79001234567, +79007654321" style="width:100%;padding:10px;border-radius:20px;border:1px solid #ddd;margin-bottom:8px;text-align:center;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button onclick="inviteSelectedFriends('manual')" style="flex:1;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Пригласить</button>
+                <label for="contactsFileInput" style="flex:1;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;text-align:center;">📂 Загрузить .vcf/.csv</label>
+                <input type="file" id="contactsFileInput" accept=".vcf,.csv" style="display:none" onchange="parseContactsFile(this)">
             </div>
-        </form>
-    </div>
-    {% endif %}
-    {% endif %}
-</div>
-
-<!-- МОДАЛКИ -->
-<div class="modal" id="donateModal">
-    <div class="modal-content">
-        <h3>💎 Поддержать канал</h3>
-        <p style="margin-bottom:12px;color:#666">Сумма в кристаллайзерах:</p>
-        <input type="number" id="donateAmount" placeholder="10" min="10" max="10000" step="1" value="10">
-        <p style="font-size:11px;color:#888;margin-bottom:16px">Минимум: 10 кристаллайзеров</p>
-        <div class="modal-buttons">
-            <button class="confirm-btn" onclick="submitDonate()">💎 Поддержать</button>
-            <button class="cancel-btn" onclick="closeDonateModal()">Отмена</button>
+            <p id="contactsInstructions" style="color:#aaa;font-size:10px;text-align:center;margin-bottom:8px;">
+                📱 <b>Android:</b> Контакты → Экспорт → .vcf<br>
+                📱 <b>iPhone:</b> iCloud → Экспорт vCard<br>
+                💻 <b>Google:</b> Google Контакты → Экспорт → vCard
+            </p>
+            <div id="contactsFileList" style="max-height:200px;overflow-y:auto;margin-bottom:8px;display:none;">
+                <div id="contactsFileItems"></div>
+                <div style="text-align:center;margin-top:8px;">
+                    <button id="inviteFileContactsBtn" onclick="inviteSelectedFriends('file')" style="background:#ffd700;color:#000;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;font-size:14px;cursor:pointer;display:none;">📤 Пригласить выбранных</button>
+                </div>
+            </div>
         </div>
-        <p id="donateError" style="color:#ff4444;font-size:13px;margin-top:8px;display:none;"></p>
+        <div id="inviteQR" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Покажи этот код другу!</p><div id="qrCode" style="width:180px;height:180px;margin:0 auto;background:white;border-radius:15px;display:flex;align-items:center;justify-content:center;"></div></div></div>
+        <div id="inviteLink" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><p style="color:#888;font-size:12px;">Отправь ссылку другу!</p><div style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:12px;color:#ff6b6b;" id="refLink">https://beargram.up.railway.app/register</div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button><button onclick="shareRefLink()" style="width:100%;background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;">📤 Поделиться</button></div></div>
+        <div id="inviteReferral" class="invite-content" style="display:none;"><div style="text-align:center;padding:15px;"><div style="font-size:48px;margin-bottom:10px;">💎</div><p style="color:#888;font-size:12px;">Пригласи друга — получи <b>+25 💎</b>!<br>Друг получит <b>+10 💎</b> на старт.</p><div id="referralStats" style="background:rgba(255,107,107,0.1);padding:10px;border-radius:10px;margin-bottom:10px;"><p style="font-size:12px;color:#ff6b6b;">Загрузка...</p></div><div style="background:rgba(255,215,0,0.1);padding:10px;border-radius:10px;margin-bottom:10px;word-break:break-all;font-size:11px;color:#ff8c00;" id="refStatsLink"></div><button onclick="copyRefLink()" style="width:100%;background:#ffd700;color:#000;border:none;padding:10px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:5px;">📋 Копировать ссылку</button></div></div>
     </div>
 </div>
 
-<div class="modal" id="avatarModal">
-    <div class="modal-content">
-        <h3>📷 Аватар</h3>
-        <input type="file" id="avatarFile" accept="image/*">
-        <div class="modal-buttons">
-            <button class="confirm-btn" onclick="uploadAvatar()">Загрузить</button>
-            <button class="cancel-btn" onclick="closeAvatarModal()">Отмена</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="editPostModal">
-    <div class="modal-content" style="max-width:500px;">
-        <h3>✏️ Редактировать пост</h3>
-        <textarea id="editPostContent" rows="4" placeholder="Текст поста"></textarea>
-        <div id="currentAttachments" style="margin:12px 0; display:flex; flex-wrap:wrap; gap:8px;"></div>
-        <div style="margin-bottom:12px;">
-            <label style="font-size:12px;color:#888;">Добавить новые файлы:</label>
-            <input type="file" id="newEditFiles" multiple style="margin-top:4px;">
-        </div>
-        <div class="modal-buttons">
-            <button class="confirm-btn" onclick="saveEditPost()">Сохранить</button>
-            <button class="cancel-btn" onclick="closeEditPostModal()">Отмена</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="editChannelModal">
-    <div class="modal-content">
-        <h3>⚙️ Настройки канала</h3>
-        <input type="text" id="editChannelName" placeholder="Название канала" value="{{ channel.name }}">
-        <input type="text" id="editChannelUsername" placeholder="@username (необязательно)" value="{{ channel.username if channel.username else '' }}">
-        <div class="modal-buttons">
-            <button class="confirm-btn" onclick="saveChannelSettings()">Сохранить</button>
-            <button class="cancel-btn" onclick="closeEditChannelModal()">Отмена</button>
-        </div>
-    </div>
-</div>
-
-<!-- ПРОСМОТРЩИК МЕДИА (фото + видео) -->
+<!-- ПРОСМОТРЩИК МЕДИА -->
 <div class="image-viewer" id="mediaViewer">
     <button class="close-btn" onclick="closeMediaViewer()">✖</button>
     <button class="nav-btn prev-btn" onclick="navigateMedia(-1)">◀</button>
@@ -435,476 +451,380 @@
 </div>
 
 <script>
-    const MAX_FILES = 10;
-    let selectedFiles = [];
-    let editingPostId = null;
-    let existingAttachments = [];
-    let deletedPaths = [];
-    let currentMediaIndex = 0;
-    let currentMediaItems = [];
-
-    async function loadBalance() {
-        try {
-            const res = await fetch('/api/coins/balance');
-            const data = await res.json();
-            document.getElementById('userBalance').innerText = data.balance;
-        } catch(e) { console.error('Balance error:', e); }
+(function() {
+    const panels = 2;
+    let current = 0;
+    const swiper = document.getElementById('swiper');
+    function goTo(i, anim = true) {
+        if (i < 0 || i >= panels) return;
+        current = i;
+        swiper.style.transition = anim ? 'transform 0.35s cubic-bezier(0.25,0.8,0.25,1)' : 'none';
+        swiper.style.transform = `translateX(-${current * 100}%)`;
+        if (current === 1) loadFeed();
     }
-    loadBalance();
-
-    async function subscribePaidChannel() {
-        const errEl = document.getElementById('subscribeError');
-        errEl.style.display = 'none';
-        try {
-            const res = await fetch(`/channel/subscribe_paid/{{ channel.id }}`, { method: 'POST' });
-            const data = await res.json();
-            if (data.success) { location.reload(); }
-            else { errEl.innerText = data.error || 'Ошибка подписки'; errEl.style.display = 'block'; }
-        } catch(e) { errEl.innerText = 'Ошибка сети'; errEl.style.display = 'block'; }
-    }
-
-    function togglePostMenu(event, postId) {
-        event.stopPropagation();
-        document.querySelectorAll('.post-dropdown.active').forEach(d => { if (d.id !== 'post-menu-' + postId) d.classList.remove('active'); });
-        document.getElementById('post-menu-' + postId).classList.toggle('active');
-    }
-    function closePostMenu(postId) {
-        document.getElementById('post-menu-' + postId).classList.remove('active');
-    }
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
-    });
-
-    // --- ГЕНЕРАЦИЯ ПРЕВЬЮ ВИДЕО (для формы) ---
-    function generateVideoPreview(file) {
-        return new Promise((resolve) => {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.muted = true;
-            video.playsInline = true;
-            video.src = URL.createObjectURL(file);
-            video.onloadeddata = () => { video.currentTime = 1; };
-            video.onseeked = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob((blob) => {
-                    URL.revokeObjectURL(video.src);
-                    resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '') + '_preview.jpg', { type: 'image/jpeg' }));
-                }, 'image/jpeg', 0.8);
-            };
-            video.onerror = () => { URL.revokeObjectURL(video.src); resolve(null); };
-            setTimeout(() => { if (video.readyState < 2) { URL.revokeObjectURL(video.src); resolve(null); } }, 3000);
-        });
-    }
-
-    // --- РАБОТА С ФАЙЛАМИ ---
-    document.getElementById('attachButton').addEventListener('click', function() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.accept = 'image/*,video/*,.pdf,.doc,.docx';
-        input.style.display = 'none';
-        input.onchange = async function(e) {
-            const files = Array.from(e.target.files);
-            for (let file of files) {
-                if (selectedFiles.length >= MAX_FILES) { alert('Максимум ' + MAX_FILES + ' файлов'); break; }
-                selectedFiles.push(file);
-                if (file.type.startsWith('video/')) {
-                    const preview = await generateVideoPreview(file);
-                    if (preview) selectedFiles.push(preview);
-                }
-            }
-            updateFileGrid();
-            input.remove();
-        };
-        document.body.appendChild(input);
-        input.click();
-    });
-
-    function updateFileGrid() {
-        const gridDiv = document.getElementById('selectedFilesGrid');
-        if (!selectedFiles.length) { gridDiv.innerHTML = ''; return; }
-        gridDiv.innerHTML = selectedFiles.map((file, idx) => {
-            const url = URL.createObjectURL(file);
-            let previewHtml = '';
-            if (file.type.startsWith('image/')) {
-                previewHtml = `<img src="${url}" onload="URL.revokeObjectURL('${url}')">`;
-            } else if (file.type.startsWith('video/')) {
-                previewHtml = `<video src="${url}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
-            } else {
-                previewHtml = `<div style="background:#2a2a3e;display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">📎</div>`;
-            }
-            return `<div class="selected-file-item"><div class="remove-file" onclick="removeFileFromGrid(${idx})">✖</div>${previewHtml}</div>`;
-        }).join('');
-    }
-    function removeFileFromGrid(index) { selectedFiles.splice(index, 1); updateFileGrid(); }
-
-    // --- СЖАТИЕ ИЗОБРАЖЕНИЙ ---
-    function compressImage(file, maxWidth = 1400, quality = 0.8) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // --- ОТПРАВКА ПОСТА ---
-    const postForm = document.getElementById('postForm');
-    if (postForm) {
-        postForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const textarea = this.querySelector('textarea[name="content"]');
-            const content = textarea.value.trim();
-            if (!content && selectedFiles.length === 0) { alert('Добавьте текст или хотя бы один файл'); return; }
-
-            const submitBtn = this.querySelector('.post-submit-btn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳ Публикация...'; submitBtn.disabled = true;
-
-            const formData = new FormData();
-            formData.append('content', content);
-            for (let file of selectedFiles) {
-                let toSend = file;
-                if (file.type.startsWith('image/') && !file.type.includes('gif') && !file.type.includes('svg')) {
-                    toSend = await compressImage(file);
-                }
-                formData.append('files', toSend, file.name);
-            }
-
-            try {
-                const response = await fetch(this.action, { method: 'POST', body: formData });
-                if (response.ok) { selectedFiles = []; location.reload(); }
-                else { const text = await response.text(); throw new Error(text || 'Ошибка сервера'); }
-            } catch (err) {
-                alert('Ошибка: ' + err.message);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-    }
-
-    // --- ДОНАТЫ ---
-    function openDonateModal() { document.getElementById('donateModal').classList.add('active'); }
-    function closeDonateModal() { document.getElementById('donateModal').classList.remove('active'); document.getElementById('donateError').style.display = 'none'; }
-    async function submitDonate() {
-        const amount = parseInt(document.getElementById('donateAmount').value, 10);
-        const msg = document.getElementById('donateError');
-        if (isNaN(amount) || amount < 10) { msg.innerText = 'Минимум 10 кристаллайзеров'; msg.style.display = 'block'; return; }
-        msg.style.display = 'none';
-        try {
-            const res = await fetch(`/channel/donate/{{ channel.id }}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({amount: amount})
-            });
-            const data = await res.json();
-            if (data.success) { closeDonateModal(); loadBalance(); alert(`Спасибо! Вы поддержали канал на ${amount} кристаллайзеров.`); }
-            else { msg.innerText = data.error || 'Ошибка'; msg.style.display = 'block'; }
-        } catch(e) { msg.innerText = 'Ошибка сети'; msg.style.display = 'block'; }
-    }
-    function donateToChannel() { openDonateModal(); }
-
-    // --- КОММЕНТАРИИ ---
-    function toggleComments(postId) {
-        const section = document.getElementById(`comments-${postId}`);
-        section.style.display = section.style.display === 'none' ? 'block' : 'none';
-    }
-    function addComment(postId) {
-        const input = document.getElementById(`comment-input-${postId}`);
-        const content = input.value.trim();
-        if (!content) return;
-        fetch(`/channel/comment/${postId}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `content=${encodeURIComponent(content)}`
-        }).then(() => location.reload());
-    }
-
-    // --- ЛАЙКИ ---
-    function likePost(postId, el) {
-        const feedItem = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        if (feedItem) {
-            const heart = document.createElement('div');
-            heart.className = 'like-heart-animation';
-            heart.innerHTML = '❤️';
-            heart.style.left = '50%';
-            heart.style.top = '50%';
-            heart.style.fontSize = '60px';
-            heart.style.transform = 'translate(-50%, -50%)';
-            feedItem.appendChild(heart);
-            setTimeout(() => heart.remove(), 1000);
-        }
-        if (el) {
-            const countSpan = el.querySelector('span');
-            let currentCount = parseInt(countSpan.textContent) || 0;
-            if (el.classList.contains('liked')) {
-                el.classList.remove('liked');
-                countSpan.textContent = Math.max(0, currentCount - 1);
-            } else {
-                el.classList.add('liked');
-                countSpan.textContent = currentCount + 1;
-            }
-        }
-        fetch(`/channel/like_post/${postId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success && el) {
-                el.querySelector('span').textContent = data.likes_count;
-                if (data.liked) el.classList.add('liked');
-                else el.classList.remove('liked');
-            }
-        });
-    }
-    function likeComment(commentId, postId) {
-        fetch(`/channel/like_comment/${commentId}`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const likesSpan = document.getElementById(`comment-likes-${commentId}`);
-                if (likesSpan) likesSpan.innerText = data.likes_count;
-            }
-        });
-    }
-    function togglePostComments(postId) {
-        fetch(`/channel/post/edit/${postId}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'content=keep&comments_enabled=' + (document.getElementById(`comments-${postId}`).style.display !== 'none' ? 'false' : 'true')
-        }).then(() => location.reload());
-    }
-
-    // --- ПОДЕЛИТЬСЯ ---
-    function sharePost(postId, channelName, preview) {
-        var link = 'https://beargram.up.railway.app/channel/' + postId;
-        var msg = '📢 ' + channelName + ': ' + (preview || '').substring(0, 80) + '...\n' + link;
-        if (navigator.share) {
-            navigator.share({title: channelName, text: msg, url: link}).catch(() => {});
-        } else {
-            navigator.clipboard.writeText(msg).then(() => alert('📋 Ссылка скопирована! Можешь отправить её в любой чат.'));
-        }
-    }
-
-    // --- АВАТАР ---
-    function openAvatarModal() { document.getElementById('avatarModal').classList.add('active'); }
-    function closeAvatarModal() { document.getElementById('avatarModal').classList.remove('active'); }
-    function uploadAvatar() {
-        const file = document.getElementById('avatarFile').files[0];
-        if (!file) { alert('Выберите файл'); return; }
-        const formData = new FormData(); formData.append('avatar', file);
-        fetch('/channel/{{ channel.id }}/upload_avatar', { method: 'POST', body: formData }).then(() => location.reload());
-    }
-
-    // --- НАСТРОЙКИ КАНАЛА ---
-    function openEditChannelModal() { document.getElementById('editChannelModal').classList.add('active'); }
-    function closeEditChannelModal() { document.getElementById('editChannelModal').classList.remove('active'); }
-    function saveChannelSettings() {
-        const name = document.getElementById('editChannelName').value.trim();
-        let username = document.getElementById('editChannelUsername').value.trim();
-        if (username && !username.startsWith('@')) username = '@' + username;
-        const data = {};
-        if (name) data.name = name;
-        data.username = username || null;
-        fetch(`/channel/edit/{{ channel.id }}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(() => location.reload());
-    }
-
-    // --- РЕДАКТИРОВАНИЕ / УДАЛЕНИЕ ПОСТА ---
-    function editPost(postId) {
-        editingPostId = postId;
-        const postDiv = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        document.getElementById('editPostContent').value = postDiv.querySelector('.feed-content').innerText;
-        const attachmentsJson = postDiv.getAttribute('data-attachments');
-        existingAttachments = attachmentsJson && attachmentsJson !== 'None' ? JSON.parse(attachmentsJson) : [];
-        deletedPaths = [];
-        renderCurrentAttachments();
-        document.getElementById('editPostModal').classList.add('active');
-    }
-    function renderCurrentAttachments() {
-        const container = document.getElementById('currentAttachments');
-        if (existingAttachments.length === 0) {
-            container.innerHTML = '<p style="color:#888;font-size:13px;width:100%;">Нет вложений</p>';
+    const app = document.getElementById('app');
+    let startX = 0, startY = 0, dragging = false, moved = false;
+    app.addEventListener('touchstart', e => {
+        // Игнорируем, если касание началось на карусели
+        if (e.target.closest('.carousel-container')) {
+            dragging = false;
             return;
         }
-        container.innerHTML = existingAttachments.map((att, idx) => {
-            let preview = '';
-            if (att.type === 'image') preview = `<img src="${att.path}" style="width:100%;height:100%;object-fit:cover">`;
-            else if (att.type === 'video') preview = `<video src="${att.path}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`;
-            else preview = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;background:#2a2a3e;">📎</div>`;
-            return `<div class="selected-file-item" style="position:relative; width:80px; height:80px; margin:4px;">
-                ${preview}
-                <div class="remove-file" onclick="markAttachmentDeleted(${idx})">✖</div>
-            </div>`;
-        }).join('');
-    }
-    function markAttachmentDeleted(index) {
-        if (index < existingAttachments.length) {
-            deletedPaths.push(existingAttachments[index].path);
-            existingAttachments.splice(index, 1);
-            renderCurrentAttachments();
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true; moved = false;
+    }, {passive: true});
+    app.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        if (Math.abs(e.touches[0].clientY - startY) > Math.abs(e.touches[0].clientX - startX)) { dragging = false; return; }
+        e.preventDefault(); moved = true;
+    }, {passive: false});
+    app.addEventListener('touchend', e => {
+        if (!dragging || !moved) { dragging = false; return; }
+        dragging = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 60) {
+            if (dx > 0 && current > 0) goTo(current - 1);
+            else if (dx < 0 && current < panels - 1) goTo(current + 1);
         }
-    }
-    function closeEditPostModal() {
-        document.getElementById('editPostModal').classList.remove('active');
-        editingPostId = null;
-        existingAttachments = [];
-        deletedPaths = [];
-    }
-    async function saveEditPost() {
-        const newText = document.getElementById('editPostContent').value.trim();
-        if (!newText) { alert('Текст не может быть пустым'); return; }
-        const formData = new FormData();
-        formData.append('content', newText);
-        formData.append('deleted_paths', JSON.stringify(deletedPaths));
-        const newFilesInput = document.getElementById('newEditFiles');
-        if (newFilesInput.files.length > 0) {
-            for (let file of newFilesInput.files) formData.append('files', file);
-        }
-        try {
-            const response = await fetch(`/channel/post/edit/${editingPostId}`, { method: 'POST', body: formData });
-            if (response.ok) location.reload();
-            else alert('Ошибка при редактировании');
-        } catch(e) { alert('Ошибка сети'); }
-    }
-    function deletePost(postId) {
-        if (confirm('Удалить пост?')) {
-            fetch(`/channel/post/delete/${postId}`, {method: 'POST'}).then(() => location.reload());
-        }
-    }
-    function deleteChannel() {
-        if (confirm('УДАЛИТЬ КАНАЛ НАВСЕГДА?')) {
-            fetch(`/channel/delete/{{ channel.id }}`, {method: 'POST'}).then(() => window.location.href = '/channels');
-        }
-    }
-
-    // --- КАРУСЕЛЬ: обновление счётчика вместо точек ---
-    document.querySelectorAll('.carousel-track').forEach(track => {
-        track.addEventListener('scroll', function() {
-            const postId = this.id.replace('carousel-', '');
-            const slides = this.querySelectorAll('.carousel-slide');
-            const counter = document.getElementById('counter-' + postId);
-            if (!counter || slides.length === 0) return;
-            const scrollLeft = this.scrollLeft;
-            const trackWidth = this.clientWidth;
-            if (trackWidth > 0) {
-                let activeIndex = Math.round(scrollLeft / trackWidth);
-                activeIndex = Math.min(activeIndex, slides.length - 1);
-                activeIndex = Math.max(activeIndex, 0);
-                counter.textContent = (activeIndex + 1) + ' / ' + slides.length;
-            }
-        });
     });
+    app.addEventListener('mousedown', e => {
+        if (e.target.closest('.carousel-container')) { dragging = false; return; }
+        startX = e.clientX; startY = e.clientY; dragging = true; moved = false;
+    });
+    window.addEventListener('mouseup', e => {
+        if (!dragging || !moved) { dragging = false; return; }
+        dragging = false;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 60) {
+            if (dx > 0 && current > 0) goTo(current - 1);
+            else if (dx < 0 && current < panels - 1) goTo(current + 1);
+        }
+    });
+    goTo(0, false);
+})();
 
-    // --- ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) ---
-    function getMediaItemsForPost(postId) {
-        const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        if (!postEl) return [];
-        const attr = postEl.getAttribute('data-attachments');
-        let items = [];
-        if (attr && attr !== 'None') {
-            try {
-                const all = JSON.parse(attr);
-                let skip = false;
-                all.forEach((att, idx) => {
-                    if (skip) { skip = false; return; }
-                    if (att.type === 'video') {
-                        items.push({ type: 'video', path: att.path });
-                        if (idx + 1 < all.length && all[idx+1].type === 'image' && all[idx+1].name.includes('_preview.jpg')) {
-                            skip = true;
-                        }
-                    } else if (att.type === 'image' && !att.name.includes('_preview.jpg')) {
-                        items.push({ type: 'image', path: att.path });
-                    }
+function formatUTCTime(utcString){if(!utcString)return'';const m=utcString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);if(!m)return utcString;const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]));return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
+document.querySelectorAll('.chat-time').forEach(el=>{const u=el.dataset.utc;if(u)el.textContent=formatUTCTime(u)});
+
+let selectedUserId=null,searchTimeout=null;
+function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function openChat(t,i){if(t==='private')location.href='/messages/'+i;else if(t==='secret')location.href='/secret_chat/'+i;else location.href='/group/'+i}
+function showChatTypeModal(uid,uname){selectedUserId=uid;document.getElementById('chatTypeModal').classList.add('active');fetch('/check_contact/'+uid).then(r=>r.json()).then(d=>{document.getElementById('removeContactBtn').style.display=d.is_contact?'block':'none'})}
+function closeChatTypeModal(){document.getElementById('chatTypeModal').classList.remove('active');selectedUserId=null}
+document.getElementById('regularChatBtn').onclick=function(){if(selectedUserId)location.href='/messages/'+selectedUserId};
+document.getElementById('secretChatBtn').onclick=function(){if(selectedUserId){fetch('/create_secret_chat/'+selectedUserId,{method:'POST',headers:{'Content-Type':'application/json'}}).then(r=>r.json()).then(d=>{if(d.chat_id)location.href='/secret_chat/'+d.chat_id;else if(d.redirect)location.href=d.redirect;else alert('Ошибка')}).catch(()=>{let f=document.createElement('form');f.method='POST';f.action='/create_secret_chat/'+selectedUserId;document.body.appendChild(f);f.submit()})}};
+document.getElementById('removeContactBtn').onclick=async function(){if(selectedUserId){const r=await fetch('/remove_contact/'+selectedUserId,{method:'POST'});const d=await r.json();if(d.success){alert('🗑️ Удалён');location.reload()}else alert(d.error)}};
+
+const stb=document.getElementById('searchToggleBtn'),sc=document.getElementById('searchContainer'),si=document.getElementById('searchInput'),sr=document.getElementById('searchResults'),scb=document.getElementById('searchCloseBtn');
+stb.onclick=function(){sc.classList.toggle('active');if(sc.classList.contains('active'))si.focus()};
+scb.onclick=function(){sc.classList.remove('active');sr.classList.remove('active');si.value=''};
+function searchUsers(){const q=si.value.trim();if(q.length<1){sr.classList.remove('active');return}
+fetch('/search_users?q='+encodeURIComponent(q)).then(r=>r.json()).then(u=>{if(u.length===0){sr.innerHTML='<div style="padding:12px;text-align:center;color:#888;">Не найдены</div>';sr.classList.add('active');return}
+sr.innerHTML='';u.forEach(user=>{const d=document.createElement('div');d.className='search-result-item';d.onclick=()=>location.href='/profile/'+user.id;d.innerHTML='<div class="search-result-avatar">'+(user.avatar!='default.png'?'<img src="/static/avatars/'+user.avatar+'">':user.username[0].toUpperCase())+'</div><div class="search-result-info"><div class="search-result-name">'+escapeHtml(user.username)+'</div><div class="search-result-link">'+escapeHtml(user.username_link)+'</div></div><div style="color:#ff6b6b">→</div>';sr.appendChild(d)});sr.classList.add('active')})}
+si.addEventListener('input',function(){if(searchTimeout)clearTimeout(searchTimeout);searchTimeout=setTimeout(searchUsers,300)});
+document.addEventListener('click',function(e){if(!sr.contains(e.target)&&e.target!==si&&e.target!==stb)sr.classList.remove('active')});
+
+function openGroupModal(){document.getElementById('groupModal').classList.add('active')}
+function closeGroupModal(){document.getElementById('groupModal').classList.remove('active');document.getElementById('groupName').value=''}
+function createGroup(){let n=document.getElementById('groupName').value.trim();if(n){let f=document.createElement('form');f.method='POST';f.action='/create_group';let i=document.createElement('input');i.name='name';i.value=n;f.appendChild(i);document.body.appendChild(f);f.submit()}else alert('Введите название')}
+if(sessionStorage.getItem('openSearch')==='1'){sessionStorage.removeItem('openSearch');document.getElementById('searchContainer').classList.add('active');document.getElementById('searchInput').focus()}
+
+function openInviteModal(){document.getElementById('inviteModal').classList.add('active');generateQR();loadReferralStats()}
+function closeInviteModal(){document.getElementById('inviteModal').classList.remove('active')}
+function switchInviteTab(tab){document.querySelectorAll('.invite-tab').forEach(b=>{b.style.background='rgba(255,255,255,0.7)';b.style.color='#888'});document.querySelectorAll('.invite-content').forEach(c=>c.style.display='none');event.target.style.background='#ff6b6b';event.target.style.color='white';const tabs={'friends':'inviteFriends','qr':'inviteQR','link':'inviteLink','referral':'inviteReferral'};if(tabs[tab])document.getElementById(tabs[tab]).style.display='block';if(tab==='qr')generateQR();if(tab==='referral')loadReferralStats()}
+
+async function inviteFromNativeContacts() { if ('contacts' in navigator && 'select' in navigator.contacts) { try { const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true }); if (contacts.length === 0) return; const link = document.getElementById('refLink').textContent.trim(); const msg = `Привет! Присоединяйся к BearGram: ${link}`; for (const contact of contacts) { if (contact.tel && contact.tel.length > 0) { const phone = contact.tel[0].replace(/\s+/g, ''); window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`; await new Promise(r => setTimeout(r, 300)); } } closeInviteModal(); } catch (err) { console.error(err); alert('Не удалось открыть контакты. Попробуйте вручную.'); } } else { alert('Ваш браузер не поддерживает выбор контактов. Используйте ручной ввод или загрузку файла.'); } }
+let fileContacts = [];
+function parseContactsFile(input) {}
+function renderFileContacts() {}
+function toggleFileContact(index, row) {}
+function inviteSelectedFriends(mode) {}
+function generateQR(){const link=document.getElementById('refLink').textContent.trim();const qr=document.getElementById('qrCode');qr.innerHTML='';const img=document.createElement('img');img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(link);img.style.width='100%';img.style.borderRadius='10px';img.onerror=()=>{qr.innerHTML='<span style="font-size:64px;">🐻</span>'};qr.appendChild(img)}
+function copyRefLink(){const link=document.getElementById('refLink').textContent.trim();navigator.clipboard.writeText(link).then(()=>alert('✅ Скопировано!')).catch(()=>prompt('Скопируй:',link))}
+function shareRefLink(){const link=document.getElementById('refLink').textContent.trim();if(navigator.share)navigator.share({title:'🐻 BearGram',text:'Общайся, люби, зарабатывай!',url:link}).catch(()=>{});else copyRefLink()}
+async function loadReferralStats(){try{const r=await fetch('/api/referral_stats');const d=await r.json();document.getElementById('referralStats').innerHTML='<p style="font-size:14px;font-weight:bold;color:#ff6b6b;">👥 Приглашено: '+d.invited_count+'</p><p style="font-size:12px;color:#888;">💎 Заработано: '+d.total_reward+'</p>'+(d.top_referrers.length>0?'<p style="font-size:10px;">🏆 '+d.top_referrers.slice(0,3).map(r=>'@'+r.username+'('+r.count+')').join(', ')+'</p>':'');document.getElementById('refStatsLink').textContent=d.referral_link;document.getElementById('refLink').textContent=d.referral_link}catch(e){}}
+
+function toggleAiAssistant() { var win = document.getElementById('aiChatWindow'); win.style.display = (win.style.display === 'flex') ? 'none' : 'flex'; }
+(function(){
+const win=document.getElementById('aiChatWindow'),input=document.getElementById('aiChatInput'),send=document.getElementById('aiChatSend'),msgDiv=document.getElementById('aiChatMessages');
+const chatBrain={greetings:['привет','здравствуй','хай','здаров','добрый день','hello','hi'],howareyou:['как дела','как ты','как жизнь'],farewell:['пока','до свидания','бай','удачи'],thanks:['спасибо','благодарю'],joke:['шутка','анекдот','юмор','рофл','мем'],fact:['факт','интересный факт'],balance:['баланс','сколько у меня','мои деньги','счёт'],rate:['курс','почём','цена'],exchange:['обменять','обмен','конвертировать'],send_grrr:['отправить','перевести','переслать'],nodes:['ноды','нода','депозит','вклад'],support:['обманули','вернуть деньги','возврат','жалоба','мошенник','обман','кинули'],report:['пожаловаться','жалоба на','репорт'],help:['помощь','команды','что ты умеешь','help']};
+const replies={greetings:['🐻 <b>Привет!</b> Как вайб?','🐼 <b>Здарова!</b>'],howareyou:['🐻 У меня всё <b>имба</b>!'],farewell:['🐻 <b>Пока!</b> Возвращайся!'],thanks:['🐻 <b>Всегда пожалуйста!</b>'],joke:['🐻 <b>Почему медведь не носит носки?</b> Потому что у него лапы!'],fact:['🐻 Медведи бегают до 40 км/ч!'],balance:['🐻 <b>Проверяю баланс...</b>'],rate:['🐻 <b>Курс:</b><br>💎 1 💎 = 1 ₽<br>🐻 1 $GRRR = 0.95 💎'],exchange:['🐻 <b>Обменник:</b> /bearpay?tab=bank'],send_grrr:['🐻 <b>Формат:</b> "Отправить 10 $GRRR @username"'],nodes:['🐻 <b>Ноды:</b> /bearnode | 🏦 <b>Банк:</b> /bearpay?tab=bank'],help:['🐻 <b>Команды:</b> Баланс | Курс | Обмен | Отправить | Ноды | Вернуть | Жалоба'],fallback:['🐻 <b>Интересно!</b> Расскажи ещё.','🐼 <b>Я слушаю!</b>']};
+function detectTopic(t){for(let[k,w]of Object.entries(chatBrain)){for(let word of w){if(t.includes(word))return k}}return'fallback'}
+function random(a){return a[Math.floor(Math.random()*a.length)]}
+function addMessage(t,isU,isH=false){const d=document.createElement('div');d.style.cssText=`background:${isU?'#ff6b6b':'#f0f0f0'};color:${isU?'white':'#333'};padding:8px 12px;border-radius:12px;align-self:${isU?'flex-end':'flex-start'};max-width:80%;`;if(isH)d.innerHTML=t;else d.textContent=t;msgDiv.appendChild(d);msgDiv.scrollTop=msgDiv.scrollHeight}
+async function sendMessage(){const t=input.value.trim();if(!t)return;addMessage(t,true);input.value='';const topic=detectTopic(t.toLowerCase());const typing=document.createElement('div');typing.style.cssText='background:#f0f0f0;color:#333;padding:8px 12px;border-radius:12px;align-self:flex-start;';typing.innerHTML='🐻 Печатает...';msgDiv.appendChild(typing);msgDiv.scrollTop=msgDiv.scrollHeight;
+if(topic==='balance'){try{const r=await fetch('/api/my_balance');const d=await r.json();typing.remove();addMessage('🐻 <b>Баланс:</b><br>💎 '+d.coins+' 💎<br>🐻 '+d.grrr.toFixed(2)+' $GRRR',false,true)}catch(e){typing.remove();addMessage('🐻 ❌ Ошибка',false,true)}return}
+if(topic==='support'||topic==='report'){typing.remove();if(t.includes('@')){const m=t.match(/@(\w+)/);if(m){try{const r=await fetch('/api/report_user',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'username='+encodeURIComponent(m[1])+'&reason='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}if(t.includes('вернуть')||t.includes('возврат')||t.includes('обман')||t.includes('кинули')||t.includes('мошенник')){addMessage('🐻 <b>Создаю заявку...</b>',false,true);try{const r=await fetch('/api/support/create',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'subject=Возврат&description='+encodeURIComponent(t)});const d=await r.json();addMessage(d.success?'🐻 ✅ Заявка #'+d.ticket_id:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}typing.remove();addMessage(random(replies.support||replies.fallback),false,true);return}
+if(topic==='send_grrr'){const am=t.match(/(\d+\.?\d*)/);const um=t.match(/@(\w+)/);if(am&&um){typing.remove();try{const r=await fetch('/api/send_grrr',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amount='+am[1]+'&username='+encodeURIComponent(um[1])});const d=await r.json();addMessage(d.success?'🐻 ✅ '+d.message:'🐻 ❌ '+d.error,false,true)}catch(e){addMessage('🐻 ❌ Ошибка',false,true)}return}}
+setTimeout(()=>{typing.remove();const reply=random(replies[topic]||replies.fallback);addMessage(reply,false,true)},500)}
+send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage()});})();
+
+function toggleFinanceDropdown() { document.getElementById('financeDropdown').classList.toggle('active'); }
+document.addEventListener('click', function(e) { var btn = document.querySelector('.finance-header-btn'); var dropdown = document.getElementById('financeDropdown'); if (!btn.contains(e.target) && !dropdown.contains(e.target)) { dropdown.classList.remove('active'); } });
+
+// ТЁМНАЯ ТЕМА (переключатель в меню "Финансы")
+(function() {
+    const body = document.body;
+    const toggleBtn = document.getElementById('themeToggleDropdown');
+    const STORAGE_KEY = 'beargram_theme';
+    function updateToggleText() {
+        if (!toggleBtn) return;
+        const isDark = body.classList.contains('dark-theme');
+        toggleBtn.textContent = isDark ? '🌓 Тема: Тёмная' : '🌓 Тема: Светлая';
+    }
+    function applyTheme(theme) {
+        if (theme === 'dark') body.classList.add('dark-theme');
+        else body.classList.remove('dark-theme');
+        updateToggleText();
+    }
+    function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function loadTheme() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === 'dark' || saved === 'light') applyTheme(saved);
+        else applyTheme(getSystemTheme());
+    }
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const isDark = body.classList.contains('dark-theme');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem(STORAGE_KEY, newTheme);
+            applyTheme(newTheme);
+        });
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem(STORAGE_KEY)) applyTheme(e.matches ? 'dark' : 'light');
+    });
+    loadTheme();
+})();
+
+let feedLoaded = false;
+let feedTapTimer = null;
+let currentMediaIndex = 0;
+let currentMediaItems = [];
+
+async function loadFeed() {
+    if (feedLoaded) return;
+    feedLoaded = true;
+    var container = document.getElementById('feedContainer');
+    container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">🐻 Загружаем обсуждения...</div>';
+    try {
+        var resp = await fetch('/api/feed');
+        if (!resp.ok) throw new Error('Ошибка сети');
+        var data = await resp.json();
+        if (data.posts.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">📢 Пока нет обсуждений. Подпишитесь на каналы!</div>';
+            return;
+        }
+        var html = '';
+        data.posts.forEach(function(p) {
+            var images = [], videos = [], audios = [], files = [];
+            if (p.attachments) {
+                p.attachments.forEach(function(att) {
+                    if (att.type === 'image') images.push(att);
+                    else if (att.type === 'video') videos.push(att);
+                    else if (att.type === 'audio') audios.push(att);
+                    else files.push(att);
                 });
-            } catch(e) {}
-        }
-        return items;
-    }
-
-    function openMediaViewer(postId, startIndex) {
-        const items = getMediaItemsForPost(postId);
-        if (items.length === 0) return;
-        currentMediaItems = items;
-        currentMediaIndex = startIndex || 0;
-        showCurrentMedia();
-        document.getElementById('mediaViewer').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function showCurrentMedia() {
-        const img = document.getElementById('viewerImage');
-        const video = document.getElementById('viewerVideo');
-        img.style.display = 'none';
-        video.style.display = 'none';
-        video.pause();
-        video.src = '';
-        if (currentMediaItems.length === 0) return;
-        const item = currentMediaItems[currentMediaIndex];
-        if (item.type === 'image') {
-            img.src = item.path;
-            img.style.display = '';
-        } else {
-            video.src = item.path;
-            video.style.display = '';
-            video.play().catch(()=>{});
-        }
-        document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaItems.length;
-        if (currentMediaItems.length > 1) {
-            const next = (currentMediaIndex + 1) % currentMediaItems.length;
-            const prev = (currentMediaIndex - 1 + currentMediaItems.length) % currentMediaItems.length;
-            [next, prev].forEach(idx => {
-                const it = currentMediaItems[idx];
-                if (it.type === 'image') (new Image()).src = it.path;
-                else { const v = document.createElement('video'); v.src = it.path; v.load(); }
-            });
-        }
-    }
-
-    function navigateMedia(direction) {
-        if (currentMediaItems.length === 0) return;
-        currentMediaIndex += direction;
-        if (currentMediaIndex < 0) currentMediaIndex = currentMediaItems.length - 1;
-        if (currentMediaIndex >= currentMediaItems.length) currentMediaIndex = 0;
-        showCurrentMedia();
-    }
-
-    function closeMediaViewer() {
-        document.getElementById('mediaViewer').classList.remove('active');
-        document.body.style.overflow = '';
-        document.getElementById('viewerVideo').pause();
-        document.getElementById('viewerVideo').src = '';
-        currentMediaItems = [];
-    }
-
-    (function() {
-        const viewer = document.getElementById('mediaViewer');
-        let startX = 0;
-        viewer.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-        viewer.addEventListener('touchend', e => {
-            const diff = e.changedTouches[0].clientX - startX;
-            if (Math.abs(diff) > 50) navigateMedia(diff > 0 ? -1 : 1);
+            }
+            var mediaHtml = '';
+            var mediaItems = images.concat(videos);
+            if (mediaItems.length > 0) {
+                mediaHtml += '<div class="carousel-container" data-post-id="' + p.id + '">';
+                mediaHtml += '<div class="carousel-track" id="carousel-' + p.id + '">';
+                mediaItems.forEach(function(item, idx) {
+                    mediaHtml += '<div class="carousel-slide" onclick="openMediaViewer(' + p.id + ', ' + idx + ')">';
+                    if (item.type === 'image') {
+                        mediaHtml += '<img src="' + item.path + '" loading="lazy" decoding="async">';
+                    } else {
+                        mediaHtml += '<video src="' + item.path + '" muted preload="metadata" playsinline></video>';
+                    }
+                    mediaHtml += '</div>';
+                });
+                mediaHtml += '</div>';
+                mediaHtml += '<div class="carousel-indicators" id="indicators-' + p.id + '">';
+                mediaItems.forEach(function(_, idx) {
+                    mediaHtml += '<div class="carousel-dot' + (idx === 0 ? ' active' : '') + '"></div>';
+                });
+                mediaHtml += '</div>';
+                mediaHtml += '</div>';
+            }
+            html += '<div class="feed-item" data-post-id="' + p.id + '" data-attachments=\'' + JSON.stringify(p.attachments || []) + '\'>';
+            html += '<div class="feed-header">';
+            html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
+            html += '<span class="feed-channel-name">' + p.channel_name + '</span>';
+            html += '<span class="feed-date">' + p.timestamp + '</span>';
+            html += '</div>';
+            html += '<div class="feed-content">' + p.content + '</div>';
+            html += mediaHtml;
+            html += '<div class="feed-actions" onclick="event.stopPropagation();">';
+            html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
+            html += '<span class="feed-action" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">💬 ' + p.comments + '</span>';
+            html += '<span class="feed-action">👁️ ' + p.views + '</span>';
+            html += '<a href="#" class="donate-btn" onclick="event.stopPropagation(); donateToChannel(' + p.channel_id + ')">💎 Донат</a>';
+            html += '<span class="feed-action" onclick="sharePost(' + p.id + ', \'' + p.channel_name.replace(/'/g, "\\'") + '\', \'' + (p.content ? p.content.substring(0, 80).replace(/'/g, "\\'") : '') + '\')">🔗</span>';
+            html += '</div>';
+            html += '</div>';
         });
-    })();
+        container.innerHTML = html;
 
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+        // Оживляем карусели
+        document.querySelectorAll('.carousel-track').forEach(track => {
+            track.addEventListener('scroll', function() {
+                const postId = this.id.replace('carousel-', '');
+                const slides = this.querySelectorAll('.carousel-slide');
+                const indicators = document.getElementById('indicators-' + postId);
+                if (!indicators) return;
+                let activeIndex = 0;
+                const scrollLeft = this.scrollLeft;
+                const trackWidth = this.clientWidth;
+                if (trackWidth > 0) {
+                    activeIndex = Math.round(scrollLeft / trackWidth);
+                    activeIndex = Math.min(activeIndex, slides.length - 1);
+                    activeIndex = Math.max(activeIndex, 0);
+                }
+                indicators.querySelectorAll('.carousel-dot').forEach((dot, idx) => {
+                    dot.classList.toggle('active', idx === activeIndex);
+                });
+            });
+        });
+
+        // Остальная логика (двойной тап, лайк) остаётся, но без изменения
+        document.querySelectorAll('.feed-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.carousel-container')) return;
+                if (feedTapTimer) {
+                    clearTimeout(feedTapTimer);
+                    feedTapTimer = null;
+                    window.location.href = '/channel/' + this.dataset.postId;
+                } else {
+                    var postId = this.dataset.postId;
+                    var rect = this.getBoundingClientRect();
+                    var x = e.clientX - rect.left;
+                    var y = e.clientY - rect.top;
+                    var heart = document.createElement('div');
+                    heart.className = 'like-heart-animation';
+                    heart.innerHTML = '❤️';
+                    heart.style.left = x + 'px';
+                    heart.style.top = y + 'px';
+                    heart.style.fontSize = '60px';
+                    this.appendChild(heart);
+                    setTimeout(function() { heart.remove(); }, 1000);
+                    likeFeedPost(postId, this.querySelector('.feed-action[onclick*="likeFeedPost"]'));
+                    feedTapTimer = setTimeout(function() { feedTapTimer = null; }, 300);
+                }
+            });
+        });
+    } catch (e) {
+        container.innerHTML = '<div style="text-align:center; color:#888; padding: 40px;">Ошибка загрузки.<br><button class="retry-btn" onclick="retryLoadFeed()">🔄 Повторить</button></div>';
+        feedLoaded = false;
+    }
+}
+
+function retryLoadFeed() { feedLoaded = false; loadFeed(); }
+async function likeFeedPost(postId, el) {
+    if (!el) el = document.querySelector('.feed-action[onclick*="likeFeedPost(' + postId + '"]');
+    if (!el) return;
+    var resp = await fetch('/api/feed/like/' + postId, {method:'POST'});
+    var data = await resp.json();
+    if (data.success) { el.classList.toggle('liked', data.liked); el.querySelector('span').textContent = data.likes; }
+}
+function sharePost(postId, channelName, preview) {
+    var link = 'https://beargram.up.railway.app/channel/' + postId;
+    var msg = '📢 ' + channelName + ': ' + (preview || '').substring(0, 80) + '...\n' + link;
+    if (navigator.share) { navigator.share({title: channelName, text: msg, url: link}).catch(function() {}); }
+    else { navigator.clipboard.writeText(msg).then(function() { alert('📋 Ссылка скопирована! Можешь отправить её в любой чат.'); }).catch(function() { prompt('Скопируй ссылку:', msg); }); }
+}
+async function donateToChannel(channelId) {
+    var amount = prompt('Введите сумму доната 💎 (минимум 10):', '50');
+    if (!amount || isNaN(amount) || amount < 10) return;
+    try {
+        var resp = await fetch('/channel/donate/' + channelId, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({amount: parseInt(amount)}) });
+        var data = await resp.json();
+        if (data.success) alert('✅ Донат отправлен! Ваш новый баланс: ' + data.new_balance + ' 💎');
+        else alert('❌ ' + (data.error || 'Ошибка'));
+    } catch (e) { alert('Ошибка сети'); }
+}
+
+// ПРОСМОТРЩИК МЕДИА
+function openMediaViewer(postId, startIndex) {
+    const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
+    if (!postEl) return;
+    const attr = postEl.getAttribute('data-attachments');
+    let items = [];
+    if (attr) {
+        try {
+            const all = JSON.parse(attr);
+            all.forEach(att => {
+                if (att.type === 'image' || att.type === 'video') {
+                    items.push({ type: att.type, path: att.path });
+                }
+            });
+        } catch(e) {}
+    }
+    if (items.length === 0) return;
+    currentMediaItems = items;
+    currentMediaIndex = startIndex || 0;
+    showCurrentMedia();
+    document.getElementById('mediaViewer').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showCurrentMedia() {
+    const img = document.getElementById('viewerImage');
+    const video = document.getElementById('viewerVideo');
+    img.style.display = 'none';
+    video.style.display = 'none';
+    video.pause();
+    video.src = '';
+    if (currentMediaItems.length === 0) return;
+    const item = currentMediaItems[currentMediaIndex];
+    if (item.type === 'image') {
+        img.src = item.path;
+        img.style.display = '';
+    } else {
+        video.src = item.path;
+        video.style.display = '';
+        video.play().catch(()=>{});
+    }
+    document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaItems.length;
+    if (currentMediaItems.length > 1) {
+        const next = (currentMediaIndex + 1) % currentMediaItems.length;
+        const prev = (currentMediaIndex - 1 + currentMediaItems.length) % currentMediaItems.length;
+        [next, prev].forEach(idx => {
+            const it = currentMediaItems[idx];
+            if (it.type === 'image') (new Image()).src = it.path;
+            else { const v = document.createElement('video'); v.src = it.path; v.load(); }
+        });
+    }
+}
+
+function navigateMedia(direction) {
+    if (currentMediaItems.length === 0) return;
+    currentMediaIndex += direction;
+    if (currentMediaIndex < 0) currentMediaIndex = currentMediaItems.length - 1;
+    if (currentMediaIndex >= currentMediaItems.length) currentMediaIndex = 0;
+    showCurrentMedia();
+}
+
+function closeMediaViewer() {
+    document.getElementById('mediaViewer').classList.remove('active');
+    document.body.style.overflow = '';
+    document.getElementById('viewerVideo').pause();
+    document.getElementById('viewerVideo').src = '';
+    currentMediaItems = [];
+}
+
+// свайпы в просмотрщике
+(function() {
+    const viewer = document.getElementById('mediaViewer');
+    let startX = 0;
+    viewer.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    viewer.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) navigateMedia(diff > 0 ? -1 : 1);
     });
+})();
 </script>
 </body>
 </html>
