@@ -46,10 +46,6 @@
         .carousel-dot.active{background:#ff6b6b}
 
         .feed-images-grid{display:none}
-        .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
-        .feed-images-grid .grid-video-wrapper{position:relative;width:100%;height:150px;cursor:pointer}
-        .feed-images-grid .grid-video-wrapper video{width:100%;height:100%;object-fit:cover;border-radius:12px}
-        .grid-video-play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;pointer-events:none}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
@@ -262,32 +258,52 @@
 
             {% if post.attachments %}
                 {% set attachments_list = post.attachments|json_decode %}
-                {% set images = [] %}
-                {% set videos = [] %}
+                <!-- Формируем список для карусели (слайды) и для просмотрщика (медиа) -->
+                {% set carousel_slides = [] %}
+                {% set media_items = [] %}
+                {% set ns = namespace(skip_next=false) %}
                 {% for att in attachments_list %}
-                    {% if att.type == 'image' %}
-                        {% set _ = images.append(att) %}
-                    {% elif att.type == 'video' %}
-                        {% set _ = videos.append(att) %}
+                    {% if ns.skip_next %}
+                        {% set ns.skip_next = false %}
+                        {% continue %}
+                    {% endif %}
+                    {% if att.type == 'video' %}
+                        {% set video_path = att.path %}
+                        {% set thumbnail = None %}
+                        {% if not loop.last %}
+                            {% set next_att = attachments_list[loop.index] %}
+                            {% if next_att.type == 'image' and '_preview.jpg' in next_att.name %}
+                                {% set thumbnail = next_att.path %}
+                                {% set ns.skip_next = true %}
+                            {% endif %}
+                        {% endif %}
+                        {% set _ = carousel_slides.append({'type': 'video', 'video': video_path, 'thumbnail': thumbnail}) %}
+                        {% set _ = media_items.append({'type': 'video', 'path': video_path}) %}
+                    {% elif att.type == 'image' and not ns.skip_next %}
+                        {% set _ = carousel_slides.append({'type': 'image', 'path': att.path}) %}
+                        {% set _ = media_items.append({'type': 'image', 'path': att.path}) %}
                     {% endif %}
                 {% endfor %}
 
-                {% set media_items = images + videos %}
-                {% if media_items %}
+                {% if carousel_slides %}
                 <div class="carousel-container" data-post-id="{{ post.id }}">
                     <div class="carousel-track" id="carousel-{{ post.id }}">
-                        {% for item in media_items %}
+                        {% for slide in carousel_slides %}
                         <div class="carousel-slide" onclick="openMediaViewer({{ post.id }}, {{ loop.index0 }})">
-                            {% if item.type == 'image' %}
-                                <img src="{{ item.path }}" loading="lazy" decoding="async">
-                            {% else %}
-                                <video src="{{ item.path }}" muted preload="metadata" playsinline></video>
+                            {% if slide.type == 'image' %}
+                                <img src="{{ slide.path }}" loading="lazy" decoding="async">
+                            {% elif slide.type == 'video' %}
+                                {% if slide.thumbnail %}
+                                    <img src="{{ slide.thumbnail }}" loading="lazy" decoding="async">
+                                {% else %}
+                                    <video src="{{ slide.video }}" muted preload="metadata" playsinline></video>
+                                {% endif %}
                             {% endif %}
                         </div>
                         {% endfor %}
                     </div>
                     <div class="carousel-indicators" id="indicators-{{ post.id }}">
-                        {% for item in media_items %}
+                        {% for slide in carousel_slides %}
                         <div class="carousel-dot {% if loop.first %}active{% endif %}"></div>
                         {% endfor %}
                     </div>
@@ -433,7 +449,6 @@
     let deletedPaths = [];
     let currentMediaIndex = 0;
     let currentMediaItems = [];
-    let currentPostId = null;
 
     async function loadBalance() {
         try {
@@ -807,24 +822,37 @@
     });
 
     // --- ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) ---
-    function openMediaViewer(postId, startIndex) {
+    function getMediaItemsForPost(postId) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
-        if (!postEl) return;
+        if (!postEl) return [];
         const attr = postEl.getAttribute('data-attachments');
         let items = [];
         if (attr && attr !== 'None') {
             try {
                 const all = JSON.parse(attr);
-                all.forEach(att => {
-                    if (att.type === 'image' || att.type === 'video') {
-                        items.push({ type: att.type, path: att.path });
+                // Нам нужны все фото и видео (без превью)
+                let skip = false;
+                all.forEach((att, idx) => {
+                    if (skip) { skip = false; return; }
+                    if (att.type === 'video') {
+                        items.push({ type: 'video', path: att.path });
+                        // если следующий элемент – превью, пропускаем его
+                        if (idx + 1 < all.length && all[idx+1].type === 'image' && all[idx+1].name.includes('_preview.jpg')) {
+                            skip = true;
+                        }
+                    } else if (att.type === 'image' && !att.name.includes('_preview.jpg')) {
+                        items.push({ type: 'image', path: att.path });
                     }
                 });
             } catch(e) {}
         }
+        return items;
+    }
+
+    function openMediaViewer(postId, startIndex) {
+        const items = getMediaItemsForPost(postId);
         if (items.length === 0) return;
         currentMediaItems = items;
-        currentPostId = postId;
         currentMediaIndex = startIndex || 0;
         showCurrentMedia();
         document.getElementById('mediaViewer').classList.add('active');
