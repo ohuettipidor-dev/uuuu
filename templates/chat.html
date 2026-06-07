@@ -24,8 +24,10 @@
         .finance-header-icon{font-size:14px}
         .finance-dropdown{position:absolute;top:100%;right:8px;background:white;border-radius:16px;padding:8px;display:none;flex-direction:column;gap:4px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:140px;margin-top:4px}
         .finance-dropdown.active{display:flex}
-        .finance-dropdown a{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px;white-space:nowrap}
-        .finance-dropdown a:hover{background:rgba(255,107,107,0.2)}
+        .finance-dropdown a,
+        .finance-dropdown button{text-decoration:none;color:#ff6b6b;font-weight:bold;font-size:13px;background:rgba(255,107,107,0.1);padding:8px 14px;border-radius:30px;white-space:nowrap;border:none;cursor:pointer;text-align:left;width:100%}
+        .finance-dropdown a:hover,
+        .finance-dropdown button:hover{background:rgba(255,107,107,0.2)}
 
         .premium-btn{background:gold;color:#333;font-weight:bold;border-radius:20px;padding:3px 8px;font-size:10px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
         .premium-active{color:gold;font-weight:bold;font-size:10px}
@@ -251,9 +253,14 @@
         body.dark-theme .finance-dropdown {
             background: #1e1e1e !important;
         }
-        body.dark-theme .finance-dropdown a {
+        body.dark-theme .finance-dropdown a,
+        body.dark-theme .finance-dropdown button {
             color: #ff6b6b !important;
             background: rgba(255,107,107,0.15) !important;
+        }
+        body.dark-theme .finance-dropdown a:hover,
+        body.dark-theme .finance-dropdown button:hover {
+            background: rgba(255,107,107,0.25) !important;
         }
         body.dark-theme .bottom-nav {
             background: rgba(20,20,20,0.95) !important;
@@ -277,8 +284,6 @@
         </div>
         <div class="logo-text" onclick="toggleAiAssistant()"><span>🐻 Bear</span><span>Gram</span></div>
         <div class="header-actions">
-            <!-- ТЁМНАЯ ТЕМА (кнопка) -->
-            <button class="icon-btn theme-toggle-btn" id="themeToggle" title="Переключить тему">🌓</button>
             <button class="icon-btn" id="searchToggleBtn">🔍</button>
             <div class="finance-header-btn" onclick="toggleFinanceDropdown()">
                 <span class="finance-header-icon">💰</span> Финансы
@@ -289,12 +294,15 @@
                 <a href="/bearpay">💳 Wallet</a>
                 <a href="/mining">⛏️ Майнинг</a>
                 <a href="/bearpay?tab=bank">🏦 Банк</a>
+                <!-- НОВЫЙ ПУНКТ: ТЕМА -->
+                <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
             </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
     </div>
 
+    <!-- Остальная структура (поиск, чаты, лента, модалки) без изменений -->
     <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
@@ -505,20 +513,25 @@ send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter
 function toggleFinanceDropdown() { document.getElementById('financeDropdown').classList.toggle('active'); }
 document.addEventListener('click', function(e) { var btn = document.querySelector('.finance-header-btn'); var dropdown = document.getElementById('financeDropdown'); if (!btn.contains(e.target) && !dropdown.contains(e.target)) { dropdown.classList.remove('active'); } });
 
-// ТЁМНАЯ ТЕМА
+// ТЁМНАЯ ТЕМА (переключатель в меню "Финансы")
 (function() {
     const body = document.body;
-    const toggleBtn = document.getElementById('themeToggle');
+    const toggleBtn = document.getElementById('themeToggleDropdown');
     const STORAGE_KEY = 'beargram_theme';
+
+    function updateToggleText() {
+        if (!toggleBtn) return;
+        const isDark = body.classList.contains('dark-theme');
+        toggleBtn.textContent = isDark ? '🌓 Тема: Тёмная' : '🌓 Тема: Светлая';
+    }
 
     function applyTheme(theme) {
         if (theme === 'dark') {
             body.classList.add('dark-theme');
-            if (toggleBtn) toggleBtn.textContent = '☀️';
         } else {
             body.classList.remove('dark-theme');
-            if (toggleBtn) toggleBtn.textContent = '🌙';
         }
+        updateToggleText();
     }
 
     function getSystemTheme() {
