@@ -471,11 +471,16 @@ async function loadFeed() {
             }
             var imagesHtml = '';
             if (images.length > 0) {
-                imagesHtml = '<div class="feed-images-grid">';
+                // Запоминаем все изображения для просмотрщика
                 images.forEach(function(img, idx) {
                     allFeedImages.push({postId: p.id, index: idx, src: img.path});
-                    imagesHtml += '<img src="' + img.path + '" loading="lazy" onclick="openImageViewer(\'' + img.path + '\', ' + p.id + ', ' + idx + ')">';
                 });
+                // Показываем только первое изображение
+                imagesHtml += '<div class="feed-images-grid" style="grid-template-columns:1fr; position:relative; cursor:pointer;" onclick="openImageViewer(\'' + images[0].path + '\', ' + p.id + ', 0)">';
+                imagesHtml += '<img src="' + images[0].path + '" loading="lazy" style="height:auto; max-height:300px;">';
+                if (images.length > 1) {
+                    imagesHtml += '<div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">1 из ' + images.length + '</div>';
+                }
                 imagesHtml += '</div>';
             }
             var videosHtml = ''; videos.forEach(function(v) { videosHtml += '<video class="feed-video" src="' + v.path + '" controls></video>'; });
