@@ -37,10 +37,10 @@
 
         /* КАРУСЕЛЬ */
         .carousel-container{position:relative;margin:10px 0}
-        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:6px;padding-bottom:8px}
+        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:0}
         .carousel-track::-webkit-scrollbar{display:none}
-        .carousel-slide{flex:0 0 auto;width:85%;max-width:300px;scroll-snap-align:start;border-radius:12px;overflow:hidden;position:relative;cursor:pointer}
-        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:250px;object-fit:cover;border-radius:12px}
+        .carousel-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;cursor:pointer}
+        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:300px;object-fit:cover;border-radius:12px}
         .carousel-indicators{display:flex;justify-content:center;gap:6px;margin-top:8px}
         .carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,0.2);transition:background 0.3s}
         .carousel-dot.active{background:#ff6b6b}
@@ -178,7 +178,7 @@
             .header{padding:4px 8px;min-height:40px}
             .channel-avatar{width:30px;height:30px;font-size:16px}
             .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
-            .carousel-slide{width:85%;max-width:250px}
+            .carousel-slide img,.carousel-slide video{max-height:250px}
             .channel-name{font-size:13px}
         }
     </style>
@@ -794,9 +794,9 @@
             if (!indicators) return;
             let activeIndex = 0;
             const scrollLeft = this.scrollLeft;
-            const slideWidth = slides[0]?.offsetWidth + 6; // 6 - gap
-            if (slideWidth > 0) {
-                activeIndex = Math.round(scrollLeft / slideWidth);
+            const trackWidth = this.clientWidth;
+            if (trackWidth > 0) {
+                activeIndex = Math.round(scrollLeft / trackWidth);
                 activeIndex = Math.min(activeIndex, slides.length - 1);
                 activeIndex = Math.max(activeIndex, 0);
             }
