@@ -263,7 +263,7 @@
                 <!-- Отображение как в ленте: одно большое фото + плашка -->
                 {% if images %}
                 <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openImageViewerFromAttachments('{{ images[0].path }}', {{ post.id }})">
-                    <img src="{{ images[0].path }}" loading="lazy" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
+                    <img src="{{ images[0].path }}" loading="lazy" decoding="async" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
                     {% if images|length > 1 %}
                     <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">
                         1 из {{ images|length }}
@@ -295,7 +295,7 @@
                 {% endfor %}
             {% elif post.file_path %}
                 {% if post.file_type == 'image' %}
-                    <img src="{{ post.file_path }}" loading="lazy" onclick="openImageViewerFromAttachments('{{ post.file_path }}', {{ post.id }})" style="cursor:pointer; max-width:100%; border-radius:12px;">
+                    <img src="{{ post.file_path }}" loading="lazy" decoding="async" onclick="openImageViewerFromAttachments('{{ post.file_path }}', {{ post.id }})" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
                     <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
@@ -475,7 +475,7 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    // ---------- РАБОТА С ФАЙЛАМИ (статический input + сжатие) ----------
+    // ---------- РАБОТА С ФАЙЛАМИ ----------
     document.getElementById('attachButton').addEventListener('click', function() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -527,7 +527,7 @@
     }
 
     // ---------- СЖАТИЕ ИЗОБРАЖЕНИЙ ----------
-    function compressImage(file, maxWidth = 1400, quality = 0.8) {
+    function compressImage(file, maxWidth = 1024, quality = 0.8) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -560,7 +560,7 @@
         });
     }
 
-    // ---------- ОТПРАВКА ПОСТА (быстрая) ----------
+    // ---------- МГНОВЕННАЯ ОТПРАВКА ПОСТА ----------
     const postForm = document.getElementById('postForm');
     if (postForm) {
         postForm.addEventListener('submit', async function(e) {
@@ -574,27 +574,60 @@
 
             const submitBtn = this.querySelector('.post-submit-btn');
             const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳ Сжатие и отправка...';
+            submitBtn.textContent = '⏳ Публикация...';
             submitBtn.disabled = true;
 
+            // Создаём локальные blob URL для мгновенного отображения
+            const localAttachments = selectedFiles.map(file => ({
+                file: file,
+                type: file.type.startsWith('image/') ? 'image' : (file.type.startsWith('video/') ? 'video' : 'file'),
+                localUrl: URL.createObjectURL(file)
+            }));
+
+            // Мгновенно добавляем пост в ленту (оптимистичная вставка)
+            const tempPost = document.createElement('div');
+            tempPost.className = 'feed-item';
+            tempPost.style.opacity = '0.7';
+            let imagesHtml = '';
+            let imageCount = 0;
+            let firstImageSrc = '';
+            localAttachments.forEach(att => {
+                if (att.type === 'image') {
+                    imageCount++;
+                    if (!firstImageSrc) firstImageSrc = att.localUrl;
+                }
+            });
+            if (imageCount > 0) {
+                imagesHtml = `<div style="margin:10px 0; position:relative; cursor:pointer;" onclick="if(document.getElementById('imageViewer')) { openImageViewerFromAttachments('${firstImageSrc}', -1) }">
+                    <img src="${firstImageSrc}" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
+                    ${imageCount > 1 ? `<div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">1 из ${imageCount}</div>` : ''}
+                </div>`;
+            }
+            tempPost.innerHTML = `
+                <div class="feed-header">
+                    <div class="feed-avatar">🐻</div>
+                    <span class="feed-channel-name">Публикация...</span>
+                </div>
+                <div class="feed-content">${content}</div>
+                ${imagesHtml}
+            `;
+            document.getElementById('posts').insertBefore(tempPost, document.getElementById('posts').firstChild);
+
+            // Сжимаем и отправляем
             const formData = new FormData();
             formData.append('content', content);
-
-            for (let file of selectedFiles) {
-                if (file.type.startsWith('image/') && !file.type.includes('gif') && !file.type.includes('svg')) {
-                    const compressed = await compressImage(file);
-                    formData.append('files', compressed, file.name);
-                } else {
-                    formData.append('files', file);
+            for (let item of localAttachments) {
+                let fileToSend = item.file;
+                if (item.type === 'image' && !fileToSend.type.includes('gif') && !fileToSend.type.includes('svg')) {
+                    fileToSend = await compressImage(fileToSend);
                 }
+                formData.append('files', fileToSend, item.file.name);
             }
 
             try {
-                const response = await fetch(this.action, {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch(this.action, { method: 'POST', body: formData });
                 if (response.ok) {
+                    // Удаляем временный пост, сервер вернёт настоящий после reload
                     selectedFiles = [];
                     location.reload();
                 } else {
@@ -602,6 +635,8 @@
                     throw new Error(text || 'Ошибка сервера');
                 }
             } catch (err) {
+                // В случае ошибки убираем временный пост
+                if (tempPost.parentNode) tempPost.parentNode.removeChild(tempPost);
                 alert('Ошибка: ' + err.message);
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
