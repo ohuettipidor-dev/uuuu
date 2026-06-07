@@ -4628,15 +4628,20 @@ def golden_upload():
     if ext not in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
         return jsonify({'error': 'Неподдерживаемый формат видео'}), 400
 
-    # Сохраняем оригинал (без конвертации)
+    # Убедимся, что папка существует
+    upload_dir = os.path.join(app.static_folder, 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+
     name = f"golden_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-    filepath = os.path.join(FILE_FOLDER, name)
+    filepath = os.path.join(upload_dir, name)
     f.save(filepath)
 
-    # Создаём запись в БД
+    # Путь относительно static (без '/static/' в начале)
+    relative_path = f'uploads/{name}'
+
     video = GoldenContent(
         author_id=current_user.id,
-        file_path=f'/static/uploads/{name}',
+        file_path=relative_path,
         title=title
     )
     db.session.add(video)
