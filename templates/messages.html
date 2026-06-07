@@ -24,6 +24,7 @@
         .user-status.typing{color:#ff6b6b;font-style:italic}
         .profile-btn{background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;text-decoration:none;color:#ff6b6b;flex-shrink:0}
         .call-btn{background:#ff6b6b;color:white;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;margin-right:4px;flex-shrink:0}
+        .theme-btn{background:rgba(255,255,255,0.9);color:#ff6b6b;padding:5px 10px;border-radius:25px;font-size:13px;transition:all 0.2s;border:none;cursor:pointer;flex-shrink:0}
         
         .messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px;position:relative}
         .message{display:flex;animation:fadeInUp 0.2s ease;position:relative}
@@ -193,6 +194,132 @@
         .read-status{color:#2ecc71;font-weight:bold}
         .delivered-status{color:#95a5a6}
         .sent-status{color:#bdc3c7}
+
+        /* ТЁМНАЯ ТЕМА */
+        body.dark-theme {
+            background: #121212 !important;
+            color: #eee;
+        }
+        body.dark-theme .container {
+            background: rgba(20,20,20,0.95) !important;
+        }
+        body.dark-theme .header,
+        body.dark-theme .input-area {
+            background: rgba(30,30,30,0.95) !important;
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        body.dark-theme .back,
+        body.dark-theme .call-btn,
+        body.dark-theme .theme-btn {
+            background: rgba(255,255,255,0.1) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .profile-btn {
+            background: rgba(255,255,255,0.1) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .user-name,
+        body.dark-theme .user-status,
+        body.dark-theme .chat-name,
+        body.dark-theme .menu-item {
+            color: #eee !important;
+        }
+        body.dark-theme .bubble.received {
+            background: #2a2a2a !important;
+            color: #ddd !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        body.dark-theme .time,
+        body.dark-theme .edited-badge,
+        body.dark-theme .forward-badge,
+        body.dark-theme .reply-preview {
+            color: #aaa !important;
+        }
+        body.dark-theme .reply-preview {
+            background: rgba(255,255,255,0.05);
+            border-left-color: #ff6b6b;
+        }
+        body.dark-theme .message-actions {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .action-btn {
+            color: #aaa !important;
+        }
+        body.dark-theme .action-btn:hover {
+            background: #333 !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .reply-bar {
+            background: #2a2a2a !important;
+        }
+        body.dark-theme .input-wrapper {
+            background: #2a2a2a !important;
+        }
+        body.dark-theme #msgInput {
+            color: #eee !important;
+        }
+        body.dark-theme #msgInput::placeholder {
+            color: #888 !important;
+        }
+        body.dark-theme .input-icon {
+            color: #aaa !important;
+        }
+        body.dark-theme .input-icon:hover {
+            background: rgba(255,255,255,0.05) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .emoji-picker,
+        body.dark-theme .sticker-panel,
+        body.dark-theme .input-menu {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .emoji-picker span:hover {
+            background: #333 !important;
+        }
+        body.dark-theme .menu-item:hover {
+            background: #333 !important;
+        }
+        body.dark-theme .sticker-item {
+            background: #2a2a2a !important;
+        }
+        body.dark-theme .sticker-item span {
+            color: #aaa !important;
+        }
+        body.dark-theme .ai-input {
+            background: #2a2a2a !important;
+            color: #eee !important;
+            border-color: #555 !important;
+        }
+        body.dark-theme .ai-info {
+            color: #aaa !important;
+        }
+        body.dark-theme .scroll-bottom-btn {
+            background: rgba(30,30,30,0.9) !important;
+            color: #ff6b6b !important;
+        }
+        body.dark-theme .date-separator span {
+            background: rgba(30,30,30,0.8) !important;
+            color: #aaa !important;
+        }
+        body.dark-theme .mention-suggestions {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .mention-suggestion-item:hover {
+            background: #333 !important;
+        }
+        body.dark-theme .mention-suggestion-name {
+            color: #eee !important;
+        }
+        body.dark-theme .mention-suggestion-link {
+            color: #aaa !important;
+        }
+        body.dark-theme .multi-preview-overlay {
+            background: #1e1e1e !important;
+        }
+        body.dark-theme .send-multi {
+            background: #4cd964 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -218,9 +345,12 @@
         </div>
         <button class="call-btn" onclick="startVideoCall()">📹</button>
         <button class="call-btn" onclick="startAudioCall()" style="background:#4cd964;color:white;">📞</button>
+        <!-- ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ -->
+        <button class="theme-btn" id="themeToggleChat" title="Переключить тему">🌓</button>
         <a href="/profile" class="profile-btn">🧸</a>
     </div>
     
+    <!-- Остальное содержимое без изменений -->
     <div class="messages" id="messages">
         <div id="pinnedMessageBar" style="display:none; background:#f9f9f9; border-radius:16px; padding:8px 12px; margin-bottom:8px; font-size:12px; border-left:3px solid #ff6b6b;">
             <span>📌 Закреплено: </span>
@@ -401,6 +531,53 @@ document.querySelectorAll('.message-time').forEach(el => {
     const utcStr = el.dataset.utc;
     if (utcStr) el.textContent = formatUTCTime(utcStr);
 });
+
+// Тёмная тема
+(function() {
+    const body = document.body;
+    const toggleBtn = document.getElementById('themeToggleChat');
+    const STORAGE_KEY = 'beargram_theme';
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            body.classList.add('dark-theme');
+            if (toggleBtn) toggleBtn.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-theme');
+            if (toggleBtn) toggleBtn.textContent = '🌙';
+        }
+    }
+
+    function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function loadTheme() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === 'dark' || saved === 'light') {
+            applyTheme(saved);
+        } else {
+            applyTheme(getSystemTheme());
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const isDark = body.classList.contains('dark-theme');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem(STORAGE_KEY, newTheme);
+            applyTheme(newTheme);
+        });
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+
+    loadTheme();
+})();
 
 const receiver_id = {{ other.id }};
 const msgInput = document.getElementById('msgInput');
