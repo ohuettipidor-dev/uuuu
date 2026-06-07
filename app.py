@@ -42,18 +42,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 import json
 
 @app.template_filter('json_decode')
-@app.template_filter('json_decode')
 def json_decode_filter(s):
     """Преобразует JSON-строку из базы в объект Python для шаблона"""
     return json.loads(s)
 
-VOLUME_ROOT = '/app/static/uploads'
-
-AVATAR_FOLDER = os.path.join(VOLUME_ROOT, 'avatars')
-FILE_FOLDER = os.path.join(VOLUME_ROOT, 'uploads')
-VOICE_FOLDER = os.path.join(VOLUME_ROOT, 'voices')
-STICKER_FOLDER = os.path.join(VOLUME_ROOT, 'stickers')
-CUSTOM_STICKER_FOLDER = os.path.join(VOLUME_ROOT, 'stickers', 'custom')
+AVATAR_FOLDER = 'static/avatars'
+FILE_FOLDER = 'static/uploads'
+VOICE_FOLDER = 'static/voices'
+STICKER_FOLDER = 'static/stickers'
+CUSTOM_STICKER_FOLDER = 'static/stickers/custom'
 
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(FILE_FOLDER, exist_ok=True)
