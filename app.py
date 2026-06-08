@@ -4,6 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+from blockchain import is_ready, transfer_onchain, init_blockchain
 import os
 import uuid
 import re
