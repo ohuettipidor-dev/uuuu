@@ -34,11 +34,17 @@
         .feed-channel-name{font-weight:600;font-size:14px;cursor:default}
         .feed-date{font-size:10px;color:#888;margin-left:auto}
         .feed-content{font-size:14px;color:#333;margin-bottom:10px;line-height:1.4}
-        .feed-images-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
-        .feed-images-grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer}
-        .feed-images-grid .grid-video-wrapper{position:relative;width:100%;height:150px;cursor:pointer}
-        .feed-images-grid .grid-video-wrapper video{width:100%;height:100%;object-fit:cover;border-radius:12px}
-        .grid-video-play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;pointer-events:none}
+        /* Карусель */
+        .carousel-container{position:relative;margin:10px 0}
+        .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;gap:0}
+        .carousel-track::-webkit-scrollbar{display:none}
+        .carousel-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;cursor:pointer}
+        .carousel-slide img,.carousel-slide video{width:100%;height:auto;max-height:300px;object-fit:cover;border-radius:12px}
+        .carousel-indicators{display:flex;justify-content:center;gap:6px;margin-top:8px}
+        .carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,0.2);transition:background 0.3s}
+        .carousel-dot.active{background:#ff6b6b}
+
+        .feed-video{width:100%;max-height:300px;border-radius:12px;margin:8px 0}
         .feed-audio{width:100%;margin:8px 0}
         .feed-file{display:flex;align-items:center;gap:8px;background:rgba(255,107,107,0.1);padding:10px 14px;border-radius:12px;text-decoration:none;color:#ff6b6b;font-size:14px;margin:6px 0}
         .feed-file .filename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:inline-block}
@@ -87,7 +93,7 @@
         .paid-overlay .price{color:#ff6b6b;font-weight:bold}
         .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
 
-        /* ПРОСМОТРЩИК МЕДИА (фото + видео) */
+        /* ПРОСМОТРЩИК МЕДИА */
         .media-viewer {
             position: fixed;
             top: 0; left: 0;
@@ -160,9 +166,8 @@
             .header{padding:4px 8px;min-height:40px}
             .channel-avatar{width:30px;height:30px;font-size:16px}
             .subscribe-btn,.subscribed-btn{padding:4px 10px;font-size:11px}
-            .feed-images-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))}
-            .feed-images-grid img,.feed-images-grid .grid-video-wrapper{height:120px}
             .channel-name{font-size:13px}
+            .carousel-slide img,.carousel-slide video{max-height:250px}
         }
     </style>
 </head>
@@ -261,21 +266,26 @@
                     {% endif %}
                 {% endfor %}
 
-                <!-- КАРУСЕЛЬ: фото + видео вместе -->
+                <!-- КАРУСЕЛЬ: фото + видео -->
                 {% set media = images + videos %}
                 {% if media %}
-                <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openMediaViewer('{{ media[0].path }}', '{{ media[0].type }}', {{ post.id }}, 0)">
-                    {% if media[0].type == 'image' %}
-                        <img src="{{ media[0].path }}" loading="lazy" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
-                    {% else %}
-                        <video src="{{ media[0].path }}" preload="metadata" muted playsinline loop style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;"></video>
-                        <div class="grid-video-play-icon">▶️</div>
-                    {% endif %}
-                    {% if media|length > 1 %}
-                    <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">
-                        1 из {{ media|length }}
+                <div class="carousel-container">
+                    <div class="carousel-track" id="carousel-{{ post.id }}">
+                        {% for item in media %}
+                        <div class="carousel-slide" onclick="openMediaViewerFromCarousel({{ post.id }}, {{ loop.index0 }})">
+                            {% if item.type == 'image' %}
+                                <img src="{{ item.path }}" loading="lazy" decoding="async">
+                            {% else %}
+                                <video src="{{ item.path }}" muted preload="metadata" playsinline></video>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endif %}
+                    <div class="carousel-indicators" id="indicators-{{ post.id }}">
+                        {% for item in media %}
+                        <div class="carousel-dot{% if loop.first %} active{% endif %}"></div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endif %}
 
@@ -293,13 +303,12 @@
             {% elif post.file_path %}
                 {# Старый формат одиночного файла #}
                 {% if post.file_type == 'image' %}
-                    <img src="{{ post.file_path }}" onclick="openMediaViewer('{{ post.file_path }}', 'image', {{ post.id }}, 0)" style="cursor:pointer; max-width:100%; border-radius:12px;">
+                    <img src="{{ post.file_path }}" onclick="openMediaViewerSingle('{{ post.file_path }}', 'image')" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
                     <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
-                    <div style="position:relative; cursor:pointer;" onclick="openMediaViewer('{{ post.file_path }}', 'video', {{ post.id }}, 0)">
+                    <div style="position:relative; cursor:pointer;" onclick="openMediaViewerSingle('{{ post.file_path }}', 'video')">
                         <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop style="width:100%; height:auto; max-height:300px; border-radius:12px;"></video>
-                        <div class="grid-video-play-icon">▶️</div>
                     </div>
                 {% else %}
                     <a href="{{ post.file_path }}" download="{{ post.file_name }}">📎 {{ post.file_name }}</a>
@@ -428,7 +437,7 @@
 <div class="media-viewer" id="mediaViewer">
     <button class="close-btn" onclick="closeMediaViewer()">✖</button>
     <button class="nav-btn prev-btn" onclick="navigateMedia(-1)">◀</button>
-    <div id="viewerContainer" style="display:flex; align-items:center; justify-content:center; max-width:95%; max-height:80vh;">
+    <div id="viewerContent" style="display:flex; align-items:center; justify-content:center; max-width:95%; max-height:80vh;">
         <img id="viewerImage" src="" style="display:none;" />
         <video id="viewerVideo" src="" controls style="display:none;"></video>
     </div>
@@ -684,7 +693,7 @@
 
     document.querySelectorAll('.feed-item').forEach(function(item) {
         item.addEventListener('click', function(e) {
-            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown')) {
+            if (e.target.closest('.feed-actions') || e.target.closest('.carousel-container') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown')) {
                 return;
             }
             const postId = this.dataset.postId;
@@ -813,23 +822,33 @@
         }
     }
 
-    // ---------- ПРОСМОТРЩИК МЕДИА (ФОТО + ВИДЕО) ----------
-    function openMediaViewer(src, type, postId, index) {
+    // ---------- ПРОСМОТРЩИК МЕДИА ----------
+    function openMediaViewerFromCarousel(postId, startIndex) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         if (!postEl) return;
         const attr = postEl.getAttribute('data-attachments');
-        let mediaList = [];
+        let items = [];
         if (attr && attr !== 'None') {
             try {
                 const all = JSON.parse(attr);
-                mediaList = all.filter(a => a.type === 'image' || a.type === 'video');
+                all.forEach(att => {
+                    if (att.type === 'image' || att.type === 'video') {
+                        items.push({ type: att.type, path: att.path });
+                    }
+                });
             } catch(e) {}
         }
-        if (mediaList.length === 0) {
-            mediaList = [{path: src, type: type}];
-        }
-        currentMediaList = mediaList;
-        currentMediaIndex = index;
+        if (items.length === 0) return;
+        currentMediaList = items;
+        currentMediaIndex = startIndex || 0;
+        showCurrentMedia();
+        document.getElementById('mediaViewer').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openMediaViewerSingle(path, type) {
+        currentMediaList = [{ type: type, path: path }];
+        currentMediaIndex = 0;
         showCurrentMedia();
         document.getElementById('mediaViewer').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -838,33 +857,25 @@
     function showCurrentMedia() {
         const img = document.getElementById('viewerImage');
         const video = document.getElementById('viewerVideo');
-        if (!currentMediaList.length) return;
+        img.style.display = 'none';
+        video.style.display = 'none';
+        video.pause();
+        video.src = '';
+        if (currentMediaList.length === 0) return;
         const item = currentMediaList[currentMediaIndex];
         if (item.type === 'image') {
             img.src = item.path;
-            img.style.display = 'block';
-            video.style.display = 'none';
-            video.pause();
+            img.style.display = '';
         } else {
             video.src = item.path;
-            video.style.display = 'block';
-            img.style.display = 'none';
-            video.play();
+            video.style.display = '';
+            video.play().catch(()=>{});
         }
         document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaList.length;
-        const prevBtn = document.querySelector('.prev-btn');
-        const nextBtn = document.querySelector('.next-btn');
-        if (currentMediaList.length <= 1) {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'none';
-        } else {
-            prevBtn.style.display = 'block';
-            nextBtn.style.display = 'block';
-        }
     }
 
     function navigateMedia(direction) {
-        if (!currentMediaList.length) return;
+        if (currentMediaList.length === 0) return;
         currentMediaIndex += direction;
         if (currentMediaIndex < 0) currentMediaIndex = currentMediaList.length - 1;
         if (currentMediaIndex >= currentMediaList.length) currentMediaIndex = 0;
@@ -874,26 +885,42 @@
     function closeMediaViewer() {
         document.getElementById('mediaViewer').classList.remove('active');
         document.body.style.overflow = '';
-        const video = document.getElementById('viewerVideo');
-        video.pause();
+        document.getElementById('viewerVideo').pause();
+        document.getElementById('viewerVideo').src = '';
         currentMediaList = [];
-        currentMediaIndex = 0;
     }
 
-    // Поддержка свайпов в просмотрщике
+    // свайпы в просмотрщике
     (function() {
         const viewer = document.getElementById('mediaViewer');
-        let touchStartX = 0;
-        viewer.addEventListener('touchstart', function(e) {
-            touchStartX = e.touches[0].clientX;
-        });
-        viewer.addEventListener('touchend', function(e) {
-            const diff = e.changedTouches[0].clientX - touchStartX;
-            if (Math.abs(diff) > 50) {
-                navigateMedia(diff > 0 ? -1 : 1);
-            }
+        let startX = 0;
+        viewer.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+        viewer.addEventListener('touchend', e => {
+            const diff = e.changedTouches[0].clientX - startX;
+            if (Math.abs(diff) > 50) navigateMedia(diff > 0 ? -1 : 1);
         });
     })();
+
+    // Активация индикаторов каруселей
+    document.querySelectorAll('.carousel-track').forEach(track => {
+        track.addEventListener('scroll', function() {
+            const postId = this.id.replace('carousel-', '');
+            const slides = this.querySelectorAll('.carousel-slide');
+            const indicators = document.getElementById('indicators-' + postId);
+            if (!indicators) return;
+            let activeIndex = 0;
+            const scrollLeft = this.scrollLeft;
+            const trackWidth = this.clientWidth;
+            if (trackWidth > 0) {
+                activeIndex = Math.round(scrollLeft / trackWidth);
+                activeIndex = Math.min(activeIndex, slides.length - 1);
+                activeIndex = Math.max(activeIndex, 0);
+            }
+            indicators.querySelectorAll('.carousel-dot').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === activeIndex);
+            });
+        });
+    });
 
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
