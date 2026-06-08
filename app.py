@@ -71,9 +71,23 @@ ALLOWED_EXTENSIONS = {
     'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', '7z'
 }
 
+def get_file_type(filename):
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    image_exts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'}
+    video_exts = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
+    audio_exts = {'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'}
+    
+    if ext in image_exts:
+        return 'image'
+    elif ext in video_exts:
+        return 'video'
+    elif ext in audio_exts:
+        return 'audio'
+    else:
+        return 'file'
+
 def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 def generate_secret_key(user_id, other_id):
     combined = f"beargram_secret_{min(user_id, other_id)}_{max(user_id, other_id)}_bear"
     return hashlib.sha256(combined.encode()).digest()
