@@ -87,7 +87,7 @@
         .paid-overlay .price{color:#ff6b6b;font-weight:bold}
         .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
 
-        /* ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) */
+        /* ПРОСМОТРЩИК МЕДИА (фото + видео) */
         .media-viewer {
             position: fixed;
             top: 0; left: 0;
@@ -261,7 +261,7 @@
                     {% endif %}
                 {% endfor %}
 
-                <!-- ЕДИНАЯ КАРУСЕЛЬ: фото + видео -->
+                <!-- КАРУСЕЛЬ: фото + видео вместе -->
                 {% set media = images + videos %}
                 {% if media %}
                 <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openMediaViewer('{{ media[0].path }}', '{{ media[0].type }}', {{ post.id }}, 0)">
@@ -284,13 +284,14 @@
                     <audio class="feed-audio" controls src="{{ audio.path }}" preload="metadata"></audio>
                 {% endfor %}
 
-                <!-- Файлы -->
+                <!-- Файлы (Word, PDF и т.д.) -->
                 {% for file in files %}
                     <a class="feed-file" href="{{ file.path }}" target="_blank">
                         📎 <span class="filename">{{ file.name }}</span>
                     </a>
                 {% endfor %}
             {% elif post.file_path %}
+                {# Старый формат одиночного файла #}
                 {% if post.file_type == 'image' %}
                     <img src="{{ post.file_path }}" onclick="openMediaViewer('{{ post.file_path }}', 'image', {{ post.id }}, 0)" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
@@ -423,7 +424,7 @@
     </div>
 </div>
 
-<!-- ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) -->
+<!-- ПРОСМОТРЩИК МЕДИА -->
 <div class="media-viewer" id="mediaViewer">
     <button class="close-btn" onclick="closeMediaViewer()">✖</button>
     <button class="nav-btn prev-btn" onclick="navigateMedia(-1)">◀</button>
