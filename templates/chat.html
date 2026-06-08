@@ -465,7 +465,6 @@
     const app = document.getElementById('app');
     let startX = 0, startY = 0, dragging = false, moved = false;
     app.addEventListener('touchstart', e => {
-        // Игнорируем, если касание началось на карусели
         if (e.target.closest('.carousel-container')) {
             dragging = false;
             return;
@@ -561,7 +560,7 @@ send.onclick=sendMessage;input.addEventListener('keypress',e=>{if(e.key==='Enter
 function toggleFinanceDropdown() { document.getElementById('financeDropdown').classList.toggle('active'); }
 document.addEventListener('click', function(e) { var btn = document.querySelector('.finance-header-btn'); var dropdown = document.getElementById('financeDropdown'); if (!btn.contains(e.target) && !dropdown.contains(e.target)) { dropdown.classList.remove('active'); } });
 
-// ТЁМНАЯ ТЕМА (переключатель в меню "Финансы")
+// ТЁМНАЯ ТЕМА
 (function() {
     const body = document.body;
     const toggleBtn = document.getElementById('themeToggleDropdown');
@@ -649,6 +648,16 @@ async function loadFeed() {
                 mediaHtml += '</div>';
                 mediaHtml += '</div>';
             }
+            // Аудио и файлы
+            var audioHtml = '';
+            audios.forEach(function(a) {
+                audioHtml += '<audio class="feed-audio" controls src="' + a.path + '" preload="metadata"></audio>';
+            });
+            var fileHtml = '';
+            files.forEach(function(f) {
+                fileHtml += '<a class="feed-file" href="' + f.path + '" target="_blank">📎 <span class="filename">' + escapeHtml(f.name || 'Файл') + '</span></a>';
+            });
+
             html += '<div class="feed-item" data-post-id="' + p.id + '" data-attachments=\'' + JSON.stringify(p.attachments || []) + '\'>';
             html += '<div class="feed-header">';
             html += '<div class="feed-avatar">' + (p.channel_avatar !== 'channel_default.png' ? '<img src="/static/avatars/' + p.channel_avatar + '">' : '📢') + '</div>';
@@ -656,7 +665,19 @@ async function loadFeed() {
             html += '<span class="feed-date">' + p.timestamp + '</span>';
             html += '</div>';
             html += '<div class="feed-content">' + p.content + '</div>';
-            html += mediaHtml;
+            html += mediaHtml + audioHtml + fileHtml;
+            // Старый формат одиночного файла
+            if (!p.attachments && p.file_path) {
+                if (p.file_type === 'image') {
+                    html += '<div class="carousel-container"><div class="carousel-track"><div class="carousel-slide" onclick="openMediaViewerSingle(\'' + p.file_path + '\', \'image\')"><img src="' + p.file_path + '" loading="lazy"></div></div></div>';
+                } else if (p.file_type === 'video') {
+                    html += '<div class="carousel-container"><div class="carousel-track"><div class="carousel-slide" onclick="openMediaViewerSingle(\'' + p.file_path + '\', \'video\')"><video src="' + p.file_path + '" muted preload="metadata" playsinline></video></div></div></div>';
+                } else if (p.file_type === 'audio') {
+                    html += '<audio class="feed-audio" controls src="' + p.file_path + '" preload="metadata"></audio>';
+                } else {
+                    html += '<a class="feed-file" href="' + p.file_path + '" download="' + p.file_name + '">📎 ' + escapeHtml(p.file_name) + '</a>';
+                }
+            }
             html += '<div class="feed-actions" onclick="event.stopPropagation();">';
             html += '<span class="feed-action" onclick="likeFeedPost(' + p.id + ', this)">❤️ <span>' + p.likes + '</span></span>';
             html += '<span class="feed-action" onclick="window.location.href=\'/channel/' + p.channel_id + '\'">💬 ' + p.comments + '</span>';
@@ -668,7 +689,7 @@ async function loadFeed() {
         });
         container.innerHTML = html;
 
-        // Оживляем карусели
+        // Карусели
         document.querySelectorAll('.carousel-track').forEach(track => {
             track.addEventListener('scroll', function() {
                 const postId = this.id.replace('carousel-', '');
@@ -689,7 +710,6 @@ async function loadFeed() {
             });
         });
 
-        // Остальная логика (двойной тап, лайк) остаётся, но без изменения
         document.querySelectorAll('.feed-item').forEach(function(item) {
             item.addEventListener('click', function(e) {
                 if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.carousel-container')) return;
@@ -770,6 +790,14 @@ function openMediaViewer(postId, startIndex) {
     document.body.style.overflow = 'hidden';
 }
 
+function openMediaViewerSingle(path, type) {
+    currentMediaItems = [{ type: type, path: path }];
+    currentMediaIndex = 0;
+    showCurrentMedia();
+    document.getElementById('mediaViewer').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
 function showCurrentMedia() {
     const img = document.getElementById('viewerImage');
     const video = document.getElementById('viewerVideo');
@@ -788,15 +816,6 @@ function showCurrentMedia() {
         video.play().catch(()=>{});
     }
     document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaItems.length;
-    if (currentMediaItems.length > 1) {
-        const next = (currentMediaIndex + 1) % currentMediaItems.length;
-        const prev = (currentMediaIndex - 1 + currentMediaItems.length) % currentMediaItems.length;
-        [next, prev].forEach(idx => {
-            const it = currentMediaItems[idx];
-            if (it.type === 'image') (new Image()).src = it.path;
-            else { const v = document.createElement('video'); v.src = it.path; v.load(); }
-        });
-    }
 }
 
 function navigateMedia(direction) {
