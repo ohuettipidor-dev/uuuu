@@ -5269,53 +5269,36 @@ def convert_coins_to_grrr(user_id, amount_coins):
 @app.route('/grrr/withdraw', methods=['POST'])
 @login_required
 def withdraw_grrr():
+    if not is_ready():
+        flash('Вывод токенов временно недоступен. Ожидайте запуска блокчейна.', 'info')
+        return redirect(url_for('grrr_page'))
+
     address = request.form.get('address', '').strip()
     amount = float(request.form.get('amount', 0))
-    
-    # Проверки
-    if not address or len(address) < 42:
-        flash('Введите корректный адрес кошелька (0x...)', 'danger')
+
+    if not Web3.is_address(address):
+        flash('Некорректный адрес Polygon', 'danger')
         return redirect(url_for('grrr_page'))
-    
+
     if amount < 10:
         flash('Минимальная сумма вывода: 10 $GRRR', 'danger')
         return redirect(url_for('grrr_page'))
-    
-    grrr_balance = get_grrr_balance(current_user.id)
-    if grrr_balance < amount:
+
+    grrr = UserGRRR.query.filter_by(user_id=current_user.id).first()
+    if not grrr or grrr.balance < amount:
         flash('Недостаточно $GRRR', 'danger')
         return redirect(url_for('grrr_page'))
-    
-    # Комиссия 10%
-    fee = amount * 0.1
-    net_amount = amount - fee
-    
-    # Списываем $GRRR
-    grrr = GRRRToken.query.filter_by(user_id=current_user.id).first()
-    grrr.balance -= amount
-    
-    # Комиссия платформе
-    platform_grrr = GRRRToken.query.filter_by(user_id=1).first()
-    if not platform_grrr:
-        platform_grrr = GRRRToken(user_id=1, balance=fee)
-        db.session.add(platform_grrr)
-    else:
-        platform_grrr.balance += fee
-    
-    # Здесь будет реальная отправка в блокчейн
-    # Пока сохраняем заявку
-    withdrawal = GRRRWithdrawal(
-        user_id=current_user.id,
-        address=address,
-        amount=amount,
-        fee=fee,
-        net_amount=net_amount,
-        status='pending'
-    )
-    db.session.add(withdrawal)
-    db.session.commit()
-    
-    flash(f'Заявка на вывод {net_amount} $GRRR создана! Комиссия: {fee} $GRRR (10%)', 'success')
+
+    amount_wei = int(amount * 10**18)
+    try:
+        tx_hash = transfer_onchain(address, amount_wei)
+        grrr.balance -= amount
+        db.session.commit()
+        flash(f'✅ Вывод успешен! TX: {tx_hash}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка вывода: {str(e)}', 'danger')
+
     return redirect(url_for('grrr_page'))
 # ========== BEAR WALLET ==========
 @app.route('/bearpay')
