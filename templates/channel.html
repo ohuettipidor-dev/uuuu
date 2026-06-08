@@ -87,8 +87,8 @@
         .paid-overlay .price{color:#ff6b6b;font-weight:bold}
         .paid-subscribe-btn{background:#ff6b6b;color:white;border:none;padding:12px 24px;border-radius:30px;cursor:pointer;font-weight:500;font-size:16px}
 
-        /* ПРОСМОТРЩИК ФОТО */
-        .image-viewer {
+        /* ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) */
+        .media-viewer {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
@@ -102,18 +102,19 @@
             visibility: hidden;
             transition: opacity 0.3s;
         }
-        .image-viewer.active {
+        .media-viewer.active {
             opacity: 1;
             visibility: visible;
         }
-        .image-viewer img {
+        .media-viewer img,
+        .media-viewer video {
             max-width: 95%;
             max-height: 80vh;
             object-fit: contain;
             border-radius: 8px;
             cursor: default;
         }
-        .image-viewer .close-btn {
+        .media-viewer .close-btn {
             position: absolute;
             top: 20px;
             right: 20px;
@@ -124,7 +125,7 @@
             cursor: pointer;
             z-index: 10;
         }
-        .image-viewer .nav-btn {
+        .media-viewer .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
@@ -138,9 +139,9 @@
             z-index: 10;
             user-select: none;
         }
-        .image-viewer .prev-btn { left: 15px; }
-        .image-viewer .next-btn { right: 15px; }
-        .image-viewer .counter {
+        .media-viewer .prev-btn { left: 15px; }
+        .media-viewer .next-btn { right: 15px; }
+        .media-viewer .counter {
             position: absolute;
             bottom: 25px;
             left: 50%;
@@ -260,27 +261,21 @@
                     {% endif %}
                 {% endfor %}
 
-                <!-- Изображения (первое большое, остальные в просмотрщике) -->
-                {% if images %}
-                <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openImageViewerFromAttachments('{{ images[0].path }}', {{ post.id }})">
-                    <img src="{{ images[0].path }}" loading="lazy" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
-                    {% if images|length > 1 %}
+                <!-- ЕДИНАЯ КАРУСЕЛЬ: фото + видео -->
+                {% set media = images + videos %}
+                {% if media %}
+                <div style="margin:10px 0; position:relative; cursor:pointer;" onclick="openMediaViewer('{{ media[0].path }}', '{{ media[0].type }}', {{ post.id }}, 0)">
+                    {% if media[0].type == 'image' %}
+                        <img src="{{ media[0].path }}" loading="lazy" style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;">
+                    {% else %}
+                        <video src="{{ media[0].path }}" preload="metadata" muted playsinline loop style="width:100%; height:auto; max-height:300px; object-fit:cover; border-radius:12px;"></video>
+                        <div class="grid-video-play-icon">▶️</div>
+                    {% endif %}
+                    {% if media|length > 1 %}
                     <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; pointer-events:none;">
-                        1 из {{ images|length }}
+                        1 из {{ media|length }}
                     </div>
                     {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Видео (сеткой) -->
-                {% if videos %}
-                <div class="feed-images-grid">
-                    {% for vid in videos %}
-                        <div class="grid-video-wrapper" onclick="window.open('{{ vid.path }}', '_blank')">
-                            <video src="{{ vid.path }}" preload="metadata" muted playsinline loop></video>
-                            <div class="grid-video-play-icon">▶️</div>
-                        </div>
-                    {% endfor %}
                 </div>
                 {% endif %}
 
@@ -289,21 +284,20 @@
                     <audio class="feed-audio" controls src="{{ audio.path }}" preload="metadata"></audio>
                 {% endfor %}
 
-                <!-- Файлы (документы и т.д.) -->
+                <!-- Файлы -->
                 {% for file in files %}
                     <a class="feed-file" href="{{ file.path }}" target="_blank">
                         📎 <span class="filename">{{ file.name }}</span>
                     </a>
                 {% endfor %}
             {% elif post.file_path %}
-                {# Старый формат одиночного файла #}
                 {% if post.file_type == 'image' %}
-                    <img src="{{ post.file_path }}" onclick="openImageViewerFromAttachments('{{ post.file_path }}', {{ post.id }})" style="cursor:pointer; max-width:100%; border-radius:12px;">
+                    <img src="{{ post.file_path }}" onclick="openMediaViewer('{{ post.file_path }}', 'image', {{ post.id }}, 0)" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
                     <audio class="feed-audio" controls src="{{ post.file_path }}" preload="metadata"></audio>
                 {% elif post.file_type == 'video' %}
-                    <div class="grid-video-wrapper" onclick="window.open('{{ post.file_path }}', '_blank')" style="height:200px;">
-                        <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop></video>
+                    <div style="position:relative; cursor:pointer;" onclick="openMediaViewer('{{ post.file_path }}', 'video', {{ post.id }}, 0)">
+                        <video src="{{ post.file_path }}" preload="metadata" muted playsinline loop style="width:100%; height:auto; max-height:300px; border-radius:12px;"></video>
                         <div class="grid-video-play-icon">▶️</div>
                     </div>
                 {% else %}
@@ -429,13 +423,16 @@
     </div>
 </div>
 
-<!-- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ -->
-<div class="image-viewer" id="imageViewer">
-    <button class="close-btn" onclick="closeImageViewer()">✖</button>
-    <button class="nav-btn prev-btn" onclick="navigateImage(-1)">◀</button>
-    <img id="viewerImage" src="" alt="Просмотр фото" />
-    <button class="nav-btn next-btn" onclick="navigateImage(1)">▶</button>
-    <div class="counter" id="imageCounter">1 / 1</div>
+<!-- ПРОСМОТРЩИК МЕДИА (ФОТО И ВИДЕО) -->
+<div class="media-viewer" id="mediaViewer">
+    <button class="close-btn" onclick="closeMediaViewer()">✖</button>
+    <button class="nav-btn prev-btn" onclick="navigateMedia(-1)">◀</button>
+    <div id="viewerContainer" style="display:flex; align-items:center; justify-content:center; max-width:95%; max-height:80vh;">
+        <img id="viewerImage" src="" style="display:none;" />
+        <video id="viewerVideo" src="" controls style="display:none;"></video>
+    </div>
+    <button class="nav-btn next-btn" onclick="navigateMedia(1)">▶</button>
+    <div class="counter" id="mediaCounter">1 / 1</div>
 </div>
 
 <script>
@@ -444,7 +441,8 @@
     let editingPostId = null;
     let existingAttachments = [];
     let deletedPaths = [];
-    let currentImageIndex = 0;
+    let currentMediaIndex = 0;
+    let currentMediaList = [];
 
     async function loadBalance() {
         try {
@@ -478,12 +476,12 @@
         document.querySelectorAll('.post-dropdown.active').forEach(d => d.classList.remove('active'));
     });
 
-    // ---------- РАБОТА С ФАЙЛАМИ (статический input + сжатие) ----------
+    // ---------- РАБОТА С ФАЙЛАМИ ----------
     document.getElementById('attachButton').addEventListener('click', function() {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
-        input.accept = '*/*';   // разрешаем все типы файлов
+        input.accept = '*/*';
         input.style.display = 'none';
         input.onchange = function(e) {
             const files = Array.from(e.target.files);
@@ -563,7 +561,7 @@
         });
     }
 
-    // ---------- ОТПРАВКА ПОСТА (быстрая) ----------
+    // ---------- ОТПРАВКА ПОСТА ----------
     const postForm = document.getElementById('postForm');
     if (postForm) {
         postForm.addEventListener('submit', async function(e) {
@@ -685,7 +683,7 @@
 
     document.querySelectorAll('.feed-item').forEach(function(item) {
         item.addEventListener('click', function(e) {
-            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown') || e.target.closest('.grid-video-wrapper')) {
+            if (e.target.closest('.feed-actions') || e.target.closest('img') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.feed-file') || e.target.closest('.post-menu-btn') || e.target.closest('.post-dropdown')) {
                 return;
             }
             const postId = this.dataset.postId;
@@ -814,37 +812,48 @@
         }
     }
 
-    // ---------- ПРОСМОТРЩИК ИЗОБРАЖЕНИЙ ----------
-    function openImageViewerFromAttachments(src, postId) {
+    // ---------- ПРОСМОТРЩИК МЕДИА (ФОТО + ВИДЕО) ----------
+    function openMediaViewer(src, type, postId, index) {
         const postEl = document.querySelector(`.feed-item[data-post-id="${postId}"]`);
         if (!postEl) return;
         const attr = postEl.getAttribute('data-attachments');
-        let images = [];
+        let mediaList = [];
         if (attr && attr !== 'None') {
             try {
                 const all = JSON.parse(attr);
-                images = all.filter(a => a.type === 'image');
+                mediaList = all.filter(a => a.type === 'image' || a.type === 'video');
             } catch(e) {}
         }
-        if (images.length === 0) {
-            images = [{path: src}];
+        if (mediaList.length === 0) {
+            mediaList = [{path: src, type: type}];
         }
-        window.currentViewerImages = images;
-        currentImageIndex = images.findIndex(img => img.path === src);
-        if (currentImageIndex === -1) currentImageIndex = 0;
-        showCurrentImage();
-        document.getElementById('imageViewer').classList.add('active');
+        currentMediaList = mediaList;
+        currentMediaIndex = index;
+        showCurrentMedia();
+        document.getElementById('mediaViewer').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    function showCurrentImage() {
-        var images = window.currentViewerImages || [];
-        if (images.length === 0) return;
-        document.getElementById('viewerImage').src = images[currentImageIndex].path;
-        document.getElementById('imageCounter').textContent = (currentImageIndex + 1) + ' / ' + images.length;
-        var prevBtn = document.querySelector('.prev-btn');
-        var nextBtn = document.querySelector('.next-btn');
-        if (images.length <= 1) {
+    function showCurrentMedia() {
+        const img = document.getElementById('viewerImage');
+        const video = document.getElementById('viewerVideo');
+        if (!currentMediaList.length) return;
+        const item = currentMediaList[currentMediaIndex];
+        if (item.type === 'image') {
+            img.src = item.path;
+            img.style.display = 'block';
+            video.style.display = 'none';
+            video.pause();
+        } else {
+            video.src = item.path;
+            video.style.display = 'block';
+            img.style.display = 'none';
+            video.play();
+        }
+        document.getElementById('mediaCounter').textContent = (currentMediaIndex + 1) + ' / ' + currentMediaList.length;
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        if (currentMediaList.length <= 1) {
             prevBtn.style.display = 'none';
             nextBtn.style.display = 'none';
         } else {
@@ -853,25 +862,26 @@
         }
     }
 
-    function navigateImage(direction) {
-        var images = window.currentViewerImages || [];
-        if (images.length === 0) return;
-        currentImageIndex += direction;
-        if (currentImageIndex < 0) currentImageIndex = images.length - 1;
-        if (currentImageIndex >= images.length) currentImageIndex = 0;
-        showCurrentImage();
+    function navigateMedia(direction) {
+        if (!currentMediaList.length) return;
+        currentMediaIndex += direction;
+        if (currentMediaIndex < 0) currentMediaIndex = currentMediaList.length - 1;
+        if (currentMediaIndex >= currentMediaList.length) currentMediaIndex = 0;
+        showCurrentMedia();
     }
 
-    function closeImageViewer() {
-        document.getElementById('imageViewer').classList.remove('active');
+    function closeMediaViewer() {
+        document.getElementById('mediaViewer').classList.remove('active');
         document.body.style.overflow = '';
-        window.currentViewerImages = [];
-        currentImageIndex = 0;
+        const video = document.getElementById('viewerVideo');
+        video.pause();
+        currentMediaList = [];
+        currentMediaIndex = 0;
     }
 
     // Поддержка свайпов в просмотрщике
     (function() {
-        const viewer = document.getElementById('imageViewer');
+        const viewer = document.getElementById('mediaViewer');
         let touchStartX = 0;
         viewer.addEventListener('touchstart', function(e) {
             touchStartX = e.touches[0].clientX;
@@ -879,7 +889,7 @@
         viewer.addEventListener('touchend', function(e) {
             const diff = e.changedTouches[0].clientX - touchStartX;
             if (Math.abs(diff) > 50) {
-                navigateImage(diff > 0 ? -1 : 1);
+                navigateMedia(diff > 0 ? -1 : 1);
             }
         });
     })();
