@@ -6480,36 +6480,7 @@ def tab_voice():
 def tab_dating():
     return render_template('dating_content.html')
     
-@app.route('/withdraw_grrr', methods=['POST'])
-@login_required
-def withdraw_grrr():
-    if not is_ready():
-        flash('Вывод токенов временно недоступен. Ожидайте запуска блокчейна.', 'info')
-        return redirect(url_for('profile'))
 
-    address = request.form.get('address')
-    amount = float(request.form.get('amount'))
-
-    if not Web3.is_address(address):
-        flash('Некорректный адрес Polygon', 'danger')
-        return redirect(url_for('profile'))
-
-    grrr = UserGRRR.query.filter_by(user_id=current_user.id).first()
-    if not grrr or grrr.balance < amount:
-        flash('Недостаточно $GRRR', 'danger')
-        return redirect(url_for('profile'))
-
-    amount_wei = int(amount * 10**18)
-    try:
-        tx_hash = transfer_onchain(address, amount_wei)
-        grrr.balance -= amount
-        db.session.commit()
-        flash(f'✅ Вывод успешен! TX: {tx_hash}', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Ошибка вывода: {str(e)}', 'danger')
-
-    return redirect(url_for('profile'))
 @app.route('/api/tab/games')
 @login_required
 def tab_games():
