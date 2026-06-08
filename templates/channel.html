@@ -300,8 +300,8 @@
                         📎 <span class="filename">{{ file.name }}</span>
                     </a>
                 {% endfor %}
-            {% elif post.file_path %}
-                {# Старый формат одиночного файла #}
+            {% elif post.file_path and not post.attachments %}
+                {# Старый формат одиночного файла (только если нет множественных вложений) #}
                 {% if post.file_type == 'image' %}
                     <img src="{{ post.file_path }}" onclick="openMediaViewerSingle('{{ post.file_path }}', 'image')" style="cursor:pointer; max-width:100%; border-radius:12px;">
                 {% elif post.file_type == 'audio' %}
