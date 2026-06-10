@@ -260,6 +260,11 @@ class BEARStake(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     user = db.relationship('User', foreign_keys=[user_id])
 
+class UserGRRR(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
+    balance = db.Column(db.Float, default=0.0)
+
 class BEARNode(db.Model):
     __tablename__ = 'bear_node'
     id = db.Column(db.Integer, primary_key=True)
