@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-w3 = Web3(Web3.HTTPProvider('https://polygon-rpc.com'))
+# Рабочий RPC (Ankr)
+w3 = Web3(Web3.HTTPProvider('https://rpc.ankr.com/polygon'))
 
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
 ADMIN_PRIVATE_KEY = os.getenv('ADMIN_PRIVATE_KEY')
