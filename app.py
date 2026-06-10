@@ -5287,6 +5287,7 @@ def convert_coins_to_grrr(user_id, amount_coins):
     db.session.commit()
     return True, f"Конвертировано {amount_coins} 💎 → {amount_coins} $GRRR"
 @app.route('/grrr/withdraw', methods=['POST'])
+@app.route('/grrr/withdraw', methods=['POST'])
 @login_required
 def withdraw_grrr():
     if not is_ready():
@@ -5304,7 +5305,7 @@ def withdraw_grrr():
         flash('Минимальная сумма вывода: 10 $GRRR', 'danger')
         return redirect(url_for('grrr_page'))
 
-    grrr = UserGRRR.query.filter_by(user_id=current_user.id).first()
+    grrr = GRRRToken.query.filter_by(user_id=current_user.id).first()
     if not grrr or grrr.balance < amount:
         flash('Недостаточно $GRRR', 'danger')
         return redirect(url_for('grrr_page'))
