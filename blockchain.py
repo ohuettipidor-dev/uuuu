@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Рабочий RPC (Ankr)
-w3 = Web3(Web3.HTTPProvider('https://rpc.ankr.com/polygon'))
+# Рабочий публичный RPC (не требует API-ключа)
+w3 = Web3(Web3.HTTPProvider('https://rpc-mainnet.maticvigil.com'))
 
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
 ADMIN_PRIVATE_KEY = os.getenv('ADMIN_PRIVATE_KEY')
