@@ -5,34 +5,124 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Подключение к Polygon Mainnet
 w3 = Web3(Web3.HTTPProvider('https://polygon-rpc.com'))
 
-# Адрес контракта и ABI берём из переменных окружения Railway
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
 ADMIN_PRIVATE_KEY = os.getenv('ADMIN_PRIVATE_KEY')
 ADMIN_ADDRESS = os.getenv('ADMIN_ADDRESS')
 
-# Загружаем ABI из переменной окружения
-CONTRACT_ABI = json.loads(os.getenv('GRRR_ABI'))
+# ABI твоего контракта (вшит в код, чтобы избежать ошибок копирования)
+CONTRACT_ABI = [
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "internalType": "address", "name": "owner", "type": "address"},
+            {"indexed": True, "internalType": "address", "name": "spender", "type": "address"},
+            {"indexed": False, "internalType": "uint256", "name": "value", "type": "uint256"}
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "internalType": "address", "name": "from", "type": "address"},
+            {"indexed": True, "internalType": "address", "name": "to", "type": "address"},
+            {"indexed": False, "internalType": "uint256", "name": "value", "type": "uint256"}
+        ],
+        "name": "Transfer",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {"internalType": "address", "name": "owner", "type": "address"},
+            {"internalType": "address", "name": "spender", "type": "address"}
+        ],
+        "name": "allowance",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {"internalType": "address", "name": "spender", "type": "address"},
+            {"internalType": "uint256", "name": "value", "type": "uint256"}
+        ],
+        "name": "approve",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "name",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {"internalType": "address", "name": "to", "type": "address"},
+            {"internalType": "uint256", "name": "value", "type": "uint256"}
+        ],
+        "name": "transfer",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {"internalType": "address", "name": "from", "type": "address"},
+            {"internalType": "address", "name": "to", "type": "address"},
+            {"internalType": "uint256", "name": "value", "type": "uint256"}
+        ],
+        "name": "transferFrom",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
 
-# Создаём объект контракта
 contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
 
 def init_blockchain():
-    """Вызывается при старте приложения (сейчас просто заглушка)"""
     pass
 
 def is_ready():
-    """Проверяет, что все данные для работы с блокчейном на месте"""
     return CONTRACT_ADDRESS is not None and ADMIN_PRIVATE_KEY is not None
 
 def get_onchain_balance(address):
-    """Возвращает реальный баланс токенов на кошельке"""
     return contract.functions.balanceOf(address).call()
 
 def transfer_onchain(to_address, amount_wei):
-    """Отправляет amount_wei токенов на указанный адрес с админского кошелька"""
     nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS)
     txn = contract.functions.transfer(to_address, amount_wei).build_transaction({
         'chainId': 137,
