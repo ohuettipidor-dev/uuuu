@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Рабочий публичный RPC (BNB Chain — проверенный, без ключа)
+# Рабочий публичный RPC
 w3 = Web3(Web3.HTTPProvider('https://polygon-bor-rpc.publicnode.com'))
 
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
@@ -124,10 +124,11 @@ def get_onchain_balance(address):
     return contract.functions.balanceOf(address).call()
 
 def transfer_onchain(to_address, amount_wei):
-    nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS)
+    # Всегда берём свежий nonce (включая pending транзакции)
+    nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS, 'pending')
     txn = contract.functions.transfer(to_address, amount_wei).build_transaction({
         'chainId': 137,
-        'gas': 100000,
+        'gas': 150000,
         'gasPrice': w3.eth.gas_price,
         'nonce': nonce,
     })
