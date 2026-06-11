@@ -124,7 +124,8 @@ def get_onchain_balance(address):
     return contract.functions.balanceOf(address).call()
 
 def transfer_onchain(to_address, amount_wei):
-    # Всегда берём свежий nonce (включая pending транзакции)
+    # Принудительно сбрасываем кеш nonce перед каждой транзакцией
+    w3.provider.make_request('eth_clearCache', [])
     nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS, 'pending')
     txn = contract.functions.transfer(to_address, amount_wei).build_transaction({
         'chainId': 137,
