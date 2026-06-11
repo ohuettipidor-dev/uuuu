@@ -5,14 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Рабочий публичный RPC
 w3 = Web3(Web3.HTTPProvider('https://polygon-bor-rpc.publicnode.com'))
 
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
 ADMIN_PRIVATE_KEY = os.getenv('ADMIN_PRIVATE_KEY')
 ADMIN_ADDRESS = os.getenv('ADMIN_ADDRESS')
 
-# ABI твоего контракта (вшит в код)
 CONTRACT_ABI = [
     {
         "anonymous": False,
@@ -124,9 +122,8 @@ def get_onchain_balance(address):
     return contract.functions.balanceOf(address).call()
 
 def transfer_onchain(to_address, amount_wei):
-    # Принудительно сбрасываем кеш nonce перед каждой транзакцией
-    w3.provider.make_request('eth_clearCache', [])
-    nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS, 'pending')
+    # Принудительный прямой запрос nonce из сети (игнорируем кеш)
+    nonce = int(w3.manager.request_blocking('eth_getTransactionCount', [ADMIN_ADDRESS, 'latest']), 16)
     txn = contract.functions.transfer(to_address, amount_wei).build_transaction({
         'chainId': 137,
         'gas': 150000,
