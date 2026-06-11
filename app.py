@@ -6478,11 +6478,16 @@ def tab_golden():
 def tab_voice():
     # Просто перенаправляем на список каналов, который уже умеет работать
     return redirect(url_for('voice_channels'))
-
+@app.route('/api/grrr_balance')
+@login_required
+def api_grrr_balance():
+    balance = get_grrr_balance(current_user.id)
+    return jsonify({'balance': balance})
 @app.route('/api/tab/dating')
 @login_required
 def tab_dating():
     return render_template('dating_content.html')
+    
     
 @app.route('/send_test_grrr')
 def send_test_grrr():
