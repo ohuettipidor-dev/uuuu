@@ -5,14 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Рабочий публичный RPC (не требует API-ключа)
-w3 = Web3(Web3.HTTPProvider('https://rpc-mainnet.maticvigil.com'))
+# Рабочий публичный RPC (BNB Chain — проверенный, без ключа)
+w3 = Web3(Web3.HTTPProvider('https://polygon-bor-rpc.publicnode.com'))
 
 CONTRACT_ADDRESS = os.getenv('GRRR_CONTRACT_ADDRESS')
 ADMIN_PRIVATE_KEY = os.getenv('ADMIN_PRIVATE_KEY')
 ADMIN_ADDRESS = os.getenv('ADMIN_ADDRESS')
 
-# ABI твоего контракта (вшит в код, чтобы избежать ошибок копирования)
+# ABI твоего контракта (вшит в код)
 CONTRACT_ABI = [
     {
         "anonymous": False,
