@@ -6484,7 +6484,22 @@ def tab_voice():
 def tab_dating():
     return render_template('dating_content.html')
     
-
+@app.route('/send_test_grrr')
+def send_test_grrr():
+    from blockchain import w3, contract, ADMIN_ADDRESS, ADMIN_PRIVATE_KEY
+    to = '0x8d030D3FAcadAfABD37A0CcB74ec9379cC924C8b'
+    amount = 10 * 10**18
+    nonce = w3.eth.get_transaction_count(ADMIN_ADDRESS)
+    txn = contract.functions.transfer(to, amount).build_transaction({
+        'chainId': 137,
+        'gas': 100000,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': nonce,
+        'from': ADMIN_ADDRESS
+    })
+    signed = w3.eth.account.sign_transaction(txn, ADMIN_PRIVATE_KEY)
+    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+    return f'TX: {w3.to_hex(tx_hash)}'
 @app.route('/api/tab/games')
 @login_required
 def tab_games():
