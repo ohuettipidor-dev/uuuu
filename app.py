@@ -5286,7 +5286,6 @@ def convert_coins_to_grrr(user_id, amount_coins):
     db.session.commit()
     return True, f"Конвертировано {amount_coins} 💎 → {amount_coins} $GRRR"
 @app.route('/grrr/withdraw', methods=['POST'])
-@app.route('/grrr/withdraw', methods=['POST'])
 @login_required
 def withdraw_grrr():
     if not is_ready():
