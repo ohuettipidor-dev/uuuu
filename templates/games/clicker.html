@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🐻 Кликер | Медовая ферма #GRRR</title>
+    <title>🐻 Медовая ферма | #GRRR</title>
     <style>
+        /* стили те же, что выше */
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{
             font-family:'Segoe UI',system-ui,sans-serif;
@@ -22,26 +23,12 @@
         .logo{font-weight:800;font-size:1.3rem;color:#f9ca24;text-shadow:0 0 10px rgba(249,202,36,0.5);}
         .balance-badge{background:rgba(0,0,0,0.5);border-radius:30px;padding:6px 14px;border:1px solid rgba(255,215,0,0.3);display:flex;align-items:center;gap:6px;}
         .balance-badge span{font-weight:bold;color:#ffeaa7;}
-        .stats{display:flex;justify-content:space-between;width:100%;font-size:14px;flex-wrap:wrap;}
-        .stats .label{color:#aaa;}.stats .value{color:#f9ca24;font-weight:bold;margin-left:4px;}
+        .stats{display:flex;justify-content:space-between;width:100%;font-size:14px;}
         .hive-area{position:relative;width:100%;aspect-ratio:1/1;max-height:320px;display:flex;justify-content:center;align-items:center;margin:10px 0;}
-        .clickable{
-            font-size:100px;cursor:pointer;transition:transform 0.05s;
-            filter:drop-shadow(0 0 20px rgba(255,215,0,0.5));
-            position:relative;z-index:2;
-        }
+        .clickable{font-size:100px;cursor:pointer;transition:transform 0.05s;filter:drop-shadow(0 0 20px rgba(255,215,0,0.5));position:relative;z-index:2;}
         .clickable:active{transform:scale(0.85);}
         .float-text{position:absolute;pointer-events:none;font-weight:bold;color:#ffeaa7;z-index:10;font-size:24px;animation:floatUp 0.8s ease-out forwards;text-shadow:0 0 10px gold;}
         @keyframes floatUp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
-        .shop{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:10px;}
-        .shop-item{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.08);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.05);}
-        .shop-info{display:flex;flex-direction:column;gap:4px;}
-        .shop-name{font-weight:bold;font-size:15px;}
-        .shop-desc{font-size:11px;color:#aaa;}
-        .shop-cost{color:#f9ca24;font-weight:bold;font-size:13px;}
-        .shop-buy{background:linear-gradient(135deg,#f9ca24,#f0932b);border:none;color:#1a1a2e;font-weight:bold;padding:8px 16px;border-radius:20px;cursor:pointer;transition:0.2s;}
-        .shop-buy:active{transform:scale(0.95);}
-        .shop-buy:disabled{opacity:0.4;transform:none;background:gray;}
         .boost-section{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;}
         .btn{background:linear-gradient(135deg,#f9ca24,#f0932b);border:none;color:#1a1a2e;font-weight:bold;padding:10px 20px;border-radius:40px;cursor:pointer;box-shadow:0 8px 16px rgba(240,147,43,0.5);transition:0.2s;font-size:14px;}
         .btn:active{transform:scale(0.95);}
@@ -59,53 +46,27 @@
         </div>
     </div>
     <div class="stats">
-        <span class="label">🍯 Мёд <span class="value" id="honeyDisplay">0</span></span>
-        <span class="label">⚡За клик <span class="value" id="clickPowerDisplay">1</span></span>
-        <span class="label">🕒Авто <span class="value" id="autoDisplay">0/с</span></span>
+        <span class="label">⚡GRRR за клик <span class="value" id="clickPowerDisplay">0.10</span></span>
+        <span class="label">🔥Множитель <span class="value" id="multiplierDisplay">1×</span></span>
     </div>
     <div class="hive-area" id="hiveArea">
         <div class="clickable" id="clickBtn">🍯</div>
     </div>
-
-    <!-- Магазин улучшений за мёд -->
-    <div class="shop">
-        <div class="shop-item">
-            <div class="shop-info">
-                <div class="shop-name">🪓 Увеличить клик</div>
-                <div class="shop-desc">+1 мёда за клик</div>
-            </div>
-            <div><span class="shop-cost" id="upgradeClickCost">10</span> 🍯</div>
-            <button class="shop-buy" id="upgradeClickBtn">Купить</button>
-        </div>
-        <div class="shop-item">
-            <div class="shop-info">
-                <div class="shop-name">🐝 Пчела-работник</div>
-                <div class="shop-desc">+1 мёда в секунду</div>
-            </div>
-            <div><span class="shop-cost" id="upgradeAutoCost">25</span> 🍯</div>
-            <button class="shop-buy" id="upgradeAutoBtn">Купить</button>
-        </div>
-    </div>
-
-    <!-- Бусты за кристаллайзеры 💎 -->
     <div class="boost-section">
         <button class="btn" onclick="activateBoost('x2', 15)">⚡×2 (15💎)</button>
         <button class="btn" onclick="activateBoost('x3', 30)">🔥×3 (30💎)</button>
         <button class="btn" onclick="activateBoost('x5', 50)">💎×5 (50💎)</button>
     </div>
     <div class="boost-status" id="boostStatus">Буст не активен</div>
-
-    <!-- Ручной обмен мёда на GRRR -->
-    <div class="boost-section" style="margin-top:5px;">
-        <button class="btn btn-outline" id="convertBtn">💰 Обменять в GRRR</button>
-    </div>
     <div class="debug-line" id="syncDebug"></div>
 </div>
 
 <script>
-// ========== СИНХРОНИЗАЦИЯ GRRR (как в honey-ninja) ==========
+// ========== СИНХРОНИЗАЦИЯ GRRR (точная копия из honey-ninja) ==========
 const grrrBalanceEl = document.getElementById('grrrBalance');
 const syncDebugEl = document.getElementById('syncDebug');
+const clickPowerDisplay = document.getElementById('clickPowerDisplay');
+const multiplierDisplay = document.getElementById('multiplierDisplay');
 
 async function updateDisplayBalance() {
     try {
@@ -119,7 +80,6 @@ async function updateDisplayBalance() {
 updateDisplayBalance();
 setInterval(updateDisplayBalance, 5000);
 
-// Отправка GRRR на сервер с дневным лимитом (как в оригинале)
 const DAILY_KEY = 'grrr_daily';
 const LIMIT = 100;
 let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
@@ -140,7 +100,7 @@ async function addGRRR(amount) {
     daily += add;
     saveDaily();
 
-    syncDebugEl.textContent = '⏳ +' + add + ' GRRR...';
+    syncDebugEl.textContent = '⏳ +' + add.toFixed(2) + ' GRRR...';
     try {
         const resp = await fetch('/api/sync_grrr', {
             method: 'POST',
@@ -152,7 +112,7 @@ async function addGRRR(amount) {
         const data = await resp.json();
         if (data.success) {
             grrrBalanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
-            syncDebugEl.textContent = '✅ +' + add + ' GRRR';
+            syncDebugEl.textContent = '✅ +' + add.toFixed(2) + ' GRRR';
             return true;
         } else {
             syncDebugEl.textContent = '❌ сервер отказал';
@@ -164,7 +124,7 @@ async function addGRRR(amount) {
     }
 }
 
-// ========== БУСТЫ ЗА КРИСТАЛЛАЙЗЕРЫ (💎) ==========
+// ========== БУСТЫ ЗА 💎 ==========
 let currentBoost = localStorage.getItem('game_boost') || null;
 let boostEndTime = localStorage.getItem('game_boost_end') || null;
 
@@ -185,18 +145,22 @@ function updateBoostUI() {
         statusEl.innerHTML = 'Буст не активен';
         statusEl.style.color = '#aaa';
     }
-    // Обновим множитель для отображения
-    updateUI();
+    updateMultiplierDisplay();
+}
+
+function updateMultiplierDisplay() {
+    const mult = getBoostMultiplier();
+    multiplierDisplay.textContent = mult + '×';
+    clickPowerDisplay.textContent = (0.1 * mult).toFixed(2); // база 0.1 GRRR за клик
 }
 
 function activateBoost(type, cost) {
     if (currentBoost) {
-        alert('Буст уже активен! Дождитесь окончания.');
+        alert('Буст уже активен!');
         return;
     }
     if (!confirm(`Купить буст ⚡${type} за ${cost} 💎?`)) return;
 
-    // Списываем кристаллайзеры через API
     fetch('/api/spend_coins', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -209,18 +173,15 @@ function activateBoost(type, cost) {
             return;
         }
         currentBoost = type;
-        boostEndTime = Date.now() + 30 * 60 * 1000; // 30 минут
+        boostEndTime = Date.now() + 30 * 60 * 1000;
         localStorage.setItem('game_boost', type);
         localStorage.setItem('game_boost_end', boostEndTime);
         updateBoostUI();
         syncDebugEl.textContent = 'Буст ' + type + ' активирован на 30 мин';
     })
-    .catch(() => {
-        alert('Ошибка при покупке буста');
-    });
+    .catch(() => alert('Ошибка при покупке буста'));
 }
 
-// Множитель буста
 function getBoostMultiplier() {
     if (!currentBoost || !boostEndTime) return 1;
     if (Date.now() > parseInt(boostEndTime)) {
@@ -234,47 +195,19 @@ function getBoostMultiplier() {
     return 1;
 }
 
-// ========== СОСТОЯНИЕ КЛИКЕРА ==========
-let honey = 0;
-let clickPower = 1;
-let autoIncome = 0;
-let upgradeClickLevel = 0;
-let upgradeAutoLevel = 0;
-
-function getUpgradeClickCost() { return Math.floor(10 * Math.pow(1.5, upgradeClickLevel)); }
-function getUpgradeAutoCost() { return Math.floor(25 * Math.pow(1.7, upgradeAutoLevel)); }
-
-const honeyDisplay = document.getElementById('honeyDisplay');
-const clickPowerDisplay = document.getElementById('clickPowerDisplay');
-const autoDisplay = document.getElementById('autoDisplay');
-const upgradeClickCostEl = document.getElementById('upgradeClickCost');
-const upgradeAutoCostEl = document.getElementById('upgradeAutoCost');
-const upgradeClickBtn = document.getElementById('upgradeClickBtn');
-const upgradeAutoBtn = document.getElementById('upgradeAutoBtn');
-const convertBtn = document.getElementById('convertBtn');
+// ========== КЛИК ==========
 const clickBtn = document.getElementById('clickBtn');
 const hiveArea = document.getElementById('hiveArea');
 
-function updateUI() {
+async function handleClick(e) {
     const mult = getBoostMultiplier();
-    honeyDisplay.textContent = Math.floor(honey); // показываем целые
-    clickPowerDisplay.textContent = clickPower * mult;
-    autoDisplay.textContent = (autoIncome * mult).toFixed(1) + '/с';
-    upgradeClickCostEl.textContent = getUpgradeClickCost();
-    upgradeAutoCostEl.textContent = getUpgradeAutoCost();
-    upgradeClickBtn.disabled = honey < getUpgradeClickCost();
-    upgradeAutoBtn.disabled = honey < getUpgradeAutoCost();
-}
+    const earned = 0.1 * mult; // 0.1 GRRR * множитель
+    await addGRRR(earned);
 
-// ========== КЛИК ==========
-function handleClick(e) {
-    const mult = getBoostMultiplier();
-    let added = clickPower * mult;
-    honey += added;
-
+    // Всплывашка
     const floatEl = document.createElement('div');
     floatEl.className = 'float-text';
-    floatEl.textContent = '+' + added;
+    floatEl.textContent = '+' + earned.toFixed(2) + ' GRRR';
     const rect = hiveArea.getBoundingClientRect();
     floatEl.style.left = (e.clientX - rect.left) + 'px';
     floatEl.style.top = (e.clientY - rect.top) + 'px';
@@ -283,74 +216,13 @@ function handleClick(e) {
 
     clickBtn.style.transform = 'scale(0.9)';
     setTimeout(() => clickBtn.style.transform = '', 80);
-
-    updateUI();
 }
 
 clickBtn.addEventListener('click', (e) => { e.preventDefault(); handleClick(e); });
 clickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e.touches[0]); });
 
-// ========== АВТО-ДОХОД ==========
-setInterval(() => {
-    if (autoIncome > 0) {
-        const mult = getBoostMultiplier();
-        honey += autoIncome * mult / 10; // каждые 100 мс
-        updateUI();
-    }
-}, 100);
-
-// ========== УЛУЧШЕНИЯ ==========
-upgradeClickBtn.addEventListener('click', () => {
-    const cost = getUpgradeClickCost();
-    if (honey >= cost) {
-        honey -= cost;
-        upgradeClickLevel++;
-        clickPower += 1;
-        updateUI();
-    }
-});
-upgradeAutoBtn.addEventListener('click', () => {
-    const cost = getUpgradeAutoCost();
-    if (honey >= cost) {
-        honey -= cost;
-        upgradeAutoLevel++;
-        autoIncome += 1;
-        updateUI();
-    }
-});
-
-// ========== КОНВЕРТАЦИЯ МЁДА В GRRR ==========
-convertBtn.addEventListener('click', () => {
-    if (honey < 10) {
-        syncDebugEl.textContent = 'Нужно минимум 10 🍯';
-        return;
-    }
-    let grrrEarned = Math.floor(honey / 10);
-    if (grrrEarned > 0) {
-        honey -= grrrEarned * 10;
-        addGRRR(grrrEarned);
-        updateUI();
-    }
-});
-
-// Авто-конвертация каждые 5 сек
-setInterval(() => {
-    if (honey >= 10 && daily < LIMIT) {
-        let grrrEarned = Math.min(Math.floor(honey / 10), LIMIT - daily);
-        if (grrrEarned > 0) {
-            honey -= grrrEarned * 10;
-            addGRRR(grrrEarned);
-            updateUI();
-        }
-    }
-}, 5000);
-
-// ========== ПЕРИОДИЧЕСКОЕ ОБНОВЛЕНИЕ БУСТА ==========
-updateBoostUI();
-setInterval(updateBoostUI, 30000); // каждые 30 сек проверяем окончание буста
-
 // Инициализация
-updateUI();
+updateBoostUI();
 </script>
 </body>
 </html>
