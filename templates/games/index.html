@@ -13,8 +13,6 @@
         .container{position:relative;z-index:1;max-width:420px;margin:0 auto}
         .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
         .back-btn{color:#f9ca24;text-decoration:none;font-size:18px}h1{color:#f9ca24;font-size:22px}
-        .balance-bar{background:rgba(255,255,255,0.08);border-radius:20px;padding:16px;text-align:center;margin-bottom:15px;border:1px solid rgba(249,202,36,0.2)}
-        .balance-bar .label{font-size:11px;color:#aaa;margin-bottom:4px}.balance-bar .amount{font-size:28px;font-weight:bold;color:#f9ca24}
         .boost-panel{background:linear-gradient(135deg,rgba(108,92,231,0.2),rgba(162,155,254,0.1));border-radius:20px;padding:15px;margin-bottom:20px;text-align:center;border:1px solid rgba(108,92,231,0.4)}
         .boost-panel h3{color:#a29bfe;font-size:14px;margin-bottom:10px}.boost-options{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
         .boost-btn{background:rgba(108,92,231,0.3);color:white;border:1px solid rgba(162,155,254,0.5);padding:10px 14px;border-radius:15px;cursor:pointer;font-weight:bold;font-size:12px;transition:0.2s}
@@ -46,7 +44,6 @@
 <body>
 <div class="container">
     <div class="header"><a href="/chat" class="back-btn">← Чат</a><h1>🎮 Игры</h1></div>
-    <div class="balance-bar"><div class="label">🐻 Баланс</div><div class="amount"><span id="totalBalance">0</span> $GRRR</div></div>
 
     <div class="boost-panel">
         <h3>⚡ Буст для всех игр</h3>
@@ -60,14 +57,14 @@
 
     <div class="section-title"><span>🕹️ Встроенные игры</span></div>
     <div class="games-grid">
-        <a href="/games/water-sort" class="game-card"><div class="game-icon">💧</div><div class="game-title">Water Sort</div><div class="game-desc">Сортируй цвета</div><div class="game-reward" id="r1">+15 $GRRR</div></a>
-        <a href="/games/bubbles" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Пузыри</div><div class="game-desc">Лопай с друзьями</div><div class="game-reward" id="r2">+1 $GRRR</div></a>
-        <a href="/games/block-blast" class="game-card"><div class="game-icon">🧩</div><div class="game-title">Block Blast</div><div class="game-desc">Собирай ряды</div><div class="game-reward" id="r3">+2 $GRRR</div></a>
-        <a href="/games/clicker" class="game-card"><div class="game-icon">⛏️</div><div class="game-title">Кликер</div><div class="game-desc">Улучшай ферму</div><div class="game-reward" id="r4">до 100 $GRRR</div></a>
-        <a href="/games/honey-ninja" class="game-card"><div class="game-icon">🍯</div><div class="game-title">Медовый Ниндзя</div><div class="game-desc">Режь предметы!</div><div class="game-reward" id="r5">+5 $GRRR</div></a>
-        <a href="/games/flappy-bear" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Flappy Bear</div><div class="game-desc">Лети и уворачивайся</div><div class="game-reward" id="r6">+2 $GRRR</div></a>
-        <a href="/games/2048" class="game-card"><div class="game-icon">🧩</div><div class="game-title">2048 Bear</div><div class="game-desc">Собери 2048!</div><div class="game-reward" id="r7">+5 $GRRR</div></a>
-        <a href="/games/wordle" class="game-card"><div class="game-icon">🧠</div><div class="game-title">Wordle Bear</div><div class="game-desc">Угадай слово!</div><div class="game-reward" id="r8">+20 $GRRR</div></a>
+        <a href="/games/water-sort" class="game-card"><div class="game-icon">💧</div><div class="game-title">Water Sort</div><div class="game-desc">Сортируй цвета</div><div class="game-reward">+15 $GRRR</div></a>
+        <a href="/games/bubbles" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Пузыри</div><div class="game-desc">Лопай с друзьями</div><div class="game-reward">+1 $GRRR</div></a>
+        <a href="/games/block-blast" class="game-card"><div class="game-icon">🧩</div><div class="game-title">Block Blast</div><div class="game-desc">Собирай ряды</div><div class="game-reward">+2 $GRRR</div></a>
+        <a href="/games/clicker" class="game-card"><div class="game-icon">⛏️</div><div class="game-title">Кликер</div><div class="game-desc">Улучшай ферму</div><div class="game-reward">до 100 $GRRR</div></a>
+        <a href="/games/honey-ninja" class="game-card"><div class="game-icon">🍯</div><div class="game-title">Медовый Ниндзя</div><div class="game-desc">Режь предметы!</div><div class="game-reward">+5 $GRRR</div></a>
+        <a href="/games/flappy-bear" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Flappy Bear</div><div class="game-desc">Лети и уворачивайся</div><div class="game-reward">+2 $GRRR</div></a>
+        <a href="/games/2048" class="game-card"><div class="game-icon">🧩</div><div class="game-title">2048 Bear</div><div class="game-desc">Собери 2048!</div><div class="game-reward">+5 $GRRR</div></a>
+        <a href="/games/wordle" class="game-card"><div class="game-icon">🧠</div><div class="game-title">Wordle Bear</div><div class="game-desc">Угадай слово!</div><div class="game-reward">+20 $GRRR</div></a>
     </div>
 
     <div class="section-title"><span>👤 Игры сообщества</span><a href="#" onclick="document.getElementById('uploadForm').style.display='block';this.style.display='none'">✨ + Добавить</a></div>
@@ -103,46 +100,6 @@
 </div>
 
 <script>
-// ========== МГНОВЕННЫЙ ПОКАЗ ЛОКАЛЬНОГО БАЛАНСА ==========
-const balanceEl = document.getElementById('totalBalance');
-balanceEl.textContent = (parseFloat(localStorage.getItem('grrr_balance')) || 0).toFixed(2);
-
-// ========== СИНХРОНИЗАЦИЯ ЛОКАЛЬНОГО БАЛАНСА С СЕРВЕРОМ (ВОЗВРАЩАЕМ!) ==========
-(async function syncGameGRRR() {
-    const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
-    const lastSynced = parseFloat(localStorage.getItem('grrr_last_synced') || '0');
-    const toSend = localBalance - lastSynced;
-    if (toSend <= 0) return;
-
-    try {
-        const resp = await fetch('/api/sync_grrr', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'amount=' + toSend
-        });
-        const data = await resp.json();
-        if (data.success) {
-            localStorage.setItem('grrr_last_synced', localBalance);
-            console.log('GRRR синхронизированы, новый общий баланс:', data.new_balance);
-            // Обновим локальный баланс, если сервер вернул более актуальный
-            if (data.new_balance !== undefined) {
-                localStorage.setItem('grrr_balance', data.new_balance);
-                balanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
-            }
-        }
-    } catch (e) {
-        console.log('Синхронизация GRRR отложена (нет сети)');
-    }
-})();
-
-// ========== АВТООБНОВЛЕНИЕ ПРИ ВОЗВРАЩЕНИИ НА ВКЛАДКУ ==========
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        balanceEl.textContent = (parseFloat(localStorage.getItem('grrr_balance')) || 0).toFixed(2);
-        syncGameGRRR(); // сразу отправляем накопленное
-    }
-});
-
 // ========== БУСТЫ (БЕЗ ИЗМЕНЕНИЙ) ==========
 let currentBoost=localStorage.getItem('game_boost')||null,boostEndTime=localStorage.getItem('game_boost_end')||null;
 function updateBoostUI(){
