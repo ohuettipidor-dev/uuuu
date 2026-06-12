@@ -78,7 +78,7 @@
 
     <div class="section" style="text-align:center;">
         <div class="section-title">🐻 Баланс $GRRR</div>
-        <p style="font-size:28px; font-weight:bold; color:#333;" id="grrr-balance-display">{{ "%.2f"|format(grrr_balance) }} $GRRR</p>
+        <p style="font-size:28px; font-weight:bold; color:#333;">{{ "%.2f"|format(grrr_balance) }} $GRRR</p>
         <small style="color:#888;">Валюта хищников BearGram</small>
         <div style="margin-top:12px;">
             <a href="/grrr" class="btn-grrr">🐻 Управлять $GRRR</a>
@@ -262,22 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(btn);
     }
 });
-
-// ====== ОБНОВЛЕНИЕ БАЛАНСА $GRRR ПРИ ЗАГРУЗКЕ ======
-(async function updateGRRRBalance() {
-    try {
-        const resp = await fetch('/api/grrr_balance');
-        const data = await resp.json();
-        if (data.balance !== undefined) {
-            const display = document.getElementById('grrr-balance-display');
-            if (display) {
-                display.textContent = parseFloat(data.balance).toFixed(2) + ' $GRRR';
-            }
-        }
-    } catch (e) {
-        // если сервер не ответил – останется значение из шаблона
-    }
-})();
 </script>
 </body>
 </html>
