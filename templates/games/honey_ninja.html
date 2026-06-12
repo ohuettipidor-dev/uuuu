@@ -19,6 +19,8 @@
         }
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
         .logo{font-weight:700;font-size:1.4rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
+        .balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
         .score-panel{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
         .score-panel span{color:#f9ca24;font-weight:bold}
         .level-panel{text-align:center;margin:4px 0;font-size:12px;color:#aaa}
@@ -49,6 +51,10 @@
 <div class="game-container">
     <div class="header">
         <span class="logo">🍯 Медовый Ниндзя</span>
+        <div class="balance-panel">
+            <span>🪙</span>
+            <span class="balance-text" id="grrrBalance">0</span>
+        </div>
     </div>
 
     <div class="score-panel">
@@ -84,7 +90,24 @@
 </div>
 
 <script>
-// ================= ГЛАВНОЕ ЯДРО (тихая синхронизация) =================
+// ================= СЕРВЕРНЫЙ БАЛАНС (ЖИВОЙ) =================
+const balanceEl = document.getElementById('grrrBalance');
+// Функция обновления баланса с сервера
+async function updateServerBalance() {
+    try {
+        const resp = await fetch('/api/grrr_balance');
+        const data = await resp.json();
+        if (data.balance !== undefined) {
+            balanceEl.textContent = parseFloat(data.balance).toFixed(2);
+        }
+    } catch (e) {}
+}
+// Первое получение
+updateServerBalance();
+// Автообновление каждые 5 секунд
+setInterval(updateServerBalance, 5000);
+
+// ================= ЯДРО НАЧИСЛЕНИЙ (ТИХАЯ ОТПРАВКА) =================
 const DAILY_KEY = 'grrr_daily';
 const LIMIT = 100;
 let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
@@ -96,17 +119,19 @@ if (localStorage.getItem('grrr_date') !== today) {
 }
 function saveDaily() { localStorage.setItem(DAILY_KEY, daily); }
 
-// Функция начисления GRRR (мгновенно отправляет на сервер)
 function addGRRR(amount) {
     if (daily >= LIMIT) return false;
     let add = Math.min(amount, LIMIT - daily);
     daily += add;
     saveDaily();
-    // Отправляем запрос на сервер (тихо, без отображения баланса)
+    // Мгновенная отправка на сервер
     fetch('/api/sync_grrr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'amount=' + add
+    }).then(() => {
+        // После успешной отправки сразу запрашиваем свежий баланс
+        updateServerBalance();
     }).catch(() => {});
     return true;
 }
