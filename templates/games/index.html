@@ -103,23 +103,28 @@
 </div>
 
 <script>
-// Отображение баланса теперь через сервер (с запасным localStorage)
+// ========== МГНОВЕННЫЙ ПОКАЗ ЛОКАЛЬНОГО БАЛАНСА ==========
 const balanceEl = document.getElementById('totalBalance');
-(async function loadBalance() {
+// Сразу показываем, что есть в localStorage (быстро, без задержек)
+balanceEl.textContent = (parseFloat(localStorage.getItem('grrr_balance')) || 0).toFixed(2);
+
+// ========== ФОНОВАЯ СИНХРОНИЗАЦИЯ С СЕРВЕРОМ ==========
+(async function syncFromServer() {
     try {
         const resp = await fetch('/api/grrr_balance');
         const data = await resp.json();
-        balanceEl.textContent = parseFloat(data.balance).toFixed(2);
-    } catch (e) {
-        // если сервер недоступен, покажем локальный баланс (на всякий случай)
-        balanceEl.textContent = localStorage.getItem('grrr_balance') || '0';
-    }
+        if (data.balance !== undefined) {
+            balanceEl.textContent = parseFloat(data.balance).toFixed(2);
+            // Обновим и локальный баланс, чтобы всё было синхронно
+            localStorage.setItem('grrr_balance', data.balance);
+        }
+    } catch (e) {}
 })();
 
-// Синхронизация GRRR с сервером (оставлена без изменений, только отправляет)
+// ========== ОТПРАВКА НАКОПЛЕННЫХ GRRR НА СЕРВЕР ==========
 (async function syncGameGRRR() {
-    const localBalance = parseInt(localStorage.getItem('grrr_balance') || '0');
-    const lastSynced = parseInt(localStorage.getItem('grrr_last_synced') || '0');
+    const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
+    const lastSynced = parseFloat(localStorage.getItem('grrr_last_synced') || '0');
     const toSend = localBalance - lastSynced;
     if (toSend <= 0) return;
 
@@ -139,7 +144,16 @@ const balanceEl = document.getElementById('totalBalance');
     }
 })();
 
-// Бусты (без изменений)
+// ========== АВТООБНОВЛЕНИЕ БАЛАНСА ПРИ ВОЗВРАЩЕНИИ НА ВКЛАДКУ ==========
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        // сразу показать локальный, потом обновить с сервера
+        balanceEl.textContent = (parseFloat(localStorage.getItem('grrr_balance')) || 0).toFixed(2);
+        syncFromServer();
+    }
+});
+
+// ========== БУСТЫ (БЕЗ ИЗМЕНЕНИЙ) ==========
 let currentBoost=localStorage.getItem('game_boost')||null,boostEndTime=localStorage.getItem('game_boost_end')||null;
 function updateBoostUI(){
     const now=Date.now();
