@@ -6510,6 +6510,15 @@ def tab_games():
     # Отдаём список игр (без основного layout)
     user_games = UserGame.query.filter_by(is_approved=True).order_by(UserGame.plays_count.desc()).all()
     return render_template('games_content.html', user_games=user_games)
+    @app.route('/fix_database')
+def fix_database():
+    import shutil
+    src = '/app/static/messenger.db'
+    dst = '/app/static/uploads/messenger.db'
+    if not os.path.exists(src):
+        return "❌ Старая база не найдена", 404
+    shutil.copy(src, dst)
+    return "✅ База скопирована! Теперь перезапусти Railway (Redeploy).", 200
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
