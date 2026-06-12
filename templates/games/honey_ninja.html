@@ -5,225 +5,224 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🍯 Медовый Ниндзя | #GRRR</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-        body{
-            font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-            background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);
-            min-height:100vh;display:flex;align-items:flex-start;justify-content:center;
-            padding:12px;color:#fff;touch-action:manipulation;overflow-y:auto;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            font-family: system-ui;
         }
-        .game-container{
-            width:100%;max-width:420px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);
-            border-radius:40px;padding:20px 16px 28px;margin-bottom:20px;
-            box-shadow:0 30px 50px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
+        body {
+            background: #0a0a0a;
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+            width: 100vw;
         }
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-        .logo{font-weight:700;font-size:1.4rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
-        .balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
-        .score-panel{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
-        .score-panel span{color:#f9ca24;font-weight:bold}
-        .level-panel{text-align:center;margin:4px 0;font-size:12px;color:#aaa}
-        .level-panel b{color:#f9ca24}
-        .lives{display:flex;gap:4px;justify-content:center;margin:8px 0}
-        .lives span{font-size:24px}
-        .canvas-container{display:flex;justify-content:center;margin:10px 0}
-        canvas{border-radius:20px;background:linear-gradient(180deg,rgba(240,147,43,0.1) 0%,rgba(26,30,43,0.3) 100%);border:2px solid rgba(255,215,0,0.2);cursor:crosshair}
-        .action-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 16px}
-        .btn-yellow{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#1a1e2b;border:none;font-weight:700;font-size:0.85rem;padding:10px 18px;border-radius:50px;box-shadow:0 8px 16px rgba(240,147,43,0.4);cursor:pointer}
-        .beargram-section{margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.3);border-radius:30px;padding:16px 10px;border:1px solid rgba(255,255,255,0.1)}
-        .btn{border:none;color:white;font-weight:700;font-size:1rem;padding:14px 28px;border-radius:50px;box-shadow:0 10px 20px rgba(0,0,0,0.3);cursor:pointer;text-decoration:none;display:inline-block;text-align:center;width:100%}
-        .btn:active{transform:scale(0.96)}
-        .btn-install{background:linear-gradient(135deg,#6c5ce7,#a29bfe);box-shadow:0 10px 20px rgba(108,92,231,0.5)}
-        .btn-grrr{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#000;box-shadow:0 10px 20px rgba(240,147,43,0.6)}
-        .btn-withdraw{background:#4cd964;color:white}
-        .beargram-text{font-size:0.8rem;color:#aaa;text-align:center}
-        .highlight{color:#ffeaa7;font-weight:600}
-        .back-btn{position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold}
-        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;font-size:0.9rem;z-index:2000;animation:toastFadeIn 0.3s ease,toastFadeOut 0.5s ease 2.5s forwards;pointer-events:none}
-        @keyframes toastFadeIn{from{opacity:0;transform:translateX(-50%) scale(0.8)}to{opacity:1;transform:translateX(-50%) scale(1)}}
-        @keyframes toastFadeOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #grrrDisplay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: gold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        /* Панель отладки – будет показывать статус синхронизации */
+        #syncDebug {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            font-size: 14px;
+            padding: 6px;
+            text-align: center;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
-<a href="/games" class="back-btn">← Игры</a>
+    <div id="grrrDisplay">🐻 <span id="grrrBalance">0.00</span></div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="syncDebug">⏳ Ожидание нарезки...</div>
 
-<div class="game-container">
-    <div class="header">
-        <span class="logo">🍯 Медовый Ниндзя</span>
-        <div class="balance-panel">
-            <span>🪙</span>
-            <span class="balance-text" id="grrrBalance">0</span>
-        </div>
-    </div>
+    <script>
+        // ========== ЭЛЕМЕНТЫ ==========
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const grrrBalanceEl = document.getElementById('grrrBalance');
+        const syncDebugEl = document.getElementById('syncDebug');
 
-    <div class="score-panel">
-        <span>🎯 Счёт: <b id="scoreDisplay">0</b></span>
-        <span>🔥 Лучший: <b id="bestDisplay">0</b></span>
-    </div>
-
-    <div class="level-panel">
-        Уровень <b id="levelDisplay">1</b> · Скорость <b id="speedDisplay">1×</b>
-    </div>
-
-    <div class="lives" id="livesDisplay">
-        <span>❤️</span><span>❤️</span><span>❤️</span>
-    </div>
-
-    <div class="canvas-container">
-        <canvas id="gameCanvas" width="350" height="380"></canvas>
-    </div>
-
-    <div class="action-buttons">
-        <button class="btn-yellow" id="newGameBtn">🔄 Новое</button>
-        <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
-        <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
-    </div>
-
-    <div class="beargram-section">
-        <div class="beargram-text" style="font-size:12px;color:#f9ca24;">🎯 <span class="highlight">Очки = $GRRR!</span> Режь — зарабатывай!</div>
-        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать $GRRR</a>
-        <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
-        <a class="btn btn-withdraw" href="https://beargram.up.railway.app/grrr" target="_blank">💰 Вывести $GRRR</a>
-        <div class="beargram-text">Фарми <span class="highlight">$GRRR</span> и выводи в рубли! 1 $GRRR ≈ 0.95 ₽</div>
-    </div>
-</div>
-
-<script>
-// ================= СЕРВЕРНЫЙ БАЛАНС (ЖИВОЙ) =================
-const balanceEl = document.getElementById('grrrBalance');
-// Функция обновления баланса с сервера
-async function updateServerBalance() {
-    try {
-        const resp = await fetch('/api/grrr_balance');
-        const data = await resp.json();
-        if (data.balance !== undefined) {
-            balanceEl.textContent = parseFloat(data.balance).toFixed(2);
+        // ========== ПОЛУЧЕНИЕ БАЛАНСА ==========
+        async function updateDisplayBalance() {
+            try {
+                const resp = await fetch('/api/grrr_balance');
+                const data = await resp.json();
+                if (data.balance !== undefined) {
+                    grrrBalanceEl.textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {
+                // не страшно
+            }
         }
-    } catch (e) {}
-}
-// Первое получение
-updateServerBalance();
-// Автообновление каждые 5 секунд
-setInterval(updateServerBalance, 5000);
+        updateDisplayBalance();
+        setInterval(updateDisplayBalance, 5000);
 
-// ================= ЯДРО НАЧИСЛЕНИЙ (ТИХАЯ ОТПРАВКА) =================
-const DAILY_KEY = 'grrr_daily';
-const LIMIT = 100;
-let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
-const today = new Date().toDateString();
-if (localStorage.getItem('grrr_date') !== today) {
-    daily = 0;
-    localStorage.setItem(DAILY_KEY, '0');
-    localStorage.setItem('grrr_date', today);
-}
-function saveDaily() { localStorage.setItem(DAILY_KEY, daily); }
+        // ========== СИНХРОНИЗАЦИЯ GRRR ==========
+        async function addGRRR(amount) {
+            syncDebugEl.textContent = '⏳ Сохраняю +' + amount + ' GRRR...';
+            try {
+                const resp = await fetch('/api/sync_grrr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'amount=' + amount,
+                    credentials: 'same-origin'
+                });
+                if (!resp.ok) {
+                    syncDebugEl.textContent = '🚫 Ошибка HTTP: ' + resp.status;
+                    return false;
+                }
+                const data = await resp.json();
+                if (data.success) {
+                    syncDebugEl.textContent = '✅ +' + amount + ' GRRR сохранено! Баланс: ' + data.new_balance;
+                    // обновим верхний счётчик
+                    if (grrrBalanceEl && data.new_balance !== undefined) {
+                        grrrBalanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
+                    }
+                    return true;
+                } else {
+                    syncDebugEl.textContent = '❌ Сервер ответил success=false';
+                    return false;
+                }
+            } catch (e) {
+                syncDebugEl.textContent = '🚫 Ошибка сети/JS: ' + e.message;
+                return false;
+            }
+        }
 
-function addGRRR(amount) {
-    if (daily >= LIMIT) return false;
-    let add = Math.min(amount, LIMIT - daily);
-    daily += add;
-    saveDaily();
-    // Мгновенная отправка на сервер
-    fetch('/api/sync_grrr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'amount=' + add
-    }).then(() => {
-        // После успешной отправки сразу запрашиваем свежий баланс
-        updateServerBalance();
-    }).catch(() => {});
-    return true;
-}
+        // ========== ИГРА (упрощённая механика) ==========
+        // Здесь вставлена базовая логика "фруктового ниндзя".
+        // Если твоя версия сложнее, встрой вызов addGRRR() в своё место начисления очков.
+        let fruits = [];
+        let score = 0;
+        let currentSliceScore = 0;
+        let gameActive = true;
 
-function showToast(t) {
-    const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
-    document.body.appendChild(d); setTimeout(() => { if (d.parentNode) d.remove(); }, 3000);
-}
-// ================================================================
+        // Адаптивный размер
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const W = 350, H = 380;
-let score = 0, best = parseInt(localStorage.getItem('honey_best') || '0'), lives = 3, gameOver = false;
-let items = [], bombs = [], particles = [], mouseX = W / 2, mouseY = H / 2, isDown = false, prevX = 0, prevY = 0;
-let level = 1, speedMultiplier = 1, spawnInterval = null, bombInterval = null;
+        // Фрукт
+        function spawnFruit() {
+            if (!gameActive) return;
+            const x = Math.random() * canvas.width;
+            const y = canvas.height + 40;
+            const vx = (Math.random() - 0.5) * 8;
+            const vy = -(Math.random() * 8 + 10);
+            fruits.push({ x, y, vx, vy, radius: 25 + Math.random() * 20, sliced: false });
+        }
 
-const FOODS = [
-    { emoji: '🍯', size: 42, points: 5, color: '#f9ca24' },
-    { emoji: '🍒', size: 40, points: 3, color: '#ff6b6b' },
-    { emoji: '🍇', size: 38, points: 2, color: '#a29bfe' },
-    { emoji: '🍊', size: 44, points: 4, color: '#f0932b' },
-    { emoji: '🍎', size: 42, points: 5, color: '#e74c3c' },
-    { emoji: '🍉', size: 48, points: 8, color: '#4cd964' },
-    { emoji: '🍓', size: 36, points: 3, color: '#ff4444' },
-];
-const BOMBS = [{ emoji: '💣', size: 40 }, { emoji: '🧨', size: 38 }, { emoji: '💥', size: 36 }];
+        // Обновление
+        function update() {
+            fruits = fruits.filter(f => {
+                f.x += f.vx;
+                f.y += f.vy;
+                f.vy += 0.3; // гравитация
+                return f.y < canvas.height + 100 && !f.sliced;
+            });
+        }
 
-function updateLevel() {
-    level = Math.floor(score / 30) + 1;
-    speedMultiplier = 1 + (level - 1) * 0.3;
-    if (speedMultiplier > 5) speedMultiplier = 5;
-    document.getElementById('levelDisplay').textContent = level;
-    document.getElementById('speedDisplay').textContent = speedMultiplier.toFixed(1) + '×';
-    clearInterval(spawnInterval); clearInterval(bombInterval);
-    spawnInterval = setInterval(spawnItem, Math.max(300, 800 - (level - 1) * 60));
-    bombInterval = setInterval(spawnBomb, Math.max(1000, 2500 - (level - 1) * 150));
-}
+        // Отрисовка
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            fruits.forEach(f => {
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+                ctx.fillStyle = f.sliced ? '#ff6666' : '#ffaa00';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
 
-function spawnItem() {
-    if (gameOver || lives <= 0) return;
-    const food = FOODS[Math.floor(Math.random() * FOODS.length)];
-    const fromLeft = Math.random() > 0.5;
-    items.push({ x: fromLeft ? -50 : W + 50, y: 40 + Math.random() * (H - 140), vx: (fromLeft ? 1 : -1) * (2 + Math.random() * 3) * speedMultiplier, vy: (Math.random() - 0.5) * 5 * speedMultiplier, emoji: food.emoji, size: food.size, points: food.points, color: food.color, gravity: 0.25, rotation: 0, rotSpeed: (Math.random() - 0.5) * 0.08 });
-}
+        // Игровой цикл
+        setInterval(() => {
+            update();
+            draw();
+        }, 30);
 
-function spawnBomb() {
-    if (gameOver || lives <= 0) return;
-    const bomb = BOMBS[Math.floor(Math.random() * BOMBS.length)];
-    const fromLeft = Math.random() > 0.5;
-    bombs.push({ x: fromLeft ? -50 : W + 50, y: 40 + Math.random() * (H - 140), vx: (fromLeft ? 1 : -1) * (2.5 + Math.random() * 2.5) * speedMultiplier, vy: (Math.random() - 0.5) * 4 * speedMultiplier, emoji: bomb.emoji, size: bomb.size, gravity: 0.3 });
-}
+        // Спавн фруктов
+        setInterval(() => {
+            if (Math.random() < 0.6) spawnFruit();
+        }, 1200);
 
-function createParticles(x, y, color) { for (let i = 0; i < 15; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12 - 5, life: 1, color, size: 3 + Math.random() * 6 }) }
+        // Обработка касания (свайпа)
+        let touchPath = [];
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            touchPath = [];
+            const t = e.touches[0];
+            touchPath.push({ x: t.clientX, y: t.clientY });
+        });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            touchPath.push({ x: t.clientX, y: t.clientY });
 
-function slashLine(x1, y1, x2, y2) {
-    items = items.filter(item => { if (distToSegment(item.x, item.y, x1, y1, x2, y2) < item.size + 12) { score += item.points; let e = Math.floor(item.points / 2); addGRRR(e); createParticles(item.x, item.y, item.color); updateScore(); updateLevel(); if (e > 0) showToast(`+${e} $GRRR`); return false } return true });
-    bombs = bombs.filter(bomb => { if (distToSegment(bomb.x, bomb.y, x1, y1, x2, y2) < bomb.size + 12) { lives--; createParticles(bomb.x, bomb.y, '#ff4444'); updateLives(); if (lives <= 0) endGame(); return false } return true });
-}
+            // Проверяем пересечение линии с фруктами
+            if (touchPath.length >= 2) {
+                const p1 = touchPath[touchPath.length - 2];
+                const p2 = touchPath[touchPath.length - 1];
+                fruits.forEach(f => {
+                    if (f.sliced) return;
+                    // Простая проверка попадания линии в окружность
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const fx = f.x - p1.x;
+                    const fy = f.y - p1.y;
+                    const dot = fx * dx + fy * dy;
+                    const lenSq = dx*dx + dy*dy;
+                    const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, dot / lenSq));
+                    const closestX = p1.x + t * dx;
+                    const closestY = p1.y + t * dy;
+                    const dist = Math.hypot(f.x - closestX, f.y - closestY);
+                    if (dist <= f.radius) {
+                        f.sliced = true;
+                        currentSliceScore += 10; // 10 очков за разрез
+                        // Начисление GRRR каждые 20 очков (как в оригинале)
+                        if (currentSliceScore >= 20) {
+                            const earned = Math.floor(currentSliceScore / 20);
+                            addGRRR(earned);
+                            currentSliceScore = currentSliceScore % 20;
+                        }
+                        score += 10;
+                    }
+                });
+            }
+        });
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            touchPath = [];
+        });
 
-function distToSegment(px, py, x1, y1, x2, y2) { const dx = x2 - x1, dy = y2 - y1; const lenSq = dx * dx + dy * dy; if (lenSq === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1)); let t = ((px - x1) * dx + (py - y1) * dy) / lenSq; t = Math.max(0, Math.min(1, t)); const cx = x1 + t * dx, cy = y1 + t * dy; return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) }
-
-function update() { if (gameOver || lives <= 0) return; items.forEach(i => { i.x += i.vx; i.y += i.vy; i.vy += i.gravity; i.rotation += i.rotSpeed }); items = items.filter(i => i.x > -80 && i.x < W + 80 && i.y < H + 80); bombs.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += b.gravity }); bombs = bombs.filter(b => b.x > -80 && b.x < W + 80 && b.y < H + 80); particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; return p.life > 0 }) }
-
-function draw() {
-    ctx.clearRect(0, 0, W, H);
-    if (isDown) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke(); ctx.strokeStyle = 'rgba(249,202,36,0.4)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke() }
-    items.forEach(i => { ctx.save(); ctx.translate(i.x, i.y); ctx.rotate(i.rotation); ctx.font = `${i.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i.emoji, 0, 0); ctx.restore() });
-    bombs.forEach(b => { ctx.font = `${b.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.emoji, b.x, b.y) });
-    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill() }); ctx.globalAlpha = 1;
-    if (gameOver) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Игра окончена', W / 2, H / 2 - 15); ctx.font = '18px sans-serif'; ctx.fillText('Счёт: ' + score, W / 2, H / 2 + 25) }
-}
-
-function updateScore() { document.getElementById('scoreDisplay').textContent = score; document.getElementById('bestDisplay').textContent = best }
-function updateLives() { const d = document.getElementById('livesDisplay'); d.innerHTML = ''; for (let i = 0; i < 3; i++) d.innerHTML += `<span>${i < lives ? '❤️' : '🖤'}</span>` }
-function endGame() { gameOver = true; clearInterval(spawnInterval); clearInterval(bombInterval); if (score > best) { best = score; localStorage.setItem('honey_best', best) } updateScore(); showToast('💀 Игра окончена! Счёт: ' + score) }
-
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop) }
-
-canvas.addEventListener('mousedown', e => { isDown = true; prevX = e.offsetX; prevY = e.offsetY; mouseX = e.offsetX; mouseY = e.offsetY });
-canvas.addEventListener('mousemove', e => { if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.offsetX; mouseY = e.offsetY; slashLine(prevX, prevY, mouseX, mouseY) } else { mouseX = e.offsetX; mouseY = e.offsetY } });
-canvas.addEventListener('mouseup', () => { isDown = false });
-canvas.addEventListener('touchstart', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); prevX = e.touches[0].clientX - r.left; prevY = e.touches[0].clientY - r.top; mouseX = prevX; mouseY = prevY; isDown = true });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.touches[0].clientX - r.left; mouseY = e.touches[0].clientY - r.top; slashLine(prevX, prevY, mouseX, mouseY) } });
-canvas.addEventListener('touchend', () => { isDown = false });
-
-document.getElementById('newGameBtn').addEventListener('click', () => { items = []; bombs = []; particles = []; score = 0; lives = 3; gameOver = false; level = 1; speedMultiplier = 1; updateScore(); updateLives(); updateLevel() });
-document.getElementById('dailyBonusBtn').addEventListener('click', () => { const last = localStorage.getItem('grrr_bonus_date'); if (last === today) { showToast('🎁 Уже получен'); return } localStorage.setItem('grrr_bonus_date', today); addGRRR(10); showToast('🎁 +10 $GRRR') });
-document.getElementById('referralBtn').addEventListener('click', () => { const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2, 8); localStorage.setItem('refId', ref); const url = location.origin + location.pathname + '?ref=' + ref; if (navigator.share) navigator.share({ title: 'Медовый Ниндзя • #GRRR', text: 'Режь и фарми $GRRR!', url }); else prompt('Ссылка:', url); addGRRR(5); showToast('📨 +5 $GRRR') });
-const refParam = new URLSearchParams(location.search).get('ref'); if (refParam && !localStorage.getItem('refUsed')) { localStorage.setItem('refUsed', '1'); addGRRR(10); showToast('🎁 +10 $GRRR') }
-
-updateScore(); updateLives(); updateLevel(); gameLoop();
-</script>
+        // Защита от скролла
+        document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    </script>
 </body>
 </html>
