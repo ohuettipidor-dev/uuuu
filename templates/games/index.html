@@ -100,6 +100,42 @@
 </div>
 
 <script>
+// ================= ВОЗВРАЩАЕМ СИНХРОНИЗАЦИЮ (без показа баланса) =================
+(async function syncGameGRRR() {
+    const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
+    const lastSynced = parseFloat(localStorage.getItem('grrr_last_synced') || '0');
+    const toSend = localBalance - lastSynced;
+    if (toSend <= 0) return;
+
+    try {
+        const resp = await fetch('/api/sync_grrr', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'amount=' + toSend
+        });
+        const data = await resp.json();
+        if (data.success) {
+            // Обновляем "последнее синхронизированное" значение
+            localStorage.setItem('grrr_last_synced', localBalance);
+            // Сразу запрашиваем актуальный серверный баланс и обновляем localStorage
+            const fresh = await fetch('/api/grrr_balance');
+            const freshData = await fresh.json();
+            if (freshData.balance !== undefined) {
+                localStorage.setItem('grrr_balance', freshData.balance);
+            }
+        }
+    } catch (e) {
+        console.log('Синхронизация отложена');
+    }
+})();
+
+// При возвращении на вкладку – повторяем синхронизацию
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        syncGameGRRR();
+    }
+});
+
 // ========== БУСТЫ (БЕЗ ИЗМЕНЕНИЙ) ==========
 let currentBoost=localStorage.getItem('game_boost')||null,boostEndTime=localStorage.getItem('game_boost_end')||null;
 function updateBoostUI(){
