@@ -100,7 +100,7 @@
 </div>
 
 <script>
-// ================= ВОЗВРАЩАЕМ СИНХРОНИЗАЦИЮ (без показа баланса) =================
+// ================= СИНХРОНИЗАЦИЯ GRRR (ТИХАЯ) =================
 (async function syncGameGRRR() {
     const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
     const lastSynced = parseFloat(localStorage.getItem('grrr_last_synced') || '0');
@@ -115,21 +115,16 @@
         });
         const data = await resp.json();
         if (data.success) {
-            // Обновляем "последнее синхронизированное" значение
             localStorage.setItem('grrr_last_synced', localBalance);
-            // Сразу запрашиваем актуальный серверный баланс и обновляем localStorage
-            const fresh = await fetch('/api/grrr_balance');
-            const freshData = await fresh.json();
-            if (freshData.balance !== undefined) {
-                localStorage.setItem('grrr_balance', freshData.balance);
-            }
+            // Обновляем локальный баланс серверным значением (для синхронизации)
+            localStorage.setItem('grrr_balance', data.new_balance);
         }
     } catch (e) {
-        console.log('Синхронизация отложена');
+        console.log('Синхронизация GRRR отложена');
     }
 })();
 
-// При возвращении на вкладку – повторяем синхронизацию
+// При возвращении на вкладку – сразу отправляем накопленное
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
         syncGameGRRR();
