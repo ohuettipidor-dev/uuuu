@@ -19,8 +19,6 @@
         }
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
         .logo{font-weight:700;font-size:1.4rem;background:linear-gradient(135deg,#f9ca24,#f0932b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .balance-panel{background:rgba(0,0,0,0.35);border-radius:30px;padding:8px 16px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,215,0,0.3)}
-        .balance-text{font-weight:700;font-size:1.2rem;color:#ffeaa7}
         .score-panel{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
         .score-panel span{color:#f9ca24;font-weight:bold}
         .level-panel{text-align:center;margin:4px 0;font-size:12px;color:#aaa}
@@ -51,10 +49,6 @@
 <div class="game-container">
     <div class="header">
         <span class="logo">🍯 Медовый Ниндзя</span>
-        <div class="balance-panel">
-            <span>🪙</span>
-            <span class="balance-text" id="grrrBalance">0</span>
-        </div>
     </div>
 
     <div class="score-panel">
@@ -90,100 +84,121 @@
 </div>
 
 <script>
-(function(){
-    const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
-    let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0');
-    let daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
-    const today=new Date().toDateString();
-    if(localStorage.getItem('grrr_date')!==today){daily=0;localStorage.setItem(DAILY_KEY,'0');localStorage.setItem('grrr_date',today)}
-    function save(){localStorage.setItem(STORAGE_KEY,balance);localStorage.setItem(DAILY_KEY,daily)}
-    function updateUI(){document.getElementById('grrrBalance').textContent=balance}
-    function addGRRR(a){if(daily>=LIMIT)return false;let add=Math.min(a,LIMIT-daily);balance+=add;daily+=add;save();updateUI();return true}
-    function showToast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove()},3000)}
+// ================= ГЛАВНОЕ ЯДРО (тихая синхронизация) =================
+const DAILY_KEY = 'grrr_daily';
+const LIMIT = 100;
+let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
+const today = new Date().toDateString();
+if (localStorage.getItem('grrr_date') !== today) {
+    daily = 0;
+    localStorage.setItem(DAILY_KEY, '0');
+    localStorage.setItem('grrr_date', today);
+}
+function saveDaily() { localStorage.setItem(DAILY_KEY, daily); }
 
-    const canvas=document.getElementById('gameCanvas');
-    const ctx=canvas.getContext('2d');
-    const W=350,H=380;
-    let score=0,best=parseInt(localStorage.getItem('honey_best')||'0'),lives=3,gameOver=false;
-    let items=[],bombs=[],particles=[],mouseX=W/2,mouseY=H/2,isDown=false,prevX=0,prevY=0;
-    let level=1,speedMultiplier=1,spawnInterval=null,bombInterval=null;
+// Функция начисления GRRR (мгновенно отправляет на сервер)
+function addGRRR(amount) {
+    if (daily >= LIMIT) return false;
+    let add = Math.min(amount, LIMIT - daily);
+    daily += add;
+    saveDaily();
+    // Отправляем запрос на сервер (тихо, без отображения баланса)
+    fetch('/api/sync_grrr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'amount=' + add
+    }).catch(() => {});
+    return true;
+}
 
-    const FOODS=[
-        {emoji:'🍯',size:42,points:5,color:'#f9ca24'},
-        {emoji:'🍒',size:40,points:3,color:'#ff6b6b'},
-        {emoji:'🍇',size:38,points:2,color:'#a29bfe'},
-        {emoji:'🍊',size:44,points:4,color:'#f0932b'},
-        {emoji:'🍎',size:42,points:5,color:'#e74c3c'},
-        {emoji:'🍉',size:48,points:8,color:'#4cd964'},
-        {emoji:'🍓',size:36,points:3,color:'#ff4444'},
-    ];
-    const BOMBS=[{emoji:'💣',size:40},{emoji:'🧨',size:38},{emoji:'💥',size:36}];
+function showToast(t) {
+    const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
+    document.body.appendChild(d); setTimeout(() => { if (d.parentNode) d.remove(); }, 3000);
+}
+// ================================================================
 
-    function updateLevel(){
-        level=Math.floor(score/30)+1;
-        speedMultiplier=1+(level-1)*0.3;
-        if(speedMultiplier>5)speedMultiplier=5;
-        document.getElementById('levelDisplay').textContent=level;
-        document.getElementById('speedDisplay').textContent=speedMultiplier.toFixed(1)+'×';
-        clearInterval(spawnInterval);clearInterval(bombInterval);
-        spawnInterval=setInterval(spawnItem,Math.max(300,800-(level-1)*60));
-        bombInterval=setInterval(spawnBomb,Math.max(1000,2500-(level-1)*150));
-    }
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const W = 350, H = 380;
+let score = 0, best = parseInt(localStorage.getItem('honey_best') || '0'), lives = 3, gameOver = false;
+let items = [], bombs = [], particles = [], mouseX = W / 2, mouseY = H / 2, isDown = false, prevX = 0, prevY = 0;
+let level = 1, speedMultiplier = 1, spawnInterval = null, bombInterval = null;
 
-    function spawnItem(){
-        if(gameOver||lives<=0)return;
-        const food=FOODS[Math.floor(Math.random()*FOODS.length)];
-        const fromLeft=Math.random()>0.5;
-        items.push({x:fromLeft?-50:W+50,y:40+Math.random()*(H-140),vx:(fromLeft?1:-1)*(2+Math.random()*3)*speedMultiplier,vy:(Math.random()-0.5)*5*speedMultiplier,emoji:food.emoji,size:food.size,points:food.points,color:food.color,gravity:0.25,rotation:0,rotSpeed:(Math.random()-0.5)*0.08});
-    }
+const FOODS = [
+    { emoji: '🍯', size: 42, points: 5, color: '#f9ca24' },
+    { emoji: '🍒', size: 40, points: 3, color: '#ff6b6b' },
+    { emoji: '🍇', size: 38, points: 2, color: '#a29bfe' },
+    { emoji: '🍊', size: 44, points: 4, color: '#f0932b' },
+    { emoji: '🍎', size: 42, points: 5, color: '#e74c3c' },
+    { emoji: '🍉', size: 48, points: 8, color: '#4cd964' },
+    { emoji: '🍓', size: 36, points: 3, color: '#ff4444' },
+];
+const BOMBS = [{ emoji: '💣', size: 40 }, { emoji: '🧨', size: 38 }, { emoji: '💥', size: 36 }];
 
-    function spawnBomb(){
-        if(gameOver||lives<=0)return;
-        const bomb=BOMBS[Math.floor(Math.random()*BOMBS.length)];
-        const fromLeft=Math.random()>0.5;
-        bombs.push({x:fromLeft?-50:W+50,y:40+Math.random()*(H-140),vx:(fromLeft?1:-1)*(2.5+Math.random()*2.5)*speedMultiplier,vy:(Math.random()-0.5)*4*speedMultiplier,emoji:bomb.emoji,size:bomb.size,gravity:0.3});
-    }
+function updateLevel() {
+    level = Math.floor(score / 30) + 1;
+    speedMultiplier = 1 + (level - 1) * 0.3;
+    if (speedMultiplier > 5) speedMultiplier = 5;
+    document.getElementById('levelDisplay').textContent = level;
+    document.getElementById('speedDisplay').textContent = speedMultiplier.toFixed(1) + '×';
+    clearInterval(spawnInterval); clearInterval(bombInterval);
+    spawnInterval = setInterval(spawnItem, Math.max(300, 800 - (level - 1) * 60));
+    bombInterval = setInterval(spawnBomb, Math.max(1000, 2500 - (level - 1) * 150));
+}
 
-    function createParticles(x,y,color){for(let i=0;i<15;i++)particles.push({x,y,vx:(Math.random()-0.5)*12,vy:(Math.random()-0.5)*12-5,life:1,color,size:3+Math.random()*6})}
+function spawnItem() {
+    if (gameOver || lives <= 0) return;
+    const food = FOODS[Math.floor(Math.random() * FOODS.length)];
+    const fromLeft = Math.random() > 0.5;
+    items.push({ x: fromLeft ? -50 : W + 50, y: 40 + Math.random() * (H - 140), vx: (fromLeft ? 1 : -1) * (2 + Math.random() * 3) * speedMultiplier, vy: (Math.random() - 0.5) * 5 * speedMultiplier, emoji: food.emoji, size: food.size, points: food.points, color: food.color, gravity: 0.25, rotation: 0, rotSpeed: (Math.random() - 0.5) * 0.08 });
+}
 
-    function slashLine(x1,y1,x2,y2){
-        items=items.filter(item=>{if(distToSegment(item.x,item.y,x1,y1,x2,y2)<item.size+12){score+=item.points;let e=Math.floor(item.points/2);addGRRR(e);createParticles(item.x,item.y,item.color);updateScore();updateLevel();if(e>0)showToast(`+${e} $GRRR`);return false}return true});
-        bombs=bombs.filter(bomb=>{if(distToSegment(bomb.x,bomb.y,x1,y1,x2,y2)<bomb.size+12){lives--;createParticles(bomb.x,bomb.y,'#ff4444');updateLives();if(lives<=0)endGame();return false}return true});
-    }
+function spawnBomb() {
+    if (gameOver || lives <= 0) return;
+    const bomb = BOMBS[Math.floor(Math.random() * BOMBS.length)];
+    const fromLeft = Math.random() > 0.5;
+    bombs.push({ x: fromLeft ? -50 : W + 50, y: 40 + Math.random() * (H - 140), vx: (fromLeft ? 1 : -1) * (2.5 + Math.random() * 2.5) * speedMultiplier, vy: (Math.random() - 0.5) * 4 * speedMultiplier, emoji: bomb.emoji, size: bomb.size, gravity: 0.3 });
+}
 
-    function distToSegment(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1;const lenSq=dx*dx+dy*dy;if(lenSq===0)return Math.sqrt((px-x1)*(px-x1)+(py-y1)*(py-y1));let t=((px-x1)*dx+(py-y1)*dy)/lenSq;t=Math.max(0,Math.min(1,t));const cx=x1+t*dx,cy=y1+t*dy;return Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))}
+function createParticles(x, y, color) { for (let i = 0; i < 15; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12 - 5, life: 1, color, size: 3 + Math.random() * 6 }) }
 
-    function update(){if(gameOver||lives<=0)return;items.forEach(i=>{i.x+=i.vx;i.y+=i.vy;i.vy+=i.gravity;i.rotation+=i.rotSpeed});items=items.filter(i=>i.x>-80&&i.x<W+80&&i.y<H+80);bombs.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.vy+=b.gravity});bombs=bombs.filter(b=>b.x>-80&&b.x<W+80&&b.y<H+80);particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.2;p.life-=0.02;return p.life>0})}
+function slashLine(x1, y1, x2, y2) {
+    items = items.filter(item => { if (distToSegment(item.x, item.y, x1, y1, x2, y2) < item.size + 12) { score += item.points; let e = Math.floor(item.points / 2); addGRRR(e); createParticles(item.x, item.y, item.color); updateScore(); updateLevel(); if (e > 0) showToast(`+${e} $GRRR`); return false } return true });
+    bombs = bombs.filter(bomb => { if (distToSegment(bomb.x, bomb.y, x1, y1, x2, y2) < bomb.size + 12) { lives--; createParticles(bomb.x, bomb.y, '#ff4444'); updateLives(); if (lives <= 0) endGame(); return false } return true });
+}
 
-    function draw(){
-        ctx.clearRect(0,0,W,H);
-        if(isDown){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(prevX,prevY);ctx.lineTo(mouseX,mouseY);ctx.stroke();ctx.strokeStyle='rgba(249,202,36,0.4)';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(prevX,prevY);ctx.lineTo(mouseX,mouseY);ctx.stroke()}
-        items.forEach(i=>{ctx.save();ctx.translate(i.x,i.y);ctx.rotate(i.rotation);ctx.font=`${i.size}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i.emoji,0,0);ctx.restore()});
-        bombs.forEach(b=>{ctx.font=`${b.size}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.emoji,b.x,b.y)});
-        particles.forEach(p=>{ctx.fillStyle=p.color;ctx.globalAlpha=p.life;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;
-        if(gameOver){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.fillText('Игра окончена',W/2,H/2-15);ctx.font='18px sans-serif';ctx.fillText('Счёт: '+score,W/2,H/2+25)}
-    }
+function distToSegment(px, py, x1, y1, x2, y2) { const dx = x2 - x1, dy = y2 - y1; const lenSq = dx * dx + dy * dy; if (lenSq === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1)); let t = ((px - x1) * dx + (py - y1) * dy) / lenSq; t = Math.max(0, Math.min(1, t)); const cx = x1 + t * dx, cy = y1 + t * dy; return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) }
 
-    function updateScore(){document.getElementById('scoreDisplay').textContent=score;document.getElementById('bestDisplay').textContent=best}
-    function updateLives(){const d=document.getElementById('livesDisplay');d.innerHTML='';for(let i=0;i<3;i++)d.innerHTML+=`<span>${i<lives?'❤️':'🖤'}</span>`}
-    function endGame(){gameOver=true;clearInterval(spawnInterval);clearInterval(bombInterval);if(score>best){best=score;localStorage.setItem('honey_best',best)}updateScore();showToast('💀 Игра окончена! Счёт: '+score)}
+function update() { if (gameOver || lives <= 0) return; items.forEach(i => { i.x += i.vx; i.y += i.vy; i.vy += i.gravity; i.rotation += i.rotSpeed }); items = items.filter(i => i.x > -80 && i.x < W + 80 && i.y < H + 80); bombs.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += b.gravity }); bombs = bombs.filter(b => b.x > -80 && b.x < W + 80 && b.y < H + 80); particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; return p.life > 0 }) }
 
-    function gameLoop(){update();draw();requestAnimationFrame(gameLoop)}
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    if (isDown) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke(); ctx.strokeStyle = 'rgba(249,202,36,0.4)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke() }
+    items.forEach(i => { ctx.save(); ctx.translate(i.x, i.y); ctx.rotate(i.rotation); ctx.font = `${i.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i.emoji, 0, 0); ctx.restore() });
+    bombs.forEach(b => { ctx.font = `${b.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.emoji, b.x, b.y) });
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill() }); ctx.globalAlpha = 1;
+    if (gameOver) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Игра окончена', W / 2, H / 2 - 15); ctx.font = '18px sans-serif'; ctx.fillText('Счёт: ' + score, W / 2, H / 2 + 25) }
+}
 
-    canvas.addEventListener('mousedown',e=>{isDown=true;prevX=e.offsetX;prevY=e.offsetY;mouseX=e.offsetX;mouseY=e.offsetY});
-    canvas.addEventListener('mousemove',e=>{if(isDown){prevX=mouseX;prevY=mouseY;mouseX=e.offsetX;mouseY=e.offsetY;slashLine(prevX,prevY,mouseX,mouseY)}else{mouseX=e.offsetX;mouseY=e.offsetY}});
-    canvas.addEventListener('mouseup',()=>{isDown=false});
-    canvas.addEventListener('touchstart',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();prevX=e.touches[0].clientX-r.left;prevY=e.touches[0].clientY-r.top;mouseX=prevX;mouseY=prevY;isDown=true});
-    canvas.addEventListener('touchmove',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();if(isDown){prevX=mouseX;prevY=mouseY;mouseX=e.touches[0].clientX-r.left;mouseY=e.touches[0].clientY-r.top;slashLine(prevX,prevY,mouseX,mouseY)}});
-    canvas.addEventListener('touchend',()=>{isDown=false});
+function updateScore() { document.getElementById('scoreDisplay').textContent = score; document.getElementById('bestDisplay').textContent = best }
+function updateLives() { const d = document.getElementById('livesDisplay'); d.innerHTML = ''; for (let i = 0; i < 3; i++) d.innerHTML += `<span>${i < lives ? '❤️' : '🖤'}</span>` }
+function endGame() { gameOver = true; clearInterval(spawnInterval); clearInterval(bombInterval); if (score > best) { best = score; localStorage.setItem('honey_best', best) } updateScore(); showToast('💀 Игра окончена! Счёт: ' + score) }
 
-    document.getElementById('newGameBtn').addEventListener('click',()=>{items=[];bombs=[];particles=[];score=0;lives=3;gameOver=false;level=1;speedMultiplier=1;updateScore();updateLives();updateLevel()});
-    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 $GRRR')});
-    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Медовый Ниндзя • #GRRR',text:'Режь и фарми $GRRR!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 $GRRR')});
-    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 $GRRR')}
+function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop) }
 
-    updateScore();updateLives();updateUI();updateLevel();gameLoop();
-})();
+canvas.addEventListener('mousedown', e => { isDown = true; prevX = e.offsetX; prevY = e.offsetY; mouseX = e.offsetX; mouseY = e.offsetY });
+canvas.addEventListener('mousemove', e => { if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.offsetX; mouseY = e.offsetY; slashLine(prevX, prevY, mouseX, mouseY) } else { mouseX = e.offsetX; mouseY = e.offsetY } });
+canvas.addEventListener('mouseup', () => { isDown = false });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); prevX = e.touches[0].clientX - r.left; prevY = e.touches[0].clientY - r.top; mouseX = prevX; mouseY = prevY; isDown = true });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.touches[0].clientX - r.left; mouseY = e.touches[0].clientY - r.top; slashLine(prevX, prevY, mouseX, mouseY) } });
+canvas.addEventListener('touchend', () => { isDown = false });
+
+document.getElementById('newGameBtn').addEventListener('click', () => { items = []; bombs = []; particles = []; score = 0; lives = 3; gameOver = false; level = 1; speedMultiplier = 1; updateScore(); updateLives(); updateLevel() });
+document.getElementById('dailyBonusBtn').addEventListener('click', () => { const last = localStorage.getItem('grrr_bonus_date'); if (last === today) { showToast('🎁 Уже получен'); return } localStorage.setItem('grrr_bonus_date', today); addGRRR(10); showToast('🎁 +10 $GRRR') });
+document.getElementById('referralBtn').addEventListener('click', () => { const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2, 8); localStorage.setItem('refId', ref); const url = location.origin + location.pathname + '?ref=' + ref; if (navigator.share) navigator.share({ title: 'Медовый Ниндзя • #GRRR', text: 'Режь и фарми $GRRR!', url }); else prompt('Ссылка:', url); addGRRR(5); showToast('📨 +5 $GRRR') });
+const refParam = new URLSearchParams(location.search).get('ref'); if (refParam && !localStorage.getItem('refUsed')) { localStorage.setItem('refUsed', '1'); addGRRR(10); showToast('🎁 +10 $GRRR') }
+
+updateScore(); updateLives(); updateLevel(); gameLoop();
 </script>
 </body>
 </html>
