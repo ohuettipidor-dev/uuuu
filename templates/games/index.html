@@ -70,8 +70,6 @@
     <div class="section-title"><span>👤 Игры сообщества</span><a href="#" onclick="document.getElementById('uploadForm').style.display='block';this.style.display='none'">✨ + Добавить</a></div>
     <div class="upload-form" id="uploadForm">
         <form method="POST" action="/games/upload" enctype="multipart/form-data">
-            <!-- Если используется Flask-WTF, замени на {{ csrf_token() }} -->
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="title" placeholder="Название игры" required>
             <textarea name="description" placeholder="Описание"></textarea>
             <input type="text" name="icon" placeholder="Иконка (эмодзи)" maxlength="2" value="🎮">
@@ -82,21 +80,7 @@
     </div>
 
     {% for game in user_games %}
-    <a href="/games/play/{{ game.id }}" class="user-game-item">
-        {# Иконка выводится через textContent для безопасности (даже если сервер пропустит вредоносный код) #}
-        <span class="game-icon" id="game-icon-{{ game.id }}"></span>
-        <script>
-            (function() {
-                var el = document.getElementById('game-icon-{{ game.id }}');
-                if (el) el.textContent = '{{ game.icon | e }}';  // |e экранирует кавычки
-            })();
-        </script>
-        <div class="game-info">
-            <div class="name">{{ game.title | e }}</div>
-            <div class="author">{{ game.description or '' | e }} · от @{{ game.user.username | e }}</div>
-            <div class="stats">▶️ {{ game.plays_count }} · ⭐ {{ game.rating }}</div>
-        </div>
-    </a>
+    <a href="/games/play/{{ game.id }}" class="user-game-item"><span class="game-icon">{{ game.icon }}</span><div class="game-info"><div class="name">{{ game.title }}</div><div class="author">{{ game.description or '' }} · от @{{ game.user.username }}</div><div class="stats">▶️ {{ game.plays_count }} · ⭐ {{ game.rating }}</div></div></a>
     {% else %}
     <p style="color:#888;text-align:center;font-size:12px;">Пока нет игр. Будь первым!</p>
     {% endfor %}
@@ -116,9 +100,8 @@
 </div>
 
 <script>
-// ================= ИСПРАВЛЕННАЯ СИНХРОНИЗАЦИЯ GRRR =================
-// Теперь функция доступна глобально и вызывается из любого места.
-async function syncGameGRRR() {
+// ================= СИНХРОНИЗАЦИЯ GRRR (ТИХАЯ) =================
+(async function syncGameGRRR() {
     const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
     const lastSynced = parseFloat(localStorage.getItem('grrr_last_synced') || '0');
     const toSend = localBalance - lastSynced;
@@ -132,91 +115,42 @@ async function syncGameGRRR() {
         });
         const data = await resp.json();
         if (data.success) {
-            // При успехе запоминаем отправленное и обновляем баланс с сервера
-            localStorage.setItem('grrr_last_synced', localBalance.toString());
-            localStorage.setItem('grrr_balance', data.new_balance.toString());
+            localStorage.setItem('grrr_last_synced', localBalance);
+            // Обновляем локальный баланс серверным значением (для синхронизации)
+            localStorage.setItem('grrr_balance', data.new_balance);
         }
     } catch (e) {
         console.log('Синхронизация GRRR отложена');
     }
-}
+})();
 
-// Запускаем синхронизацию при загрузке
-syncGameGRRR();
-
-// При возврате на вкладку – сразу отправляем накопленное
+// При возвращении на вкладку – сразу отправляем накопленное
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
         syncGameGRRR();
     }
 });
 
-// ========== БУСТЫ (БЕЗ ИЗМЕНЕНИЙ, ТОЛЬКО НЕБОЛЬШОЙ РЕФАКТОРИНГ) ==========
-let currentBoost = localStorage.getItem('game_boost') || null;
-let boostEndTime = localStorage.getItem('game_boost_end') || null;
-
-function updateBoostUI() {
-    const now = Date.now();
-    if (boostEndTime && now > parseInt(boostEndTime)) {
-        currentBoost = null;
-        boostEndTime = null;
-        localStorage.removeItem('game_boost');
-        localStorage.removeItem('game_boost_end');
-    }
-
-    const statusEl = document.getElementById('boostStatus');
-    if (!statusEl) return;
-
-    if (currentBoost) {
-        const remaining = Math.max(0, Math.floor((parseInt(boostEndTime) - now) / 60000));
-        // Безопасная установка текста (только статический эмодзи и число)
-        statusEl.textContent = '⚡ Буст ' + currentBoost + ' активен! Осталось: ' + remaining + ' мин';
-        statusEl.style.color = '#a29bfe';
-    } else {
-        statusEl.textContent = 'Буст не активен';
-        statusEl.style.color = '#aaa';
-    }
+// ========== БУСТЫ (БЕЗ ИЗМЕНЕНИЙ) ==========
+let currentBoost=localStorage.getItem('game_boost')||null,boostEndTime=localStorage.getItem('game_boost_end')||null;
+function updateBoostUI(){
+    const now=Date.now();
+    if(boostEndTime&&now>parseInt(boostEndTime)){currentBoost=null;boostEndTime=null;localStorage.removeItem('game_boost');localStorage.removeItem('game_boost_end')}
+    const s=document.getElementById('boostStatus');
+    if(currentBoost){const r=Math.max(0,Math.floor((parseInt(boostEndTime)-now)/60000));s.innerHTML=`⚡ Буст ${currentBoost} активен! Осталось: ${r} мин`;s.style.color='#a29bfe'}
+    else{s.innerHTML='Буст не активен';s.style.color='#aaa'}
 }
-
-function activateBoost(boostType, cost) {
-    if (currentBoost) {
-        alert('Уже активен буст!');
-        return;
-    }
-    if (!confirm('Купить буст ⚡' + boostType + ' за ' + cost + ' 💎?')) return;
-
-    currentBoost = boostType;
-    boostEndTime = (Date.now() + 30 * 60000).toString();
-
-    localStorage.setItem('game_boost', currentBoost);
-    localStorage.setItem('game_boost_end', boostEndTime);
-
-    fetch('/api/spend_coins', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'amount=' + cost
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (!d.success) {
-            currentBoost = null;
-            boostEndTime = null;
-            localStorage.removeItem('game_boost');
-            localStorage.removeItem('game_boost_end');
-            alert('Недостаточно 💎');
-        }
-        updateBoostUI();
-    })
-    .catch(() => {
-        alert('Ошибка сети');
-        updateBoostUI();
-    });
-
-    updateBoostUI();
+function activateBoost(t,c){
+    if(currentBoost){alert('Уже активен буст!');return}
+    if(!confirm(`Купить буст ⚡${t} за ${c} 💎?`))return;
+    currentBoost=t;boostEndTime=Date.now()+30*60000;
+    localStorage.setItem('game_boost',t);localStorage.setItem('game_boost_end',boostEndTime);
+    fetch('/api/spend_coins',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'amount='+c})
+    .then(r=>r.json()).then(d=>{if(!d.success){currentBoost=null;boostEndTime=null;localStorage.removeItem('game_boost');localStorage.removeItem('game_boost_end');alert('Недостаточно 💎')}updateBoostUI()})
+    .catch(()=>{alert('Ошибка');updateBoostUI()});
+    updateBoostUI()
 }
-
-updateBoostUI();
-setInterval(updateBoostUI, 30000);
+updateBoostUI();setInterval(updateBoostUI,30000);
 </script>
 </body>
 </html>
