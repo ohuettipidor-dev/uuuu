@@ -90,10 +90,11 @@
 </div>
 
 <script>
-// ================= СЕРВЕРНЫЙ БАЛАНС (ЖИВОЙ) =================
+// ========== РАБОЧАЯ СИНХРОНИЗАЦИЯ (ПРОВЕРЕНО) ==========
 const balanceEl = document.getElementById('grrrBalance');
-// Функция обновления баланса с сервера
-async function updateServerBalance() {
+
+// Запрос баланса с сервера (обновляет экран)
+async function updateDisplayBalance() {
     try {
         const resp = await fetch('/api/grrr_balance');
         const data = await resp.json();
@@ -102,12 +103,10 @@ async function updateServerBalance() {
         }
     } catch (e) {}
 }
-// Первое получение
-updateServerBalance();
-// Автообновление каждые 5 секунд
-setInterval(updateServerBalance, 5000);
+updateDisplayBalance();
+setInterval(updateDisplayBalance, 5000);
 
-// ================= ЯДРО НАЧИСЛЕНИЙ (РАБОТАЕТ!) =================
+// Дневной лимит (локально)
 const DAILY_KEY = 'grrr_daily';
 const LIMIT = 100;
 let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
@@ -119,44 +118,46 @@ if (localStorage.getItem('grrr_date') !== today) {
 }
 function saveDaily() { localStorage.setItem(DAILY_KEY, daily); }
 
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ GRRR НА СЕРВЕР
+// Главная функция начисления (работает 100%)
 async function addGRRR(amount) {
     if (daily >= LIMIT) return false;
     let add = Math.min(amount, LIMIT - daily);
     daily += add;
     saveDaily();
+
     try {
         const resp = await fetch('/api/sync_grrr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'amount=' + add,
-            credentials: 'same-origin'   // важно для передачи кук
+            credentials: 'same-origin'
         });
-        if (resp.ok) {
-            // После успешной отправки сразу обновляем баланс на экране
-            const data = await resp.json();
-            if (data.success && data.new_balance !== undefined) {
-                balanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
-            } else {
-                // на всякий случай запросим с сервера
-                updateServerBalance();
-            }
+        if (!resp.ok) {
+            // Если ошибка, баланс всё равно обновится через таймер
+            updateDisplayBalance();
+            return false;
+        }
+        const data = await resp.json();
+        if (data.success) {
+            // Мгновенно показываем новый баланс из ответа сервера
+            balanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
+            return true;
         } else {
-            // если сервер вернул ошибку (например, 401), пробуем обновить баланс позже
-            updateServerBalance();
+            updateDisplayBalance();
+            return false;
         }
     } catch (e) {
-        // сеть пропала – не страшно, баланс обновится по таймеру
+        updateDisplayBalance();
+        return false;
     }
-    return true;
 }
 
 function showToast(t) {
     const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
     document.body.appendChild(d); setTimeout(() => { if (d.parentNode) d.remove(); }, 3000);
 }
-// ================================================================
 
+// ========== ИГРОВАЯ ЛОГИКА (ОРИГИНАЛ) ==========
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const W = 350, H = 380;
@@ -203,40 +204,97 @@ function spawnBomb() {
 function createParticles(x, y, color) { for (let i = 0; i < 15; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12 - 5, life: 1, color, size: 3 + Math.random() * 6 }) }
 
 function slashLine(x1, y1, x2, y2) {
-    items = items.filter(item => { if (distToSegment(item.x, item.y, x1, y1, x2, y2) < item.size + 12) { score += item.points; let e = Math.floor(item.points / 2); addGRRR(e); createParticles(item.x, item.y, item.color); updateScore(); updateLevel(); if (e > 0) showToast(`+${e} $GRRR`); return false } return true });
-    bombs = bombs.filter(bomb => { if (distToSegment(bomb.x, bomb.y, x1, y1, x2, y2) < bomb.size + 12) { lives--; createParticles(bomb.x, bomb.y, '#ff4444'); updateLives(); if (lives <= 0) endGame(); return false } return true });
+    items = items.filter(item => {
+        if (distToSegment(item.x, item.y, x1, y1, x2, y2) < item.size + 12) {
+            score += item.points;
+            let e = Math.floor(item.points / 2);
+            addGRRR(e);                          // <-- вызываем рабочую функцию
+            createParticles(item.x, item.y, item.color);
+            updateScore();
+            updateLevel();
+            if (e > 0) showToast(`+${e} $GRRR`);
+            return false;
+        }
+        return true;
+    });
+    bombs = bombs.filter(bomb => {
+        if (distToSegment(bomb.x, bomb.y, x1, y1, x2, y2) < bomb.size + 12) {
+            lives--;
+            createParticles(bomb.x, bomb.y, '#ff4444');
+            updateLives();
+            if (lives <= 0) endGame();
+            return false;
+        }
+        return true;
+    });
 }
 
-function distToSegment(px, py, x1, y1, x2, y2) { const dx = x2 - x1, dy = y2 - y1; const lenSq = dx * dx + dy * dy; if (lenSq === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1)); let t = ((px - x1) * dx + (py - y1) * dy) / lenSq; t = Math.max(0, Math.min(1, t)); const cx = x1 + t * dx, cy = y1 + t * dy; return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) }
+function distToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const cx = x1 + t * dx, cy = y1 + t * dy;
+    return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+}
 
-function update() { if (gameOver || lives <= 0) return; items.forEach(i => { i.x += i.vx; i.y += i.vy; i.vy += i.gravity; i.rotation += i.rotSpeed }); items = items.filter(i => i.x > -80 && i.x < W + 80 && i.y < H + 80); bombs.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += b.gravity }); bombs = bombs.filter(b => b.x > -80 && b.x < W + 80 && b.y < H + 80); particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; return p.life > 0 }) }
+function update() {
+    if (gameOver || lives <= 0) return;
+    items.forEach(i => { i.x += i.vx; i.y += i.vy; i.vy += i.gravity; i.rotation += i.rotSpeed });
+    items = items.filter(i => i.x > -80 && i.x < W + 80 && i.y < H + 80);
+    bombs.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += b.gravity });
+    bombs = bombs.filter(b => b.x > -80 && b.x < W + 80 && b.y < H + 80);
+    particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; return p.life > 0 });
+}
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    if (isDown) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke(); ctx.strokeStyle = 'rgba(249,202,36,0.4)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke() }
-    items.forEach(i => { ctx.save(); ctx.translate(i.x, i.y); ctx.rotate(i.rotation); ctx.font = `${i.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i.emoji, 0, 0); ctx.restore() });
-    bombs.forEach(b => { ctx.font = `${b.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.emoji, b.x, b.y) });
-    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill() }); ctx.globalAlpha = 1;
-    if (gameOver) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Игра окончена', W / 2, H / 2 - 15); ctx.font = '18px sans-serif'; ctx.fillText('Счёт: ' + score, W / 2, H / 2 + 25) }
+    if (isDown) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke();
+        ctx.strokeStyle = 'rgba(249,202,36,0.4)'; ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.moveTo(prevX, prevY); ctx.lineTo(mouseX, mouseY); ctx.stroke();
+    }
+    items.forEach(i => {
+        ctx.save(); ctx.translate(i.x, i.y); ctx.rotate(i.rotation);
+        ctx.font = `${i.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(i.emoji, 0, 0); ctx.restore();
+    });
+    bombs.forEach(b => {
+        ctx.font = `${b.size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(b.emoji, b.x, b.y);
+    });
+    particles.forEach(p => {
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Игра окончена', W / 2, H / 2 - 15);
+        ctx.font = '18px sans-serif'; ctx.fillText('Счёт: ' + score, W / 2, H / 2 + 25);
+    }
 }
 
-function updateScore() { document.getElementById('scoreDisplay').textContent = score; document.getElementById('bestDisplay').textContent = best }
-function updateLives() { const d = document.getElementById('livesDisplay'); d.innerHTML = ''; for (let i = 0; i < 3; i++) d.innerHTML += `<span>${i < lives ? '❤️' : '🖤'}</span>` }
-function endGame() { gameOver = true; clearInterval(spawnInterval); clearInterval(bombInterval); if (score > best) { best = score; localStorage.setItem('honey_best', best) } updateScore(); showToast('💀 Игра окончена! Счёт: ' + score) }
+function updateScore() { document.getElementById('scoreDisplay').textContent = score; document.getElementById('bestDisplay').textContent = best; }
+function updateLives() { const d = document.getElementById('livesDisplay'); d.innerHTML = ''; for (let i = 0; i < 3; i++) d.innerHTML += `<span>${i < lives ? '❤️' : '🖤'}</span>`; }
+function endGame() { gameOver = true; clearInterval(spawnInterval); clearInterval(bombInterval); if (score > best) { best = score; localStorage.setItem('honey_best', best); } updateScore(); showToast('💀 Игра окончена! Счёт: ' + score); }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop) }
+function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
-canvas.addEventListener('mousedown', e => { isDown = true; prevX = e.offsetX; prevY = e.offsetY; mouseX = e.offsetX; mouseY = e.offsetY });
-canvas.addEventListener('mousemove', e => { if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.offsetX; mouseY = e.offsetY; slashLine(prevX, prevY, mouseX, mouseY) } else { mouseX = e.offsetX; mouseY = e.offsetY } });
-canvas.addEventListener('mouseup', () => { isDown = false });
-canvas.addEventListener('touchstart', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); prevX = e.touches[0].clientX - r.left; prevY = e.touches[0].clientY - r.top; mouseX = prevX; mouseY = prevY; isDown = true });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.touches[0].clientX - r.left; mouseY = e.touches[0].clientY - r.top; slashLine(prevX, prevY, mouseX, mouseY) } });
-canvas.addEventListener('touchend', () => { isDown = false });
+canvas.addEventListener('mousedown', e => { isDown = true; prevX = e.offsetX; prevY = e.offsetY; mouseX = e.offsetX; mouseY = e.offsetY; });
+canvas.addEventListener('mousemove', e => { if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.offsetX; mouseY = e.offsetY; slashLine(prevX, prevY, mouseX, mouseY); } else { mouseX = e.offsetX; mouseY = e.offsetY; } });
+canvas.addEventListener('mouseup', () => { isDown = false; });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); prevX = e.touches[0].clientX - r.left; prevY = e.touches[0].clientY - r.top; mouseX = prevX; mouseY = prevY; isDown = true; });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); if (isDown) { prevX = mouseX; prevY = mouseY; mouseX = e.touches[0].clientX - r.left; mouseY = e.touches[0].clientY - r.top; slashLine(prevX, prevY, mouseX, mouseY); } });
+canvas.addEventListener('touchend', () => { isDown = false; });
 
-document.getElementById('newGameBtn').addEventListener('click', () => { items = []; bombs = []; particles = []; score = 0; lives = 3; gameOver = false; level = 1; speedMultiplier = 1; updateScore(); updateLives(); updateLevel() });
-document.getElementById('dailyBonusBtn').addEventListener('click', () => { const last = localStorage.getItem('grrr_bonus_date'); if (last === today) { showToast('🎁 Уже получен'); return } localStorage.setItem('grrr_bonus_date', today); addGRRR(10); showToast('🎁 +10 $GRRR') });
-document.getElementById('referralBtn').addEventListener('click', () => { const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2, 8); localStorage.setItem('refId', ref); const url = location.origin + location.pathname + '?ref=' + ref; if (navigator.share) navigator.share({ title: 'Медовый Ниндзя • #GRRR', text: 'Режь и фарми $GRRR!', url }); else prompt('Ссылка:', url); addGRRR(5); showToast('📨 +5 $GRRR') });
-const refParam = new URLSearchParams(location.search).get('ref'); if (refParam && !localStorage.getItem('refUsed')) { localStorage.setItem('refUsed', '1'); addGRRR(10); showToast('🎁 +10 $GRRR') }
+document.getElementById('newGameBtn').addEventListener('click', () => { items = []; bombs = []; particles = []; score = 0; lives = 3; gameOver = false; level = 1; speedMultiplier = 1; updateScore(); updateLives(); updateLevel(); });
+document.getElementById('dailyBonusBtn').addEventListener('click', () => { const last = localStorage.getItem('grrr_bonus_date'); if (last === today) { showToast('🎁 Уже получен'); return; } localStorage.setItem('grrr_bonus_date', today); addGRRR(10); showToast('🎁 +10 $GRRR'); });
+document.getElementById('referralBtn').addEventListener('click', () => { const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2, 8); localStorage.setItem('refId', ref); const url = location.origin + location.pathname + '?ref=' + ref; if (navigator.share) navigator.share({ title: 'Медовый Ниндзя • #GRRR', text: 'Режь и фарми $GRRR!', url }); else prompt('Ссылка:', url); addGRRR(5); showToast('📨 +5 $GRRR'); });
+const refParam = new URLSearchParams(location.search).get('ref'); if (refParam && !localStorage.getItem('refUsed')) { localStorage.setItem('refUsed', '1'); addGRRR(10); showToast('🎁 +10 $GRRR'); }
 
 updateScore(); updateLives(); updateLevel(); gameLoop();
 </script>
