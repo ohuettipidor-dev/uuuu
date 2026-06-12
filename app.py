@@ -863,10 +863,9 @@ def get_grrr_balance(user_id):
 def add_grrr(user_id, amount):
     grrr = GRRRToken.query.filter_by(user_id=user_id).first()
     if not grrr:
-        grrr = GRRRToken(user_id=user_id, balance=amount)
+        grrr = GRRRToken(user_id=user_id, balance=0)
         db.session.add(grrr)
-    else:
-        grrr.balance += amount
+    grrr.balance = float(grrr.balance) + float(amount)
     db.session.commit()
     return grrr.balance
 
