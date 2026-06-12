@@ -138,17 +138,14 @@ let trail = [];
 let isSlicing = false;
 let lastSpawn = Date.now();
 
-// Уровень и скорость
 let level = 1;
-let speedMultiplier = 1; // множитель скорости (меняется с уровнем)
-const SCORE_PER_LEVEL = 30; // каждые 30 очков повышаем уровень
-const MAX_SPEED = 5;        // максимальный множитель
+let speedMultiplier = 1;
+const SCORE_PER_LEVEL = 30;
+const MAX_SPEED = 5;
 
-// Таймеры спавна (будут меняться)
 let spawnFruitInterval = null;
 let spawnBombInterval = null;
 
-// Типы фруктов
 const FRUIT_TYPES = [
     { emoji:'🍉', radius:24, points:8, color:'#4cd964' },
     { emoji:'🍊', radius:22, points:4, color:'#f0932b' },
@@ -161,7 +158,7 @@ const FRUIT_TYPES = [
 const BOMB_EMOJI = '💣';
 const BOMB_RADIUS = 20;
 
-// ========== УСКОРЕНИЕ: обновление уровня и интервалов ==========
+// ========== УСЛОЖНЕНИЕ: МЕНЬШЕ РАЗЛЁТ, БОЛЬШЕ БОМБ ==========
 function updateLevelAndSpeed() {
     const newLevel = Math.floor(score / SCORE_PER_LEVEL) + 1;
     if (newLevel !== level) {
@@ -170,7 +167,6 @@ function updateLevelAndSpeed() {
         if (speedMultiplier > MAX_SPEED) speedMultiplier = MAX_SPEED;
         document.getElementById('levelDisplay').textContent = level;
         document.getElementById('speedDisplay').textContent = speedMultiplier.toFixed(1) + '×';
-        // Перезапускаем интервалы спавна с новыми задержками
         restartSpawnTimers();
     }
 }
@@ -178,29 +174,28 @@ function updateLevelAndSpeed() {
 function restartSpawnTimers() {
     clearInterval(spawnFruitInterval);
     clearInterval(spawnBombInterval);
-    // Задержка спавна фруктов уменьшается с уровнем
+    // Фрукты появляются чаще с ростом уровня
     const fruitDelay = Math.max(400, 1000 - (level - 1) * 80);
     spawnFruitInterval = setInterval(() => {
-        if (!gameOver && lives > 0 && Math.random() < 0.6) spawnFruit();
+        if (!gameOver && lives > 0 && Math.random() < 0.7) spawnFruit();
     }, fruitDelay);
-    // Бомбы появляются чуть реже
-    const bombDelay = Math.max(700, 1800 - (level - 1) * 120);
+    // Бомбы появляются ЗНАЧИТЕЛЬНО чаще: интервал короче, вероятность выше
+    const bombDelay = Math.max(450, 1400 - (level - 1) * 100); // уменьшили базу
     spawnBombInterval = setInterval(() => {
-        if (!gameOver && lives > 0 && Math.random() < 0.2) spawnBomb();
+        if (!gameOver && lives > 0 && Math.random() < 0.4) spawnBomb(); // было 0.2, стало 0.4
     }, bombDelay);
 }
 
 function spawnFruit() {
     if (gameOver || lives <= 0) return;
     const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
-    const x = Math.random() * (W - 60) + 30;
-    const y = H + 40;
-    // Скорость зависит от множителя
-    const baseVX = (Math.random() - 0.5) * 5;
+    // Сужаем горизонтальный разброс: было *5, стало *2.5 (в два раза меньше)
+    const baseVX = (Math.random() - 0.5) * 2.5;
     const baseVY = -(Math.random() * 8 + 10);
     fruits.push({
         ...type,
-        x, y,
+        x: Math.random() * (W - 60) + 30,
+        y: H + 40,
         vx: baseVX * speedMultiplier,
         vy: baseVY * speedMultiplier,
         radius: type.radius,
@@ -212,18 +207,25 @@ function spawnFruit() {
 
 function spawnBomb() {
     if (gameOver || lives <= 0) return;
-    const x = Math.random() * (W - 60) + 30;
-    const y = H + 40;
-    const baseVX = (Math.random() - 0.5) * 4;
+    // Бомбы тоже с уменьшенным горизонтальным разлётом
+    const baseVX = (Math.random() - 0.5) * 2.2;
     const baseVY = -(Math.random() * 7 + 8);
     bombs.push({
-        x, y,
+        x: Math.random() * (W - 60) + 30,
+        y: H + 40,
         vx: baseVX * speedMultiplier,
         vy: baseVY * speedMultiplier,
         radius: BOMB_RADIUS,
         rotation: 0,
-        rotSpeed: (Math.random() - 0.5) * 0.05 * speedMultiplier
+        rotSpeed: (Math.random() - 0.5) * 0.08 * speedMultiplier
     });
+}
+
+// Добавим лёгкое отражение от стен, чтобы фрукты не уходили
+function keepInBounds(obj) {
+    const margin = 10;
+    if (obj.x < margin) { obj.x = margin; obj.vx = Math.abs(obj.vx) * 0.7; }
+    if (obj.x > W - margin) { obj.x = W - margin; obj.vx = -Math.abs(obj.vx) * 0.7; }
 }
 
 // Физика
@@ -232,8 +234,9 @@ function updateGame() {
     fruits = fruits.filter(f => {
         f.x += f.vx;
         f.y += f.vy;
-        f.vy += 0.3 * speedMultiplier; // гравитация тоже ускоряется
+        f.vy += 0.3 * speedMultiplier;
         f.rotation += f.rotSpeed;
+        keepInBounds(f); // чтобы не улетали за края
         return (f.y < H + 100 && !f.sliced);
     });
     bombs = bombs.filter(b => {
@@ -241,6 +244,7 @@ function updateGame() {
         b.y += b.vy;
         b.vy += 0.3 * speedMultiplier;
         b.rotation += b.rotSpeed;
+        keepInBounds(b);
         return (b.y < H + 100);
     });
     particles = particles.filter(p => {
@@ -252,10 +256,9 @@ function updateGame() {
     });
 }
 
-// Отрисовка (без изменений в стиле)
+// Отрисовка (без изменений)
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    // След лезвия
     if (trail.length > 1) {
         ctx.beginPath();
         ctx.moveTo(trail[0].x, trail[0].y);
@@ -271,7 +274,6 @@ function draw() {
         ctx.shadowBlur = 0;
         ctx.shadowColor = 'transparent';
     }
-    // Фрукты
     fruits.forEach(f => {
         ctx.save();
         ctx.translate(f.x, f.y);
@@ -282,7 +284,6 @@ function draw() {
         ctx.fillText(f.emoji, 0, 0);
         ctx.restore();
     });
-    // Бомбы
     bombs.forEach(b => {
         ctx.save();
         ctx.translate(b.x, b.y);
@@ -293,7 +294,6 @@ function draw() {
         ctx.fillText(BOMB_EMOJI, 0, 0);
         ctx.restore();
     });
-    // Частицы
     particles.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.life;
@@ -302,7 +302,6 @@ function draw() {
         ctx.fill();
     });
     ctx.globalAlpha = 1;
-    // Game Over
     if (gameOver) {
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
         ctx.fillRect(0,0,W,H);
@@ -315,7 +314,6 @@ function draw() {
     }
 }
 
-// Проверка столкновения линии с объектом
 function lineIntersectsCircle(x1,y1,x2,y2, cx,cy, r) {
     const dx = x2-x1, dy = y2-y1;
     const fx = cx-x1, fy = cy-y1;
@@ -334,7 +332,6 @@ function sliceCheck(x1,y1,x2,y2) {
             f.sliced = true;
             score += f.points;
             updateScore();
-            // Частицы
             for (let i=0;i<12;i++) {
                 particles.push({
                     x: f.x, y: f.y,
@@ -345,7 +342,6 @@ function sliceCheck(x1,y1,x2,y2) {
                     size: 3+Math.random()*5
                 });
             }
-            // Начисление GRRR
             let earned = Math.max(1, Math.floor(f.points/2));
             addGRRR(earned);
         }
@@ -374,7 +370,7 @@ function sliceCheck(x1,y1,x2,y2) {
 function updateScore() {
     document.getElementById('scoreDisplay').textContent = score;
     document.getElementById('bestDisplay').textContent = best;
-    updateLevelAndSpeed(); // проверяем повышение уровня
+    updateLevelAndSpeed();
 }
 function updateLives() {
     document.getElementById('livesDisplay').textContent = lives;
@@ -390,7 +386,6 @@ function endGame() {
     updateScore();
 }
 
-// Игровой цикл
 function gameLoop() {
     if (!gameOver && lives > 0) {
         updateGame();
@@ -399,7 +394,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Обработка касаний
 function getCanvasPos(e) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -435,7 +429,6 @@ canvas.addEventListener('touchend', e => {
     trail = [];
 });
 
-// Кнопки
 document.getElementById('newGameBtn').addEventListener('click', () => {
     fruits = []; bombs = []; particles = []; score = 0; lives = 3; gameOver = false;
     level = 1; speedMultiplier = 1;
@@ -457,7 +450,6 @@ document.getElementById('dailyBonusBtn').addEventListener('click', () => {
     syncDebugEl.textContent = '🎁 +10 GRRR';
 });
 
-// Старт
 updateScore();
 updateLives();
 restartSpawnTimers();
