@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🐻 Медовая ферма | #GRRR</title>
     <style>
-        /* стили те же, что выше */
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{
             font-family:'Segoe UI',system-ui,sans-serif;
             background:radial-gradient(circle at 20% 50%, #2d1b3a, #0f0c1f);
             min-height:100vh;display:flex;align-items:center;justify-content:center;
-            padding:10px;color:#fff;touch-action:manipulation;overflow-y:auto;
+            padding:10px;color:#fff;touch-action:manipulation;overflow:hidden;
         }
         .game-wrapper{
             width:100%;max-width:420px;background:rgba(255,255,255,0.05);
@@ -23,18 +22,17 @@
         .logo{font-weight:800;font-size:1.3rem;color:#f9ca24;text-shadow:0 0 10px rgba(249,202,36,0.5);}
         .balance-badge{background:rgba(0,0,0,0.5);border-radius:30px;padding:6px 14px;border:1px solid rgba(255,215,0,0.3);display:flex;align-items:center;gap:6px;}
         .balance-badge span{font-weight:bold;color:#ffeaa7;}
-        .stats{display:flex;justify-content:space-between;width:100%;font-size:14px;}
         .hive-area{position:relative;width:100%;aspect-ratio:1/1;max-height:320px;display:flex;justify-content:center;align-items:center;margin:10px 0;}
-        .clickable{font-size:100px;cursor:pointer;transition:transform 0.05s;filter:drop-shadow(0 0 20px rgba(255,215,0,0.5));position:relative;z-index:2;}
+        .clickable{
+            font-size:100px;cursor:pointer;transition:transform 0.05s;
+            filter:drop-shadow(0 0 20px rgba(255,215,0,0.5));
+            position:relative;z-index:2;
+        }
         .clickable:active{transform:scale(0.85);}
         .float-text{position:absolute;pointer-events:none;font-weight:bold;color:#ffeaa7;z-index:10;font-size:24px;animation:floatUp 0.8s ease-out forwards;text-shadow:0 0 10px gold;}
         @keyframes floatUp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
-        .boost-section{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;}
-        .btn{background:linear-gradient(135deg,#f9ca24,#f0932b);border:none;color:#1a1a2e;font-weight:bold;padding:10px 20px;border-radius:40px;cursor:pointer;box-shadow:0 8px 16px rgba(240,147,43,0.5);transition:0.2s;font-size:14px;}
-        .btn:active{transform:scale(0.95);}
-        .btn-outline{background:transparent;border:1px solid #f9ca24;color:#f9ca24;box-shadow:none;}
+        .stats{display:flex;justify-content:space-between;width:100%;font-size:14px;}
         .debug-line{width:100%;text-align:center;font-size:11px;color:#aaa;margin-top:5px;opacity:0.8;}
-        .boost-status{font-size:12px;color:#a29bfe;text-align:center;}
     </style>
 </head>
 <body>
@@ -46,27 +44,18 @@
         </div>
     </div>
     <div class="stats">
-        <span class="label">⚡GRRR за клик <span class="value" id="clickPowerDisplay">0.10</span></span>
-        <span class="label">🔥Множитель <span class="value" id="multiplierDisplay">1×</span></span>
+        <span class="label">⚡ +0.1 GRRR за клик</span>
     </div>
     <div class="hive-area" id="hiveArea">
         <div class="clickable" id="clickBtn">🍯</div>
     </div>
-    <div class="boost-section">
-        <button class="btn" onclick="activateBoost('x2', 15)">⚡×2 (15💎)</button>
-        <button class="btn" onclick="activateBoost('x3', 30)">🔥×3 (30💎)</button>
-        <button class="btn" onclick="activateBoost('x5', 50)">💎×5 (50💎)</button>
-    </div>
-    <div class="boost-status" id="boostStatus">Буст не активен</div>
     <div class="debug-line" id="syncDebug"></div>
 </div>
 
 <script>
-// ========== СИНХРОНИЗАЦИЯ GRRR (точная копия из honey-ninja) ==========
+// ========== ТОЧНО ТАКАЯ ЖЕ СИНХРОНИЗАЦИЯ, КАК В HONEY-NINJA ==========
 const grrrBalanceEl = document.getElementById('grrrBalance');
 const syncDebugEl = document.getElementById('syncDebug');
-const clickPowerDisplay = document.getElementById('clickPowerDisplay');
-const multiplierDisplay = document.getElementById('multiplierDisplay');
 
 async function updateDisplayBalance() {
     try {
@@ -80,6 +69,7 @@ async function updateDisplayBalance() {
 updateDisplayBalance();
 setInterval(updateDisplayBalance, 5000);
 
+// Дневной лимит (как в оригинале)
 const DAILY_KEY = 'grrr_daily';
 const LIMIT = 100;
 let daily = parseInt(localStorage.getItem(DAILY_KEY) || '0');
@@ -93,7 +83,7 @@ function saveDaily() { localStorage.setItem(DAILY_KEY, daily); }
 
 async function addGRRR(amount) {
     if (daily >= LIMIT) {
-        syncDebugEl.textContent = 'Дневной лимит GRRR исчерпан';
+        syncDebugEl.textContent = 'Лимит на сегодня исчерпан';
         return false;
     }
     let add = Math.min(amount, LIMIT - daily);
@@ -124,90 +114,18 @@ async function addGRRR(amount) {
     }
 }
 
-// ========== БУСТЫ ЗА 💎 ==========
-let currentBoost = localStorage.getItem('game_boost') || null;
-let boostEndTime = localStorage.getItem('game_boost_end') || null;
-
-function updateBoostUI() {
-    const now = Date.now();
-    if (boostEndTime && now > parseInt(boostEndTime)) {
-        currentBoost = null;
-        boostEndTime = null;
-        localStorage.removeItem('game_boost');
-        localStorage.removeItem('game_boost_end');
-    }
-    const statusEl = document.getElementById('boostStatus');
-    if (currentBoost) {
-        const remaining = Math.max(0, Math.floor((parseInt(boostEndTime) - now) / 60000));
-        statusEl.innerHTML = `⚡ Буст ${currentBoost} активен! Осталось: ${remaining} мин`;
-        statusEl.style.color = '#a29bfe';
-    } else {
-        statusEl.innerHTML = 'Буст не активен';
-        statusEl.style.color = '#aaa';
-    }
-    updateMultiplierDisplay();
-}
-
-function updateMultiplierDisplay() {
-    const mult = getBoostMultiplier();
-    multiplierDisplay.textContent = mult + '×';
-    clickPowerDisplay.textContent = (0.1 * mult).toFixed(2); // база 0.1 GRRR за клик
-}
-
-function activateBoost(type, cost) {
-    if (currentBoost) {
-        alert('Буст уже активен!');
-        return;
-    }
-    if (!confirm(`Купить буст ⚡${type} за ${cost} 💎?`)) return;
-
-    fetch('/api/spend_coins', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'amount=' + cost
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) {
-            alert('Недостаточно 💎!');
-            return;
-        }
-        currentBoost = type;
-        boostEndTime = Date.now() + 30 * 60 * 1000;
-        localStorage.setItem('game_boost', type);
-        localStorage.setItem('game_boost_end', boostEndTime);
-        updateBoostUI();
-        syncDebugEl.textContent = 'Буст ' + type + ' активирован на 30 мин';
-    })
-    .catch(() => alert('Ошибка при покупке буста'));
-}
-
-function getBoostMultiplier() {
-    if (!currentBoost || !boostEndTime) return 1;
-    if (Date.now() > parseInt(boostEndTime)) {
-        currentBoost = null; boostEndTime = null;
-        localStorage.removeItem('game_boost'); localStorage.removeItem('game_boost_end');
-        return 1;
-    }
-    if (currentBoost === 'x2') return 2;
-    if (currentBoost === 'x3') return 3;
-    if (currentBoost === 'x5') return 5;
-    return 1;
-}
-
 // ========== КЛИК ==========
 const clickBtn = document.getElementById('clickBtn');
 const hiveArea = document.getElementById('hiveArea');
 
 async function handleClick(e) {
-    const mult = getBoostMultiplier();
-    const earned = 0.1 * mult; // 0.1 GRRR * множитель
+    const earned = 0.1; // фиксированный заработок за клик
     await addGRRR(earned);
 
-    // Всплывашка
+    // Всплывающий текст
     const floatEl = document.createElement('div');
     floatEl.className = 'float-text';
-    floatEl.textContent = '+' + earned.toFixed(2) + ' GRRR';
+    floatEl.textContent = '+0.1 GRRR';
     const rect = hiveArea.getBoundingClientRect();
     floatEl.style.left = (e.clientX - rect.left) + 'px';
     floatEl.style.top = (e.clientY - rect.top) + 'px';
@@ -220,9 +138,6 @@ async function handleClick(e) {
 
 clickBtn.addEventListener('click', (e) => { e.preventDefault(); handleClick(e); });
 clickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e.touches[0]); });
-
-// Инициализация
-updateBoostUI();
 </script>
 </body>
 </html>
