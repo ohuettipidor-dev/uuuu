@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐻 Заявки на вывод $GRRR | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{background:#1a1a2e;color:white;font-family:system-ui;padding:20px}
+        table{width:100%;border-collapse:collapse;margin-top:20px}
+        th,td{border:1px solid #333;padding:10px;text-align:left}
+        th{background:#f9ca24; color:#000}
+        .btn{padding:6px 12px;border:none;border-radius:20px;cursor:pointer;font-weight:bold}
+        .btn-done{background:#4cd964;color:white;margin-right:5px}
+        .btn-reject{background:#ff4444;color:white}
+    </style>
+</head>
+<body>
+    <h1>Заявки на вывод $GRRR</h1>
+    <table>
+        <tr>
+            <th>ID</th><th>Пользователь</th><th>Сумма GRRR</th><th>TON адрес</th><th>Статус</th><th>Действия</th>
+        </tr>
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.id }}</td>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.amount }}</td>
+            <td>{{ req.ton_address[:15] }}...</td>
+            <td>{{ req.status }}</td>
+            <td>
+                {% if req.status == 'pending' %}
+                <a href="/admin/withdrawal/{{ req.id }}/done" class="btn btn-done">✅ Выполнено</a>
+                <a href="/admin/withdrawal/{{ req.id }}/reject" class="btn btn-reject">❌ Отклонить</a>
+                {% else %}
+                -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p style="margin-top:20px; font-size:12px; color:#aaa;">После отметки "Выполнено" отправьте токены вручную с админского кошелька на указанный TON-адрес.</p>
+</body>
+</html>
