@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>⛏️ Майнинг | BearGram</title>
+    <title>⛏️ Майнинг & Ноды | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -31,6 +31,7 @@
         .btn-red{background:#ff4444;color:white}
         .btn-gold{background:#ffd700;color:#000}
         .btn-orange{background:#ff8c00;color:white}
+        .btn-claim{background:#4cd964;color:white;padding:5px 12px;font-size:11px;margin:0;width:auto}
         
         .coin-option{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
         .coin-info{flex:1}
@@ -38,9 +39,22 @@
         .coin-desc{font-size:11px;color:#aaa;margin-top:3px}
         .coin-profit{color:#4cd964;font-weight:bold;font-size:13px}
         
+        /* BEAR Node styles */
+        .node-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;flex:1;min-width:120px;text-align:center}
+        .node-name{font-weight:bold;color:#ffd700;font-size:14px}
+        .node-rate{font-size:28px;font-weight:bold;color:#4cd964}
+        .node-amount{font-size:11px;color:#aaa}
+        .node-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+        .node-info{flex:1}
+        .node-status{color:#4cd964;font-size:12px}
+        .info-text{color:#ccc;font-size:14px;line-height:1.6}
+        .info-sub{color:#aaa;font-size:13px;line-height:1.6;margin-top:10px}
+        .info-highlight{color:#ffd700;font-size:13px;margin-top:10px}
+        
         .flash{padding:10px;border-radius:12px;margin-bottom:15px;font-size:14px}
         .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
         .flash-info{background:rgba(255,215,0,0.2);color:#ffd700}
+        .flash-danger{background:rgba(255,68,68,0.2);color:#ff4444}
         
         small{color:#888;font-size:11px}
     </style>
@@ -48,7 +62,7 @@
 <body>
     <div class="header">
         <a href="/grrr" class="back-btn">← $GRRR</a>
-        <h1>⛏️ Майнинг</h1>
+        <h1>⛏️ Майнинг & 🔋 Ноды</h1>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -72,6 +86,14 @@
         <div class="stat-card">
             <div class="stat-value">{{ mining_active }}</div>
             <div class="stat-label">Майнеров онлайн</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_nodes }}</div>
+            <div class="stat-label">Нод в сети</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_network }} $GRRR</div>
+            <div class="stat-label">Заблокировано в сети</div>
         </div>
     </div>
 
@@ -110,6 +132,81 @@
     </div>
     {% endif %}
 
+    <!-- BEAR NODE -->
+    <!-- ОПИСАНИЕ -->
+    <div class="card" style="text-align:left;">
+        <h3>❓ Что такое BEAR Node?</h3>
+        <p class="info-text">
+            <strong>BEAR Node</strong> — это твой пассивный доход и вклад в абсолютную независимость BearGram.
+        </p>
+        <p class="info-sub">
+            💰 <strong style="color:#4cd964;">Пассивный доход до 50% годовых</strong><br>
+            Ты покупаешь Ноду, токены блокируются и начинают работать на тебя. 
+            Каждые 30 дней ты получаешь проценты в $GRRR. Никаких действий — просто держи и зарабатывай.
+        </p>
+        <p class="info-sub">
+            🌍 <strong style="color:#ffd700;">Вклад в независимость</strong><br>
+            Каждая Нода делает BearGram сильнее. Твои токены поддерживают сервера, 
+            хранят данные и обрабатывают сообщения. Чем больше Нод — тем сложнее 
+            отключить или заблокировать нашу сеть. Ты буквально строишь свободный интернет.
+        </p>
+        <p class="info-highlight">
+            <strong>Это не просто инвестиция. Это твой голос за цифровую свободу.</strong>
+        </p>
+    </div>
+
+    <!-- ПОКУПКА НОД -->
+    <div class="card">
+        <h3>🔋 Купить Ноду</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="node-card">
+                <div class="node-name">🐻 Малая</div>
+                <div class="node-rate">12%</div>
+                <div class="node-amount">1 000 $GRRR</div>
+                <form method="POST" action="/bearnode/buy">
+                    <input type="hidden" name="level" value="small">
+                    <button class="btn btn-gold" style="margin-top:5px;">Купить</button>
+                </form>
+            </div>
+            <div class="node-card">
+                <div class="node-name">🐅 Средняя</div>
+                <div class="node-rate">25%</div>
+                <div class="node-amount">5 000 $GRRR</div>
+                <form method="POST" action="/bearnode/buy">
+                    <input type="hidden" name="level" value="medium">
+                    <button class="btn btn-gold" style="margin-top:5px;">Купить</button>
+                </form>
+            </div>
+            <div class="node-card">
+                <div class="node-name">👑 Крупная</div>
+                <div class="node-rate">50%</div>
+                <div class="node-amount">10 000 $GRRR</div>
+                <form method="POST" action="/bearnode/buy">
+                    <input type="hidden" name="level" value="large">
+                    <button class="btn btn-gold" style="margin-top:5px;">Купить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОИ НОДЫ -->
+    <div class="card">
+        <h3>📋 Мои Ноды</h3>
+        {% if nodes %}
+            {% for node in nodes %}
+            <div class="node-item">
+                <div class="node-info">
+                    <strong>{{ node.amount }} $GRRR</strong> — {{ node.annual_rate }}% годовых
+                    <div class="node-status">● Активна</div>
+                </div>
+                <button class="btn btn-claim" onclick="claimReward({{ node.id }})">💰 Забрать</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color:#888;">Нет активных нод</p>
+        {% endif %}
+    </div>
+
     <!-- МАЙНИНГ ДРУГИХ КРИПТ (ИНСТРУКЦИИ) -->
     <div class="card">
         <h3>🌍 Майнинг других криптовалют</h3>
@@ -138,12 +235,13 @@
 
     <!-- ИНФОРМАЦИЯ -->
     <div class="card">
-        <h3>ℹ️ О майнинге</h3>
+        <h3>ℹ️ О майнинге и нодах</h3>
         <p style="color:#aaa;font-size:12px;line-height:1.6;">
             💡 <b>$GRRR</b> — наша крипта. Пока симуляция, скоро реальный блокчейн.<br>
             🌍 <b>Verus и Monero</b> — реальная крипта. Майнится прямо сейчас на твоём устройстве.<br>
             ⚠️ <b>Комиссия платформы:</b> 10% от намайненного $GRRR, 15% от других крипт.<br>
-            🔒 Всё легально. Ты сам решаешь — майнить или нет.
+            🔒 Всё легально. Ты сам решаешь — майнить или нет.<br>
+            🔋 <b>Ноды</b> — пассивный доход до 50% годовых. Укрепляют сеть BearGram.
         </p>
     </div>
 
@@ -190,6 +288,18 @@
                   '5. Запусти и майнь!\n\n' +
                   '⚠️ Только для ПК. Нужен хороший процессор.\n' +
                   '💻 Минимум 4 ядра для нормальной скорости.');
+        }
+
+        // BEAR Node claim reward
+        async function claimReward(nodeId) {
+            const resp = await fetch(`/bearnode/claim/${nodeId}`, {method:'POST'});
+            const data = await resp.json();
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.error);
+            }
         }
     </script>
 </body>
