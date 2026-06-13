@@ -135,6 +135,19 @@ def decrypt_message(encrypted_message, user_id, other_id):
     except Exception:
         return "[Зашифрованное сообщение]"
 
+def send_grrr_to_user(recipient_address: str, amount_grrr: float):
+    """Отправляет GRRR с кошелька-кассира на указанный адрес."""
+    if not CASHIER_WALLET:
+        raise Exception("Кошелёк-кассир не инициализирован")
+
+    jetton_master = 'EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX'
+    tx = CASHIER_WALLET.transfer_jetton(
+        to=recipient_address,
+        jetton_master=jetton_master,
+        amount=int(amount_grrr * 1e9),   # decimals = 9
+        gas_amount=0.05
+    )
+    return tx.hash
 def render_mentions(text, current_user_id=None):
     if not text:
         return text, []
@@ -156,6 +169,7 @@ def render_mentions(text, current_user_id=None):
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
 
 # ========== МОДЕЛИ ==========
 class User(UserMixin, db.Model):
