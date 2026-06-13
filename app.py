@@ -1668,25 +1668,32 @@ def secret_chats_list():
     return render_template('secret_chats.html', secret_chats=chats_data)
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    if request.headers.get('X-Telegram-Bot-Api-Secret') != BOT_TOKEN:
-        return 'unauthorized', 403
     update = request.get_json()
     if not update or 'message' not in update:
         return 'ok'
     msg = update['message']
     chat_id = msg['chat']['id']
     text = msg.get('text', '')
+    user_telegram_id = msg['from']['id']
 
     if text == '/start':
+        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
         keyboard = {
             "inline_keyboard": [
                 [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
                 [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
                 [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
-                [{"text": "💎 Пригласить друга", "web_app": {"url": "https://beargram.up.railway.app/referral"}}]
+                [{"text": "💎 Пригласить друга", "switch_inline_query": f"Приглашаю в BearGram! Играй и зарабатывай крипту: {ref_link}"}]
             ]
         }
         send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
+
+    elif text == '/bonus':
+        send_message(chat_id, "🎁 Сегодня ты уже получил бонус! Возвращайся завтра.")
+
+    elif text == '/ref':
+        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
+        send_message(chat_id, f"🔗 Твоя реферальная ссылка:\n{ref_link}\n\nОтправь её другу и получи 5 💎 за каждого, кто начнёт играть!")
 
     return 'ok'
 
