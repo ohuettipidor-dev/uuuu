@@ -836,6 +836,24 @@ class StoryView(db.Model):
     viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
     story = db.relationship('Story', foreign_keys=[story_id])
     user = db.relationship('User', foreign_keys=[user_id])
+    
+class DailyStat(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    grrr_earned = db.Column(db.Float, default=0.0)
+    grrr_withdrawn = db.Column(db.Float, default=0.0)
+    user = db.relationship('User', backref='daily_stats')
+
+
+class WithdrawRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    ton_address = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='withdraw_requests')    
 
 # ========== ПЛАТЕЖИ И ЗАКАЗЫ ==========
 class Order(db.Model):
