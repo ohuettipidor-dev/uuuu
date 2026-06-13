@@ -2183,14 +2183,14 @@ def withdraw():
 
     flash(f'✅ Заявка на вывод {amount} GRRR создана. Ожидайте обработки.', 'success')
     return redirect('/grrr')
+
 @app.route('/admin/withdrawals')
 @login_required
 def admin_withdrawals():
-    if current_user.id != 1:   # замени на свой ID админа, если не 1
+    if current_user.id != 1:   # замени на свой ID, если он не 1
         return redirect('/')
     reqs = WithdrawRequest.query.order_by(WithdrawRequest.created_at.desc()).all()
-    return render_template('admin/withdrawals.html', requests=reqs)
-
+    return render_template('admin/grrr_withdrawals.html', requests=reqs)
 
 @app.route('/admin/withdrawal/<int:req_id>/done')
 @login_required
