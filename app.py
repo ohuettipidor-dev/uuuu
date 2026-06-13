@@ -2225,11 +2225,18 @@ def mark_done(req_id):
     if current_user.id != 1:
         return redirect('/')
     req = WithdrawRequest.query.get(req_id)
-    if req and req.status == 'pending':
+    if not req or req.status != 'pending':
+        return redirect('/admin/withdrawals')
+
+    try:
+        tx_hash = send_grrr_to_user(req.ton_address, req.amount)
         req.status = 'done'
         db.session.commit()
-    return redirect('/admin/withdrawals')
+        flash(f'✅ Выплата {req.amount} GRRR отправлена! TxID: {tx_hash[:10]}...', 'success')
+    except Exception as e:
+        flash(f'❌ Ошибка отправки: {str(e)}. Проверьте баланс кассира.', 'danger')
 
+    return redirect('/admin/withdrawals')
 
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
