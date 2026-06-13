@@ -2014,6 +2014,23 @@ def edit_group(gid):
     
     db.session.commit()
     return jsonify({'success': True})
+@app.route('/grrr/airdrop', methods=['POST'])
+@login_required
+def grrr_airdrop():
+    # Один раз проверили — и хватит
+    already_claimed = AirdropClaim.query.filter_by(user_id=current_user.id).first()
+    if already_claimed:
+        return jsonify({'success': False, 'error': 'Вы уже получили аирдроп'})
+
+    # Начисляем ровно 100 GRRR
+    add_grrr(current_user.id, 100)
+    
+    # Фиксируем в базе, что пользователь больше не сможет забрать аирдроп
+    claim = AirdropClaim(user_id=current_user.id)
+    db.session.add(claim)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': '🎉 Вы получили 100 $GRRR! Баланс обновлён.'})
 
 @app.route('/group/<int:gid>/delete', methods=['POST'])
 @login_required
