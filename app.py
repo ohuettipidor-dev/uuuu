@@ -1702,30 +1702,8 @@ def set_webhook():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
     ngrok_url = "https://beargram.up.railway.app/webhook"
     data = {'url': ngrok_url}
-    resp = requests.post(url, json=data).json()
-    return f"Webhook установлен: {resp}"
-    
-@app.route('/api/secret/burn_message/<int:msg_id>', methods=['POST'])
-@login_required
-def burn_secret_message(msg_id):
-    msg = SecretMessage.query.get(msg_id)
-    if not msg:
-        return jsonify({'error': 'Сообщение не найдено'}), 404
-    
-    secret_chat = msg.secret_chat
-    if secret_chat.user1_id != current_user.id and secret_chat.user2_id != current_user.id:
-        return jsonify({'error': 'Нет доступа'}), 403
-    
-    # Удаляем файл, если есть
-    if msg.file_path:
-        filepath = os.path.join(FILE_FOLDER, os.path.basename(msg.file_path))
-        if os.path.exists(filepath):
-            os.remove(filepath)
-    
-    db.session.delete(msg)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+    resp = requests.post(url, json=data)
+    return f"<pre>{resp.text}</pre>", 200, {'Content-Type': 'text/html'}
 
 # ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
