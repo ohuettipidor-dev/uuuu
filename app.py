@@ -2213,11 +2213,11 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Формируем ссылку для Tonkeeper
+    # Правильная ссылка: отправляем GRRR с кассира
     jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
     cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
     amount_nano = int(amount * 1e9)
-    ton_link = f"ton://transfer/{jetton_master}?amount={amount_nano}&to={ton_address}&from={cashier_addr}"
+    ton_link = f"ton://transfer/{cashier_addr}?jetton={jetton_master}&amount={amount_nano}&to={ton_address}"
 
     # Генерируем QR-код через надёжный сервис
     qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={ton_link}"
