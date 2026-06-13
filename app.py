@@ -33,6 +33,56 @@ import json
 import struct
 import hashlib
 import ed25519
+import os
+import requests
+
+# Токен бота из переменной окружения
+BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
+
+def send_message(chat_id, text, reply_markup=None):
+    """Отправляет сообщение пользователю бота."""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
+    if reply_markup:
+        data['reply_markup'] = reply_markup
+    try:
+        requests.post(url, json=data)
+    except Exception:
+        pass
+
+# Webhook для бота
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    if request.headers.get('X-Telegram-Bot-Api-Secret') != BOT_TOKEN:
+        return 'unauthorized', 403
+    update = request.get_json()
+    if not update or 'message' not in update:
+        return 'ok'
+    msg = update['message']
+    chat_id = msg['chat']['id']
+    text = msg.get('text', '')
+
+    if text == '/start':
+        keyboard = {
+            "inline_keyboard": [
+                [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
+                [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
+                [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
+                [{"text": "💎 Пригласить друга", "web_app": {"url": "https://beargram.up.railway.app/referral"}}]
+            ]
+        }
+        send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
+
+    return 'ok'
+
+# Установка вебхука (выполни один раз после деплоя)
+@app.route('/set_webhook')
+def set_webhook():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
+    ngrok_url = "https://beargram.up.railway.app/webhook"
+    data = {'url': ngrok_url}
+    resp = requests.post(url, json=data).json()
+    return f"Webhook установлен: {resp}"
 
 # Кошелёк-кассир (seed из переменной окружения)
 CASHIER_SEED = os.environ.get('CASHIER_SEED', '')
