@@ -1671,49 +1671,48 @@ def secret_chats_list():
         last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
         chats_data.append({'id': sc.id, 'other_user': other_user, 'last_msg': last_msg})
     return render_template('secret_chats.html', secret_chats=chats_data)
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update = request.get_json()
-    print("WEBHOOK UPDATE:", update)  # отладка
-    if not update or 'message' not in update:
-        return 'ok'
-    msg = update['message']
-    chat_id = msg['chat']['id']
-    text = msg.get('text', '')
-    user_telegram_id = msg['from']['id']
-    print(f"MSG: chat_id={chat_id}, text={text}")
+# ==================== ТЕЛЕГРАМ БОТ (LONG POLLING) ====================
+import time
 
-    if text == '/start':
-        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
-        keyboard = {
-            "inline_keyboard": [
-                [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
-                [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
-                [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
-                [{"text": "💎 Пригласить друга", "switch_inline_query": f"Приглашаю в BearGram! Играй и зарабатывай крипту: {ref_link}"}]
-            ]
-        }
+def run_bot():
+    """Бесконечный цикл опроса сообщений. Запускается в отдельном потоке."""
+    offset = 0
+    while True:
         try:
-            send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
-        except Exception as e:
-            print(f"SEND ERROR: {e}")
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?timeout=5&offset={offset}"
+            resp = requests.get(url).json()
+            if resp.get('ok') and resp['result']:
+                for upd in resp['result']:
+                    offset = upd['update_id'] + 1
+                    if 'message' not in upd:
+                        continue
+                    msg = upd['message']
+                    chat_id = msg['chat']['id']
+                    text = msg.get('text', '')
+                    user_telegram_id = msg['from']['id']
 
-    elif text == '/bonus':
-        send_message(chat_id, "🎁 Бонус пока недоступен. Завтра добавим.")
+                    if text == '/start':
+                        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
+                        keyboard = {
+                            "inline_keyboard": [
+                                [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
+                                [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
+                                [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
+                                [{"text": "💎 Пригласить друга", "switch_inline_query": f"Приглашаю в BearGram! Играй и зарабатывай крипту: {ref_link}"}]
+                            ]
+                        }
+                        send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
 
-    elif text == '/ref':
-        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
-        send_message(chat_id, f"🔗 Твоя реферальная ссылка:\n{ref_link}")
+                    elif text == '/bonus':
+                        send_message(chat_id, "🎁 Бонус пока недоступен. Завтра добавим.")
 
-    return 'ok'
-@app.route('/set_webhook')
-def set_webhook():
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
-    ngrok_url = "https://beargram.up.railway.app/webhook"
-    data = {'url': ngrok_url}
-    resp = requests.post(url, json=data)
-    return f"<pre>{resp.text}</pre>", 200, {'Content-Type': 'text/html'}
+                    elif text == '/ref':
+                        ref_link = f"https://beargram.up.railway.app/ref/{user_telegram_id}"
+                        send_message(chat_id, f"🔗 Твоя реферальная ссылка:\n{ref_link}")
 
+        except Exception:
+            pass
+        time.sleep(1)  # небольшая пауза, чтобы не нагружать сервер
 # ========== ГРУППЫ ==========
 @app.route('/create_group', methods=['POST'])
 @login_required
