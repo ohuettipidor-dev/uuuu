@@ -27,20 +27,22 @@ import zipfile
 import firebase_admin
 from firebase_admin import credentials, messaging
 import os
-from tons import Wallet
+import os
+from ton import Wallet, ToncenterProvider
 
 # Инициализация кошелька-кассира (запустится при старте сервера)
 CASHIER_SEED = os.environ.get('CASHIER_SEED')
 CASHIER_WALLET = None
 if CASHIER_SEED:
     try:
-        CASHIER_WALLET = Wallet.from_mnemonic(CASHIER_SEED.split())
+        # Используем публичный Toncenter (без API-ключа)
+        provider = ToncenterProvider(endpoint="https://toncenter.com/api/v2/jsonRPC")
+        CASHIER_WALLET = Wallet.from_mnemonic(CASHIER_SEED.split(), provider)
         print("✅ Кошелёк-кассир загружен")
     except Exception as e:
         print(f"❌ Ошибка загрузки кошелька-кассира: {e}")
 else:
     print("❌ Переменная окружения CASHIER_SEED не задана!")
-
 YOOMONEY_WALLET = '4100119522166446'
 YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
 VAPID_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg_gjCYMlsnEqEwve9-aPTyOGeCr7FSMk8N1pyVjjr0LShRANCAARlre50Affy8pB2MI1Qu5sFIHVsdEbSMubEuYigcTXaW_e49z7UjMjggoRUody6Fbpuz_x3NngMjDlQSSApYIrE"
@@ -136,35 +138,23 @@ def decrypt_message(encrypted_message, user_id, other_id):
         return "[Зашифрованное сообщение]"
 
 def send_grrr_to_user(recipient_address: str, amount_grrr: float):
+def send_grrr_to_user(recipient_address: str, amount_grrr: float):
     """Отправляет GRRR с кошелька-кассира на указанный адрес."""
     if not CASHIER_WALLET:
         raise Exception("Кошелёк-кассир не инициализирован")
 
     jetton_master = 'EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX'
+    # decimals = 9, умножаем на 1e9
+    amount = int(amount_grrr * 1_000_000_000)
+    
+    # Отправляем жетон
     tx = CASHIER_WALLET.transfer_jetton(
         to=recipient_address,
         jetton_master=jetton_master,
-        amount=int(amount_grrr * 1e9),   # decimals = 9
-        gas_amount=0.05
+        amount=amount,
+        gas_amount=0.05  # комиссия TON
     )
     return tx.hash
-def render_mentions(text, current_user_id=None):
-    if not text:
-        return text, []
-    mentioned_users = []
-    users = User.query.all()
-    for user in users:
-        if user.id == current_user_id:
-            continue
-        if user.username_link:
-            mention_name = user.username_link[1:]
-        else:
-            mention_name = user.username
-        pattern = r'@' + re.escape(mention_name) + r'\b'
-        if re.search(pattern, text):
-            text = re.sub(pattern, f'<a href="/profile/{user.id}" class="mention">@{mention_name}</a>', text)
-            mentioned_users.append(user.id)
-    return text, mentioned_users
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -2220,14 +2210,16 @@ def admin_withdrawals():
     return render_template('grrr_withdrawals.html', requests=reqs)
 
 @app.route('/admin/withdrawal/<int:req_id>/done')
+@app.route('/admin/withdrawal/<int:req_id>/done')
 @login_required
 def mark_done(req_id):
-    if current_user.id != 1:
+    if current_user.id != 1:  # твой ID админа (замени, если другой)
         return redirect('/')
+    
     req = WithdrawRequest.query.get(req_id)
     if not req or req.status != 'pending':
         return redirect('/admin/withdrawals')
-
+    
     try:
         tx_hash = send_grrr_to_user(req.ton_address, req.amount)
         req.status = 'done'
@@ -2235,9 +2227,8 @@ def mark_done(req_id):
         flash(f'✅ Выплата {req.amount} GRRR отправлена! TxID: {tx_hash[:10]}...', 'success')
     except Exception as e:
         flash(f'❌ Ошибка отправки: {str(e)}. Проверьте баланс кассира.', 'danger')
-
+    
     return redirect('/admin/withdrawals')
-
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
 def reject_withdrawal(req_id):
