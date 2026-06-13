@@ -2175,6 +2175,7 @@ def messages(uid):
     db.session.commit()
     return render_template('messages.html', msgs=msgs, other=other)
 
+
 @app.route('/withdraw', methods=['POST'])
 @login_required
 def withdraw():
@@ -2212,13 +2213,18 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Правильный deeplink для Tonkeeper
+    # Правильный deeplink для Tonkeeper (от имени кассира)
+    cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
     jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
     amount_nano = int(amount * 1e9)
-    deep_link = f"ton://transfer/{jetton_master}?amount={amount_nano}&to={ton_address}"
+
+    # Ссылка формата https://app.tonkeeper.com/transfer/...
+    deep_link = f"https://app.tonkeeper.com/transfer/{jetton_master}?amount={amount_nano}&to={ton_address}&from={cashier_addr}"
 
     req.status = 'done'
     db.session.commit()
+
+    # Отдаем ссылку как безопасный HTML
     flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deep_link}">Открыть Tonkeeper и подтвердить</a>', 'deeplink')
     return redirect('/grrr')
 
