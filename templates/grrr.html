@@ -25,9 +25,9 @@
         .flash{padding:10px;border-radius:12px;margin:10px 0;font-size:14px}
         .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
         .flash-danger{background:rgba(255,68,68,0.2);color:#ff4444}
-        .flash-warning{background:rgba(255,140,0,0.2);color:#ff8c00}
-        .qr-container{margin-top:15px; text-align:center}
+        .qr-container{margin:20px 0; text-align:center}
         .qr-container img{max-width:200px; border-radius:16px; background:white; padding:10px}
+        .ton-link{word-break:break-all; color:#a29bfe; font-size:12px; margin-top:10px; display:block;}
         .exchange-banner{background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
         .exchange-banner p{color:#ffd700;font-size:14px;margin:5px 0}
         .mining-banner{background:rgba(255,140,0,0.08);border:1px solid rgba(255,140,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
@@ -41,7 +41,6 @@
         .limit-info{color:#ffd700;font-size:13px;margin-bottom:8px}
         .rate-info{color:#aaa; font-size:12px; margin:5px 0;}
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
 <div class="card">
@@ -54,26 +53,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">
-                    {{ message|safe }}
-                    {% if category == 'deeplink' %}
-                    <div class="qr-container" id="qrCode"></div>
-                    <script>
-                        var deeplinkMatch = '{{ message }}'.match(/href="([^"]+)"/);
-                        if (deeplinkMatch && deeplinkMatch[1]) {
-                            var link = deeplinkMatch[1];
-                            new QRCode(document.getElementById("qrCode"), {
-                                text: link,
-                                width: 200,
-                                height: 200,
-                                colorDark : "#000000",
-                                colorLight : "#ffffff",
-                                correctLevel : QRCode.CorrectLevel.M
-                            });
-                        }
-                    </script>
-                    {% endif %}
-                </div>
+                <div class="flash flash-{{ category }}">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -116,7 +96,14 @@
             <p class="fee-info">Комиссия: 10% · Сегодня можно вывести: {{ remain }} GRRR</p>
             <button type="submit" class="btn">📤 Отправить заявку на вывод</button>
         </form>
-        <p style="color:#888;font-size:10px;margin-top:5px;">После отправки вы увидите QR-код. Отсканируйте его камерой Tonkeeper и подтвердите перевод.</p>
+        <p style="color:#888;font-size:10px;margin-top:5px;">После отправки отсканируйте QR-код камерой Tonkeeper и подтвердите перевод.</p>
+        
+        {% if show_qr %}
+        <div class="qr-container">
+            <img src="{{ qr_code_url }}" alt="QR-код для вывода GRRR">
+            <p style="color:#a29bfe; margin-top:10px;">Или <a href="{{ ton_link }}" class="ton-link">нажмите здесь</a>, чтобы открыть в Tonkeeper</p>
+        </div>
+        {% endif %}
     </div>
     
     <div class="back-link">
