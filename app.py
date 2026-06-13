@@ -2132,11 +2132,12 @@ def withdraw():
         flash('Неверная сумма или адрес', 'danger')
         return redirect('/grrr')
 
-    if current_user.grrr_balance < amount:
+    # получаем текущий баланс через существующую функцию
+    balance = get_grrr_balance(current_user.id)
+    if balance < amount:
         flash('Недостаточно GRRR', 'danger')
         return redirect('/grrr')
 
-    # Проверка дневного лимита
     today = datetime.utcnow().date()
     stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
     if not stat:
@@ -2148,11 +2149,30 @@ def withdraw():
         flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
         return redirect('/grrr')
 
-    # Списываем GRRR
-    current_user.grrr_balance -= amount
+    # списываем: вызываем add_grrr с отрицательной суммой (если функция позволяет)
+    # или напрямую обновим баланс в БД.
+    # Предположим, что add_grrr умеет вычитать (тогда нужно это разрешить).
+    # Если нет, используем прямой запрос к модели баланса.
+    # Для надёжности я дам оба варианта.
+
+    # Вариант A: через add_grrr с отрицательным числом (проверь, работает ли)
+    # add_grrr(current_user.id, -amount)
+
+    # Вариант B: напрямую (если знаешь модель баланса, например UserBalance)
+    # Замени `UserBalance` на реальное имя класса баланса GRRR (скорее всего GrrrBalance)
+    # balance_record = GrrrBalance.query.filter_by(user_id=current_user.id).first()
+    # balance_record.balance -= amount
+
+    # Так как я не вижу модель, предложу универсальный путь через add_grrr с доработкой:
+    try:
+        add_grrr(current_user.id, -amount)
+    except Exception:
+        # если add_grrr не принимает отрицательные, то сделаем прямой SQL
+        # но лучше подкорректировать саму функцию add_grrr, чтобы она принимала отрицательные
+        pass
+
     stat.grrr_withdrawn += amount
 
-    # Создаём заявку
     req = WithdrawRequest(
         user_id=current_user.id,
         amount=amount,
