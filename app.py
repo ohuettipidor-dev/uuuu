@@ -2213,19 +2213,15 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Правильный deeplink для Tonkeeper (от имени кассира)
-    cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
+    # Ссылка для QR (формат ton://) и резервная кнопка
     jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
+    cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
     amount_nano = int(amount * 1e9)
-
-    # Ссылка формата https://app.tonkeeper.com/transfer/...
-    deep_link = f"https://app.tonkeeper.com/transfer/{jetton_master}?amount={amount_nano}&to={ton_address}&from={cashier_addr}"
+    ton_link = f"ton://transfer/{jetton_master}?amount={amount_nano}&to={ton_address}&from={cashier_addr}"
 
     req.status = 'done'
     db.session.commit()
-
-    # Отдаем ссылку как безопасный HTML
-    flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deep_link}">Открыть Tonkeeper и подтвердить</a>', 'deeplink')
+    flash(f'✅ Перевод готов! Отсканируйте QR-код камерой Tonkeeper или <a href="{ton_link}">нажмите здесь</a>', 'deeplink')
     return redirect('/grrr')
 
 @app.route('/admin/withdrawal/<int:req_id>/done')
