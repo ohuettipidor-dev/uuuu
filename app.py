@@ -6517,7 +6517,10 @@ def tab_games():
     # Отдаём список игр (без основного layout)
     user_games = UserGame.query.filter_by(is_approved=True).order_by(UserGame.plays_count.desc()).all()
     return render_template('games_content.html', user_games=user_games)
-    
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.utcnow}
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
