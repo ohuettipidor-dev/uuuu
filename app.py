@@ -2601,6 +2601,7 @@ def forward_message():
             db.session.add(new_msg)
     db.session.commit()
     return jsonify({'success': True, 'target_type': target_type, 'target_id': target_id})
+
 @app.route('/api/sync_grrr', methods=['POST'])
 @login_required
 def sync_grrr():
@@ -2624,11 +2625,12 @@ def sync_grrr():
             return jsonify({'success': False, 'error': 'Дневной лимит GRRR исчерпан'})
         amount = allowed
 
-    current_user.grrr_balance += amount
+    # Начисляем через существующую функцию
+    new_balance = add_grrr(current_user.id, amount)
     stat.grrr_earned += amount
     db.session.commit()
 
-    return jsonify({'success': True, 'new_balance': current_user.grrr_balance})
+    return jsonify({'success': True, 'new_balance': new_balance})
 @app.route('/toggle_favorite', methods=['POST'])
 @login_required
 def toggle_favorite():
