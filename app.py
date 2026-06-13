@@ -1652,6 +1652,11 @@ def get_secret_messages(chat_id, last_id):
     db.session.commit()
     return jsonify(result)
 
+@app.route('/test_updates')
+def test_updates():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
+    resp = requests.get(url).json()
+    return f"<pre>{resp}</pre>"
 @app.route('/secret_chats')
 @login_required
 def secret_chats_list():
