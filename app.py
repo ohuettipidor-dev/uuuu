@@ -36,54 +36,6 @@ import ed25519
 import os
 import requests
 
-# Токен бота из переменной окружения
-BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
-
-def send_message(chat_id, text, reply_markup=None):
-    """Отправляет сообщение пользователю бота."""
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    data = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
-    if reply_markup:
-        data['reply_markup'] = reply_markup
-    try:
-        requests.post(url, json=data)
-    except Exception:
-        pass
-
-# Webhook для бота
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    if request.headers.get('X-Telegram-Bot-Api-Secret') != BOT_TOKEN:
-        return 'unauthorized', 403
-    update = request.get_json()
-    if not update or 'message' not in update:
-        return 'ok'
-    msg = update['message']
-    chat_id = msg['chat']['id']
-    text = msg.get('text', '')
-
-    if text == '/start':
-        keyboard = {
-            "inline_keyboard": [
-                [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
-                [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
-                [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
-                [{"text": "💎 Пригласить друга", "web_app": {"url": "https://beargram.up.railway.app/referral"}}]
-            ]
-        }
-        send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
-
-    return 'ok'
-
-# Установка вебхука (выполни один раз после деплоя)
-@app.route('/set_webhook')
-def set_webhook():
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
-    ngrok_url = "https://beargram.up.railway.app/webhook"
-    data = {'url': ngrok_url}
-    resp = requests.post(url, json=data).json()
-    return f"Webhook установлен: {resp}"
-
 # Кошелёк-кассир (seed из переменной окружения)
 CASHIER_SEED = os.environ.get('CASHIER_SEED', '')
 
@@ -128,6 +80,7 @@ YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB6
 VAPID_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg_gjCYMlsnEqEwve9-aPTyOGeCr7FSMk8N1pyVjjr0LShRANCAARlre50Affy8pB2MI1Qu5sFIHVsdEbSMubEuYigcTXaW_e49z7UjMjggoRUody6Fbpuz_x3NngMjDlQSSApYIrE"
 VAPID_PUBLIC_KEY = "BGWt7nQB9_LykHYwjVC7mwUgdWx0RtIy5sS5iKBxNdpb97j3PtSMyOCChFSh3LoVum7P_Hc2eAyMOVBJIClgisQ="
 app = Flask(__name__)
+BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
 @app.after_request
 def allow_iframe(response):
     response.headers.pop('X-Frame-Options', None)  # убираем запрет
@@ -166,7 +119,16 @@ ALLOWED_EXTENSIONS = {
     'mp4', 'avi', 'mov', 'mkv', 'webm',
     'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', '7z'
 }
-
+def send_message(chat_id, text, reply_markup=None):
+    """Отправляет сообщение пользователю бота."""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
+    if reply_markup:
+        data['reply_markup'] = reply_markup
+    try:
+        requests.post(url, json=data)
+    except Exception:
+        pass
 def get_file_type(filename):
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
     image_exts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'}
@@ -1704,6 +1666,38 @@ def secret_chats_list():
         last_msg = SecretMessage.query.filter_by(secret_chat_id=sc.id).order_by(SecretMessage.timestamp.desc()).first()
         chats_data.append({'id': sc.id, 'other_user': other_user, 'last_msg': last_msg})
     return render_template('secret_chats.html', secret_chats=chats_data)
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    if request.headers.get('X-Telegram-Bot-Api-Secret') != BOT_TOKEN:
+        return 'unauthorized', 403
+    update = request.get_json()
+    if not update or 'message' not in update:
+        return 'ok'
+    msg = update['message']
+    chat_id = msg['chat']['id']
+    text = msg.get('text', '')
+
+    if text == '/start':
+        keyboard = {
+            "inline_keyboard": [
+                [{"text": "🎮 Игры", "web_app": {"url": "https://beargram.up.railway.app/games"}}],
+                [{"text": "💰 Баланс", "web_app": {"url": "https://beargram.up.railway.app/grrr"}}],
+                [{"text": "📢 Новости", "url": "https://t.me/beargram_news"}],
+                [{"text": "💎 Пригласить друга", "web_app": {"url": "https://beargram.up.railway.app/referral"}}]
+            ]
+        }
+        send_message(chat_id, "🐻 <b>Добро пожаловать в BearGram!</b>\n\nВыберите действие:", keyboard)
+
+    return 'ok'
+
+@app.route('/set_webhook')
+def set_webhook():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook"
+    ngrok_url = "https://beargram.up.railway.app/webhook"
+    data = {'url': ngrok_url}
+    resp = requests.post(url, json=data).json()
+    return f"Webhook установлен: {resp}"
+    
 @app.route('/api/secret/burn_message/<int:msg_id>', methods=['POST'])
 @login_required
 def burn_secret_message(msg_id):
