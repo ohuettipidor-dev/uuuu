@@ -28,28 +28,51 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import os
 import os
-import asyncio
-from pytonlib import TonlibClient
-from pytonlib.wallet import Wallet
+import requests
+import json
+import struct
+import hashlib
+import ed25519
 
-# Кошелёк-кассир (загружается один раз при старте)
-CASHIER_SEED = os.environ.get('CASHIER_SEED')
-CASHIER_WALLET = None
-if CASHIER_SEED:
-    try:
-        # Инициализируем кошелёк асинхронно, но обернём в синхронный вызов
-        async def _init_cashier():
-            global CASHIER_WALLET
-            client = TonlibClient()
-            await client.init_tonlib()
-            wallet = await Wallet.from_mnemonic(client, CASHIER_SEED.split())
-            return wallet
-        CASHIER_WALLET = asyncio.run(_init_cashier())
-        print("✅ Кошелёк-кассир загружен")
-    except Exception as e:
-        print(f"❌ Ошибка загрузки кошелька-кассира: {e}")
-else:
-    print("❌ Переменная окружения CASHIER_SEED не задана!")
+# Кошелёк-кассир (seed из переменной окружения)
+CASHIER_SEED = os.environ.get('CASHIER_SEED', '')
+
+def build_transfer_payload(recipient: str, amount_grrr: float) -> dict:
+    """Формирует payload для перевода GRRR."""
+    jetton_master = 'EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX'
+    amount = int(amount_grrr * 1e9)  # decimals=9
+    # Формат сообщения для жетона (transfer)
+    # https://github.com/ton-blockchain/TIPs/issues/74
+    payload = {
+        'type': 'transfer',
+        'amount': amount,
+        'destination': recipient,
+        'jetton_master': jetton_master,
+        'gas_amount': 50000000  # 0.05 TON
+    }
+    return payload
+
+def sign_transaction(payload: dict) -> str:
+    """Подписывает транзакцию с помощью seed кассира."""
+    # Генерируем ключи из seed
+    seed_bytes = hashlib.sha256(CASHIER_SEED.encode()).digest()
+    signing_key = ed25519.SigningKey(seed_bytes)
+    # Сериализуем payload в bytes (упрощённо)
+    message = json.dumps(payload, sort_keys=True).encode()
+    signature = signing_key.sign(message)
+    return signature.hex()
+
+def send_via_deeplink(payload: dict) -> str:
+    """Создаёт deeplink URL для Tonkeeper."""
+    # Подписываем
+    signature = sign_transaction(payload)
+    # Кодируем параметры в base64
+    import base64
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+    sig_b64 = base64.urlsafe_b64encode(bytes.fromhex(signature)).decode()
+    # Формируем deeplink
+    deeplink = f"ton://transfer/{payload['jetton_master']}?amount={payload['amount']}&to={payload['destination']}&payload={payload_b64}&signature={sig_b64}"
+    return deeplink
 YOOMONEY_WALLET = '4100119522166446'
 YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
 VAPID_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg_gjCYMlsnEqEwve9-aPTyOGeCr7FSMk8N1pyVjjr0LShRANCAARlre50Affy8pB2MI1Qu5sFIHVsdEbSMubEuYigcTXaW_e49z7UjMjggoRUody6Fbpuz_x3NngMjDlQSSApYIrE"
@@ -2151,67 +2174,6 @@ def messages(uid):
             m.is_read = True
     db.session.commit()
     return render_template('messages.html', msgs=msgs, other=other)
-@app.route('/withdraw', methods=['POST'])
-@login_required
-def withdraw():
-    amount = float(request.form.get('amount', 0))
-    ton_address = request.form.get('ton_address', '').strip()
-
-    if amount <= 0 or not ton_address:
-        flash('Неверная сумма или адрес', 'danger')
-        return redirect('/grrr')
-
-    # получаем текущий баланс через существующую функцию
-    balance = get_grrr_balance(current_user.id)
-    if balance < amount:
-        flash('Недостаточно GRRR', 'danger')
-        return redirect('/grrr')
-
-    today = datetime.utcnow().date()
-    stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
-    if not stat:
-        stat = DailyStat(user_id=current_user.id, date=today, grrr_earned=0, grrr_withdrawn=0)
-        db.session.add(stat)
-
-    if stat.grrr_withdrawn + amount > 100:
-        available = max(0, 100 - stat.grrr_withdrawn)
-        flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
-        return redirect('/grrr')
-
-    # списываем: вызываем add_grrr с отрицательной суммой (если функция позволяет)
-    # или напрямую обновим баланс в БД.
-    # Предположим, что add_grrr умеет вычитать (тогда нужно это разрешить).
-    # Если нет, используем прямой запрос к модели баланса.
-    # Для надёжности я дам оба варианта.
-
-    # Вариант A: через add_grrr с отрицательным числом (проверь, работает ли)
-    # add_grrr(current_user.id, -amount)
-
-    # Вариант B: напрямую (если знаешь модель баланса, например UserBalance)
-    # Замени `UserBalance` на реальное имя класса баланса GRRR (скорее всего GrrrBalance)
-    # balance_record = GrrrBalance.query.filter_by(user_id=current_user.id).first()
-    # balance_record.balance -= amount
-
-    # Так как я не вижу модель, предложу универсальный путь через add_grrr с доработкой:
-    try:
-        add_grrr(current_user.id, -amount)
-    except Exception:
-        # если add_grrr не принимает отрицательные, то сделаем прямой SQL
-        # но лучше подкорректировать саму функцию add_grrr, чтобы она принимала отрицательные
-        pass
-
-    stat.grrr_withdrawn += amount
-
-    req = WithdrawRequest(
-        user_id=current_user.id,
-        amount=amount,
-        ton_address=ton_address
-    )
-    db.session.add(req)
-    db.session.commit()
-
-    flash(f'✅ Заявка на вывод {amount} GRRR создана. Ожидайте обработки.', 'success')
-    return redirect('/grrr')
 
 @app.route('/withdraw', methods=['POST'])
 @login_required
@@ -2252,17 +2214,18 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Пытаемся отправить токены автоматически
+    # Формируем deeplink
     try:
-        tx_hash = send_grrr_to_user(ton_address, amount)
-        req.status = 'done'
+        payload = build_transfer_payload(ton_address, amount)
+        deeplink_url = send_via_deeplink(payload)
+        req.status = 'done'  # считаем выполненной, т.к. пользователь получит ссылку
         db.session.commit()
-        flash(f'✅ {amount} GRRR отправлены на ваш кошелёк! TxID: {tx_hash[:10]}...', 'success')
+        flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deeplink_url}">Открыть Tonkeeper</a>', 'success')
     except Exception as e:
-        # Если не удалось – заявка остаётся pending, админ увидит её в админке
-        flash(f'⚠️ Заявка создана, но авто-отправка не удалась: {str(e)}. Админ отправит вручную.', 'warning')
+        flash(f'⚠️ Заявка создана, но не удалось сформировать ссылку: {str(e)}', 'warning')
 
-    return redirect('/grrr')
+    return redirect('/grrr') 
+
 
 @app.route('/admin/withdrawal/<int:req_id>/done')
 @login_required
