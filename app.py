@@ -2590,8 +2590,25 @@ def sync_grrr():
         return jsonify({'success': False, 'error': 'Неверная сумма'})
     if amount <= 0:
         return jsonify({'success': False, 'error': 'Сумма должна быть положительной'})
-    new_balance = add_grrr(current_user.id, amount)
-    return jsonify({'success': True, 'new_balance': new_balance})
+
+    today = datetime.utcnow().date()
+    stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
+    if not stat:
+        stat = DailyStat(user_id=current_user.id, date=today, grrr_earned=0, grrr_withdrawn=0)
+        db.session.add(stat)
+
+    # Дневной лимит 100 GRRR
+    if stat.grrr_earned + amount > 100:
+        allowed = max(0, 100 - stat.grrr_earned)
+        if allowed == 0:
+            return jsonify({'success': False, 'error': 'Дневной лимит GRRR исчерпан'})
+        amount = allowed
+
+    current_user.grrr_balance += amount
+    stat.grrr_earned += amount
+    db.session.commit()
+
+    return jsonify({'success': True, 'new_balance': current_user.grrr_balance})
 @app.route('/toggle_favorite', methods=['POST'])
 @login_required
 def toggle_favorite():
