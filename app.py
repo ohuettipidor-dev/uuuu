@@ -2201,11 +2201,9 @@ def withdraw():
         flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
         return redirect('/grrr')
 
-    # Списываем баланс
     add_grrr(current_user.id, -amount)
     stat.grrr_withdrawn += amount
 
-    # Создаём заявку
     req = WithdrawRequest(
         user_id=current_user.id,
         amount=amount,
@@ -2214,18 +2212,18 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Формируем deeplink
-    try:
-        payload = build_transfer_payload(ton_address, amount)
-        deeplink_url = send_via_deeplink(payload)
-        req.status = 'done'  # считаем выполненной, т.к. пользователь получит ссылку
-        db.session.commit()
-        flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deeplink_url}">Открыть Tonkeeper</a>', 'success')
-    except Exception as e:
-        flash(f'⚠️ Заявка создана, но не удалось сформировать ссылку: {str(e)}', 'warning')
-
-    return redirect('/grrr') 
-
+    # Ссылка для Tonkeeper (от имени кассира, с уже заполненными полями)
+    cashier_address = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
+    jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
+    amount_nano = int(amount * 1e9)
+    deep_link = f"https://app.tonkeeper.com/transfer/{cashier_address}?jetton={jetton_master}&amount={amount_nano}&to={ton_address}"
+    
+    # Помечаем заявку как выполненную (можно оставить pending, если хочешь контролировать)
+    req.status = 'done'
+    db.session.commit()
+    
+    flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deep_link}">Открыть Tonkeeper и подтвердить</a>', 'deeplink')
+    return redirect('/grrr')
 
 @app.route('/admin/withdrawal/<int:req_id>/done')
 @login_required
