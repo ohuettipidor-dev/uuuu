@@ -28,16 +28,23 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import os
 import os
-from ton import Wallet, ToncenterProvider
+import asyncio
+from pytonlib import TonlibClient
+from pytonlib.wallet import Wallet
 
-# Инициализация кошелька-кассира (запустится при старте сервера)
+# Кошелёк-кассир (загружается один раз при старте)
 CASHIER_SEED = os.environ.get('CASHIER_SEED')
 CASHIER_WALLET = None
 if CASHIER_SEED:
     try:
-        # Используем публичный Toncenter (без API-ключа)
-        provider = ToncenterProvider(endpoint="https://toncenter.com/api/v2/jsonRPC")
-        CASHIER_WALLET = Wallet.from_mnemonic(CASHIER_SEED.split(), provider)
+        # Инициализируем кошелёк асинхронно, но обернём в синхронный вызов
+        async def _init_cashier():
+            global CASHIER_WALLET
+            client = TonlibClient()
+            await client.init_tonlib()
+            wallet = await Wallet.from_mnemonic(client, CASHIER_SEED.split())
+            return wallet
+        CASHIER_WALLET = asyncio.run(_init_cashier())
         print("✅ Кошелёк-кассир загружен")
     except Exception as e:
         print(f"❌ Ошибка загрузки кошелька-кассира: {e}")
@@ -137,24 +144,29 @@ def decrypt_message(encrypted_message, user_id, other_id):
     except Exception:
         return "[Зашифрованное сообщение]"
 
-def send_grrr_to_user(recipient_address: str, amount_grrr: float):
-def send_grrr_to_user(recipient_address: str, amount_grrr: float):
-    """Отправляет GRRR с кошелька-кассира на указанный адрес."""
+async def _send_grrr_async(recipient: str, amount_grrr: float):
+    """Отправляет GRRR с кошелька-кассира"""
     if not CASHIER_WALLET:
-        raise Exception("Кошелёк-кассир не инициализирован")
-
+        raise Exception("Кассир не инициализирован")
     jetton_master = 'EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX'
-    # decimals = 9, умножаем на 1e9
+    # decimals = 9, переводим в минимальные единицы
     amount = int(amount_grrr * 1_000_000_000)
-    
-    # Отправляем жетон
-    tx = CASHIER_WALLET.transfer_jetton(
-        to=recipient_address,
-        jetton_master=jetton_master,
+    tx = await CASHIER_WALLET.transfer_jetton(
+        destination=recipient,
+        jetton_master_address=jetton_master,
         amount=amount,
         gas_amount=0.05  # комиссия TON
     )
-    return tx.hash
+    return tx['hash']
+
+def send_grrr_to_user(recipient: str, amount_grrr: float):
+    """Синхронная обёртка для вызова из Flask"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_send_grrr_async(recipient, amount_grrr))
+    finally:
+        loop.close()
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -2201,15 +2213,57 @@ def withdraw():
     flash(f'✅ Заявка на вывод {amount} GRRR создана. Ожидайте обработки.', 'success')
     return redirect('/grrr')
 
-@app.route('/admin/withdrawals')
+@app.route('/withdraw', methods=['POST'])
 @login_required
-def admin_withdrawals():
-    if current_user.id != 1:   # замени на свой ID, если он не 1
-        return redirect('/')
-    reqs = WithdrawRequest.query.order_by(WithdrawRequest.created_at.desc()).all()
-    return render_template('grrr_withdrawals.html', requests=reqs)
+def withdraw():
+    amount = float(request.form.get('amount', 0))
+    ton_address = request.form.get('ton_address', '').strip()
 
-@app.route('/admin/withdrawal/<int:req_id>/done')
+    if amount <= 0 or not ton_address:
+        flash('Неверная сумма или адрес', 'danger')
+        return redirect('/grrr')
+
+    balance = get_grrr_balance(current_user.id)
+    if balance < amount:
+        flash('Недостаточно GRRR', 'danger')
+        return redirect('/grrr')
+
+    today = datetime.utcnow().date()
+    stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
+    if not stat:
+        stat = DailyStat(user_id=current_user.id, date=today, grrr_earned=0, grrr_withdrawn=0)
+        db.session.add(stat)
+
+    if stat.grrr_withdrawn + amount > 100:
+        available = max(0, 100 - stat.grrr_withdrawn)
+        flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
+        return redirect('/grrr')
+
+    # Списываем баланс
+    add_grrr(current_user.id, -amount)
+    stat.grrr_withdrawn += amount
+
+    # Создаём заявку
+    req = WithdrawRequest(
+        user_id=current_user.id,
+        amount=amount,
+        ton_address=ton_address
+    )
+    db.session.add(req)
+    db.session.commit()
+
+    # Пытаемся отправить токены автоматически
+    try:
+        tx_hash = send_grrr_to_user(ton_address, amount)
+        req.status = 'done'
+        db.session.commit()
+        flash(f'✅ {amount} GRRR отправлены на ваш кошелёк! TxID: {tx_hash[:10]}...', 'success')
+    except Exception as e:
+        # Если не удалось – заявка остаётся pending, админ увидит её в админке
+        flash(f'⚠️ Заявка создана, но авто-отправка не удалась: {str(e)}. Админ отправит вручную.', 'warning')
+
+    return redirect('/grrr')
+
 @app.route('/admin/withdrawal/<int:req_id>/done')
 @login_required
 def mark_done(req_id):
