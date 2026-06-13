@@ -3,20 +3,20 @@
 <head>
     <title>⛏️ Майнинг & Ноды | BearGram</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white;padding:20px}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white;padding:20px;overflow-x:hidden}
         .header{display:flex;align-items:center;gap:15px;margin-bottom:20px}
         .back-btn{color:#ff6b6b;text-decoration:none;font-size:18px}
         h1{color:#ffd700;font-size:20px}
         .card{background:rgba(255,255,255,0.1);border-radius:20px;padding:20px;margin-bottom:15px}
         h3{color:#ffd700;margin-bottom:10px}
         
-        .stats{display:flex;gap:10px;margin-bottom:15px}
-        .stat-card{background:rgba(255,215,0,0.1);border-radius:15px;padding:12px;flex:1;text-align:center}
-        .stat-value{font-size:20px;font-weight:bold;color:#ffd700}
-        .stat-label{font-size:10px;color:#aaa}
+        .stats{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;justify-content:center}
+        .stat-card{background:rgba(255,215,0,0.1);border-radius:15px;padding:12px;flex:1 1 auto;min-width:80px;text-align:center}
+        .stat-value{font-size:20px;font-weight:bold;color:#ffd700;word-break:break-word}
+        .stat-label{font-size:10px;color:#aaa;word-break:break-word}
         
         .mining-active{background:rgba(76,217,100,0.15);border:2px solid #4cd964;border-radius:20px;padding:25px;text-align:center;margin-bottom:15px}
         .mining-inactive{background:rgba(255,255,255,0.05);border-radius:20px;padding:25px;text-align:center;margin-bottom:15px}
@@ -33,19 +33,20 @@
         .btn-orange{background:#ff8c00;color:white}
         .btn-claim{background:#4cd964;color:white;padding:5px 12px;font-size:11px;margin:0;width:auto}
         
-        .coin-option{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-        .coin-info{flex:1}
+        .coin-option{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+        .coin-info{flex:1;min-width:150px}
         .coin-name{font-weight:bold;font-size:14px}
         .coin-desc{font-size:11px;color:#aaa;margin-top:3px}
         .coin-profit{color:#4cd964;font-weight:bold;font-size:13px}
         
         /* BEAR Node styles */
-        .node-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;flex:1;min-width:120px;text-align:center}
+        .nodes-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+        .node-card{background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;flex:1 1 auto;min-width:120px;text-align:center}
         .node-name{font-weight:bold;color:#ffd700;font-size:14px}
         .node-rate{font-size:28px;font-weight:bold;color:#4cd964}
         .node-amount{font-size:11px;color:#aaa}
-        .node-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-        .node-info{flex:1}
+        .node-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+        .node-info{flex:1;min-width:150px}
         .node-status{color:#4cd964;font-size:12px}
         .info-text{color:#ccc;font-size:14px;line-height:1.6}
         .info-sub{color:#aaa;font-size:13px;line-height:1.6;margin-top:10px}
@@ -101,7 +102,6 @@
     <div class="{% if user_mining %}mining-active{% else %}mining-inactive{% endif %}">
         <div class="mining-icon">⛏️🐻</div>
         <h3>Майнинг $GRRR</h3>
-        <p style="color:#aaa;font-size:13px;">Симуляция — готовимся к реальному блокчейну!</p>
         
         {% if user_mining %}
             <div class="mining-speed">⚡ Идёт майнинг...</div>
@@ -123,7 +123,7 @@
     <div class="card">
         <h3>📋 История майнинга $GRRR</h3>
         {% for session in mining_sessions %}
-        <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin:5px 0;display:flex;justify-content:space-between;">
+        <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin:5px 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px;">
             <span style="font-size:12px;">{{ session.started_at.strftime('%d.%m %H:%M') }}</span>
             <span style="color:#4cd964;">+{{ "%.2f"|format(session.reward) }} $GRRR</span>
             <span style="color:#888;font-size:11px;">{{ session.hours }} ч.</span>
@@ -158,7 +158,7 @@
     <!-- ПОКУПКА НОД -->
     <div class="card">
         <h3>🔋 Купить Ноду</h3>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="nodes-grid">
             <div class="node-card">
                 <div class="node-name">🐻 Малая</div>
                 <div class="node-rate">12%</div>
