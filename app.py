@@ -2213,18 +2213,19 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
+    # Формируем ссылку для Tonkeeper
     jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
     cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
     amount_nano = int(amount * 1e9)
     ton_link = f"ton://transfer/{jetton_master}?amount={amount_nano}&to={ton_address}&from={cashier_addr}"
-    qr_url = f"https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl={ton_link}"
 
-    # Помечаем заявку выполненной (можно оставить pending, если хочешь контролировать)
+    # Генерируем QR-код через надёжный сервис
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={ton_link}"
+
     req.status = 'done'
     db.session.commit()
 
-    # Показываем ту же страницу с QR-кодом
-    return render_template('grrr.html', 
+    return render_template('grrr.html',
                            grrr_balance=get_grrr_balance(current_user.id),
                            coins_balance=get_user_coins(current_user.id).balance,
                            show_qr=True,
