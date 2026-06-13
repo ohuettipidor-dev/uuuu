@@ -25,9 +25,6 @@
         .flash{padding:10px;border-radius:12px;margin:10px 0;font-size:14px}
         .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
         .flash-danger{background:rgba(255,68,68,0.2);color:#ff4444}
-        .airdrop-banner{background:rgba(255,215,0,0.1);border:1px solid #ffd700;border-radius:16px;padding:15px;margin:15px 0}
-        .airdrop-banner h3{color:#ffd700;margin-bottom:5px}
-        .airdrop-banner p{color:#aaa;font-size:12px}
         .exchange-banner{background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
         .exchange-banner p{color:#ffd700;font-size:14px;margin:5px 0}
         .mining-banner{background:rgba(255,140,0,0.08);border:1px solid rgba(255,140,0,0.3);border-radius:16px;padding:15px;margin:15px 0}
@@ -38,6 +35,8 @@
         .node-banner{background:rgba(255,140,0,0.1);border:1px solid #ff8c00;border-radius:16px;padding:15px;margin:15px 0}
         .node-banner h3{color:#ff8c00;margin-bottom:5px}
         .node-banner p{color:#aaa;font-size:12px}
+        .limit-info{color:#ffd700;font-size:13px;margin-bottom:8px}
+        .rate-info{color:#aaa; font-size:12px; margin:5px 0;}
     </style>
 </head>
 <body>
@@ -58,23 +57,16 @@
     
     <div class="label">Твой баланс $GRRR:</div>
     <div class="balance">{{ "%.2f"|format(grrr_balance) }} $GRRR</div>
+    <div class="rate-info">💰 1 GRRR ≈ 0.02 TON (~6 ₽)</div>
     
-    {% if grrr_balance == 0 %}
-    <div class="airdrop-banner">
-        <h3>🎁 Бесплатный Airdrop!</h3>
-        <p>Получи 100 $GRRR прямо сейчас!</p>
-        <button class="btn btn-green" onclick="claimAirdrop()">🔥 Забрать 100 $GRRR</button>
-    </div>
-    {% endif %}
-    
-    <!-- ОБМЕННИК -->
+    <!-- ОБМЕННИК (пока оставлен) -->
     <div class="exchange-banner">
         <p>💎 Хочешь обменять кристаллайзеры на $GRRR?</p>
         <a href="/bearpay?tab=bank" class="btn btn-gold" style="display:inline-block;text-decoration:none;margin-top:8px;">🔄 Открыть обменник</a>
         <p style="color:#888;font-size:11px;margin-top:5px;">Курс: 1 💎 = 0.95 $GRRR · Комиссия 5%</p>
     </div>
     
-    <!-- МАЙНИНГ -->
+    <!-- МАЙНИНГ (пока оставлен) -->
     <div class="mining-banner">
         <div style="font-size:32px;">⛏️</div>
         <p>Майни $GRRR и другие криптовалюты!</p>
@@ -82,22 +74,30 @@
         <p style="color:#888;font-size:11px;margin-top:5px;">$GRRR + Verus Coin + Monero</p>
     </div>
     
-    <!-- BEAR Node -->
+    <!-- BEAR Node (пока оставлен) -->
     <div class="node-banner">
         <h3>🔋 BEAR Node</h3>
         <p>Купи ноду — поддержи независимую сеть и получай до 50% годовых в $GRRR</p>
         <a href="/bearnode" class="btn btn-orange" style="display:inline-block;margin-top:8px;text-decoration:none;">🔋 Купить Ноду</a>
     </div>
     
-    <!-- ВЫВОД $GRRR -->
+    <!-- ВЫВОД $GRRR (НОВЫЙ – на TON!) с лимитом 100 GRRR/день -->
     <div class="withdraw-section">
-        <h3>📤 Вывести $GRRR</h3>
-        <form method="POST" action="/grrr/withdraw">
-            <input type="text" name="address" placeholder="Адрес кошелька (0x...)" required>
-            <input type="number" name="amount" placeholder="Сумма $GRRR (мин. 10)" min="10" step="1" required>
-            <p class="fee-info">Комиссия: 10% | Минимум: 10 $GRRR</p>
-            <button type="submit" class="btn">📤 Вывести на кошелёк</button>
+        <h3>📤 Вывести $GRRR → TON</h3>
+        {% set today = now().date() %}
+        {% set stat = current_user.daily_stats|selectattr('date', 'equalto', today)|first|default(None) %}
+        {% set already_withdrawn = stat.grrr_withdrawn if stat else 0 %}
+        {% set remain = (100 - already_withdrawn)|round(2) %}
+        <div class="limit-info">
+            🕒 Сегодня доступно к выводу: <b>{{ remain if remain > 0 else 0 }} GRRR</b> (из 100 GRRR/день)
+        </div>
+        <form method="POST" action="/withdraw">
+            <input type="text" name="ton_address" placeholder="Ваш TON-адрес (UQ...)" required>
+            <input type="number" name="amount" placeholder="Сумма GRRR (мин. 1)" min="1" step="0.1" max="{{ remain }}" required>
+            <p class="fee-info">Комиссия: 10% · Сегодня можно вывести: {{ remain }} GRRR</p>
+            <button type="submit" class="btn">📤 Отправить заявку на вывод</button>
         </form>
+        <p style="color:#888;font-size:10px;margin-top:5px;">Заявки обрабатываются вручную. Убедитесь, что TON-адрес верен.</p>
     </div>
     
     <div class="back-link">
@@ -106,16 +106,11 @@
 </div>
 
 <script>
-async function claimAirdrop() {
-    const res = await fetch('/grrr/airdrop', {method:'POST'});
-    const data = await res.json();
-    if (data.success) {
-        alert(data.message);
-        location.reload();
-    } else {
-        alert(data.error);
-    }
-}
+// Дополнительная защита на клиенте – не даём ввести больше лимита
+document.querySelector('input[name="amount"]').addEventListener('input', function() {
+    let max = parseFloat(this.max);
+    if (this.value > max) this.value = max;
+});
 </script>
 </body>
 </html>
