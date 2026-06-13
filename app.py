@@ -247,6 +247,10 @@ class SupportTicket(db.Model):
     status = db.Column(db.String(20), default='open')  # open, resolved, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', foreign_keys=[user_id])
+    class AirdropClaim(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    claimed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class UserGame(db.Model):
     id = db.Column(db.Integer, primary_key=True)
