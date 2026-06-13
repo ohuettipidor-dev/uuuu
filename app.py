@@ -6690,5 +6690,14 @@ def inject_now():
     from datetime import datetime
     return {'now': datetime.utcnow}
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    with app.app_context():
+        db.create_all()
+
+    # Запуск Telegram-бота в фоновом потоке
+    import threading
+    if BOT_TOKEN:
+        t = threading.Thread(target=run_bot, daemon=True)
+        t.start()
+        print("🤖 Бот запущен через Long Polling")
+
+    app.run(host='0.0.0.0', port=8080, debug=True)
