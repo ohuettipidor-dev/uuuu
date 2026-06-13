@@ -50,7 +50,13 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">{{ message }}</div>
+                <div class="flash flash-{{ category }}">
+                    {% if category == 'deeplink' %}
+                        {{ message|safe }}
+                    {% else %}
+                        {{ message }}
+                    {% endif %}
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -97,7 +103,7 @@
             <p class="fee-info">Комиссия: 10% · Сегодня можно вывести: {{ remain }} GRRR</p>
             <button type="submit" class="btn">📤 Отправить заявку на вывод</button>
         </form>
-        <p style="color:#888;font-size:10px;margin-top:5px;">Заявки обрабатываются вручную. Убедитесь, что TON-адрес верен.</p>
+        <p style="color:#888;font-size:10px;margin-top:5px;">После отправки вы получите ссылку для подтверждения в Tonkeeper. Проверьте, что адрес верен.</p>
     </div>
     
     <div class="back-link">
