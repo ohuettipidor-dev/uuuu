@@ -26,7 +26,20 @@ import requests
 import zipfile
 import firebase_admin
 from firebase_admin import credentials, messaging
+import os
+from tons import Wallet
 
+# Инициализация кошелька-кассира (запустится при старте сервера)
+CASHIER_SEED = os.environ.get('CASHIER_SEED')
+CASHIER_WALLET = None
+if CASHIER_SEED:
+    try:
+        CASHIER_WALLET = Wallet.from_mnemonic(CASHIER_SEED.split())
+        print("✅ Кошелёк-кассир загружен")
+    except Exception as e:
+        print(f"❌ Ошибка загрузки кошелька-кассира: {e}")
+else:
+    print("❌ Переменная окружения CASHIER_SEED не задана!")
 
 YOOMONEY_WALLET = '4100119522166446'
 YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
