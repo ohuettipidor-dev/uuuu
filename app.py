@@ -2212,16 +2212,13 @@ def withdraw():
     db.session.add(req)
     db.session.commit()
 
-    # Ссылка для Tonkeeper (от имени кассира, с уже заполненными полями)
-    cashier_address = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
+    # Правильный deeplink для Tonkeeper
     jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
     amount_nano = int(amount * 1e9)
-    deep_link = f"https://app.tonkeeper.com/transfer/{cashier_address}?jetton={jetton_master}&amount={amount_nano}&to={ton_address}"
-    
-    # Помечаем заявку как выполненную (можно оставить pending, если хочешь контролировать)
+    deep_link = f"ton://transfer/{jetton_master}?amount={amount_nano}&to={ton_address}"
+
     req.status = 'done'
     db.session.commit()
-    
     flash(f'✅ Нажмите ссылку, чтобы завершить перевод: <a href="{deep_link}">Открыть Tonkeeper и подтвердить</a>', 'deeplink')
     return redirect('/grrr')
 
