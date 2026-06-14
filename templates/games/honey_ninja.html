@@ -46,14 +46,12 @@
 <body>
 <div class="game-wrapper">
     <div class="top-bar">
-        <!-- Добавлена кнопка назад в игры -->
         <a href="/games" style="color:#f9ca24;text-decoration:none;font-size:18px;margin-right:10px;">← Игры</a>
         <span class="logo">🍯 Медовый Ниндзя</span>
         <div class="balance-badge">
             <span>🐻</span> <span id="grrrBalance">0.00</span>
         </div>
     </div>
-    <!-- Остальной код без изменений -->
     <div class="stats">
         <span class="label">🎯 Счёт <span class="value" id="scoreDisplay">0</span></span>
         <span class="label">🏆 Лучший <span class="value" id="bestDisplay">0</span></span>
@@ -177,22 +175,19 @@ function updateLevelAndSpeed() {
 function restartSpawnTimers() {
     clearInterval(spawnFruitInterval);
     clearInterval(spawnBombInterval);
-    // Фрукты появляются чаще с ростом уровня
     const fruitDelay = Math.max(400, 1000 - (level - 1) * 80);
     spawnFruitInterval = setInterval(() => {
         if (!gameOver && lives > 0 && Math.random() < 0.7) spawnFruit();
     }, fruitDelay);
-    // Бомбы появляются ЗНАЧИТЕЛЬНО чаще: интервал короче, вероятность выше
-    const bombDelay = Math.max(450, 1400 - (level - 1) * 100); // уменьшили базу
+    const bombDelay = Math.max(450, 1400 - (level - 1) * 100);
     spawnBombInterval = setInterval(() => {
-        if (!gameOver && lives > 0 && Math.random() < 0.4) spawnBomb(); // было 0.2, стало 0.4
+        if (!gameOver && lives > 0 && Math.random() < 0.4) spawnBomb();
     }, bombDelay);
 }
 
 function spawnFruit() {
     if (gameOver || lives <= 0) return;
     const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
-    // Сужаем горизонтальный разброс: было *5, стало *2.5 (в два раза меньше)
     const baseVX = (Math.random() - 0.5) * 2.5;
     const baseVY = -(Math.random() * 8 + 10);
     fruits.push({
@@ -210,7 +205,6 @@ function spawnFruit() {
 
 function spawnBomb() {
     if (gameOver || lives <= 0) return;
-    // Бомбы тоже с уменьшенным горизонтальным разлётом
     const baseVX = (Math.random() - 0.5) * 2.2;
     const baseVY = -(Math.random() * 7 + 8);
     bombs.push({
@@ -224,14 +218,12 @@ function spawnBomb() {
     });
 }
 
-// Добавим лёгкое отражение от стен, чтобы фрукты не уходили
 function keepInBounds(obj) {
     const margin = 10;
     if (obj.x < margin) { obj.x = margin; obj.vx = Math.abs(obj.vx) * 0.7; }
     if (obj.x > W - margin) { obj.x = W - margin; obj.vx = -Math.abs(obj.vx) * 0.7; }
 }
 
-// Физика
 function updateGame() {
     if (gameOver || lives <= 0) return;
     fruits = fruits.filter(f => {
@@ -239,7 +231,7 @@ function updateGame() {
         f.y += f.vy;
         f.vy += 0.3 * speedMultiplier;
         f.rotation += f.rotSpeed;
-        keepInBounds(f); // чтобы не улетали за края
+        keepInBounds(f);
         return (f.y < H + 100 && !f.sliced);
     });
     bombs = bombs.filter(b => {
@@ -259,7 +251,6 @@ function updateGame() {
     });
 }
 
-// Отрисовка (без изменений)
 function draw() {
     ctx.clearRect(0, 0, W, H);
     if (trail.length > 1) {
@@ -458,5 +449,19 @@ updateLives();
 restartSpawnTimers();
 gameLoop();
 </script>
+
+<!-- СКРИПТ АНАЛИТИКИ TELEGRAM -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        fetch('https://api.telegram.org/analytics/eyJhcHBfbmFtZSI6ImhvbmV5bmluamEiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL2JlYXJncmFtX2NvbW11bml0eV9ib3QiLCJhcHBfZG9tYWluIjoiaHR0cHM6Ly9iZWFyZ3JhbS51cC5yYWlsd2F5LmFwcC8ifQ==!+1xA1U50SuA8oy+vkX66Nbbtt3tcAIMxP63AXy/b4VA=/event', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({event: 'app_open'})
+        });
+    }
+</script>
+
 </body>
 </html>
