@@ -54,6 +54,8 @@
         .btn-add-mine{background:#ff6b6b; color:white;}
         .btn-delete{background:#e74c3c; color:white;}
         .music-add-row{display:flex; gap:8px; margin-bottom:10px;}
+        .lang-switch{text-align:center; margin-top:15px;}
+        .lang-switch a{color:#ff6b6b; text-decoration:none; font-weight:bold;}
     </style>
 </head>
 <body>
@@ -95,7 +97,7 @@
         </form>
         <small style="color:#888;">Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON.</small>
 
-        <!-- НОВАЯ ИНСТРУКЦИЯ ПО ВЫВОДУ -->
+        <!-- ИНСТРУКЦИЯ ПО ВЫВОДУ -->
         <div style="margin-top: 12px; text-align: left;">
             <button onclick="var el=document.getElementById('withdrawGuide'); el.style.display = (el.style.display === 'none' ? 'block' : 'none');"
                     style="background: none; border: 1px solid #ffb3b3; color: #ff6b6b; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-size: 14px; width: 100%;">
@@ -167,6 +169,16 @@
     <div class="section"><div class="section-title">💕 Анкета</div><form method="POST" action="/update_profile" enctype="multipart/form-data"><div class="form-group"><select name="gender"><option value="">Не указан</option><option value="male">Мужской</option><option value="female">Женский</option></select></div><div class="form-group"><select name="preference"><option value="all">Всех</option><option value="male">Мужчин</option><option value="female">Женщин</option></select></div><div class="form-group"><input type="date" name="birthday" value="{{ current_user.birthday }}"></div><div class="form-group"><input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="Москва"></div><div class="form-group"><input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="Интересы"></div><div class="form-group"><textarea name="bio" placeholder="О себе...">{{ profile.bio if profile else '' }}</textarea></div><div class="form-group"><input type="file" name="photo" accept="image/*"></div><button type="submit">Сохранить</button></form></div>
     <div class="section danger-zone"><div class="section-title">⚠️ Опасная зона</div><form method="POST" onsubmit="return confirm('Удалить аккаунт?')"><input type="hidden" name="delete_account" value="1"><button type="submit" class="btn-danger">🗑️ Удалить аккаунт</button></form></div>
     <div class="back-link"><a href="/chat">← Вернуться в чат</a></div>
+
+    <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
+    <div class="lang-switch">
+        {% if lang == 'ru' %}
+            <a href="/set_lang/en">🌐 Switch to English</a>
+        {% else %}
+            <a href="/set_lang/ru">🌐 Переключить на Русский</a>
+        {% endif %}
+    </div>
+
 </div>
 
 <script>
