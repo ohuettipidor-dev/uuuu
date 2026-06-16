@@ -6706,15 +6706,35 @@ def tab_games():
     # Отдаём список игр (без основного layout)
     user_games = UserGame.query.filter_by(is_approved=True).order_by(UserGame.plays_count.desc()).all()
     return render_template('games_content.html', user_games=user_games)
+import json
+
+# Загружаем переводы один раз при старте
+try:
+    with open('templates/en.json', 'r', encoding='utf-8') as f:
+        EN_TRANSLATIONS = json.load(f)
+except:
+    EN_TRANSLATIONS = {}
+
 @app.context_processor
-def inject_now():
+def inject_now_and_lang():
     from datetime import datetime
-    return {'now': datetime.utcnow}
+    lang = request.cookies.get('lang', 'ru')  # по умолчанию русский
+    return {
+        'now': datetime.utcnow,
+        'lang': lang,
+        '_': lambda key: EN_TRANSLATIONS.get(key, key) if lang == 'en' else key
+    }
+
+@app.route('/set_lang/<lang>')
+def set_lang(lang):
+    resp = redirect(request.referrer or '/')
+    resp.set_cookie('lang', lang, max_age=365*24*3600)  # на год
+    return resp
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-    # Запуск Telegram-бота в фоновом потоке
     import threading
     if BOT_TOKEN:
         t = threading.Thread(target=run_bot, daemon=True)
