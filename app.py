@@ -194,6 +194,18 @@ async def _send_grrr_async(recipient: str, amount_grrr: float):
     )
     return tx['hash']
 
+import re
+
+def render_mentions(content, sender_id):
+    """Превращает @username в кликабельные ссылки и собирает упомянутых пользователей."""
+    mentioned_ids = []
+    for match in re.finditer(r'@(\w+)', content):
+        username = match.group(1)
+        user = User.query.filter_by(username=username).first()
+        if user:
+            content = content.replace(f'@{username}', f'<a href="/profile/{user.id}">@{username}</a>')
+            mentioned_ids.append(user.id)
+    return content, mentioned_ids
 def send_grrr_to_user(recipient: str, amount_grrr: float):
     """Синхронная обёртка для вызова из Flask"""
     loop = asyncio.new_event_loop()
