@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <script src="/static/push.js"></script>
+    <script src="/static/translate.js"></script>
     <title>🐻 BearGram | Уютный мессенджер</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -312,6 +313,8 @@
                 <a href="/mining">⛏️ Майнинг</a>
                 <a href="/bearpay?tab=bank">🏦 Банк</a>
                 <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
+            </div>
+                <button id="langToggleBtn" onclick="switchLanguage()">🌐 Switch to English</button>
             </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
