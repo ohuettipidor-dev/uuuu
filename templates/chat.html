@@ -312,12 +312,12 @@
                 <a href="/mining">⛏️ Майнинг</a>
                 <a href="/bearpay?tab=bank">🏦 Банк</a>
                 <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
-                <button id="langToggleBtn" onclick="switchLanguage()">🌐 Switch to English</button>
             </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
         </div>
     </div>
+
     <div class="search-container" id="searchContainer">
         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей... @username">
         <div class="search-results" id="searchResults"></div>
@@ -844,6 +844,6 @@ function closeMediaViewer() {
         if (Math.abs(diff) > 50) navigateMedia(diff > 0 ? -1 : 1);
     });
 })();
-</script>        
+</script>
 </body>
 </html>
