@@ -165,110 +165,129 @@
     <div class="back-link"><a href="/chat">← {{ _('back_to_chat') }}</a></div>
 
     <div class="lang-switch">
-        {% if lang == 'ru' %}
-            <a href="/set_lang/en">🌐 Switch to English</a>
-        {% else %}
-            <a href="/set_lang/ru">🌐 Переключить на Русский</a>
-        {% endif %}
+        <a href="#" onclick="switchLang()" id="langToggleBtn">🌐 Switch to English</a>
     </div>
-</div>
 
-<script>
-// Поиск треков
-let searchTimeout;
-async function searchTracks() {
-    clearTimeout(searchTimeout);
-    const q = document.getElementById('musicSearch').value.trim();
-    const results = document.getElementById('searchResults');
-    if (q.length < 1) {
-        results.classList.remove('active');
-        return;
-    }
-    searchTimeout = setTimeout(async () => {
-        const resp = await fetch('/api/music/search?q=' + encodeURIComponent(q));
-        const data = await resp.json();
-        if (!data.tracks.length) {
-            results.innerHTML = '<div style="padding:10px;color:#888;">{{ _('nothing_found') }}</div>';
-        } else {
-            results.innerHTML = data.tracks.map(t => `
-                <div class="search-item" onclick="addToMyMusic('${t.file_path}', '${t.title}')">
-                    <span style="flex:1;">🎵 ${t.title} <span style="color:#888;">(${t.author})</span></span>
-                    <span class="btn-music btn-add-mine" style="flex-shrink:0;">➕</span>
-                </div>
-            `).join('');
+    <script>
+        function switchLang() {
+            const currentLang = getCookie('lang') || 'ru';
+            const newLang = currentLang === 'ru' ? 'en' : 'ru';
+            setCookie('lang', newLang, 365);
+            location.reload();
         }
-        results.classList.add('active');
-    }, 300);
-}
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.music-search')) document.getElementById('searchResults').classList.remove('active');
-});
-
-async function addTrack() {
-    const url = document.getElementById('musicUrl').value.trim();
-    if (!url) return;
-    const title = prompt('{{ _('track_title_prompt') }}') || '{{ _('untitled') }}';
-    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
-    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
-    const data = await resp.json();
-    if (data.success) { document.getElementById('musicUrl').value = ''; location.reload(); }
-    else alert(data.error || '{{ _('error') }}');
-}
-
-async function uploadTrack() {
-    const file = document.getElementById('musicFile').files[0];
-    if (!file) return;
-    const title = prompt('{{ _('track_title_prompt') }}') || file.name;
-    const fd = new FormData(); fd.append('file', file); fd.append('title', title);
-    const resp = await fetch('/api/music/upload', {method:'POST', body: fd});
-    const data = await resp.json();
-    if (data.success) { document.getElementById('musicFile').value = ''; location.reload(); }
-    else alert(data.error || '{{ _('error') }}');
-}
-
-async function deleteTrack(trackId) {
-    if (!confirm('{{ _('delete_track_confirm') }}')) return;
-    const resp = await fetch('/api/music/delete/' + trackId, {method:'POST'});
-    const data = await resp.json();
-    if (data.success) document.getElementById('track-' + trackId).remove();
-    else alert('{{ _('error') }}');
-}
-
-async function addToMyMusic(url, title) {
-    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
-    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
-    const data = await resp.json();
-    if (data.success) alert('✅ {{ _('track_added') }}');
-    else alert('{{ _('error_adding') }}');
-}
-
-function countListen(trackId) {
-    fetch('/api/music/listen/' + trackId, {method:'POST'});
-}
-
-// ========== Лимит видимых треков ==========
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('myTracksContainer');
-    if (!container) return;
-    const items = container.querySelectorAll('.music-item');
-    const MAX_VISIBLE = 4;
-    if (items.length > MAX_VISIBLE) {
-        for (let i = MAX_VISIBLE; i < items.length; i++) {
-            items[i].style.display = 'none';
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
         }
-        const btn = document.createElement('button');
-        btn.textContent = '{{ _('show_all') }} (' + items.length + ')';
-        btn.className = 'btn-music';
-        btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
-        btn.onclick = function() {
-            for (let i = MAX_VISIBLE; i < items.length; i++) {
-                items[i].style.display = '';
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days*24*60*60*1000));
+            document.cookie = `${name}=${value};path=/;expires=${d.toUTCString()}`;
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('langToggleBtn');
+            const currentLang = getCookie('lang') || 'ru';
+            btn.textContent = currentLang === 'ru' ? '🌐 Switch to English' : '🌐 Переключить на Русский';
+        });
+    </script>
+
+    <script>
+        // Поиск треков
+        let searchTimeout;
+        async function searchTracks() {
+            clearTimeout(searchTimeout);
+            const q = document.getElementById('musicSearch').value.trim();
+            const results = document.getElementById('searchResults');
+            if (q.length < 1) {
+                results.classList.remove('active');
+                return;
             }
-            btn.style.display = 'none';
-        };
-        container.appendChild(btn);
-    }
-});
-</script>
+            searchTimeout = setTimeout(async () => {
+                const resp = await fetch('/api/music/search?q=' + encodeURIComponent(q));
+                const data = await resp.json();
+                if (!data.tracks.length) {
+                    results.innerHTML = '<div style="padding:10px;color:#888;">{{ _('nothing_found') }}</div>';
+                } else {
+                    results.innerHTML = data.tracks.map(t => `
+                        <div class="search-item" onclick="addToMyMusic('${t.file_path}', '${t.title}')">
+                            <span style="flex:1;">🎵 ${t.title} <span style="color:#888;">(${t.author})</span></span>
+                            <span class="btn-music btn-add-mine" style="flex-shrink:0;">➕</span>
+                        </div>
+                    `).join('');
+                }
+                results.classList.add('active');
+            }, 300);
+        }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.music-search')) document.getElementById('searchResults').classList.remove('active');
+        });
+
+        async function addTrack() {
+            const url = document.getElementById('musicUrl').value.trim();
+            if (!url) return;
+            const title = prompt('{{ _('track_title_prompt') }}') || '{{ _('untitled') }}';
+            const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+            const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+            const data = await resp.json();
+            if (data.success) { document.getElementById('musicUrl').value = ''; location.reload(); }
+            else alert(data.error || '{{ _('error') }}');
+        }
+
+        async function uploadTrack() {
+            const file = document.getElementById('musicFile').files[0];
+            if (!file) return;
+            const title = prompt('{{ _('track_title_prompt') }}') || file.name;
+            const fd = new FormData(); fd.append('file', file); fd.append('title', title);
+            const resp = await fetch('/api/music/upload', {method:'POST', body: fd});
+            const data = await resp.json();
+            if (data.success) { document.getElementById('musicFile').value = ''; location.reload(); }
+            else alert(data.error || '{{ _('error') }}');
+        }
+
+        async function deleteTrack(trackId) {
+            if (!confirm('{{ _('delete_track_confirm') }}')) return;
+            const resp = await fetch('/api/music/delete/' + trackId, {method:'POST'});
+            const data = await resp.json();
+            if (data.success) document.getElementById('track-' + trackId).remove();
+            else alert('{{ _('error') }}');
+        }
+
+        async function addToMyMusic(url, title) {
+            const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+            const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+            const data = await resp.json();
+            if (data.success) alert('✅ {{ _('track_added') }}');
+            else alert('{{ _('error_adding') }}');
+        }
+
+        function countListen(trackId) {
+            fetch('/api/music/listen/' + trackId, {method:'POST'});
+        }
+
+        // ========== Лимит видимых треков ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('myTracksContainer');
+            if (!container) return;
+            const items = container.querySelectorAll('.music-item');
+            const MAX_VISIBLE = 4;
+            if (items.length > MAX_VISIBLE) {
+                for (let i = MAX_VISIBLE; i < items.length; i++) {
+                    items[i].style.display = 'none';
+                }
+                const btn = document.createElement('button');
+                btn.textContent = '{{ _('show_all') }} (' + items.length + ')';
+                btn.className = 'btn-music';
+                btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
+                btn.onclick = function() {
+                    for (let i = MAX_VISIBLE; i < items.length; i++) {
+                        items[i].style.display = '';
+                    }
+                    btn.style.display = 'none';
+                };
+                container.appendChild(btn);
+            }
+        });
+    </script>
 </body>
 </html>
