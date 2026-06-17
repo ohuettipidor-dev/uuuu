@@ -312,7 +312,7 @@
                 <a href="/mining">⛏️ Майнинг</a>
                 <a href="/bearpay?tab=bank">🏦 Банк</a>
                 <button id="themeToggleDropdown">🌓 Тема: Светлая</button>
-                <button id="langToggleBtn" style="background:rgba(255,107,107,0.1);color:#ff6b6b;font-weight:bold;font-size:13px;padding:8px 14px;border-radius:30px;white-space:nowrap;border:none;cursor:pointer;text-align:left;width:100%;">🌐 Switch to English</button>
+                <button id="langToggleBtn" onclick="switchLanguage()">🌐 Switch to English</button>
             </div>
             {% if not is_premium %}<a href="/premium" class="premium-btn">⚡ Premium</a>{% else %}<span class="premium-active">👑 Premium</span>{% endif %}
             <a href="/logout" class="icon-btn">🚪</a>
@@ -453,20 +453,19 @@
 
 <script>
     // ========== ПЕРЕКЛЮЧЕНИЕ ЯЗЫКА (ДОБАВЛЕНО ТОЛЬКО ЭТО) ==========
+    function switchLanguage() {
+        var currentLang = localStorage.getItem('lang') || 'ru';
+        var newLang = currentLang === 'ru' ? 'en' : 'ru';
+        localStorage.setItem('lang', newLang);
+        location.reload();
+    }
+    // Устанавливаем правильный текст кнопки при загрузке
     (function() {
         var langBtn = document.getElementById('langToggleBtn');
-        var currentLang = localStorage.getItem('lang') || 'ru';
-
-        // Устанавливаем начальный текст кнопки
-        langBtn.textContent = currentLang === 'ru' ? '🌐 Switch to English' : '🌐 Переключить на Русский';
-
-        // Функция переключения
-        langBtn.addEventListener('click', function() {
-            var newLang = currentLang === 'ru' ? 'en' : 'ru';
-            localStorage.setItem('lang', newLang);
-            // Просто перезагружаем страницу, сервер сам подхватит новый язык из кук
-            location.reload();
-        });
+        if (langBtn) {
+            var currentLang = localStorage.getItem('lang') || 'ru';
+            langBtn.textContent = currentLang === 'ru' ? '🌐 Switch to English' : '🌐 Переключить на Русский';
+        }
     })();
     // ================================================================
 
