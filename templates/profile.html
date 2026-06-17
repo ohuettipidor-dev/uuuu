@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🐻 {{ _('profile_title') }}</title>
+    <title>🐻 Профиль | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -35,6 +35,7 @@
         small{color:#aaa;font-size:11px}
         .danger-zone{border-bottom:none;background:rgba(231,76,60,0.1);border-radius:20px;padding:20px;margin-top:10px}
         .danger-zone .section-title{color:#e74c3c}
+        /* Плеер (компактный) */
         .music-search{position:relative; margin-bottom:10px;}
         .music-search input{padding-right:40px;}
         .search-results{position:absolute; top:100%; left:0; right:0; background:white; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:10; max-height:200px; overflow-y:auto; display:none;}
@@ -53,8 +54,6 @@
         .btn-add-mine{background:#ff6b6b; color:white;}
         .btn-delete{background:#e74c3c; color:white;}
         .music-add-row{display:flex; gap:8px; margin-bottom:10px;}
-        .lang-switch{text-align:center; margin-top:15px;}
-        .lang-switch a{color:#ff6b6b; text-decoration:none; font-weight:bold; cursor:pointer;}
     </style>
 </head>
 <body>
@@ -63,70 +62,76 @@
         {% if user.avatar != 'default.png' %}<img src="/static/avatars/{{ user.avatar }}">{% else %}🐻{% endif %}
     </div>
     <h2>{{ user.username }}</h2>
-    <div class="info">{{ user.username_link or _('no_username') }}</div>
+    <div class="info">{{ user.username_link or 'Нет @username' }}</div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
 
     <div class="section" style="text-align:center;">
-        <div class="section-title" data-ru="💎 Баланс кристалайзеров" data-en="💎 Crystal Balance">{{ _('crystal_balance_title') }}</div>
+        <div class="section-title">💎 Баланс кристалайзеров</div>
         <p style="font-size:28px; font-weight:bold; color:#333;">{{ coins.balance }} 💎</p>
-        {% if current_user.phone_verified %}<small style="color:green;" data-ru="✅ Номер подтверждён" data-en="✅ Phone verified">{{ _('phone_verified') }}</small>{% else %}<small style="color:#ff6b6b;" data-ru="⚠️ Подтвердите номер" data-en="⚠️ Verify phone">{{ _('phone_unverified') }}</small>{% endif %}
+        {% if current_user.phone_verified %}<small style="color:green;">✅ Номер подтверждён</small>{% else %}<small style="color:#ff6b6b;">⚠️ Подтвердите номер</small>{% endif %}
         <div style="margin-top:12px;">
-            <a href="/shop/coins" class="btn-coins" data-ru="💎 Зарядить" data-en="💎 Top up">{{ _('charge') }}</a>
-            <a href="/withdraw" class="btn-withdraw" data-ru="💰 Вывести" data-en="💰 Withdraw">{{ _('withdraw') }}</a>
+            <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
+            <a href="/withdraw" class="btn-withdraw">💰 Вывести</a>
         </div>
     </div>
 
     <div class="section" style="text-align:center;">
-        <div class="section-title" data-ru="🐻 Баланс $GRRR" data-en="🐻 $GRRR Balance">{{ _('grrr_balance_title') }}</div>
+        <div class="section-title">🐻 Баланс $GRRR</div>
         <p style="font-size:28px; font-weight:bold; color:#333;">{{ "%.2f"|format(grrr_balance) }} $GRRR</p>
-        <small style="color:#888;" data-ru="Валюта хищников BearGram" data-en="BearGram Predator Currency">{{ _('predator_currency') }}</small>
+        <small style="color:#888;">Валюта хищников BearGram</small>
         <div style="margin-top:12px;">
-            <a href="/grrr" class="btn-grrr" data-ru="🐻 Управлять $GRRR" data-en="🐻 Manage $GRRR">{{ _('manage_grrr') }}</a>
+            <a href="/grrr" class="btn-grrr">🐻 Управлять $GRRR</a>
         </div>
     </div>
 
+    <!-- ВЫВОД $GRRR -->
     <div class="section" style="text-align:center;">
-        <div class="section-title" data-ru="💸 Вывести $GRRR" data-en="💸 Withdraw $GRRR">{{ _('withdraw_grrr_title') }}</div>
+        <div class="section-title">💸 Вывести $GRRR</div>
         <form method="POST" action="/grrr/withdraw">
-            <input type="text" name="address" data-ru="Ваш TON-адрес (UQ...)" data-en="Your TON address (UQ...)" placeholder="{{ _('ton_address_placeholder') }}" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
-            <input type="number" name="amount" data-ru="Сумма" data-en="Amount" placeholder="{{ _('amount_placeholder') }}" step="0.01" min="0.01" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
-            <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;" data-ru="💸 Вывести" data-en="💸 Withdraw">{{ _('withdraw_btn') }}</button>
+            <input type="text" name="address" placeholder="Ваш TON-адрес (UQ...)" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+            <input type="number" name="amount" placeholder="Сумма" step="0.01" min="0.01" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+            <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">💸 Вывести</button>
         </form>
-        <small style="color:#888;" data-ru="Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON." data-en="Minimum: 10 $GRRR. Network fee ~0.1 TON.">{{ _('min_amount_info') }}</small>
+        <small style="color:#888;">Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON.</small>
 
+        <!-- НОВАЯ ИНСТРУКЦИЯ ПО ВЫВОДУ -->
         <div style="margin-top: 12px; text-align: left;">
             <button onclick="var el=document.getElementById('withdrawGuide'); el.style.display = (el.style.display === 'none' ? 'block' : 'none');"
-                    style="background: none; border: 1px solid #ffb3b3; color: #ff6b6b; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-size: 14px; width: 100%;"
-                    data-ru="🐻 Как вывести деньги? (простая инструкция)" data-en="🐻 How to withdraw? (simple guide)">{{ _('how_to_withdraw') }}</button>
+                    style="background: none; border: 1px solid #ffb3b3; color: #ff6b6b; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-size: 14px; width: 100%;">
+                🐻 Как вывести деньги? (простая инструкция)
+            </button>
 
             <div id="withdrawGuide" style="display: none; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; margin-top: 10px; color: #333; font-size: 14px; line-height: 1.5;">
-                <p><b data-ru="1. Установи Tonkeeper" data-en="1. Install Tonkeeper">{{ _('step1_title') }}</b> <span data-ru="— официальный кошелёк TON. Запиши секретную фразу и сохрани в надёжном месте." data-en="— the official TON wallet. Save your secret phrase.">{{ _('step1_desc') }}</span></p>
-                <p><b data-ru="2. Скопируй адрес" data-en="2. Copy your address">{{ _('step2_title') }}</b> <span data-ru="— в Tonkeeper нажми на адрес (начинается с UQ...), он скопируется. Это твой счёт." data-en="— tap on the address (starts with UQ...) to copy.">{{ _('step2_desc') }}</span></p>
-                <p><b data-ru="3. Выведи из BearGram" data-en="3. Withdraw from BearGram">{{ _('step3_title') }}</b> <span data-ru="— вставь этот адрес в поле «TON-адрес», укажи сумму и нажми «Вывести». Отсканируй QR-код и подтверди перевод в Tonkeeper. GRRR придут за пару секунд." data-en="— paste the address, enter amount, scan QR and confirm in Tonkeeper.">{{ _('step3_desc') }}</span></p>
-                <p><b data-ru="4. Обменяй на TON" data-en="4. Swap to TON">{{ _('step4_title') }}</b> <span data-ru="— в Tonkeeper или на сайте DeDust.io обменяй GRRR на TON." data-en="— exchange GRRR for TON in Tonkeeper or on DeDust.io.">{{ _('step4_desc') }}</span></p>
-                <p><b data-ru="5. Получи деньги" data-en="5. Get your money">{{ _('step5_title') }}</b><br><span data-ru="а) EUR/USD в Telegram-кошельке — обменяй TON на USDT или EUR прямо в Tonkeeper, затем переведи в @wallet и продай через P2P. б) Рубли через KuCoin — отправь TON на биржу KuCoin (Активы → Депозит → TON), зайди в раздел P2P, продай TON за RUB и получи рубли на карту." data-en="a) EUR/USD in @wallet — swap TON to USDT or EUR and sell via P2P. b) Rubles via KuCoin — deposit TON, sell for RUB in P2P.">{{ _('step5_desc') }}</span></p>
-                <p style="color: #888; font-size: 12px; margin-top: 10px;" data-ru="Если что-то непонятно — пиши в поддержку, поможем." data-en="If you have questions — contact support.">{{ _('support_note') }}</p>
+                <p><b>1. Установи Tonkeeper</b> — официальный кошелёк TON. Запиши секретную фразу и сохрани в надёжном месте.</p>
+                <p><b>2. Скопируй адрес</b> — в Tonkeeper нажми на адрес (начинается с <code>UQ...</code>), он скопируется. Это твой счёт.</p>
+                <p><b>3. Выведи из BearGram</b> — вставь этот адрес в поле «TON-адрес», укажи сумму и нажми «Вывести». Отсканируй QR-код и подтверди перевод в Tonkeeper. GRRR придут за пару секунд.</p>
+                <p><b>4. Обменяй на TON</b> — в Tonkeeper или на сайте <a href="https://dedust.io" target="_blank">DeDust.io</a> обменяй GRRR на TON.</p>
+                <p><b>5. Получи деньги</b><br>
+                <b>а) EUR/USD в Telegram-кошельке</b> — обменяй TON на USDT или EUR прямо в Tonkeeper, затем переведи в <code>@wallet</code> и продай через P2P.<br>
+                <b>б) Рубли через KuCoin</b> — отправь TON на биржу KuCoin (Активы → Депозит → TON), зайди в раздел P2P, продай TON за RUB и получи рубли на карту.</p>
+                <p style="color: #888; font-size: 12px; margin-top: 10px;">Если что-то непонятно — пиши в поддержку, поможем.</p>
             </div>
         </div>
     </div>
 
     <div class="section" style="text-align:center;">
-        <div class="section-title" data-ru="👥 Пригласить друзей" data-en="👥 Invite Friends">{{ _('invite_friends_title') }}</div>
-        <p style="color:#888;font-size:13px;" data-ru="Пригласи друзей из контактов и получи +25 💎 за каждого!" data-en="Invite friends and get +25 💎 for each!">{{ _('invite_friends_desc') }}</p>
+        <div class="section-title">👥 Пригласить друзей</div>
+        <p style="color:#888;font-size:13px;">Пригласи друзей из контактов и получи +25 💎 за каждого!</p>
         <div style="margin-top:12px;">
-            <a href="/chat" class="btn-friends" onclick="sessionStorage.setItem('openSearch','1')" data-ru="👥 Пригласить друзей" data-en="👥 Invite Friends">{{ _('invite_friends_btn') }}</a>
+            <a href="/chat" class="btn-friends" onclick="sessionStorage.setItem('openSearch','1')">👥 Пригласить друзей</a>
         </div>
     </div>
 
+    <!-- 🎵 Музыка -->
     <div class="section">
-        <div class="section-title">🎵 <span data-ru="Музыка" data-en="Music">{{ _('music_section') }}</span></div>
+        <div class="section-title">🎵 Музыка</div>
         <div class="music-search">
-            <input type="text" id="musicSearch" data-ru="🔍 Найти трек..." data-en="🔍 Search track..." placeholder="{{ _('search_track') }}" oninput="searchTracks()" autocomplete="off">
+            <input type="text" id="musicSearch" placeholder="🔍 Найти трек..." oninput="searchTracks()" autocomplete="off">
             <div class="search-results" id="searchResults"></div>
         </div>
         <div class="music-add-row">
-            <input type="text" id="musicUrl" data-ru="Ссылка на mp3..." data-en="MP3 link..." placeholder="{{ _('mp3_url') }}" style="flex:1;">
+            <input type="text" id="musicUrl" placeholder="Ссылка на mp3..." style="flex:1;">
             <button onclick="addTrack()" style="padding:8px 12px;">➕</button>
         </div>
         <div class="music-add-row">
@@ -149,190 +154,117 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <p style="color:#888; text-align:center;" data-ru="Нет треков" data-en="No tracks">{{ _('no_tracks') }}</p>
+                <p style="color:#888; text-align:center;">Нет треков</p>
             {% endif %}
         </div>
     </div>
 
-    <div class="section"><div class="section-title" data-ru="📸 Аватар" data-en="📸 Avatar">{{ _('avatar_section') }}</div><form method="POST" enctype="multipart/form-data"><div class="form-group"><input type="file" name="avatar" accept="image/*"></div><button type="submit" data-ru="Загрузить аватар" data-en="Upload Avatar">{{ _('upload_avatar') }}</button></form></div>
-    <div class="section"><div class="section-title">🔗 @username</div><form method="POST"><div class="form-group"><input type="text" name="username_link" value="{{ user.username_link or '' }}" placeholder="@username"><small data-ru="Уникальный идентификатор" data-en="Unique identifier">{{ _('unique_id') }}</small></div><button type="submit" data-ru="Сохранить" data-en="Save">{{ _('save') }}</button></form></div>
-    <div class="section"><div class="section-title" data-ru="🔒 Приватность" data-en="🔒 Privacy">{{ _('privacy_section') }}</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="is_private" {% if current_user.is_private %}checked{% endif %}><span data-ru="Закрытый профиль" data-en="Private profile">{{ _('private_profile') }}</span></label><button type="submit" style="margin-top:15px;" data-ru="Сохранить" data-en="Save">{{ _('save') }}</button></form></div>
-    <div class="section"><div class="section-title" data-ru="🔔 Уведомления" data-en="🔔 Notifications">{{ _('notifications_section') }}</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}><span data-ru="Получать уведомления" data-en="Receive notifications">{{ _('receive_notifications') }}</span></label><button type="submit" style="margin-top:15px;" data-ru="Сохранить" data-en="Save">{{ _('save') }}</button></form></div>
-    <div class="section"><div class="section-title" data-ru="📱 Подтверждение телефона" data-en="📱 Phone Verification">{{ _('phone_verification_section') }}</div>{% if current_user.phone_verified %}<p style="color:green;">✅ {{ current_user.phone_number }}</p>{% else %}<p style="color:#ff6b6b;" data-ru="⚠️ Не подтверждён" data-en="⚠️ Not verified">{{ _('phone_unverified') }}</p><form method="POST" action="/verify_phone"><div class="form-group"><input type="text" name="phone" placeholder="+7XXXXXXXXXX" value="{{ current_user.phone_number or '' }}"></div><div class="form-group"><input type="text" name="code" data-ru="Код" data-en="Code" placeholder="{{ _('code') }} (1234)"></div><button type="submit" name="verify_code" data-ru="Подтвердить" data-en="Verify">{{ _('verify') }}</button></form><small>{{ _('code') }}: 1234</small>{% endif %}</div>
-
-    <div class="section">
-        <div class="section-title" data-ru="💕 Анкета" data-en="💕 Dating Profile">{{ _('dating_profile') }}</div>
-        <form method="POST" action="/update_profile" enctype="multipart/form-data">
-            <div class="form-group">
-                <select name="gender">
-                    <option value="" data-ru="Не указан" data-en="Not specified">{{ _('not_specified') }}</option>
-                    <option value="male" data-ru="Мужской" data-en="Male">{{ _('male') }}</option>
-                    <option value="female" data-ru="Женский" data-en="Female">{{ _('female') }}</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <select name="preference">
-                    <option value="all" data-ru="Всех" data-en="All">{{ _('all') }}</option>
-                    <option value="male" data-ru="Мужчин" data-en="Men">{{ _('men') }}</option>
-                    <option value="female" data-ru="Женщин" data-en="Women">{{ _('women') }}</option>
-                </select>
-            </div>
-            <div class="form-group"><input type="date" name="birthday" value="{{ current_user.birthday }}"></div>
-            <div class="form-group"><input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="{{ _('city_placeholder') }}"></div>
-            <div class="form-group"><input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="{{ _('interests_placeholder') }}"></div>
-            <div class="form-group"><textarea name="bio" placeholder="{{ _('bio_placeholder') }}...">{{ profile.bio if profile else '' }}</textarea></div>
-            <div class="form-group"><input type="file" name="photo" accept="image/*"></div>
-            <button type="submit">{{ _('save') }}</button>
-        </form>
-    </div>
-
-    <div class="section danger-zone"><div class="section-title" data-ru="⚠️ Опасная зона" data-en="⚠️ Danger Zone">{{ _('danger_zone') }}</div><form method="POST" onsubmit="return confirm('{{ _('delete_confirm') }}')"><input type="hidden" name="delete_account" value="1"><button type="submit" class="btn-danger" data-ru="🗑️ Удалить аккаунт" data-en="🗑️ Delete Account">{{ _('delete_account') }}</button></form></div>
-    <div class="back-link"><a href="/chat">← <span data-ru="Вернуться в чат" data-en="Back to Chat">{{ _('back_to_chat') }}</span></a></div>
-
-    <div class="lang-switch">
-        <a onclick="switchLang()" id="langToggleBtn" style="cursor:pointer;">🌐 Switch to English</a>
-    </div>
+    <div class="section"><div class="section-title">📸 Аватар</div><form method="POST" enctype="multipart/form-data"><div class="form-group"><input type="file" name="avatar" accept="image/*"></div><button type="submit">Загрузить аватар</button></form></div>
+    <div class="section"><div class="section-title">🔗 @username</div><form method="POST"><div class="form-group"><input type="text" name="username_link" value="{{ user.username_link or '' }}" placeholder="@username"><small>Уникальный идентификатор</small></div><button type="submit">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">🔒 Приватность</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="is_private" {% if current_user.is_private %}checked{% endif %}>Закрытый профиль</label><button type="submit" style="margin-top:15px;">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">🔔 Уведомления</div><form method="POST"><label class="checkbox-label"><input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>Получать уведомления</label><button type="submit" style="margin-top:15px;">Сохранить</button></form></div>
+    <div class="section"><div class="section-title">📱 Подтверждение телефона</div>{% if current_user.phone_verified %}<p style="color:green;">✅ {{ current_user.phone_number }}</p>{% else %}<p style="color:#ff6b6b;">⚠️ Не подтверждён</p><form method="POST" action="/verify_phone"><div class="form-group"><input type="text" name="phone" placeholder="+7XXXXXXXXXX" value="{{ current_user.phone_number or '' }}"></div><div class="form-group"><input type="text" name="code" placeholder="Код (1234)"></div><button type="submit" name="verify_code">Подтвердить</button></form><small>Код: 1234</small>{% endif %}</div>
+    <div class="section"><div class="section-title">💕 Анкета</div><form method="POST" action="/update_profile" enctype="multipart/form-data"><div class="form-group"><select name="gender"><option value="">Не указан</option><option value="male">Мужской</option><option value="female">Женский</option></select></div><div class="form-group"><select name="preference"><option value="all">Всех</option><option value="male">Мужчин</option><option value="female">Женщин</option></select></div><div class="form-group"><input type="date" name="birthday" value="{{ current_user.birthday }}"></div><div class="form-group"><input type="text" name="city" value="{{ profile.city if profile else '' }}" placeholder="Москва"></div><div class="form-group"><input type="text" name="interests" value="{{ profile.interests if profile else '' }}" placeholder="Интересы"></div><div class="form-group"><textarea name="bio" placeholder="О себе...">{{ profile.bio if profile else '' }}</textarea></div><div class="form-group"><input type="file" name="photo" accept="image/*"></div><button type="submit">Сохранить</button></form></div>
+    <div class="section danger-zone"><div class="section-title">⚠️ Опасная зона</div><form method="POST" onsubmit="return confirm('Удалить аккаунт?')"><input type="hidden" name="delete_account" value="1"><button type="submit" class="btn-danger">🗑️ Удалить аккаунт</button></form></div>
+    <div class="back-link"><a href="/chat">← Вернуться в чат</a></div>
 </div>
 
 <script>
-    // Функция переключения языка (без перезагрузки)
-    function switchLang() {
-        const currentLang = localStorage.getItem('lang') || 'ru';
-        const newLang = currentLang === 'ru' ? 'en' : 'ru';
-        localStorage.setItem('lang', newLang);
-        applyLanguage(newLang);
+// Поиск треков
+let searchTimeout;
+async function searchTracks() {
+    clearTimeout(searchTimeout);
+    const q = document.getElementById('musicSearch').value.trim();
+    const results = document.getElementById('searchResults');
+    if (q.length < 1) {
+        results.classList.remove('active');
+        return;
     }
-
-    function applyLanguage(lang) {
-        // Обновляем текст кнопки
-        const btn = document.getElementById('langToggleBtn');
-        btn.textContent = lang === 'ru' ? '🌐 Switch to English' : '🌐 Переключить на Русский';
-
-        // Обновляем все элементы с атрибутами data-ru и data-en
-        document.querySelectorAll('[data-ru]').forEach(el => {
-            const text = lang === 'ru' ? el.getAttribute('data-ru') : el.getAttribute('data-en');
-            if (text) {
-                if (el.tagName === 'INPUT') {
-                    el.placeholder = text;
-                } else if (el.tagName === 'OPTION') {
-                    el.text = text;
-                } else {
-                    el.textContent = text;
-                }
-            }
-        });
-
-        // Сохраняем выбор в localStorage
-        localStorage.setItem('lang', lang);
-    }
-
-    // При загрузке страницы применяем сохранённый язык
-    document.addEventListener('DOMContentLoaded', function() {
-        const savedLang = localStorage.getItem('lang') || 'ru';
-        applyLanguage(savedLang);
-    });
-
-    // Поиск треков
-    let searchTimeout;
-    async function searchTracks() {
-        clearTimeout(searchTimeout);
-        const q = document.getElementById('musicSearch').value.trim();
-        const results = document.getElementById('searchResults');
-        if (q.length < 1) {
-            results.classList.remove('active');
-            return;
+    searchTimeout = setTimeout(async () => {
+        const resp = await fetch('/api/music/search?q=' + encodeURIComponent(q));
+        const data = await resp.json();
+        if (!data.tracks.length) {
+            results.innerHTML = '<div style="padding:10px;color:#888;">Ничего не найдено</div>';
+        } else {
+            results.innerHTML = data.tracks.map(t => `
+                <div class="search-item" onclick="addToMyMusic('${t.file_path}', '${t.title}')">
+                    <span style="flex:1;">🎵 ${t.title} <span style="color:#888;">(${t.author})</span></span>
+                    <span class="btn-music btn-add-mine" style="flex-shrink:0;">➕</span>
+                </div>
+            `).join('');
         }
-        searchTimeout = setTimeout(async () => {
-            const resp = await fetch('/api/music/search?q=' + encodeURIComponent(q));
-            const data = await resp.json();
-            const lang = localStorage.getItem('lang') || 'ru';
-            if (!data.tracks.length) {
-                results.innerHTML = lang === 'ru' ? '<div style="padding:10px;color:#888;">Ничего не найдено</div>' : '<div style="padding:10px;color:#888;">Nothing found</div>';
-            } else {
-                results.innerHTML = data.tracks.map(t => `
-                    <div class="search-item" onclick="addToMyMusic('${t.file_path}', '${t.title}')">
-                        <span style="flex:1;">🎵 ${t.title} <span style="color:#888;">(${t.author})</span></span>
-                        <span class="btn-music btn-add-mine" style="flex-shrink:0;">➕</span>
-                    </div>
-                `).join('');
-            }
-            results.classList.add('active');
-        }, 300);
-    }
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.music-search')) document.getElementById('searchResults').classList.remove('active');
-    });
+        results.classList.add('active');
+    }, 300);
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.music-search')) document.getElementById('searchResults').classList.remove('active');
+});
 
-    async function addTrack() {
-        const url = document.getElementById('musicUrl').value.trim();
-        if (!url) return;
-        const lang = localStorage.getItem('lang') || 'ru';
-        const title = prompt(lang === 'ru' ? 'Название трека:' : 'Track title:') || (lang === 'ru' ? 'Без названия' : 'Untitled');
-        const fd = new FormData(); fd.append('url', url); fd.append('title', title);
-        const resp = await fetch('/api/music/add', {method:'POST', body: fd});
-        const data = await resp.json();
-        if (data.success) { document.getElementById('musicUrl').value = ''; location.reload(); }
-        else alert(data.error || (lang === 'ru' ? 'Ошибка' : 'Error'));
-    }
+async function addTrack() {
+    const url = document.getElementById('musicUrl').value.trim();
+    if (!url) return;
+    const title = prompt('Название трека:') || 'Без названия';
+    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) { document.getElementById('musicUrl').value = ''; location.reload(); }
+    else alert(data.error || 'Ошибка');
+}
 
-    async function uploadTrack() {
-        const file = document.getElementById('musicFile').files[0];
-        if (!file) return;
-        const lang = localStorage.getItem('lang') || 'ru';
-        const title = prompt(lang === 'ru' ? 'Название трека:' : 'Track title:') || file.name;
-        const fd = new FormData(); fd.append('file', file); fd.append('title', title);
-        const resp = await fetch('/api/music/upload', {method:'POST', body: fd});
-        const data = await resp.json();
-        if (data.success) { document.getElementById('musicFile').value = ''; location.reload(); }
-        else alert(data.error || (lang === 'ru' ? 'Ошибка' : 'Error'));
-    }
+async function uploadTrack() {
+    const file = document.getElementById('musicFile').files[0];
+    if (!file) return;
+    const title = prompt('Название трека:') || file.name;
+    const fd = new FormData(); fd.append('file', file); fd.append('title', title);
+    const resp = await fetch('/api/music/upload', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) { document.getElementById('musicFile').value = ''; location.reload(); }
+    else alert(data.error || 'Ошибка');
+}
 
-    async function deleteTrack(trackId) {
-        const lang = localStorage.getItem('lang') || 'ru';
-        if (!confirm(lang === 'ru' ? 'Удалить трек?' : 'Delete track?')) return;
-        const resp = await fetch('/api/music/delete/' + trackId, {method:'POST'});
-        const data = await resp.json();
-        if (data.success) document.getElementById('track-' + trackId).remove();
-        else alert(lang === 'ru' ? 'Ошибка' : 'Error');
-    }
+async function deleteTrack(trackId) {
+    if (!confirm('Удалить трек?')) return;
+    const resp = await fetch('/api/music/delete/' + trackId, {method:'POST'});
+    const data = await resp.json();
+    if (data.success) document.getElementById('track-' + trackId).remove();
+    else alert('Ошибка удаления');
+}
 
-    async function addToMyMusic(url, title) {
-        const lang = localStorage.getItem('lang') || 'ru';
-        const fd = new FormData(); fd.append('url', url); fd.append('title', title);
-        const resp = await fetch('/api/music/add', {method:'POST', body: fd});
-        const data = await resp.json();
-        if (data.success) alert(lang === 'ru' ? '✅ Трек добавлен в твой плеер!' : '✅ Track added to your player!');
-        else alert(lang === 'ru' ? 'Ошибка при добавлении' : 'Error while adding');
-    }
+async function addToMyMusic(url, title) {
+    const fd = new FormData(); fd.append('url', url); fd.append('title', title);
+    const resp = await fetch('/api/music/add', {method:'POST', body: fd});
+    const data = await resp.json();
+    if (data.success) alert('✅ Трек добавлен в твой плеер!');
+    else alert('Ошибка при добавлении');
+}
 
-    function countListen(trackId) {
-        fetch('/api/music/listen/' + trackId, {method:'POST'});
-    }
+function countListen(trackId) {
+    fetch('/api/music/listen/' + trackId, {method:'POST'});
+}
 
-    // Лимит видимых треков
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.getElementById('myTracksContainer');
-        if (!container) return;
-        const items = container.querySelectorAll('.music-item');
-        const MAX_VISIBLE = 4;
-        if (items.length > MAX_VISIBLE) {
+// ========== Лимит видимых треков ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('myTracksContainer');
+    if (!container) return;
+    const items = container.querySelectorAll('.music-item');
+    const MAX_VISIBLE = 4;
+    if (items.length > MAX_VISIBLE) {
+        for (let i = MAX_VISIBLE; i < items.length; i++) {
+            items[i].style.display = 'none';
+        }
+        const btn = document.createElement('button');
+        btn.textContent = `Показать все (${items.length})`;
+        btn.className = 'btn-music';
+        btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
+        btn.onclick = function() {
             for (let i = MAX_VISIBLE; i < items.length; i++) {
-                items[i].style.display = 'none';
+                items[i].style.display = '';
             }
-            const btn = document.createElement('button');
-            const lang = localStorage.getItem('lang') || 'ru';
-            btn.textContent = (lang === 'ru' ? 'Показать все' : 'Show all') + ' (' + items.length + ')';
-            btn.className = 'btn-music';
-            btn.style.cssText = 'margin-top:8px; background:#ffd700; color:#000; padding:10px; border-radius:20px; font-weight:bold; width:100%;';
-            btn.onclick = function() {
-                for (let i = MAX_VISIBLE; i < items.length; i++) {
-                    items[i].style.display = '';
-                }
-                btn.style.display = 'none';
-            };
-            container.appendChild(btn);
-        }
-    });
+            btn.style.display = 'none';
+        };
+        container.appendChild(btn);
+    }
+});
 </script>
 </body>
 </html>
