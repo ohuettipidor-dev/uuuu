@@ -6706,12 +6706,15 @@ def tab_games():
     # Отдаём список игр (без основного layout)
     user_games = UserGame.query.filter_by(is_approved=True).order_by(UserGame.plays_count.desc()).all()
     return render_template('games_content.html', user_games=user_games)
-
-
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.utcnow}
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
+    # Запуск Telegram-бота в фоновом потоке
     import threading
     if BOT_TOKEN:
         t = threading.Thread(target=run_bot, daemon=True)
