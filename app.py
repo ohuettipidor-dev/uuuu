@@ -2249,58 +2249,57 @@ def messages(uid):
 @app.route('/withdraw', methods=['POST'])
 @login_required
 def withdraw():
-    # Если пришло поле ton_address – это вывод GRRR (твой рабочий код)
-    if request.form.get('ton_address'):
-        amount = float(request.form.get('amount', 0))
-        ton_address = request.form.get('ton_address', '').strip()
+    amount = float(request.form.get('amount', 0))
+    ton_address = request.form.get('ton_address', '').strip()
 
-        if amount <= 0 or not ton_address:
-            flash('Неверная сумма или адрес', 'danger')
-            return redirect('/grrr')
+    if amount <= 0 or not ton_address:
+        flash('Неверная сумма или адрес', 'danger')
+        return redirect('/grrr')
 
-        balance = get_grrr_balance(current_user.id)
-        if balance < amount:
-            flash('Недостаточно GRRR', 'danger')
-            return redirect('/grrr')
+    balance = get_grrr_balance(current_user.id)
+    if balance < amount:
+        flash('Недостаточно GRRR', 'danger')
+        return redirect('/grrr')
 
-        today = datetime.utcnow().date()
-        stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
-        if not stat:
-            stat = DailyStat(user_id=current_user.id, date=today, grrr_earned=0, grrr_withdrawn=0)
-            db.session.add(stat)
+    today = datetime.utcnow().date()
+    stat = DailyStat.query.filter_by(user_id=current_user.id, date=today).first()
+    if not stat:
+        stat = DailyStat(user_id=current_user.id, date=today, grrr_earned=0, grrr_withdrawn=0)
+        db.session.add(stat)
 
-        if stat.grrr_withdrawn + amount > 100:
-            available = max(0, 100 - stat.grrr_withdrawn)
-            flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
-            return redirect('/grrr')
+    if stat.grrr_withdrawn + amount > 100:
+        available = max(0, 100 - stat.grrr_withdrawn)
+        flash(f'Лимит вывода сегодня: ещё можно вывести {available:.2f} GRRR', 'danger')
+        return redirect('/grrr')
 
-        add_grrr(current_user.id, -amount)
-        stat.grrr_withdrawn += amount
+    add_grrr(current_user.id, -amount)
+    stat.grrr_withdrawn += amount
 
-        req = WithdrawRequest(
-            user_id=current_user.id,
-            amount=amount,
-            ton_address=ton_address
-        )
-        db.session.add(req)
-        db.session.commit()
+    req = WithdrawRequest(
+        user_id=current_user.id,
+        amount=amount,
+        ton_address=ton_address
+    )
+    db.session.add(req)
+    db.session.commit()
 
-        jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
-        cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
-        amount_nano = int(amount * 1e9)
-        ton_link = f"ton://transfer/{cashier_addr}?jetton={jetton_master}&amount={amount_nano}&to={ton_address}"
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={ton_link}"
-        req.status = 'done'
-        db.session.commit()
+    jetton_master = "EQA54wK6aOv4luif0c-qwFwYU6h5WD4rXeQdZoYAxL9wYECX"
+    cashier_addr = "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p"
+    amount_nano = int(amount * 1e9)
+    ton_link = f"ton://transfer/{cashier_addr}?jetton={jetton_master}&amount={amount_nano}&to={ton_address}"
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={ton_link}"
+    req.status = 'done'
+    db.session.commit()
 
-        return render_template('grrr.html',
-                               grrr_balance=get_grrr_balance(current_user.id),
-                               coins_balance=get_user_coins(current_user.id).balance,
-                               show_qr=True,
-                               qr_code_url=qr_url,
-                               ton_link=ton_link)
-
-    # Иначе это вывод рублей на ЮMoney (восстановленная логика)
+    return render_template('grrr.html',
+                           grrr_balance=get_grrr_balance(current_user.id),
+                           coins_balance=get_user_coins(current_user.id).balance,
+                           show_qr=True,
+                           qr_code_url=qr_url,
+                          ton_link=ton_link)
+@app.route('/withdraw_rub', methods=['POST'])
+@login_required
+def withdraw_rub():
     amount_coins = int(request.form.get('amount_coins', 0))
     wallet = request.form.get('wallet', '').strip()
 
@@ -2338,27 +2337,7 @@ def withdraw():
     db.session.commit()
 
     flash(f'Заявка создана! К выплате: {net_rub} ₽ (удержано: комиссия {platform_fee} ₽, налог {tax_amount} ₽)', 'success')
-    return redirect('/withdraw')
-
-@app.route('/admin/withdrawal/<int:req_id>/done')
-@login_required
-def mark_done(req_id):
-    if current_user.id != 1:  # твой ID админа (замени, если другой)
-        return redirect('/')
-    
-    req = WithdrawRequest.query.get(req_id)
-    if not req or req.status != 'pending':
-        return redirect('/admin/withdrawals')
-    
-    try:
-        tx_hash = send_grrr_to_user(req.ton_address, req.amount)
-        req.status = 'done'
-        db.session.commit()
-        flash(f'✅ Выплата {req.amount} GRRR отправлена! TxID: {tx_hash[:10]}...', 'success')
-    except Exception as e:
-        flash(f'❌ Ошибка отправки: {str(e)}. Проверьте баланс кассира.', 'danger')
-    
-    return redirect('/admin/withdrawals')
+    return redirect('/withdraw')    
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
 def reject_withdrawal(req_id):
