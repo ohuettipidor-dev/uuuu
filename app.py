@@ -2350,7 +2350,44 @@ def withdraw_rub():
 
     return redirect('/profile')
 
-       
+
+@app.route('/check_ton_payment', methods=['POST'])
+@login_required
+def check_ton_payment():
+    # Публичный API TON Center (не требует установки библиотек)
+    url = f"https://toncenter.com/api/v2/getTransactions"
+    params = {
+        "address": "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p",
+        "limit": 5,
+        "to_lt": 0,
+        "archival": "false"
+    }
+    
+    try:
+        resp = requests.get(url, params=params)
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'error': 'Ошибка API'})
+        
+        data = resp.json()
+        if not data.get('ok'):
+            return jsonify({'success': False, 'error': 'Ошибка данных'})
+        
+        # Проверяем последние 5 транзакций
+        for tx in data['result']:
+            # Ищем входящий перевод с суммой
+            if 'in_msg' in tx and 'value' in tx['in_msg']:
+                amount_ton = int(tx['in_msg']['value']) / 1e9
+                # Зачисляем: 1 TON = 100 💎, комиссия 10%
+                amount_coins = int(amount_ton * 100 * 0.9)
+                if amount_coins > 0:
+                    coins = get_user_coins(current_user.id)
+                    coins.balance += amount_coins
+                    db.session.commit()
+                    return jsonify({'success': True, 'amount': amount_coins})
+        
+        return jsonify({'success': False, 'error': 'Платёж не найден'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
 def reject_withdrawal(req_id):
