@@ -54,24 +54,6 @@
         .btn-add-mine{background:#ff6b6b; color:white;}
         .btn-delete{background:#e74c3c; color:white;}
         .music-add-row{display:flex; gap:8px; margin-bottom:10px;}
-        .payment-switch-btn {
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-        .payment-switch-btn.active {
-            background: #ffd700;
-            color: #000;
-            border: none;
-        }
-        .payment-switch-btn.inactive {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 1px solid #ffb3b3;
-        }
     </style>
 </head>
 <body>
@@ -88,27 +70,9 @@
         <div class="section-title">💎 Баланс кристалайзеров</div>
         <p style="font-size:28px; font-weight:bold; color:#333;">{{ coins.balance }} 💎</p>
         {% if current_user.phone_verified %}<small style="color:green;">✅ Номер подтверждён</small>{% else %}<small style="color:#ff6b6b;">⚠️ Подтвердите номер</small>{% endif %}
-        
-        <!-- ТОЛЬКО ПЕРЕКЛЮЧАТЕЛЬ (ДОБАВЛЕН) -->
-        <div style="display:flex; gap:8px; justify-content:center; margin:12px 0;">
-            <button onclick="switchTopUp('yoomoney')" id="btnTopUpYoo" class="payment-switch-btn active">🇷🇺 ЮMoney (Рубли)</button>
-            <button onclick="switchTopUp('ton')" id="btnTopUpTon" class="payment-switch-btn inactive">🌍 TON (International)</button>
-        </div>
-
-        <!-- ИСХОДНЫЕ КНОПКИ (НЕ ТРОНУТЫ) -->
-        <div id="formTopUpYoo">
-            <p style="color:#888; font-size:13px;">Курс: 1 💎 = 1 ₽</p>
+        <div style="margin-top:12px;">
             <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
             <a href="/withdraw" class="btn-withdraw">💰 Вывести</a>
-        </div>
-
-        <!-- ФОРМА ДЛЯ TON (СКРЫТА) -->
-        <div id="formTopUpTon" style="display:none;">
-            <p style="color:#888; font-size:13px;">Курс: 1 TON ≈ 100 💎 (комиссия 10%)</p>
-            <p style="color:#aaa; font-size:11px;">Отправьте TON на адрес ниже. Кристаллайзеры зачислятся после проверки.</p>
-            <input type="text" readonly value="UQBADn-paZpo5Oq8mChNe-uoIbXsTw6x6yYPHZoekh369pq2" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px; text-align:center; font-size:12px;">
-            <p style="color:#ff6b6b; font-size:12px;">⚠️ После оплаты нажмите кнопку ниже для проверки</p>
-            <button onclick="checkTonPayment()" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🔄 Проверить платёж TON</button>
         </div>
     </div>
 
@@ -206,30 +170,6 @@
 </div>
 
 <script>
-// ========== ПЕРЕКЛЮЧЕНИЕ СПОСОБА ПОПОЛНЕНИЯ ==========
-function switchTopUp(method) {
-    var btnYoo = document.getElementById('btnTopUpYoo');
-    var btnTon = document.getElementById('btnTopUpTon');
-    var formYoo = document.getElementById('formTopUpYoo');
-    var formTon = document.getElementById('formTopUpTon');
-    
-    if (method === 'ton') {
-        btnTon.className = 'payment-switch-btn active';
-        btnYoo.className = 'payment-switch-btn inactive';
-        formTon.style.display = 'block';
-        formYoo.style.display = 'none';
-    } else {
-        btnYoo.className = 'payment-switch-btn active';
-        btnTon.className = 'payment-switch-btn inactive';
-        formYoo.style.display = 'block';
-        formTon.style.display = 'none';
-    }
-}
-
-function checkTonPayment() {
-    alert('✅ Функция проверки платежа появится в ближайшем обновлении. После отправки TON напишите в поддержку для ручного зачисления.');
-}
-
 // Поиск треков
 let searchTimeout;
 async function searchTracks() {
