@@ -2322,7 +2322,6 @@ def withdraw_rub():
     tax_amount = round(after_platform * tax_rate / 100, 2)
     net_rub = round(after_platform - tax_amount, 2)
 
-    # Реальная отправка через API ЮMoney
     headers = {
         'Authorization': f'Bearer {YOOMONEY_TOKEN}',
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -2349,7 +2348,9 @@ def withdraw_rub():
     except Exception as e:
         flash(f'❌ Ошибка соединения: {str(e)}', 'danger')
 
-    return redirect('/profile')    
+    return redirect('/profile')
+
+       
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
 def reject_withdrawal(req_id):
