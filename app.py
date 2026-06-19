@@ -292,6 +292,10 @@ class GameSkin(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     author = db.relationship('User', foreign_keys=[author_id])
     game = db.relationship('UserGame', foreign_keys=[game_id])
+    
+class ProcessedTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tx_hash = db.Column(db.String(100), unique=True, nullable=False)
 
 class SkinPurchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -2373,14 +2377,22 @@ def check_ton_payment():
         
         for tx in data['result']:
             tx_id = tx.get('transaction_id', {}).get('hash', '')
-            if tx_id in PROCESSED_TX:
-                continue  # уже обработана
+            if not tx_id:
+                continue
+                
+            # Проверяем, не обработана ли уже эта транзакция
+            if ProcessedTransaction.query.filter_by(tx_hash=tx_id).first():
+                continue
             
             if 'in_msg' in tx and 'value' in tx['in_msg']:
                 amount_ton = int(tx['in_msg']['value']) / 1e9
                 amount_coins = int(amount_ton * 100 * 0.9)
                 if amount_coins > 0:
-                    PROCESSED_TX.add(tx_id)
+                    # Сохраняем tx_id в БД
+                    processed = ProcessedTransaction(tx_hash=tx_id)
+                    db.session.add(processed)
+                    db.session.commit()
+                    
                     coins = get_user_coins(current_user.id)
                     coins.balance += amount_coins
                     db.session.commit()
