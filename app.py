@@ -2297,6 +2297,8 @@ def withdraw():
                            show_qr=True,
                            qr_code_url=qr_url,
                           ton_link=ton_link)
+
+
 @app.route('/withdraw_rub', methods=['POST'])
 @login_required
 def withdraw_rub():
@@ -2305,12 +2307,12 @@ def withdraw_rub():
 
     if amount_coins < 1000:
         flash('Минимальная сумма вывода 1000 💎', 'danger')
-        return redirect('/withdraw')
+        return redirect('/profile')
 
     coins = get_user_coins(current_user.id)
     if coins.balance < amount_coins:
         flash('Недостаточно кристаллайзеров', 'danger')
-        return redirect('/withdraw')
+        return redirect('/profile')
 
     rub_per_coin = 1.0
     gross_rub = round(amount_coins * rub_per_coin, 2)
@@ -2320,24 +2322,34 @@ def withdraw_rub():
     tax_amount = round(after_platform * tax_rate / 100, 2)
     net_rub = round(after_platform - tax_amount, 2)
 
-    coins.balance -= amount_coins
+    # Реальная отправка через API ЮMoney
+    headers = {
+        'Authorization': f'Bearer {YOOMONEY_TOKEN}',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    data = {
+        'pattern_id': 'p2p',
+        'to': wallet,
+        'amount': str(net_rub),
+        'comment': f'BearGram withdrawal for user {current_user.id}'
+    }
 
-    req = WithdrawalRequest(
-        user_id=current_user.id,
-        amount_coins=amount_coins,
-        gross_rub=gross_rub,
-        platform_fee=platform_fee,
-        tax_amount=tax_amount,
-        net_rub=net_rub,
-        tax_rate=tax_rate,
-        method='yoomoney',
-        wallet=wallet
-    )
-    db.session.add(req)
-    db.session.commit()
+    try:
+        resp = requests.post(
+            'https://yoomoney.ru/api/transfer',
+            headers=headers,
+            data=data
+        )
+        if resp.status_code == 200 and resp.json().get('status') == 'success':
+            coins.balance -= amount_coins
+            db.session.commit()
+            flash(f'✅ Вывод {net_rub} ₽ выполнен! Средства отправлены на кошелёк {wallet}.', 'success')
+        else:
+            flash('❌ Ошибка при отправке. Попробуйте позже.', 'danger')
+    except Exception as e:
+        flash(f'❌ Ошибка соединения: {str(e)}', 'danger')
 
-    flash(f'Заявка создана! К выплате: {net_rub} ₽ (удержано: комиссия {platform_fee} ₽, налог {tax_amount} ₽)', 'success')
-    return redirect('/withdraw')    
+    return redirect('/profile')    
 @app.route('/admin/withdrawal/<int:req_id>/reject')
 @login_required
 def reject_withdrawal(req_id):
