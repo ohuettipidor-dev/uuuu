@@ -35,6 +35,7 @@
         small{color:#aaa;font-size:11px}
         .danger-zone{border-bottom:none;background:rgba(231,76,60,0.1);border-radius:20px;padding:20px;margin-top:10px}
         .danger-zone .section-title{color:#e74c3c}
+        /* Плеер (компактный) */
         .music-search{position:relative; margin-bottom:10px;}
         .music-search input{padding-right:40px;}
         .search-results{position:absolute; top:100%; left:0; right:0; background:white; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:10; max-height:200px; overflow-y:auto; display:none;}
@@ -96,7 +97,8 @@
 
         <div id="formTopUpYoo">
             <p style="color:#888; font-size:13px;">Курс: 1 💎 = 1 ₽</p>
-            <a href="/shop/coins" class="btn-coins">💎 Зарядить через ЮMoney</a>
+            <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
+            <a href="/withdraw" class="btn-withdraw">💰 Вывести</a>
         </div>
 
         <div id="formTopUpTon" style="display:none;">
@@ -127,11 +129,13 @@
         </form>
         <small style="color:#888;">Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON.</small>
 
+        <!-- НОВАЯ ИНСТРУКЦИЯ ПО ВЫВОДУ -->
         <div style="margin-top: 12px; text-align: left;">
             <button onclick="var el=document.getElementById('withdrawGuide'); el.style.display = (el.style.display === 'none' ? 'block' : 'none');"
                     style="background: none; border: 1px solid #ffb3b3; color: #ff6b6b; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-size: 14px; width: 100%;">
                 🐻 Как вывести деньги? (простая инструкция)
             </button>
+
             <div id="withdrawGuide" style="display: none; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; margin-top: 10px; color: #333; font-size: 14px; line-height: 1.5;">
                 <p><b>1. Установи Tonkeeper</b> — официальный кошелёк TON. Запиши секретную фразу и сохрани в надёжном месте.</p>
                 <p><b>2. Скопируй адрес</b> — в Tonkeeper нажми на адрес (начинается с <code>UQ...</code>), он скопируется. Это твой счёт.</p>
