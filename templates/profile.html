@@ -90,8 +90,8 @@
         <!-- Форма пополнения через TON -->
         <div id="tonTopUpForm" style="display:none; text-align:center; margin-top:15px;">
             <p style="color:#888; font-size:13px;">Курс: 1 TON ≈ 100 💎 (комиссия 10%)</p>
-            <p style="color:#aaa; font-size:11px;">Отправьте TON на адрес ниже. Кристаллайзеры зачислятся автоматически после 1 подтверждения.</p>
-            <input type="text" readonly value="UQBADn-paZpo5Oq8mChNe-uoIbXsTw6x6yYPHZoekh369pq2" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px; text-align:center; font-size:12px;">
+            <p style="color:#aaa; font-size:11px;">Отправьте TON на адрес ниже и нажмите «Проверить платёж».</p>
+            <input type="text" readonly value="UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px; text-align:center; font-size:12px;">
             <button onclick="checkTonTopUp()" style="background:#4cd964; color:white; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🔄 Проверить платёж</button>
         </div>
     </div>
@@ -194,7 +194,17 @@ function toggleTonForm() {
 }
 
 function checkTonTopUp() {
-    alert('✅ Проверка платежа будет добавлена в следующем обновлении.');
+    fetch('/check_ton_payment', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Платёж найден! Кристаллайзеры зачислены: ' + data.amount + ' 💎');
+                location.reload();
+            } else {
+                alert('❌ Платёж не найден. Попробуйте позже.');
+            }
+        })
+        .catch(error => alert('❌ Ошибка проверки: ' + error));
 }
 
 // Поиск треков
