@@ -72,7 +72,28 @@
         {% if current_user.phone_verified %}<small style="color:green;">✅ Номер подтверждён</small>{% else %}<small style="color:#ff6b6b;">⚠️ Подтвердите номер</small>{% endif %}
         <div style="margin-top:12px;">
             <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
-            <a href="/withdraw" class="btn-withdraw">💰 Вывести</a>
+            <button onclick="document.getElementById('withdrawRubForm').style.display='block'" class="btn-withdraw">💰 Вывести</button>
+        </div>
+        <div style="margin-top:10px;">
+            <button onclick="toggleTonForm()" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🌍 Пополнить через TON</button>
+        </div>
+
+        <!-- Форма вывода рублей -->
+        <div id="withdrawRubForm" style="display:none; text-align:center; margin-top:15px;">
+            <form method="POST" action="/withdraw_rub">
+                <input type="text" name="wallet" placeholder="Номер кошелька ЮMoney" required style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+                <input type="number" name="amount_coins" placeholder="Сумма в 💎 (мин. 1000)" min="1000" required style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+                <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">💸 Отправить заявку</button>
+            </form>
+            <small style="color:#888;">Курс: 1 💎 = 1 ₽. Комиссия платформы 25% + налог 13%.</small>
+        </div>
+
+        <!-- Форма пополнения через TON -->
+        <div id="tonTopUpForm" style="display:none; text-align:center; margin-top:15px;">
+            <p style="color:#888; font-size:13px;">Курс: 1 TON ≈ 100 💎 (комиссия 10%)</p>
+            <p style="color:#aaa; font-size:11px;">Отправьте TON на адрес ниже. Кристаллайзеры зачислятся автоматически после 1 подтверждения.</p>
+            <input type="text" readonly value="UQBADn-paZpo5Oq8mChNe-uoIbXsTw6x6yYPHZoekh369pq2" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px; text-align:center; font-size:12px;">
+            <button onclick="checkTonTopUp()" style="background:#4cd964; color:white; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🔄 Проверить платёж</button>
         </div>
     </div>
 
@@ -88,20 +109,18 @@
     <!-- ВЫВОД $GRRR -->
     <div class="section" style="text-align:center;">
         <div class="section-title">💸 Вывести $GRRR</div>
-        <form method="POST" action="/grrr/withdraw">
-            <input type="text" name="address" placeholder="Ваш TON-адрес (UQ...)" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
-            <input type="number" name="amount" placeholder="Сумма" step="0.01" min="0.01" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
-            <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">💸 Вывести</button>
+        <form method="POST" action="/withdraw">
+            <input type="text" name="ton_address" placeholder="Ваш TON-адрес (UQ...)" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+            <input type="number" name="amount" placeholder="Сумма GRRR" step="0.01" min="0.01" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+            <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">💸 Вывести GRRR</button>
         </form>
         <small style="color:#888;">Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON.</small>
 
-        <!-- НОВАЯ ИНСТРУКЦИЯ ПО ВЫВОДУ -->
         <div style="margin-top: 12px; text-align: left;">
             <button onclick="var el=document.getElementById('withdrawGuide'); el.style.display = (el.style.display === 'none' ? 'block' : 'none');"
                     style="background: none; border: 1px solid #ffb3b3; color: #ff6b6b; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-size: 14px; width: 100%;">
                 🐻 Как вывести деньги? (простая инструкция)
             </button>
-
             <div id="withdrawGuide" style="display: none; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; margin-top: 10px; color: #333; font-size: 14px; line-height: 1.5;">
                 <p><b>1. Установи Tonkeeper</b> — официальный кошелёк TON. Запиши секретную фразу и сохрани в надёжном месте.</p>
                 <p><b>2. Скопируй адрес</b> — в Tonkeeper нажми на адрес (начинается с <code>UQ...</code>), он скопируется. Это твой счёт.</p>
@@ -170,6 +189,16 @@
 </div>
 
 <script>
+function toggleTonForm() {
+    var form = document.getElementById('tonTopUpForm');
+    form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+}
+
+function checkTonTopUp() {
+    // Проверка транзакции через TON API будет добавлена в следующем обновлении
+    alert('✅ После отправки TON напишите в поддержку @beargram_support для зачисления.');
+}
+
 // Поиск треков
 let searchTimeout;
 async function searchTracks() {
