@@ -75,6 +75,7 @@ def send_via_deeplink(payload: dict) -> str:
     # Формируем deeplink
     deeplink = f"ton://transfer/{payload['jetton_master']}?amount={payload['amount']}&to={payload['destination']}&payload={payload_b64}&signature={sig_b64}"
     return deeplink
+PROCESSED_TX = set()
 YOOMONEY_WALLET = '4100119522166446'
 YOOMONEY_TOKEN = '4100119522166446.E6966B58F022F5CC1E6F3AC9E9409E17676AE12DA3DB68F69885448E192A538ACB87CEE93D045E643159D6C9AACE07098E3F5FDF895F77FE268ED68CD358FDBDE1F97AF0D56F6B2D55D87AA2D29B02983119D7E2797D0B481D7F900571BF15812229EC1F6A1430AF29AD6DB07EFAA51D4BBC680293CF0065B00E1C6047AFA6EC'
 VAPID_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg_gjCYMlsnEqEwve9-aPTyOGeCr7FSMk8N1pyVjjr0LShRANCAARlre50Affy8pB2MI1Qu5sFIHVsdEbSMubEuYigcTXaW_e49z7UjMjggoRUody6Fbpuz_x3NngMjDlQSSApYIrE"
@@ -2350,15 +2351,13 @@ def withdraw_rub():
 
     return redirect('/profile')
 
-
 @app.route('/check_ton_payment', methods=['POST'])
 @login_required
 def check_ton_payment():
-    # Публичный API TON Center (не требует установки библиотек)
     url = f"https://toncenter.com/api/v2/getTransactions"
     params = {
         "address": "UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p",
-        "limit": 5,
+        "limit": 10,
         "to_lt": 0,
         "archival": "false"
     }
@@ -2372,14 +2371,16 @@ def check_ton_payment():
         if not data.get('ok'):
             return jsonify({'success': False, 'error': 'Ошибка данных'})
         
-        # Проверяем последние 5 транзакций
         for tx in data['result']:
-            # Ищем входящий перевод с суммой
+            tx_id = tx.get('transaction_id', {}).get('hash', '')
+            if tx_id in PROCESSED_TX:
+                continue  # уже обработана
+            
             if 'in_msg' in tx and 'value' in tx['in_msg']:
                 amount_ton = int(tx['in_msg']['value']) / 1e9
-                # Зачисляем: 1 TON = 100 💎, комиссия 10%
                 amount_coins = int(amount_ton * 100 * 0.9)
                 if amount_coins > 0:
+                    PROCESSED_TX.add(tx_id)
                     coins = get_user_coins(current_user.id)
                     coins.balance += amount_coins
                     db.session.commit()
