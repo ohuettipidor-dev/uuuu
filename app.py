@@ -2375,20 +2375,20 @@ def check_ton_payment():
         if not data.get('ok'):
             return jsonify({'success': False, 'error': 'Ошибка данных'})
         
+        # Собираем ВСЕ уже обработанные tx_id из БД
+        processed_ids = {tx.tx_hash for tx in ProcessedTransaction.query.all()}
+        
+        # Находим первый (самый свежий) непомеченный входящий перевод
         for tx in data['result']:
             tx_id = tx.get('transaction_id', {}).get('hash', '')
-            if not tx_id:
-                continue
-                
-            # Проверяем, не обработана ли уже эта транзакция
-            if ProcessedTransaction.query.filter_by(tx_hash=tx_id).first():
-                continue
+            if not tx_id or tx_id in processed_ids:
+                continue  # пропускаем уже обработанные
             
             if 'in_msg' in tx and 'value' in tx['in_msg']:
                 amount_ton = int(tx['in_msg']['value']) / 1e9
                 amount_coins = int(amount_ton * 100 * 0.9)
                 if amount_coins > 0:
-                    # Сохраняем tx_id в БД
+                    # Помечаем как обработанную
                     processed = ProcessedTransaction(tx_hash=tx_id)
                     db.session.add(processed)
                     db.session.commit()
