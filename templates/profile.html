@@ -90,11 +90,11 @@
         <!-- Форма пополнения через TON -->
         <div id="tonTopUpForm" style="display:none; text-align:center; margin-top:15px;">
             <p style="color:#888; font-size:13px;">Курс: 1 TON ≈ 100 💎 (комиссия 10%)</p>
-            <p style="color:#aaa; font-size:11px;">Введите желаемую сумму в 💎, и мы покажем, сколько TON нужно отправить.</p>
+            <p style="color:#aaa; font-size:11px;">Введите желаемую сумму в 💎, и мы покажем, сколько TON нужно отправить (минимум 3 💎).</p>
             
-            <input type="number" id="desiredCoins" placeholder="Сколько 💎 хотите получить?" min="1" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;" oninput="calculateTon()">
+            <input type="number" id="desiredCoins" placeholder="Сколько 💎 хотите получить? (мин. 3)" min="3" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;" oninput="calculateTon()">
             
-            <p style="color:#ffd700; font-weight:bold; font-size:16px; margin:10px 0;" id="tonAmountDisplay">Введите сумму</p>
+            <p style="color:#ffd700; font-weight:bold; font-size:16px; margin:10px 0;" id="tonAmountDisplay">Введите сумму от 3 💎</p>
             
             <input type="text" readonly id="tonAddress" value="UQBkA668ckVSb_Qjy5xSj5P8CEbtowavFcC1j0Ho-gebFW8p" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px; text-align:center; font-size:12px;">
             
@@ -118,9 +118,9 @@
     <!-- ВЫВОД $GRRR -->
     <div class="section" style="text-align:center;">
         <div class="section-title">💸 Вывести $GRRR</div>
-        <form method="POST" action="/withdraw">
-            <input type="text" name="ton_address" placeholder="Ваш TON-адрес (UQ...)" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
-            <input type="number" name="amount" placeholder="Сумма GRRR" step="0.01" min="0.01" style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+        <form method="POST" action="/withdraw" onsubmit="return validateWithdraw()">
+            <input type="text" name="ton_address" id="ton_address" placeholder="Ваш TON-адрес (UQ...)" required style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
+            <input type="number" name="amount" id="amount_grrr" placeholder="Сумма GRRR" step="0.01" min="0.01" required style="width:100%; padding:10px; border-radius:20px; border:1px solid #ffb3b3; margin-bottom:8px;">
             <button type="submit" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">💸 Вывести GRRR</button>
         </form>
         <small style="color:#888;">Минимальная сумма: 10 $GRRR. Комиссия сети ~0.1 TON.</small>
@@ -205,8 +205,21 @@ function toggleTonForm() {
 
 function calculateTon() {
     var desired = parseFloat(document.getElementById('desiredCoins').value) || 0;
-    var tonNeeded = (desired / 90).toFixed(3); // 100 💎 минус 10% комиссия = 90 💎 за 1 TON
+    if (desired < 3) {
+        document.getElementById('tonAmountDisplay').textContent = 'Минимальная сумма: 3 💎';
+        return;
+    }
+    var tonNeeded = (desired / 90).toFixed(3);
     document.getElementById('tonAmountDisplay').textContent = 'Отправьте ровно ' + tonNeeded + ' TON';
+}
+
+function validateWithdraw() {
+    var amount = document.getElementById('amount_grrr').value.trim();
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+        alert('Пожалуйста, введите сумму для вывода.');
+        return false;
+    }
+    return true;
 }
 
 function checkTonTopUp() {
