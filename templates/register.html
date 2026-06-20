@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -35,7 +36,7 @@
         .form-group{
             margin-bottom: 20px;
         }
-        input{
+        input, select{
             width: 100%;
             padding: 14px 18px;
             border: 1px solid #ffb3b3;
@@ -44,7 +45,7 @@
             background: white;
             transition: all 0.3s;
         }
-        input:focus{
+        input:focus, select:focus{
             outline: none;
             border-color: #ff6b6b;
             box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
@@ -149,7 +150,14 @@
             <input type="password" name="confirm_password" placeholder="🔒 Подтвердите пароль" required>
         </div>
         
-        <!-- ПОЛЕ ТЕЛЕФОНА (СКОБКИ ЗАКРЫТЫ) -->
+        <div class="form-group">
+            <select name="language" required>
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="en">🇬🇧 English</option>
+            </select>
+            <small>🌐 Язык интерфейса</small>
+        </div>
+        
         <div class="form-group">
             <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)">
             <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
@@ -168,3 +176,4 @@
 </div>
 </body>
 </html>
+```
