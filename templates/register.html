@@ -35,7 +35,7 @@
         .form-group{
             margin-bottom: 20px;
         }
-        input, select{
+        input{
             width: 100%;
             padding: 14px 18px;
             border: 1px solid #ffb3b3;
@@ -44,7 +44,7 @@
             background: white;
             transition: all 0.3s;
         }
-        input:focus, select:focus{
+        input:focus{
             outline: none;
             border-color: #ff6b6b;
             box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
@@ -119,57 +119,181 @@
             content: "💎";
             font-size: 16px;
         }
+        
+        /* Стили для переключателя языков */
+        .language-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .language-selector select {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #ffb3b3;
+            background: white;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .language-selector select:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+        }
+        
+        /* Скрываем баннер Google Translate */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+        body {
+            top: 0px !important;
+        }
+        .goog-logo-link {
+            display: none !important;
+        }
+        .goog-te-gadget {
+            color: transparent !important;
+        }
     </style>
+    
+    <!-- Google Translate API -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ru',
+                includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
+                layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+                autoDisplay: false,
+                gaTrack: false
+            }, 'google_translate_element');
+        }
+        
+        // Функция для программного перевода
+        function changeLanguage(langCode) {
+            // Сохраняем выбранный язык в cookie
+            document.cookie = "googtrans=/ru/" + langCode + "; path=/; SameSite=Lax";
+            
+            // Перезагружаем страницу для применения перевода
+            location.reload();
+        }
+        
+        // Определяем язык браузера пользователя
+        function detectUserLanguage() {
+            var userLang = navigator.language || navigator.userLanguage;
+            var shortLang = userLang.split('-')[0];
+            
+            // Список поддерживаемых языков
+            var supportedLangs = ['en', 'ru', 'es', 'de', 'fr', 'zh', 'ar', 'pt', 'ja', 'ko', 'tr', 'it', 'pl', 'uk', 'hi'];
+            
+            // Проверяем, есть ли уже сохраненный язык
+            var savedLang = getCookie('googtrans');
+            if (!savedLang) {
+                // Если язык пользователя поддерживается и это не русский
+                if (supportedLangs.includes(shortLang) && shortLang !== 'ru') {
+                    changeLanguage(shortLang);
+                }
+            }
+        }
+        
+        // Вспомогательная функция для получения cookie
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length == 2) return parts.pop().split(";").shift();
+            return null;
+        }
+    </script>
+    
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </head>
-<body>
-<div class="card">
-    <h2>🐻 Bear<span>Gram</span></h2>
-    <h2 style="font-size:22px; margin-bottom:20px">📝 Регистрация</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <form method="POST">
-        <div class="form-group">
-            <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
-        </div>
-        <div class="form-group">
-            <input type="text" name="username_link" placeholder="@username (необязательно)">
-            <small>Можно добавить позже в настройках профиля</small>
-        </div>
-        <div class="form-group">
-            <input type="password" name="password" placeholder="🔒 Пароль" required>
-        </div>
-        <div class="form-group">
-            <input type="password" name="confirm_password" placeholder="🔒 Подтвердите пароль" required>
-        </div>
-        <div class="form-group">
-            <select name="language" required>
+<body onload="detectUserLanguage()">
+    <div class="card">
+        <h2>🐻 Bear<span>Gram</span></h2>
+        
+        <!-- Селектор языка -->
+        <div class="language-selector">
+            <select onchange="changeLanguage(this.value)" id="languageSelect">
                 <option value="ru">🇷🇺 Русский</option>
                 <option value="en">🇬🇧 English</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="zh-CN">🇨🇳 中文</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="pl">🇵🇱 Polski</option>
+                <option value="uk">🇺🇦 Українська</option>
+                <option value="hi">🇮🇳 हिन्दी</option>
             </select>
-            <small>🌐 Язык интерфейса</small>
-        </div>
-        <div class="form-group">
-            <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)">
-            <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
         </div>
         
-        <button type="submit">🐾 Зарегистрироваться</button>
-    </form>
+        <h2 style="font-size:22px; margin-bottom:20px">📝 Регистрация</h2>
+        
+        <!-- Скрытый элемент Google Translate -->
+        <div id="google_translate_element" style="display:none;"></div>
 
-    <div class="phone-hint">
-        Подтвердите номер после регистрации и получите 100 кристалайзеров в подарок!
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="username_link" placeholder="@username (необязательно)">
+                <small>Можно добавить позже в настройках профиля</small>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="🔒 Пароль" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="confirm_password" placeholder="🔒 Подтвердите пароль" required>
+            </div>
+            
+            <!-- ПОЛЕ ТЕЛЕФОНА -->
+            <div class="form-group">
+                <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)">
+                <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
+            </div>
+            
+            <button type="submit">🐾 Зарегистрироваться</button>
+        </form>
+
+        <div class="phone-hint">
+            Подтвердите номер после регистрации и получите 100 кристалайзеров в подарок!
+        </div>
+
+        <div class="link">
+            Уже есть аккаунт? <a href="/login">Войти 🐻</a>
+        </div>
     </div>
 
-    <div class="link">
-        Уже есть аккаунт? <a href="/login">Войти 🐻</a>
-    </div>
-</div>
+    <script>
+        // Устанавливаем текущий язык в селекторе
+        document.addEventListener('DOMContentLoaded', function() {
+            var savedLang = getCookie('googtrans');
+            if (savedLang) {
+                var langCode = savedLang.split('/')[2];
+                var select = document.getElementById('languageSelect');
+                if (select && langCode) {
+                    for (var i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === langCode) {
+                            select.value = langCode;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
