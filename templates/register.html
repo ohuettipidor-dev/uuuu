@@ -199,11 +199,6 @@
                 transform: rotate(360deg);
             }
         }
-
-        /* Защита от перевода атрибутов */
-        .no-translate {
-            translate: no;
-        }
     </style>
 </head>
 <body>
@@ -278,127 +273,19 @@
     </div>
 
     <script>
-        // Кэш переводов
-        const translationCache = {};
-
-        // Функция перевода текста через Google Translate API
-        async function translateText(text, targetLang) {
-            if (!text || text.trim() === '') return text;
-            if (targetLang === 'ru') return text;
-
-            const cacheKey = `${text}_${targetLang}`;
-            if (translationCache[cacheKey]) {
-                return translationCache[cacheKey];
-            }
-
-            try {
-                const response = await fetch(
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
-                );
-                const data = await response.json();
-
-                let translatedText = '';
-                if (data && data[0]) {
-                    data[0].forEach(item => {
-                        if (item[0]) {
-                            translatedText += item[0];
-                        }
-                    });
-                }
-
-                translationCache[cacheKey] = translatedText || text;
-                return translationCache[cacheKey];
-            } catch (error) {
-                console.error('Translation error:', error);
-                return text;
-            }
+        // Функция выбора языка — сохраняет и перезагружает страницу
+        function translatePage(targetLang) {
+            localStorage.setItem('selectedLanguage', targetLang);
+            location.reload();
         }
 
-        // Главная функция перевода страницы
-        async function translatePage(targetLang) {
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.style.display = 'flex';
-
-            try {
-                localStorage.setItem('selectedLanguage', targetLang);
-
-                if (targetLang === 'ru') {
-                    location.reload();
-                    return;
-                }
-
-                // Переводим заголовок
-                const title = document.getElementById('registerTitle');
-                if (title && title.dataset.originalText === undefined) {
-                    title.dataset.originalText = title.textContent;
-                }
-                if (title && title.dataset.originalText) {
-                    title.textContent = await translateText(title.dataset.originalText, targetLang);
-                }
-
-                // Переводим placeholder'ы (НЕ ТРОГАЕМ name и id!)
-                const inputs = document.querySelectorAll('input');
-                for (const input of inputs) {
-                    if (input.placeholder) {
-                        if (input.dataset.originalPlaceholder === undefined) {
-                            input.dataset.originalPlaceholder = input.placeholder;
-                        }
-                        input.placeholder = await translateText(input.dataset.originalPlaceholder, targetLang);
-                    }
-                }
-
-                // Переводим подсказки
-                const hints = document.querySelectorAll('.hint-text');
-                for (const hint of hints) {
-                    if (hint.dataset.originalText === undefined) {
-                        hint.dataset.originalText = hint.textContent;
-                    }
-                    hint.textContent = await translateText(hint.dataset.originalText, targetLang);
-                }
-
-                // Переводим кнопку
-                const button = document.querySelector('button[type="submit"]');
-                if (button) {
-                    if (button.dataset.originalText === undefined) {
-                        button.dataset.originalText = button.textContent;
-                    }
-                    button.textContent = await translateText(button.dataset.originalText, targetLang);
-                }
-
-                // Переводим блок с бонусом
-                const phoneHint = document.getElementById('phoneHint');
-                if (phoneHint) {
-                    if (phoneHint.dataset.originalText === undefined) {
-                        phoneHint.dataset.originalText = phoneHint.textContent;
-                    }
-                    phoneHint.textContent = await translateText(phoneHint.dataset.originalText, targetLang);
-                }
-
-                // Переводим ссылку
-                const loginLink = document.getElementById('loginLink');
-                if (loginLink) {
-                    if (loginLink.dataset.originalText === undefined) {
-                        loginLink.dataset.originalText = loginLink.innerHTML;
-                    }
-                    const translatedText = await translateText('Уже есть аккаунт?', targetLang);
-                    const translatedLogin = await translateText('Войти 🐻', targetLang);
-                    loginLink.innerHTML = translatedText + ' <a href="/login">' + translatedLogin + '</a>';
-                }
-
-            } catch (error) {
-                console.error('Page translation error:', error);
-            } finally {
-                overlay.style.display = 'none';
-            }
-        }
-
-        // Инициализация при загрузке
+        // Инициализация при загрузке — применяем сохранённый язык
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('selectedLanguage');
             if (savedLang && savedLang !== 'ru') {
                 document.getElementById('languageSelect').value = savedLang;
-                translatePage(savedLang);
-            } else {
+            } else if (!savedLang) {
+                // Автоопределение языка браузера при первом заходе
                 const browserLang = navigator.language || navigator.userLanguage;
                 const shortLang = browserLang.split('-')[0];
 
@@ -429,5 +316,8 @@
             }
         });
     </script>
+    
+    <!-- АВТОПЕРЕВОДЧИК -->
+    <script src="/static/lang.js"></script>
 </body>
 </html>
