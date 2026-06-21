@@ -43,6 +43,34 @@
             color: #ff6b6b
         }
 
+        .language-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .language-selector select {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #ffb3b3;
+            background: white;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 35px;
+        }
+
+        .language-selector select:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -122,6 +150,28 @@
 <body>
     <div class="card">
         <h2>🐻 Bear<span>Gram</span></h2>
+
+        <!-- СЕЛЕКТОР ЯЗЫКА -->
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="zh-CN">🇨🇳 中文</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="pl">🇵🇱 Polski</option>
+                <option value="uk">🇺🇦 Українська</option>
+                <option value="hi">🇮🇳 हिन्दी</option>
+            </select>
+        </div>
+
         <h2 style="font-size:22px; margin-bottom:20px">🔐 Вход в аккаунт</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -146,6 +196,22 @@
             Нет аккаунта? <a href="/register">Зарегистрироваться 🧸</a>
         </div>
     </div>
+
+    <script>
+        // При выборе языка — сохраняем и перезагружаем
+        function changeLanguage(lang) {
+            localStorage.setItem('selectedLanguage', lang);
+            location.reload();
+        }
+
+        // При загрузке — показываем сохранённый язык
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem('selectedLanguage');
+            if (savedLang) {
+                document.getElementById('languageSelect').value = savedLang;
+            }
+        });
+    </script>
 
     <!-- АВТОПЕРЕВОДЧИК -->
     <script src="/static/lang.js"></script>
