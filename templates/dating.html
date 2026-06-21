@@ -27,9 +27,54 @@
         .premium-hint{margin-top:14px;font-size:14px;}
         .premium-hint a{color:#ff6b6b;text-decoration:none;border:1px solid #ff6b6b;padding:8px 16px;border-radius:20px;}
         .premium-btn{background:#ff6b6b;color:white;border:none;padding:8px 16px;border-radius:20px;font-weight:bold;cursor:pointer;}
+
+        /* Скрываем Google Translate баннеры */
+        .goog-te-banner-frame, .goog-te-gadget, .goog-te-gadget-simple, 
+        #google_translate_element, .goog-te-balloon-frame, .goog-tooltip,
+        .goog-te-spinner-pos, iframe.goog-te-banner-frame, .skiptranslate {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+        }
+        body { top: 0 !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
     </style>
 </head>
 <body>
+<!-- Google Translate (скрытый) -->
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'ru',
+        includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
+        layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<div id="google_translate_element" style="display:none;"></div>
+
+<script>
+// Применяем сохранённый язык
+(function() {
+    var lang = localStorage.getItem('selectedLanguage');
+    if (lang && lang !== 'ru') {
+        var check = setInterval(function() {
+            var select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = lang;
+                select.dispatchEvent(new Event('change'));
+                clearInterval(check);
+            }
+        }, 500);
+    }
+})();
+</script>
+
 <div class="card" id="card">
     <div id="profile">
         <p>Загрузка...</p>
@@ -139,5 +184,6 @@ if (whoLikedBtn) {
 
 loadProfile();
 </script>
+<script src="/static/lang.js"></script>
 </body>
 </html>
