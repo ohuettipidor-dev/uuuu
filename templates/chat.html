@@ -303,10 +303,9 @@
         body { top: 0 !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
 
-        /* ========== ФИКС ШАПКИ ПРИ ПЕРЕВОДЕ ========== */
+        /* ФИКС ШАПКИ (без поломки выпадающего списка) */
         .header {
             flex-wrap: nowrap !important;
-            overflow: hidden;
         }
         .header .logo-text {
             max-width: 130px;
@@ -317,8 +316,7 @@
         }
         .header .header-actions {
             flex-wrap: nowrap !important;
-            overflow: hidden;
-            gap: 4px;
+            /* убрали overflow: hidden, чтобы выпадающий список был виден */
         }
         .header .icon-btn,
         .header .finance-header-btn,
@@ -332,7 +330,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* =========================================== */
     </style>
 </head>
 <body>
