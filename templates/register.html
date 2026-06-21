@@ -168,44 +168,9 @@
             content: "💎";
             font-size: 16px;
         }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #ffb3b3;
-            border-top: 5px solid #ff6b6b;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-    </div>
-
     <div class="card">
         <h2>🐻 Bear<span>Gram</span></h2>
 
@@ -230,7 +195,7 @@
             </select>
         </div>
 
-        <h2 style="font-size:22px; margin-bottom:20px" id="registerTitle">📝 Регистрация</h2>
+        <h2 style="font-size:22px; margin-bottom:20px">📝 Регистрация</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -240,55 +205,60 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST" id="registerForm">
+        <form method="POST">
             <div class="form-group">
-                <input type="text" name="username" id="username" placeholder="🐻 Имя пользователя" required autocomplete="username">
+                <input type="text" name="username" placeholder="🐻 Имя пользователя" required autocomplete="username">
             </div>
             <div class="form-group">
-                <input type="text" name="username_link" id="username_link" placeholder="@username (необязательно)" autocomplete="off">
-                <small class="hint-text">Можно добавить позже в настройках профиля</small>
+                <input type="text" name="username_link" placeholder="@username (необязательно)" autocomplete="off">
+                <small>Можно добавить позже в настройках профиля</small>
             </div>
             <div class="form-group">
-                <input type="password" name="password" id="password" placeholder="🔒 Пароль" required autocomplete="new-password">
+                <input type="password" name="password" placeholder="🔒 Пароль" required autocomplete="new-password">
             </div>
             <div class="form-group">
-                <input type="password" name="confirm_password" id="confirm_password" placeholder="🔒 Подтвердите пароль" required autocomplete="new-password">
+                <input type="password" name="confirm_password" placeholder="🔒 Подтвердите пароль" required autocomplete="new-password">
             </div>
 
             <div class="form-group">
-                <input type="text" name="phone" id="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)" autocomplete="tel">
-                <small class="hint-text">Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
+                <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)" autocomplete="tel">
+                <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
             </div>
 
             <button type="submit">🐾 Зарегистрироваться</button>
         </form>
 
-        <div class="phone-hint" id="phoneHint">
+        <div class="phone-hint">
             Подтвердите номер после регистрации и получите 100 кристалайзеров в подарок!
         </div>
 
-        <div class="link" id="loginLink">
+        <div class="link">
             Уже есть аккаунт? <a href="/login">Войти 🐻</a>
         </div>
     </div>
 
     <script>
-        // Функция выбора языка — сохраняет и перезагружает страницу
+        // Функция выбора языка — сбрасывает куку гугла и сохраняет выбор
         function translatePage(targetLang) {
+            // Сбрасываем куку Google Translate
+            document.cookie = 'googtrans=; Path=/; Max-Age=0';
+            if (targetLang === 'ru') {
+                // Для русского ставим куку /ru/ru, чтобы перевод отключился
+                document.cookie = 'googtrans=/ru/ru; Path=/; SameSite=Lax';
+            }
             localStorage.setItem('selectedLanguage', targetLang);
             location.reload();
         }
 
-        // Инициализация при загрузке — применяем сохранённый язык
+        // При загрузке страницы подставляем сохранённый язык в селектор
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('selectedLanguage');
-            if (savedLang && savedLang !== 'ru') {
+            if (savedLang) {
                 document.getElementById('languageSelect').value = savedLang;
-            } else if (!savedLang) {
+            } else {
                 // Автоопределение языка браузера при первом заходе
                 const browserLang = navigator.language || navigator.userLanguage;
                 const shortLang = browserLang.split('-')[0];
-
                 const langMap = {
                     'zh': 'zh-CN',
                     'en': 'en',
@@ -306,9 +276,7 @@
                     'hi': 'hi',
                     'ru': 'ru'
                 };
-
                 const targetLang = langMap[shortLang] || 'ru';
-
                 if (targetLang !== 'ru') {
                     document.getElementById('languageSelect').value = targetLang;
                     translatePage(targetLang);
@@ -316,8 +284,6 @@
             }
         });
     </script>
-    
-    <!-- АВТОПЕРЕВОДЧИК -->
     <script src="/static/lang.js"></script>
 </body>
 </html>
