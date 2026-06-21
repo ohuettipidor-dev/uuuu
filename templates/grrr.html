@@ -41,9 +41,54 @@
         .node-banner p{color:#aaa;font-size:12px}
         .limit-info{color:#ffd700;font-size:13px;margin-bottom:8px}
         .rate-info{color:#aaa; font-size:12px; margin:5px 0;}
+
+        /* Скрываем все элементы Google Translate */
+        .goog-te-banner-frame, .goog-te-gadget, .goog-te-gadget-simple, 
+        #google_translate_element, .goog-te-balloon-frame, .goog-tooltip,
+        .goog-te-spinner-pos, iframe.goog-te-banner-frame, .skiptranslate {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+        }
+        body { top: 0 !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
     </style>
 </head>
 <body>
+<!-- Google Translate (скрытый) -->
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'ru',
+        includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
+        layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<div id="google_translate_element" style="display:none;"></div>
+
+<script>
+// Применяем сохранённый язык к Google Translate
+(function() {
+    var lang = localStorage.getItem('selectedLanguage');
+    if (lang && lang !== 'ru') {
+        var check = setInterval(function() {
+            var select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = lang;
+                select.dispatchEvent(new Event('change'));
+                clearInterval(check);
+            }
+        }, 500);
+    }
+})();
+</script>
+
 <div class="card">
     <div class="logo">
         <img src="https://i.ibb.co/Q3ZK5Yqc/lucid-origin-A-fierce-bear-head-in-profile-a-glowing-crystal-clamped-in-its-teeth-the-crystal-0.jpg" alt="$GRRR">
@@ -130,5 +175,6 @@ document.querySelector('input[name="amount"]').addEventListener('input', functio
     if (this.value > max) this.value = max;
 });
 </script>
+<script src="/static/lang.js"></script>
 </body>
 </html>
