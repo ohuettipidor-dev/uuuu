@@ -40,9 +40,54 @@
         .upload-form{display:none;background:rgba(255,255,255,0.05);border-radius:15px;padding:15px;margin-bottom:15px}
         .upload-form input,.upload-form textarea{width:100%;padding:10px;border-radius:10px;border:none;margin-bottom:8px;background:rgba(255,255,255,0.1);color:white}
         .upload-form textarea{min-height:60px;resize:vertical}.upload-form button{width:100%;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:white;border:none;padding:12px;border-radius:15px;font-weight:bold;cursor:pointer;font-size:14px}
+
+        /* Скрываем баннеры Google Translate */
+        .goog-te-banner-frame, .goog-te-gadget, .goog-te-gadget-simple, 
+        #google_translate_element, .goog-te-balloon-frame, .goog-tooltip,
+        .goog-te-spinner-pos, iframe.goog-te-banner-frame, .skiptranslate {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+        }
+        body { top: 0 !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
     </style>
 </head>
 <body>
+<!-- Google Translate (скрытый) -->
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'ru',
+        includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
+        layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<div id="google_translate_element" style="display:none;"></div>
+
+<script>
+// Применяем сохранённый язык
+(function() {
+    var lang = localStorage.getItem('selectedLanguage');
+    if (lang && lang !== 'ru') {
+        var check = setInterval(function() {
+            var select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = lang;
+                select.dispatchEvent(new Event('change'));
+                clearInterval(check);
+            }
+        }, 500);
+    }
+})();
+</script>
+
 <div class="container">
     <div class="header"><a href="/chat" class="back-btn">← Чат</a><h1>🎮 Игры</h1></div>
 
@@ -152,5 +197,6 @@ function activateBoost(t,c){
 }
 updateBoostUI();setInterval(updateBoostUI,30000);
 </script>
+<script src="/static/lang.js"></script>
 </body>
 </html>
