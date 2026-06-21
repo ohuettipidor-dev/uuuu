@@ -302,6 +302,37 @@
         }
         body { top: 0 !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+
+        /* ========== ФИКС ШАПКИ ПРИ ПЕРЕВОДЕ ========== */
+        .header {
+            flex-wrap: nowrap !important;
+            overflow: hidden;
+        }
+        .header .logo-text {
+            max-width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+        .header .header-actions {
+            flex-wrap: nowrap !important;
+            overflow: hidden;
+            gap: 4px;
+        }
+        .header .icon-btn,
+        .header .finance-header-btn,
+        .header .premium-btn,
+        .header .premium-active {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .finance-header-btn {
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* =========================================== */
     </style>
 </head>
 <body>
