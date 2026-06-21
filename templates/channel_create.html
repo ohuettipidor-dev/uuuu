@@ -54,20 +54,20 @@ function googleTranslateElementInit() {
 <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 <div id="google_translate_element" style="display:none;"></div>
 
+<!-- ВСТРОЕННЫЙ ПЕРЕВОДЧИК (без внешнего lang.js) -->
 <script>
-// Применяем сохранённый язык
 (function() {
-    var lang = localStorage.getItem('selectedLanguage');
-    if (lang && lang !== 'ru') {
-        var check = setInterval(function() {
-            var select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = lang;
-                select.dispatchEvent(new Event('change'));
-                clearInterval(check);
-            }
-        }, 500);
-    }
+    const savedLang = localStorage.getItem('selectedLanguage');
+    if (!savedLang || savedLang === 'ru') return;
+
+    // Проверяем, правильная ли кука уже установлена
+    const match = document.cookie.match(/googtrans=\/ru\/([^;]+)/);
+    if (match && match[1] === savedLang) return; // уже переведено
+
+    // Устанавливаем куку и перезагружаем страницу
+    document.cookie = 'googtrans=; Path=/; Max-Age=0'; // сброс
+    document.cookie = 'googtrans=/ru/' + savedLang + '; Path=/; SameSite=Lax';
+    location.reload();
 })();
 </script>
 
@@ -132,6 +132,5 @@ function googleTranslateElementInit() {
             document.getElementById('isPaidCheckbox').checked ? 'block' : 'none';
     }
 </script>
-<script src="/static/lang.js"></script>
 </body>
 </html>
