@@ -6,29 +6,36 @@
         document.cookie = 'googtrans=; Path=/; Max-Age=0;';
     }
 
-    // Применяем сохранённый язык
-    function applyLanguage(lang) {
+    // Устанавливаем куку для нужного языка
+    function setGoogleLang(lang) {
         clearGoogleCookie();
-        if (!lang || lang === 'ru') {
-            // Если русский — удаляем куку и ничего не переводим
-            return;
+        if (lang && lang !== 'ru') {
+            document.cookie = 'googtrans=/ru/' + lang + '; Path=/; SameSite=Lax';
+        } else {
+            // для русского ставим /ru/ru или просто удаляем – оба варианта отключают перевод
+            document.cookie = 'googtrans=/ru/ru; Path=/; SameSite=Lax';
         }
-        // Устанавливаем куку для Google Translate
-        document.cookie = 'googtrans=/ru/' + lang + '; Path=/; SameSite=Lax';
-        // Перезагружаем страницу, чтобы Google Translate подхватил
-        location.reload();
     }
 
-    // Вызывается при загрузке страницы: проверяем, надо ли переключить
+    // Применяем язык при загрузке страницы
     var savedLang = localStorage.getItem('selectedLanguage');
-    var currentCookie = document.cookie.match(/googtrans=\/ru\/([^;]+)/);
-    var currentLang = currentCookie ? currentCookie[1] : null;
-
-    // Если сохранённый язык не совпадает с текущей кукой — применяем
-    if (savedLang && savedLang !== 'ru' && currentLang !== savedLang) {
-        applyLanguage(savedLang);
-    } else if (!savedLang && currentLang) {
-        // Если нет сохранённого языка, но кука есть — убираем её (возвращаем русский)
-        applyLanguage('ru');
+    // Если сохранён русский или ничего нет — убеждаемся, что кука сброшена
+    if (!savedLang || savedLang === 'ru') {
+        clearGoogleCookie();
+        // на всякий случай подстраховываемся: если виджет уже загрузился, сбрасываем его
+        setTimeout(function() {
+            var frame = document.querySelector('.goog-te-banner-frame');
+            if (frame) {
+                // скрываем баннер (уже скрыт CSS, но перестрахуем)
+                frame.style.display = 'none';
+            }
+        }, 1000);
+    } else {
+        // Нерусский язык: устанавливаем куку, если она ещё не совпадает
+        var match = document.cookie.match(/googtrans=\/ru\/([^;]+)/);
+        if (!match || match[1] !== savedLang) {
+            setGoogleLang(savedLang);
+            location.reload(); // перезагружаем, чтобы Google Translate применил куку
+        }
     }
 })();
