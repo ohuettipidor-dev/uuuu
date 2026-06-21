@@ -43,34 +43,6 @@
             color: #ff6b6b
         }
 
-        .language-selector {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .language-selector select {
-            padding: 10px 20px;
-            border-radius: 25px;
-            border: 1px solid #ffb3b3;
-            background: white;
-            font-size: 14px;
-            color: #333;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.3s;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            padding-right: 35px;
-        }
-
-        .language-selector select:focus {
-            border-color: #ff6b6b;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
-        }
-
         .form-group {
             margin-bottom: 20px;
         }
@@ -145,69 +117,12 @@
         .link a:hover {
             text-decoration: underline
         }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #ffb3b3;
-            border-top: 5px solid #ff6b6b;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-    </div>
-
     <div class="card">
         <h2>🐻 Bear<span>Gram</span></h2>
-
-        <!-- СЕЛЕКТОР ЯЗЫКА -->
-        <div class="language-selector">
-            <select id="languageSelect" onchange="translatePage(this.value)">
-                <option value="ru">🇷🇺 Русский</option>
-                <option value="en">🇬🇧 English</option>
-                <option value="es">🇪🇸 Español</option>
-                <option value="de">🇩🇪 Deutsch</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="zh-CN">🇨🇳 中文</option>
-                <option value="ar">🇸🇦 العربية</option>
-                <option value="pt">🇧🇷 Português</option>
-                <option value="ja">🇯🇵 日本語</option>
-                <option value="ko">🇰🇷 한국어</option>
-                <option value="tr">🇹🇷 Türkçe</option>
-                <option value="it">🇮🇹 Italiano</option>
-                <option value="pl">🇵🇱 Polski</option>
-                <option value="uk">🇺🇦 Українська</option>
-                <option value="hi">🇮🇳 हिन्दी</option>
-            </select>
-        </div>
-
-        <h2 style="font-size:22px; margin-bottom:20px" id="loginTitle">🔐 Вход в аккаунт</h2>
+        <h2 style="font-size:22px; margin-bottom:20px">🔐 Вход в аккаунт</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -217,154 +132,22 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST" id="loginForm">
+        <form method="POST">
             <div class="form-group">
-                <input type="text" name="username" id="username" placeholder="🐻 Имя пользователя" required autocomplete="username">
+                <input type="text" name="username" placeholder="🐻 Имя пользователя" required>
             </div>
             <div class="form-group">
-                <input type="password" name="password" id="password" placeholder="🔒 Пароль" required autocomplete="current-password">
+                <input type="password" name="password" placeholder="🔒 Пароль" required>
             </div>
-            <button type="submit" id="submitBtn">🐾 Войти</button>
+            <button type="submit">🐾 Войти</button>
         </form>
 
-        <div class="link" id="registerLink">
+        <div class="link">
             Нет аккаунта? <a href="/register">Зарегистрироваться 🧸</a>
         </div>
     </div>
 
-    <script>
-        // Кэш переводов
-        const translationCache = {};
-
-        // Функция перевода текста через Google Translate API
-        async function translateText(text, targetLang) {
-            if (!text || text.trim() === '') return text;
-            if (targetLang === 'ru') return text;
-
-            const cacheKey = `${text}_${targetLang}`;
-            if (translationCache[cacheKey]) {
-                return translationCache[cacheKey];
-            }
-
-            try {
-                const response = await fetch(
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ru&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
-                );
-                const data = await response.json();
-
-                let translatedText = '';
-                if (data && data[0]) {
-                    data[0].forEach(item => {
-                        if (item[0]) {
-                            translatedText += item[0];
-                        }
-                    });
-                }
-
-                translationCache[cacheKey] = translatedText || text;
-                return translationCache[cacheKey];
-            } catch (error) {
-                console.error('Translation error:', error);
-                return text;
-            }
-        }
-
-        // Главная функция перевода страницы
-        async function translatePage(targetLang) {
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.style.display = 'flex';
-
-            try {
-                // Сохраняем язык
-                localStorage.setItem('selectedLanguage', targetLang);
-
-                // Если русский — перезагружаем для сброса
-                if (targetLang === 'ru') {
-                    location.reload();
-                    return;
-                }
-
-                // Переводим заголовок "Вход в аккаунт"
-                const title = document.getElementById('loginTitle');
-                if (title) {
-                    if (title.dataset.originalText === undefined) {
-                        title.dataset.originalText = title.textContent;
-                    }
-                    title.textContent = await translateText(title.dataset.originalText, targetLang);
-                }
-
-                // Переводим placeholder'ы (НЕ трогаем name и id!)
-                const inputs = document.querySelectorAll('input');
-                for (const input of inputs) {
-                    if (input.placeholder) {
-                        if (input.dataset.originalPlaceholder === undefined) {
-                            input.dataset.originalPlaceholder = input.placeholder;
-                        }
-                        input.placeholder = await translateText(input.dataset.originalPlaceholder, targetLang);
-                    }
-                }
-
-                // Переводим кнопку
-                const button = document.getElementById('submitBtn');
-                if (button) {
-                    if (button.dataset.originalText === undefined) {
-                        button.dataset.originalText = button.textContent;
-                    }
-                    button.textContent = await translateText(button.dataset.originalText, targetLang);
-                }
-
-                // Переводим ссылку "Нет аккаунта? Зарегистрироваться"
-                const registerLink = document.getElementById('registerLink');
-                if (registerLink) {
-                    const textNoAccount = await translateText('Нет аккаунта?', targetLang);
-                    const textRegister = await translateText('Зарегистрироваться 🧸', targetLang);
-                    registerLink.innerHTML = textNoAccount + ' <a href="/register">' + textRegister + '</a>';
-                }
-
-            } catch (error) {
-                console.error('Page translation error:', error);
-            } finally {
-                overlay.style.display = 'none';
-            }
-        }
-
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedLang = localStorage.getItem('selectedLanguage');
-            if (savedLang && savedLang !== 'ru') {
-                document.getElementById('languageSelect').value = savedLang;
-                translatePage(savedLang);
-            } else {
-                // Автоопределение языка браузера
-                const browserLang = navigator.language || navigator.userLanguage;
-                const shortLang = browserLang.split('-')[0];
-
-                const langMap = {
-                    'zh': 'zh-CN',
-                    'en': 'en',
-                    'es': 'es',
-                    'de': 'de',
-                    'fr': 'fr',
-                    'ar': 'ar',
-                    'pt': 'pt',
-                    'ja': 'ja',
-                    'ko': 'ko',
-                    'tr': 'tr',
-                    'it': 'it',
-                    'pl': 'pl',
-                    'uk': 'uk',
-                    'hi': 'hi',
-                    'ru': 'ru'
-                };
-
-                const targetLang = langMap[shortLang] || 'ru';
-
-                if (targetLang !== 'ru') {
-                    document.getElementById('languageSelect').value = targetLang;
-                    translatePage(targetLang);
-                }
-            }
-        });
-    </script>
+    <!-- АВТОПЕРЕВОДЧИК -->
+    <script src="/static/lang.js"></script>
 </body>
 </html>
