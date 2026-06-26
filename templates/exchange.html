@@ -6,74 +6,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{
-            background:linear-gradient(135deg, #1a1a2e, #16213e);
-            min-height:100vh;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
-            margin:0;
-        }
-        .card{
-            background:rgba(255,255,255,0.1);
-            border-radius:30px;
-            padding:30px;
-            max-width:400px;
-            width:100%;
-            color:white;
-            text-align:center;
-            box-shadow:0 15px 35px rgba(0,0,0,0.4);
-        }
-        .card h2{font-size:26px;color:#ffd700;margin-bottom:15px}
-        .card p{color:#aaa;font-size:14px;line-height:1.6;margin-bottom:25px}
-        
-        .btn{
-            display:block;
-            width:100%;
-            padding:16px;
-            border-radius:15px;
-            font-weight:bold;
-            font-size:18px;
-            text-decoration:none;
-            margin:12px 0;
-            transition:transform 0.2s;
-            text-align:center;
-        }
-        .btn:active{transform:scale(0.96)}
-        
-        .btn-primary{
-            background:#ffd700;
-            color:#000;
-            box-shadow:0 8px 20px rgba(255,215,0,0.3);
-        }
-        .btn-secondary{
-            background:rgba(255,255,255,0.1);
-            color:#fff;
-            border:1px solid rgba(255,255,255,0.2);
-        }
-        
-        .back-link{
-            margin-top:20px;
-            color:#888;
-            text-decoration:none;
-            font-size:14px;
-            font-weight:bold;
-        }
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .card{background:rgba(255,255,255,0.1);border-radius:30px;padding:20px;max-width:400px;width:100%;color:white;text-align:center}
+        .input-group{position:relative;margin:12px 0;text-align:left}
+        .input-group input{width:100%;padding:14px;border-radius:15px;border:none;background:rgba(255,255,255,0.1);color:white;font-size:16px;outline:none}
+        .dropdown{position:absolute;top:100%;left:0;right:0;background:#1e1e2f;border-radius:15px;max-height:180px;overflow-y:auto;display:none;z-index:10;margin-top:5px}
+        .dropdown.active{display:block}
+        .dropdown-item{padding:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-size:14px}
+        .dropdown-item:hover{background:rgba(255,215,0,0.2)}
+        .rate-box{background:rgba(255,215,0,0.1);padding:15px;border-radius:15px;margin:15px 0}
+        .btn{background:#ffd700;color:#000;border:none;padding:14px;border-radius:15px;width:100%;font-weight:bold;font-size:16px;cursor:pointer;margin-top:10px}
+        .btn:active{transform:scale(0.98)}
+        .full-link{color:#ffd700;text-decoration:none;font-size:13px;display:block;margin-top:15px}
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🔄 Обменник BearGram</h2>
-        <p>Обменивайте криптовалюту мгновенно и безопасно. Поддерживаются сотни пар, включая RUB → TON.</p>
-        
-        <!-- Главная кнопка: прямой переход на полный обменник с нашим партнёрским ID -->
-        <a href="https://changenow.io/?link_id=021079c6f6061a" target="_blank" rel="noopener" class="btn btn-primary">
-            🔄 Открыть обменник
-        </a>
-        
-        <a href="/chat" class="back-link">← Вернуться в чат</a>
+<div class="card">
+    <h2>🔄 Обменник</h2>
+    <div class="input-group">
+        <input type="text" id="fromInput" placeholder="Отдаёте (btc, eth, rub...)" autocomplete="off">
+        <div class="dropdown" id="fromDropdown"></div>
     </div>
+    <div class="input-group">
+        <input type="text" id="toInput" placeholder="Получаете (ton, usdt, grrr...)" autocomplete="off">
+        <div class="dropdown" id="toDropdown"></div>
+    </div>
+    <input type="number" id="amount" placeholder="Сумма" value="1">
+    <div class="rate-box" id="rateBox">Выберите валюту</div>
+    <button class="btn" onclick="proceedToExchange()">🔄 Обменять</button>
+    <a href="https://changenow.io/?link_id=021079c6f6061a" target="_blank" rel="noopener" class="full-link">🌐 Открыть полный обменник</a>
+</div>
+
+<script>
+    const PARTNER_ID = "021079c6f6061a";
+    const OUR_COMMISSION = 0.5;
+    let currencies = [];
+    let fromCurrency = null;
+    let toCurrency = null;
+    let currentEstimatedAmount = null;
+
+    fetch('/api/exchange/currencies')
+        .then(r => r.json())
+        .then(data => {
+            currencies = data.filter(c => c.ticker);
+        });
+
+    function setupDropdown(inputId, dropdownId, onSelect) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        
+        input.addEventListener('input', () => {
+            const q = input.value.toLowerCase().trim();
+            if (!q) { dropdown.classList.remove('active'); return; }
+            const filtered = currencies.filter(c => 
+                c.ticker.toLowerCase().includes(q) || 
+                c.name.toLowerCase().includes(q)
+            ).slice(0, 8);
+            dropdown.innerHTML = filtered.map(c => 
+                `<div class="dropdown-item" data-ticker="${c.ticker}">${c.name} (${c.ticker})</div>`
+            ).join('');
+            dropdown.classList.add('active');
+            dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const ticker = item.dataset.ticker;
+                    input.value = ticker;
+                    dropdown.classList.remove('active');
+                    onSelect(ticker);
+                });
+            });
+        });
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+
+    setupDropdown('fromInput', 'fromDropdown', (ticker) => {
+        fromCurrency = ticker;
+        updateRate();
+    });
+    setupDropdown('toInput', 'toDropdown', (ticker) => {
+        toCurrency = ticker;
+        updateRate();
+    });
+
+    let rateTimer;
+    function updateRate() {
+        clearTimeout(rateTimer);
+        rateTimer = setTimeout(async () => {
+            if (!fromCurrency || !toCurrency) return;
+            const amount = document.getElementById('amount').value || 1;
+            try {
+                const resp = await fetch(`/api/exchange/rate?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`);
+                const data = await resp.json();
+                if (data.estimatedAmount && !isNaN(parseFloat(data.estimatedAmount))) {
+                    currentEstimatedAmount = parseFloat(data.estimatedAmount);
+                    document.getElementById('rateBox').innerHTML = `
+                        <p>≈ <b>${currentEstimatedAmount.toFixed(6)} ${toCurrency.toUpperCase()}</b></p>
+                        <small>Включая комиссию платформы ${OUR_COMMISSION}%</small>
+                    `;
+                } else {
+                    document.getElementById('rateBox').innerHTML = `
+                        <p style="color:#ff6b6b;">⚠️ Пара не поддерживается</p>
+                        <small>Воспользуйтесь полным обменником ниже</small>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('rateBox').innerHTML = `<p style="color:#ff6b6b;">Ошибка соединения</p>`;
+            }
+        }, 600);
+    }
+
+    document.getElementById('amount').addEventListener('input', updateRate);
+
+    function proceedToExchange() {
+        if (!fromCurrency || !toCurrency || !currentEstimatedAmount) {
+            alert('Сначала выберите валюты и дождитесь расчёта курса');
+            return;
+        }
+        const amount = document.getElementById('amount').value || 1;
+        window.location.href = `/exchange-widget?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`;
+    }
+</script>
 </body>
 </html>
