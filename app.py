@@ -225,11 +225,6 @@ login_manager.login_view = 'login'
 
 # ==================== P2P ОБМЕННИК ====================
 
-@app.route('/exchange')
-def exchange_page():
-    ads = P2PAd.query.filter_by(is_active=True).order_by(P2PAd.is_vip.desc(), P2PAd.created_at.desc()).all()
-    return render_template('exchange.html', ads=ads)
-
 @app.route('/exchange/create', methods=['POST'])
 def p2p_create():
     ad_type = request.form.get('type')
@@ -240,8 +235,8 @@ def p2p_create():
     contact = request.form.get('contact')
     
     user = current_user
-    coins = Coins.query.filter_by(user_id=user.id).first()
-    if coins.balance < 10:
+    
+    if user.coins < 10:
         flash('Недостаточно 💎 для размещения объявления', 'danger')
         return redirect('/exchange')
     
@@ -256,7 +251,7 @@ def p2p_create():
         is_vip=False
     )
     db.session.add(ad)
-    coins.balance -= 10
+    user.coins -= 10
     db.session.commit()
     
     flash('Объявление размещено!', 'success')
@@ -266,14 +261,13 @@ def p2p_create():
 def p2p_vip(ad_id):
     ad = P2PAd.query.get(ad_id)
     user = current_user
-    coins = Coins.query.filter_by(user_id=user.id).first()
     
-    if coins.balance < 50:
+    if user.coins < 50:
         flash('Недостаточно 💎 для VIP', 'danger')
         return redirect('/exchange')
     
     ad.is_vip = True
-    coins.balance -= 50
+    user.coins -= 50
     db.session.commit()
     
     flash('Объявление поднято в VIP!', 'success')
