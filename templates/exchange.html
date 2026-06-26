@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔄 Обменник | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .card{background:rgba(255,255,255,0.1);border-radius:30px;padding:30px;max-width:400px;width:100%;color:white;text-align:center}
+        select,input{width:100%;padding:14px;margin:10px 0;border-radius:15px;border:none;background:rgba(255,255,255,0.1);color:white;font-size:16px}
+        .rate-box{background:rgba(255,215,0,0.1);padding:15px;border-radius:15px;margin:15px 0}
+        .btn{background:#ffd700;color:#000;border:none;padding:14px;border-radius:15px;width:100%;font-weight:bold;font-size:16px;cursor:pointer;margin-top:10px}
+        .btn:hover{transform:scale(1.02)}
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🔄 Обменник BearGram</h2>
+    <select id="fromCurrency"></select>
+    <select id="toCurrency"></select>
+    <input type="number" id="amount" placeholder="Сумма">
+    <div class="rate-box" id="rateBox">Выберите валюту</div>
+    <input type="text" id="wallet" placeholder="Ваш адрес кошелька">
+    <button class="btn" onclick="createExchange()">🔄 Обменять</button>
+</div>
+
+<script>
+    let currencies = [];
+    fetch('/api/exchange/currencies')
+        .then(r => r.json())
+        .then(data => {
+            currencies = data;
+            let from = document.getElementById('fromCurrency');
+            let to = document.getElementById('toCurrency');
+            data.forEach(c => {
+                from.innerHTML += `<option value="${c.ticker}">${c.name}</option>`;
+                to.innerHTML += `<option value="${c.ticker}">${c.name}</option>`;
+            });
+        });
+
+    document.getElementById('amount').addEventListener('input', updateRate);
+    document.getElementById('fromCurrency').addEventListener('change', updateRate);
+    document.getElementById('toCurrency').addEventListener('change', updateRate);
+
+    function updateRate() {
+        let from = document.getElementById('fromCurrency').value;
+        let to = document.getElementById('toCurrency').value;
+        let amount = document.getElementById('amount').value || 1;
+        fetch(`/api/exchange/rate?from=${from}&to=${to}&amount=${amount}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('rateBox').innerHTML = `
+                    <p>Вы получите: <b>${parseFloat(data.estimatedAmount).toFixed(6)}</b></p>
+                    <small>Комиссия: ${data.commission}</small>
+                `;
+            });
+    }
+
+    function createExchange() {
+        let payload = {
+            from: document.getElementById('fromCurrency').value,
+            to: document.getElementById('toCurrency').value,
+            amount: document.getElementById('amount').value,
+            address: document.getElementById('wallet').value
+        };
+        fetch('/api/exchange/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(data => {
+            alert(`Обмен создан! ID: ${data.id}`);
+        });
+    }
+</script>
+</body>
+</html>
