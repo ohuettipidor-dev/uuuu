@@ -222,12 +222,17 @@ login_manager.login_view = 'login'
 
 
 
+
 API_KEY = "0b1c873fc3e09a3ddf6a9d092ac35ffbabf637edfc890b46a309663e1049b3db"
-OUR_COMMISSION = 0.5
+OUR_COMMISSION = 0.5  # Наша наценка в процентах
 
 @app.route('/exchange')
 def exchange_page():
     return render_template('exchange.html')
+
+@app.route('/exchange-widget')
+def exchange_widget():
+    return render_template('exchange-widget.html')
 
 @app.route('/api/exchange/currencies')
 def get_currencies():
