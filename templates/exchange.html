@@ -16,35 +16,47 @@
             padding:20px;
             margin:0;
         }
-        .header{
-            width:100%;
-            max-width:420px;
-            text-align:center;
-            color:white;
-            margin-bottom:20px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:10px;
-        }
-        .header h2{font-size:22px;color:#ffd700}
-        .widget-container{
-            width:100%;
-            max-width:420px;
-            background:rgba(255,255,255,0.05);
+        .card{
+            background:rgba(255,255,255,0.1);
             border-radius:30px;
-            overflow:hidden;
+            padding:30px;
+            max-width:400px;
+            width:100%;
+            color:white;
+            text-align:center;
             box-shadow:0 15px 35px rgba(0,0,0,0.4);
         }
-        iframe{
-            width:100%;
-            height:650px;
-            border:none;
+        .card h2{font-size:26px;color:#ffd700;margin-bottom:15px}
+        .card p{color:#aaa;font-size:14px;line-height:1.6;margin-bottom:25px}
+        
+        .btn{
             display:block;
+            width:100%;
+            padding:16px;
+            border-radius:15px;
+            font-weight:bold;
+            font-size:18px;
+            text-decoration:none;
+            margin:12px 0;
+            transition:transform 0.2s;
+            text-align:center;
         }
+        .btn:active{transform:scale(0.96)}
+        
+        .btn-primary{
+            background:#ffd700;
+            color:#000;
+            box-shadow:0 8px 20px rgba(255,215,0,0.3);
+        }
+        .btn-secondary{
+            background:rgba(255,255,255,0.1);
+            color:#fff;
+            border:1px solid rgba(255,255,255,0.2);
+        }
+        
         .back-link{
             margin-top:20px;
-            color:#ffd700;
+            color:#888;
             text-decoration:none;
             font-size:14px;
             font-weight:bold;
@@ -52,15 +64,16 @@
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="card">
         <h2>🔄 Обменник BearGram</h2>
+        <p>Обменивайте криптовалюту мгновенно и безопасно. Поддерживаются сотни пар, включая RUB → TON.</p>
+        
+        <!-- Главная кнопка: прямой переход на полный обменник с нашим партнёрским ID -->
+        <a href="https://changenow.io/?link_id=021079c6f6061a" target="_blank" rel="noopener" class="btn btn-primary">
+            🔄 Открыть обменник
+        </a>
+        
+        <a href="/chat" class="back-link">← Вернуться в чат</a>
     </div>
-
-    <div class="widget-container">
-        <iframe src="https://changenow.io/embeds/exchange-widget/v2/widget.html?theme=dark&from=btc&to=ton&partner_id=021079c6f6061a&FAQ=true&locales=true&logo=false&toTheMoon=true">
-        </iframe>
-    </div>
-
-    <a href="/chat" class="back-link">← Вернуться в чат</a>
 </body>
 </html>
