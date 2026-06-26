@@ -221,6 +221,51 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 
+
+API_KEY = "0b1c873fc3e09a3ddf6a9d092ac35ffbabf637edfc890b46a309663e1049b3db"
+OUR_COMMISSION = 0.5
+
+@app.route('/exchange')
+def exchange_page():
+    return render_template('exchange.html')
+
+@app.route('/api/exchange/currencies')
+def get_currencies():
+    try:
+        resp = requests.get('https://api.changenow.io/v1/currencies?active=true')
+        return jsonify(resp.json())
+    except:
+        return jsonify([])
+
+@app.route('/api/exchange/rate')
+def get_rate():
+    from_currency = request.args.get('from')
+    to_currency = request.args.get('to')
+    amount = float(request.args.get('amount', 1))
+    
+    resp = requests.get(
+        f'https://api.changenow.io/v1/exchange-amount/{amount}/{from_currency}_{to_currency}/?api_key={API_KEY}'
+    )
+    data = resp.json()
+    if 'estimatedAmount' in data:
+        original = float(data['estimatedAmount'])
+        with_commission = original * (1 - OUR_COMMISSION / 100)
+        data['estimatedAmount'] = str(with_commission)
+        data['commission'] = f"{OUR_COMMISSION}%"
+    return jsonify(data)
+
+@app.route('/api/exchange/create', methods=['POST'])
+def create_exchange():
+    data = request.get_json()
+    payload = {
+        "from": data['from'],
+        "to": data['to'],
+        "address": data['address'],
+        "amount": data['amount'],
+        "api_key": API_KEY
+    }
+    resp = requests.post('https://api.changenow.io/v1/transactions', json=payload)
+    return jsonify(resp.json())
 # ========== МОДЕЛИ ==========
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
