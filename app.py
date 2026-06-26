@@ -223,55 +223,109 @@ login_manager.login_view = 'login'
 
 
 
-API_KEY = "0b1c873fc3e09a3ddf6a9d092ac35ffbabf637edfc890b46a309663e1049b3db"
-OUR_COMMISSION = 0.5  # Наша наценка в процентах
+# ==================== P2P ОБМЕННИК ====================
 
 @app.route('/exchange')
 def exchange_page():
-    return render_template('exchange.html')
+    ads = P2PAd.query.filter_by(is_active=True).order_by(P2PAd.is_vip.desc(), P2PAd.created_at.desc()).all()
+    return render_template('exchange.html', ads=ads)
 
-@app.route('/exchange-widget')
-def exchange_widget():
-    return render_template('exchange-widget.html')
-
-@app.route('/api/exchange/currencies')
-def get_currencies():
-    try:
-        resp = requests.get('https://api.changenow.io/v1/currencies?active=true')
-        return jsonify(resp.json())
-    except:
-        return jsonify([])
-
-@app.route('/api/exchange/rate')
-def get_rate():
-    from_currency = request.args.get('from')
-    to_currency = request.args.get('to')
-    amount = float(request.args.get('amount', 1))
+@app.route('/exchange/create', methods=['POST'])
+def p2p_create():
+    ad_type = request.form.get('type')
+    crypto = request.form.get('crypto')
+    fiat = request.form.get('fiat')
+    amount = request.form.get('amount')
+    price = request.form.get('price')
+    contact = request.form.get('contact')
     
-    resp = requests.get(
-        f'https://api.changenow.io/v1/exchange-amount/{amount}/{from_currency}_{to_currency}/?api_key={API_KEY}'
+    user = current_user
+    coins = Coins.query.filter_by(user_id=user.id).first()
+    if coins.balance < 10:
+        flash('Недостаточно 💎 для размещения объявления', 'danger')
+        return redirect('/exchange')
+    
+    ad = P2PAd(
+        user_id=user.id,
+        type=ad_type,
+        crypto=crypto,
+        fiat=fiat,
+        amount=amount,
+        price=price,
+        contact=contact,
+        is_vip=False
     )
-    data = resp.json()
-    if 'estimatedAmount' in data:
-        original = float(data['estimatedAmount'])
-        with_commission = original * (1 - OUR_COMMISSION / 100)
-        data['estimatedAmount'] = str(with_commission)
-        data['commission'] = f"{OUR_COMMISSION}%"
-    return jsonify(data)
+    db.session.add(ad)
+    coins.balance -= 10
+    db.session.commit()
+    
+    flash('Объявление размещено!', 'success')
+    return redirect('/exchange')
 
-@app.route('/api/exchange/create', methods=['POST'])
-def create_exchange():
-    data = request.get_json()
-    payload = {
-        "from": data['from'],
-        "to": data['to'],
-        "address": data['address'],
-        "amount": data['amount'],
-        "api_key": API_KEY
-    }
-    resp = requests.post('https://api.changenow.io/v1/transactions', json=payload)
-    return jsonify(resp.json())
+@app.route('/exchange/vip/<int:ad_id>', methods=['POST'])
+def p2p_vip(ad_id):
+    ad = P2PAd.query.get(ad_id)
+    user = current_user
+    coins = Coins.query.filter_by(user_id=user.id).first()
+    
+    if coins.balance < 50:
+        flash('Недостаточно 💎 для VIP', 'danger')
+        return redirect('/exchange')
+    
+    ad.is_vip = True
+    coins.balance -= 50
+    db.session.commit()
+    
+    flash('Объявление поднято в VIP!', 'success')
+    return redirect('/exchange')
+
+@app.route('/api/exchange/report/<int:ad_id>', methods=['POST'])
+def report_p2p_deal(ad_id):
+    ad = P2PAd.query.get(ad_id)
+    user = current_user
+    
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0)
+    reports_this_month = P2PReport.query.filter_by(
+        reporter_id=user.id
+    ).filter(P2PReport.created_at >= month_start).count()
+    
+    if reports_this_month >= 3:
+        return jsonify({'success': False, 'error': 'Вы исчерпали лимит жалоб на этот месяц'})
+    
+    report = P2PReport(
+        ad_id=ad_id,
+        reporter_id=user.id,
+        seller_id=ad.user_id,
+        status='pending'
+    )
+    db.session.add(report)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Жалоба принята. Мишка рассмотрит её в ближайшее время.'})
 # ========== МОДЕЛИ ==========
+class P2PAd(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    type = db.Column(db.String(10))  # buy или sell
+    crypto = db.Column(db.String(20))
+    fiat = db.Column(db.String(20))
+    amount = db.Column(db.String(50))
+    price = db.Column(db.String(50))
+    contact = db.Column(db.String(100))
+    is_active = db.Column(db.Boolean, default=True)
+    is_vip = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='p2p_ads')
+
+class P2PReport(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ad_id = db.Column(db.Integer, db.ForeignKey('p2p_ad.id'))
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
