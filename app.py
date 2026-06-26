@@ -318,14 +318,6 @@ class P2PAd(db.Model):
     
     user = db.relationship('User', backref='p2p_ads')
 
-class P2PReport(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    ad_id = db.Column(db.Integer, db.ForeignKey('p2p_ad.id'))
-    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
