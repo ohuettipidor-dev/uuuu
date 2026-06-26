@@ -8,140 +8,17 @@
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
         body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
         .card{background:rgba(255,255,255,0.1);border-radius:30px;padding:20px;max-width:400px;width:100%;color:white;text-align:center}
-        .input-group{position:relative;margin:12px 0;text-align:left}
-        .input-group input{width:100%;padding:14px;border-radius:15px;border:none;background:rgba(255,255,255,0.1);color:white;font-size:16px;outline:none}
-        .dropdown{position:absolute;top:100%;left:0;right:0;background:#1e1e2f;border-radius:15px;max-height:200px;overflow-y:auto;display:none;z-index:10;margin-top:5px}
-        .dropdown.active{display:block}
-        .dropdown-item{padding:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-size:14px}
-        .dropdown-item:hover{background:rgba(255,215,0,0.2)}
-        .rate-box{background:rgba(255,215,0,0.1);padding:15px;border-radius:15px;margin:15px 0}
-        .btn{background:#ffd700;color:#000;border:none;padding:14px;border-radius:15px;width:100%;font-weight:bold;font-size:16px;cursor:pointer;margin-top:10px}
+        iframe{width:100%;height:600px;border:none;border-radius:20px;margin:20px 0}
+        .back-btn{display:inline-block;margin-top:10px;color:#ffd700;text-decoration:none;font-size:14px}
     </style>
 </head>
 <body>
 <div class="card">
     <h2>🔄 Обменник</h2>
-    <div class="input-group">
-        <input type="text" id="fromInput" placeholder="Отдаёте (BTC, ETH...)" autocomplete="off">
-        <div class="dropdown" id="fromDropdown"></div>
-    </div>
-    <div class="input-group">
-        <input type="text" id="toInput" placeholder="Получаете (TON, USDT...)" autocomplete="off">
-        <div class="dropdown" id="toDropdown"></div>
-    </div>
-    <input type="number" id="amount" placeholder="Сумма" value="1">
-    <div class="rate-box" id="rateBox">Выберите валюту</div>
-    <input type="text" id="wallet" placeholder="Ваш адрес кошелька">
-    <button class="btn" onclick="createExchange()">🔄 Обменять</button>
+    <iframe src="https://changenow.io/embeds/exchange-widget/v2/widget.html?theme=dark&from=btc&to=ton&partner_id=021079c6f6061a" 
+            style="height: 600px; width: 100%; border: none; border-radius: 20px;">
+    </iframe>
+    <a href="/chat" class="back-btn">← Вернуться в чат</a>
 </div>
-
-<script>
-    let currencies = [];
-    let fromCurrency = null;
-    let toCurrency = null;
-
-    // Загружаем валюты один раз
-    fetch('/api/exchange/currencies')
-        .then(r => r.json())
-        .then(data => {
-            currencies = data.filter(c => c.ticker);
-        });
-
-    function setupDropdown(inputId, dropdownId, onSelect) {
-        const input = document.getElementById(inputId);
-        const dropdown = document.getElementById(dropdownId);
-        
-        input.addEventListener('input', () => {
-            const q = input.value.toLowerCase().trim();
-            if (!q) { dropdown.classList.remove('active'); return; }
-            const filtered = currencies.filter(c => 
-                c.ticker.toLowerCase().includes(q) || 
-                c.name.toLowerCase().includes(q)
-            ).slice(0, 10);
-            dropdown.innerHTML = filtered.map(c => 
-                `<div class="dropdown-item" data-ticker="${c.ticker}">${c.name} (${c.ticker})</div>`
-            ).join('');
-            dropdown.classList.add('active');
-            dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const ticker = item.dataset.ticker;
-                    input.value = ticker;
-                    dropdown.classList.remove('active');
-                    onSelect(ticker);
-                });
-            });
-        });
-        document.addEventListener('click', (e) => {
-            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    }
-
-    setupDropdown('fromInput', 'fromDropdown', (ticker) => {
-        fromCurrency = ticker;
-        updateRate();
-    });
-    setupDropdown('toInput', 'toDropdown', (ticker) => {
-        toCurrency = ticker;
-        updateRate();
-    });
-
-    let rateTimer;
-    function updateRate() {
-        clearTimeout(rateTimer);
-        rateTimer = setTimeout(async () => {
-            if (!fromCurrency || !toCurrency) return;
-            const amount = document.getElementById('amount').value || 1;
-            try {
-                const resp = await fetch(`/api/exchange/rate?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`);
-                const data = await resp.json();
-                // Проверяем, есть ли estimatedAmount и не является ли он null/undefined
-                if (data.estimatedAmount && !isNaN(parseFloat(data.estimatedAmount))) {
-                    document.getElementById('rateBox').innerHTML = `
-                        <p>Вы получите: <b>${parseFloat(data.estimatedAmount).toFixed(6)}</b></p>
-                        <small>Комиссия: ${data.commission || '0.5%'}</small>
-                    `;
-                } else {
-                    document.getElementById('rateBox').innerHTML = `
-                        <p style="color:#ff6b6b;">⚠️ Не удалось получить курс для этой пары.</p>
-                        <small>Попробуйте другую комбинацию валют.</small>
-                    `;
-                }
-            } catch (e) {
-                document.getElementById('rateBox').innerHTML = `
-                    <p style="color:#ff6b6b;">Ошибка соединения.</p>
-                `;
-            }
-        }, 500);
-    }
-
-    document.getElementById('amount').addEventListener('input', updateRate);
-
-    function createExchange() {
-        const wallet = document.getElementById('wallet').value.trim();
-        const amount = document.getElementById('amount').value;
-        if (!fromCurrency || !toCurrency || !wallet || !amount) {
-            alert('Заполните все поля');
-            return;
-        }
-        fetch('/api/exchange/create', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                from: fromCurrency,
-                to: toCurrency,
-                amount: amount,
-                address: wallet
-            })
-        }).then(r => r.json()).then(data => {
-            if (data.id) {
-                alert(`Обмен создан! ID: ${data.id}`);
-            } else {
-                alert('Ошибка: ' + (data.message || 'неизвестно'));
-            }
-        });
-    }
-</script>
 </body>
 </html>
