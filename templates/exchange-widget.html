@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔄 Обменник | BearGram</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+        .widget-container{width:100%;max-width:420px;background:rgba(255,255,255,0.05);border-radius:30px;overflow:hidden;padding:20px 0}
+        iframe{width:100%;height:600px;border:none;border-radius:20px}
+        .back-link{color:#ffd700;text-decoration:none;font-size:14px;margin-top:15px;display:block;text-align:center}
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <iframe id="exchangeIframe" src="" style="width:100%; height:600px; border:none; border-radius:20px;"></iframe>
+    </div>
+    <a href="/chat" class="back-link">← Вернуться в чат</a>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const from = params.get('from') || 'btc';
+        const to = params.get('to') || 'ton';
+        const amount = params.get('amount') || '0.1';
+        const widgetUrl = `https://changenow.io/embeds/exchange-widget/v2/widget.html?theme=dark&from=${from}&to=${to}&amount=${amount}&partner_id=021079c6f6061a`;
+        document.getElementById('exchangeIframe').src = widgetUrl;
+    </script>
+</body>
+</html>
