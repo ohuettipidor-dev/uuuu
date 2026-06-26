@@ -1,129 +1,91 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <title>🔄 Обменник | BearGram</title>
+    <title>🔄 P2P Обмен | BearGram</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-        body{
-            background:linear-gradient(135deg, #1a1a2e, #16213e);
-            min-height:100vh;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
-            margin:0;
-        }
-        .card{
-            background:rgba(255,255,255,0.1);
-            border-radius:30px;
-            padding:30px;
-            max-width:400px;
-            width:100%;
-            color:white;
-            text-align:center;
-            box-shadow:0 15px 35px rgba(0,0,0,0.4);
-        }
-        .card h2{font-size:26px;color:#ffd700;margin-bottom:15px}
-        .card p{color:#aaa;font-size:14px;line-height:1.6;margin-bottom:10px}
-        .notice{
-            background:rgba(255,107,107,0.15);
-            border:1px solid rgba(255,107,107,0.4);
-            border-radius:12px;
-            padding:12px;
-            margin:15px 0;
-            font-size:12px;
-            color:#ff6b6b;
-        }
-        .btn{
-            display:block;
-            width:100%;
-            padding:16px;
-            border-radius:15px;
-            font-weight:bold;
-            font-size:18px;
-            text-decoration:none;
-            margin:12px 0;
-            transition:transform 0.2s;
-            text-align:center;
-        }
-        .btn:active{transform:scale(0.96)}
-        .btn-primary{
-            background:#ffd700;
-            color:#000;
-            box-shadow:0 8px 20px rgba(255,215,0,0.3);
-        }
-        .back-link{
-            margin-top:20px;
-            color:#888;
-            text-decoration:none;
-            font-size:14px;
-            font-weight:bold;
-        }
-
-        /* Скрываем баннеры Google Translate */
-        .goog-te-banner-frame, .goog-te-gadget, .goog-te-gadget-simple, 
-        #google_translate_element, .goog-te-balloon-frame, .goog-tooltip,
-        .goog-te-spinner-pos, iframe.goog-te-banner-frame, .skiptranslate {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-            position: absolute !important;
-            top: -9999px !important;
-        }
-        body { top: 0 !important; }
-        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        body{background:linear-gradient(135deg, #1a1a2e, #16213e);min-height:100vh;color:white;padding:20px}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+        .btn{background:#ffd700;color:#000;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:bold;border:none;cursor:pointer;font-size:14px}
+        .btn-outline{background:transparent;border:1px solid #ffd700;color:#ffd700}
+        .ad-card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:10px;border:2px solid transparent}
+        .ad-card.vip{border-color:#ff6b6b}
+        .badge{background:#ffd700;color:#000;padding:3px 8px;border-radius:10px;font-size:11px;display:inline-block;margin-right:5px}
+        .badge-vip{background:#ff6b6b;color:white}
+        .badge-safe{background:#4cd964;color:white}
+        .contact-btn{background:#4cd964;color:white;padding:8px 16px;border-radius:15px;text-decoration:none;display:inline-block;margin-top:8px;font-size:13px}
+        .report-btn{background:transparent;border:1px solid #ff6b6b;color:#ff6b6b;padding:8px 16px;border-radius:15px;cursor:pointer;font-size:13px;margin-top:8px;margin-left:5px}
+        .form-card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:20px}
+        input,select{width:100%;padding:10px;margin:5px 0;border-radius:10px;border:none;background:#1e1e2f;color:white;font-size:14px}
+        .flash{padding:10px;border-radius:10px;margin-bottom:10px;font-size:13px}
+        .flash-success{background:rgba(76,217,100,0.2);color:#4cd964}
+        .flash-danger{background:rgba(255,107,107,0.2);color:#ff6b6b}
     </style>
 </head>
 <body>
-<!-- Google Translate (скрытый) -->
-<script>
-function googleTranslateElementInit() {
-    new google.translate.TranslateElement({
-        pageLanguage: 'ru',
-        includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
-        layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
-        autoDisplay: false
-    }, 'google_translate_element');
-}
-</script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-<div id="google_translate_element" style="display:none;"></div>
-
-<script>
-// Применяем сохранённый язык
-(function() {
-    var lang = localStorage.getItem('selectedLanguage');
-    if (lang && lang !== 'ru') {
-        var check = setInterval(function() {
-            var select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = lang;
-                select.dispatchEvent(new Event('change'));
-                clearInterval(check);
-            }
-        }, 500);
-    }
-})();
-</script>
-
-<div class="card">
-    <h2>🔄 Обменник BearGram</h2>
-    <p>Обменивайте криптовалюту мгновенно и безопасно. Поддерживаются сотни пар.</p>
-    
-    <div class="notice">
-        ⚠️ Для пользователей из России: обменник может быть недоступен без VPN. Включите VPN перед использованием.
+    <div class="header">
+        <h2>🔄 P2P Обмен</h2>
+        <a href="/chat" class="btn btn-outline">← Чат</a>
     </div>
 
-    <a href="https://changenow.io/?link_id=021079c6f6061a" target="_blank" class="btn btn-primary">
-        🔄 Открыть обменник
-    </a>
-    <a href="/chat" class="back-link">← Вернуться в чат</a>
-</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-<script src="/static/lang.js"></script>
+    <button onclick="document.getElementById('createForm').style.display='block'" class="btn" style="width:100%;margin-bottom:20px">➕ Создать объявление (10 💎)</button>
+
+    <form id="createForm" method="POST" action="/exchange/create" class="form-card" style="display:none">
+        <select name="type" required>
+            <option value="sell">Продаю</option>
+            <option value="buy">Покупаю</option>
+        </select>
+        <input name="crypto" placeholder="Крипта (TON, BTC, GRRR...)" required>
+        <input name="fiat" placeholder="Валюта (RUB, USD, USDT...)" required>
+        <input name="amount" placeholder="Сумма (например: 100 TON)" required>
+        <input name="price" placeholder="Цена за единицу (например: 150 ₽)" required>
+        <input name="contact" placeholder="@username или телефон" required>
+        <button type="submit" class="btn" style="width:100%;margin-top:10px">📤 Опубликовать (10 💎)</button>
+        <button type="button" onclick="document.getElementById('createForm').style.display='none'" class="btn btn-outline" style="width:100%;margin-top:5px">Отмена</button>
+    </form>
+
+    {% for ad in ads %}
+    <div class="ad-card {% if ad.is_vip %}vip{% endif %}">
+        <div>
+            {% if ad.is_vip %}<span class="badge badge-vip">VIP</span>{% endif %}
+            <span class="badge">{{ 'Продажа' if ad.type == 'sell' else 'Покупка' }}</span>
+            <strong>{{ ad.crypto }} → {{ ad.fiat }}</strong>
+        </div>
+        <p style="margin:8px 0">Сумма: {{ ad.amount }} | Цена: {{ ad.price }}</p>
+        <p style="color:#aaa;font-size:12px">Продавец: @{{ ad.user.username }}</p>
+        <a href="/messages/{{ ad.user.id }}" class="contact-btn">💬 Написать</a>
+        {% if ad.user_id != current_user.id %}
+        <button class="report-btn" onclick="reportDeal({{ ad.id }})">⚠️ Пожаловаться</button>
+        {% endif %}
+        {% if ad.user_id == current_user.id and not ad.is_vip %}
+        <form method="POST" action="/exchange/vip/{{ ad.id }}" style="display:inline">
+            <button type="submit" class="btn" style="background:#ff6b6b;color:white;padding:8px 16px;margin-left:5px">🚀 VIP (50 💎)</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <script>
+        async function reportDeal(adId) {
+            if (!confirm('Вы уверены, что хотите пожаловаться на эту сделку? Лимит: 3 жалобы в месяц.')) return;
+            const resp = await fetch(`/api/exchange/report/${adId}`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                alert('✅ ' + data.message);
+            } else {
+                alert('❌ ' + data.error);
+            }
+        }
+    </script>
 </body>
 </html>
