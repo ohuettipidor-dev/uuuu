@@ -44,7 +44,7 @@
     fetch('/api/exchange/currencies')
         .then(r => r.json())
         .then(data => {
-            currencies = data.filter(c => c.ticker); // только с тикером
+            currencies = data.filter(c => c.ticker);
         });
 
     function setupDropdown(inputId, dropdownId, onSelect) {
@@ -57,12 +57,11 @@
             const filtered = currencies.filter(c => 
                 c.ticker.toLowerCase().includes(q) || 
                 c.name.toLowerCase().includes(q)
-            ).slice(0, 10); // показываем не более 10
+            ).slice(0, 10);
             dropdown.innerHTML = filtered.map(c => 
                 `<div class="dropdown-item" data-ticker="${c.ticker}">${c.name} (${c.ticker})</div>`
             ).join('');
             dropdown.classList.add('active');
-            // клик по элементу
             dropdown.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const ticker = item.dataset.ticker;
@@ -72,7 +71,6 @@
                 });
             });
         });
-        // скрываем dropdown при клике вне
         document.addEventListener('click', (e) => {
             if (!input.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('active');
@@ -92,17 +90,29 @@
     let rateTimer;
     function updateRate() {
         clearTimeout(rateTimer);
-        rateTimer = setTimeout(() => {
+        rateTimer = setTimeout(async () => {
             if (!fromCurrency || !toCurrency) return;
             const amount = document.getElementById('amount').value || 1;
-            fetch(`/api/exchange/rate?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`)
-                .then(r => r.json())
-                .then(data => {
+            try {
+                const resp = await fetch(`/api/exchange/rate?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`);
+                const data = await resp.json();
+                // Проверяем, есть ли estimatedAmount и не является ли он null/undefined
+                if (data.estimatedAmount && !isNaN(parseFloat(data.estimatedAmount))) {
                     document.getElementById('rateBox').innerHTML = `
                         <p>Вы получите: <b>${parseFloat(data.estimatedAmount).toFixed(6)}</b></p>
                         <small>Комиссия: ${data.commission || '0.5%'}</small>
                     `;
-                });
+                } else {
+                    document.getElementById('rateBox').innerHTML = `
+                        <p style="color:#ff6b6b;">⚠️ Не удалось получить курс для этой пары.</p>
+                        <small>Попробуйте другую комбинацию валют.</small>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('rateBox').innerHTML = `
+                    <p style="color:#ff6b6b;">Ошибка соединения.</p>
+                `;
+            }
         }, 500);
     }
 
