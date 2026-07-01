@@ -1436,7 +1436,9 @@ def get_signaling(room_id):
     if candidates_key in signaling_store and signaling_store[candidates_key]:
         result['candidate'] = signaling_store[candidates_key].pop(0)
     return jsonify(result)
-
+@app.route('/proof')
+def proof():
+    return render_template('proof.html')
 @app.route('/start_call/<int:user_id>', methods=['POST'])
 @login_required
 def start_call(user_id):
