@@ -1202,6 +1202,9 @@ def verify_phone():
             flash('Неверный код', 'danger')
 
     return redirect(url_for('profile'))
+@app.route('/simulation')
+def simulation():
+    return render_template('simulation.html')
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
