@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Доказательство Mass Gap | BearGram</title>
+    <title>Mass Gap Proof | BearGram</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: system-ui; background: #0d0d1a; color: #ddd; padding: 20px; max-width: 600px; margin: auto; }
@@ -12,65 +12,102 @@
         pre { background: #1a1a2e; padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 13px; }
         .green { color: #4cd964; }
         .gold { color: #ffd700; }
-
-        /* Скрываем баннеры Google Translate */
-        .goog-te-banner-frame, .goog-te-gadget, .goog-te-gadget-simple, 
-        #google_translate_element, .goog-te-balloon-frame, .goog-tooltip,
-        .goog-te-spinner-pos, iframe.goog-te-banner-frame, .skiptranslate {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-            position: absolute !important;
-            top: -9999px !important;
-        }
-        body { top: 0 !important; }
-        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        .lang-switch { text-align: right; margin-bottom: 10px; }
+        .lang-switch button { display: inline; width: auto; padding: 8px 15px; font-size: 14px; background: transparent; border: 1px solid #ffd700; color: #ffd700; }
+        .lang-switch button.active { background: #ffd700; color: #000; }
     </style>
 </head>
 <body>
-<!-- Google Translate (скрытый) -->
-<script>
-function googleTranslateElementInit() {
-    new google.translate.TranslateElement({
-        pageLanguage: 'ru',
-        includedLanguages: 'en,ru,es,de,fr,zh-CN,ar,pt,ja,ko,tr,it,pl,uk,hi',
-        layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
-        autoDisplay: false
-    }, 'google_translate_element');
-}
-</script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-<div id="google_translate_element" style="display:none;"></div>
 
-<script>
-// Применяем сохранённый язык
-(function() {
-    var lang = localStorage.getItem('selectedLanguage');
-    if (lang && lang !== 'ru') {
-        var check = setInterval(function() {
-            var select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = lang;
-                select.dispatchEvent(new Event('change'));
-                clearInterval(check);
-            }
-        }, 500);
-    }
-})();
-</script>
+<div class="lang-switch">
+    <button id="btnRu" class="active" onclick="setLang('ru')">🇷🇺 RU</button>
+    <button id="btnEn" onclick="setLang('en')">🇬🇧 EN</button>
+</div>
 
-<h2>📐 Доказательство существования Mass Gap</h2>
-<p>Принцип Связи • Теория Янга-Миллса • Уточнённый расчёт</p>
+<h2 id="title">📐 Доказательство существования Mass Gap</h2>
+<p id="subtitle">Принцип Связи • Теория Янга-Миллса • Уточнённый расчёт</p>
 
-<button onclick="run()">🚀 Запустить доказательство</button>
+<button id="runBtn" onclick="run()">🚀 Запустить доказательство</button>
 
 <pre id="out"></pre>
 
 <script>
+let currentLang = 'ru';
+
+const texts = {
+    ru: {
+        title: '📐 Доказательство существования Mass Gap',
+        subtitle: 'Принцип Связи • Теория Янга-Миллса • Уточнённый расчёт',
+        runBtn: '🚀 Запустить доказательство',
+        computing: 'Вычисление...',
+        inputData: '=== ВХОДНЫЕ ДАННЫЕ (PDG, Lattice QCD) ===',
+        gluonCondensate: 'Глюонный конденсат',
+        equation: '=== УРАВНЕНИЕ (Принцип Связи) ===',
+        centralValue: '=== ЦЕНТРАЛЬНОЕ ЗНАЧЕНИЕ ===',
+        range: '=== ГРАНИЦЫ ДИАПАЗОНА ===',
+        lowerBound: 'Нижняя граница',
+        upperBound: 'Верхняя граница',
+        finalRange: 'Итоговый диапазон',
+        comparison: '=== СРАВНЕНИЕ С ЭКСПЕРИМЕНТОМ ===',
+        ourMassGap: 'Наш mass gap',
+        pionMass: 'Масса пиона',
+        protonMass: 'Масса протона',
+        conclusion: '=== ВЫВОД ===',
+        upperBoundBelow: '✅ ДАЖЕ ВЕРХНЯЯ ГРАНИЦА',
+        belowPion: 'НИЖЕ МАССЫ ПИОНА',
+        gapExists: '✅ MASS GAP СУЩЕСТВУЕТ И СТРОГО ПОЛОЖИТЕЛЕН',
+        vacuumEnergy: '✅ ЭНЕРГИЯ ВАКУУМА ПОДТВЕРЖДЕНА С УЧЁТОМ ПОГРЕШНОСТЕЙ',
+        principleProven: '✅ ПРИНЦИП СВЯЗИ ДОКАЗАН ЭМПИРИЧЕСКИ',
+        copyright: '© Артём Гончаров • BearGram • 2026'
+    },
+    en: {
+        title: '📐 Mass Gap Existence Proof',
+        subtitle: 'Connection Principle • Yang-Mills Theory • Refined Calculation',
+        runBtn: '🚀 Run Proof',
+        computing: 'Computing...',
+        inputData: '=== INPUT DATA (PDG, Lattice QCD) ===',
+        gluonCondensate: 'Gluon condensate',
+        equation: '=== EQUATION (Connection Principle) ===',
+        centralValue: '=== CENTRAL VALUE ===',
+        range: '=== RANGE BOUNDARIES ===',
+        lowerBound: 'Lower bound',
+        upperBound: 'Upper bound',
+        finalRange: 'Final range',
+        comparison: '=== COMPARISON WITH EXPERIMENT ===',
+        ourMassGap: 'Our mass gap',
+        pionMass: 'Pion mass',
+        protonMass: 'Proton mass',
+        conclusion: '=== CONCLUSION ===',
+        upperBoundBelow: '✅ EVEN THE UPPER BOUND',
+        belowPion: 'IS BELOW THE PION MASS',
+        gapExists: '✅ MASS GAP EXISTS AND IS STRICTLY POSITIVE',
+        vacuumEnergy: '✅ VACUUM ENERGY CONFIRMED WITH UNCERTAINTIES',
+        principleProven: '✅ CONNECTION PRINCIPLE EMPIRICALLY PROVEN',
+        copyright: '© Artem Goncharov • BearGram • 2026'
+    }
+};
+
+function setLang(lang) {
+    currentLang = lang;
+    document.getElementById('btnRu').classList.toggle('active', lang === 'ru');
+    document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+    
+    const t = texts[lang];
+    document.getElementById('title').textContent = t.title;
+    document.getElementById('subtitle').textContent = t.subtitle;
+    document.getElementById('runBtn').textContent = t.runBtn;
+    
+    // Если уже был запуск — перезапустить с новым языком
+    const out = document.getElementById('out');
+    if (out.textContent && out.textContent !== t.computing && out.textContent !== texts['ru'].computing && out.textContent !== texts['en'].computing) {
+        run();
+    }
+}
+
 function run() {
     const out = document.getElementById('out');
-    out.textContent = 'Вычисление...\n';
+    const t = texts[currentLang];
+    out.textContent = t.computing + '\n';
 
     const alpha_s = 0.33;
     const alpha_s_err = 0.02;
@@ -93,42 +130,44 @@ function run() {
     const pion_mass = 140;
     const proton_mass = 938;
 
-    let result = '';
-    result += '=== ВХОДНЫЕ ДАННЫЕ (PDG, Lattice QCD) ===\n';
-    result += `α_s = ${alpha_s} ± ${alpha_s_err}\n`;
-    result += `Глюонный конденсат = ${condensate} ± ${condensate_err} ГэВ⁴\n\n`;
+    const unit = currentLang === 'ru' ? 'МэВ' : 'MeV';
+    const unitGeV = currentLang === 'ru' ? 'ГэВ' : 'GeV';
+    const unitGeV4 = currentLang === 'ru' ? 'ГэВ⁴' : 'GeV⁴';
 
-    result += '=== УРАВНЕНИЕ (Принцип Связи) ===\n';
+    let result = '';
+    result += t.inputData + '\n';
+    result += `α_s = ${alpha_s} ± ${alpha_s_err}\n`;
+    result += `${t.gluonCondensate} = ${condensate} ± ${condensate_err} ${unitGeV4}\n\n`;
+
+    result += t.equation + '\n';
     result += 'ΔE = √⟨0|(α_s/π)G²|0⟩ ≠ const\n\n';
 
-    result += '=== ЦЕНТРАЛЬНОЕ ЗНАЧЕНИЕ ===\n';
-    result += `ΔE = √${condensate} = ${mass_gap_central.toFixed(4)} ГэВ\n`;
-    result += `ΔE = ${mass_gap_MeV_central.toFixed(0)} МэВ\n\n`;
+    result += t.centralValue + '\n';
+    result += `ΔE = √${condensate} = ${mass_gap_central.toFixed(4)} ${unitGeV}\n`;
+    result += `ΔE = ${mass_gap_MeV_central.toFixed(0)} ${unit}\n\n`;
 
-    result += '=== ГРАНИЦЫ ДИАПАЗОНА ===\n';
-    result += `Нижняя граница: √${condensate_min.toFixed(3)} = ${mass_gap_min.toFixed(4)} ГэВ = ${mass_gap_MeV_min.toFixed(0)} МэВ\n`;
-    result += `Верхняя граница: √${condensate_max.toFixed(3)} = ${mass_gap_max.toFixed(4)} ГэВ = ${mass_gap_MeV_max.toFixed(0)} МэВ\n`;
-    result += `Итоговый диапазон: ${mass_gap_MeV_central.toFixed(0)} ± ${error.toFixed(0)} МэВ\n\n`;
+    result += t.range + '\n';
+    result += `${t.lowerBound}: √${condensate_min.toFixed(3)} = ${mass_gap_min.toFixed(4)} ${unitGeV} = ${mass_gap_MeV_min.toFixed(0)} ${unit}\n`;
+    result += `${t.upperBound}: √${condensate_max.toFixed(3)} = ${mass_gap_max.toFixed(4)} ${unitGeV} = ${mass_gap_MeV_max.toFixed(0)} ${unit}\n`;
+    result += `${t.finalRange}: ${mass_gap_MeV_central.toFixed(0)} ± ${error.toFixed(0)} ${unit}\n\n`;
 
-    result += '=== СРАВНЕНИЕ С ЭКСПЕРИМЕНТОМ ===\n';
-    result += `Наш mass gap: ${mass_gap_MeV_central.toFixed(0)} ± ${error.toFixed(0)} МэВ\n`;
-    result += `Масса пиона: ${pion_mass} МэВ\n`;
-    result += `Масса протона: ${proton_mass} МэВ\n\n`;
+    result += t.comparison + '\n';
+    result += `${t.ourMassGap}: ${mass_gap_MeV_central.toFixed(0)} ± ${error.toFixed(0)} ${unit}\n`;
+    result += `${t.pionMass}: ${pion_mass} ${unit}\n`;
+    result += `${t.protonMass}: ${proton_mass} ${unit}\n\n`;
 
-    result += '=== ВЫВОД ===\n';
+    result += t.conclusion + '\n';
     if (mass_gap_MeV_max < pion_mass) {
-        result += '✅ ДАЖЕ ВЕРХНЯЯ ГРАНИЦА (' + mass_gap_MeV_max.toFixed(0) + ' МэВ) НИЖЕ МАССЫ ПИОНА (' + pion_mass + ' МэВ)\n';
+        result += `${t.upperBoundBelow} (${mass_gap_MeV_max.toFixed(0)} ${unit}) ${t.belowPion} (${pion_mass} ${unit})\n`;
     }
-    result += '✅ MASS GAP СУЩЕСТВУЕТ И СТРОГО ПОЛОЖИТЕЛЕН\n';
-    result += '✅ ЭНЕРГИЯ ВАКУУМА ПОДТВЕРЖДЕНА С УЧЁТОМ ПОГРЕШНОСТЕЙ\n';
-    result += '✅ ПРИНЦИП СВЯЗИ ДОКАЗАН ЭМПИРИЧЕСКИ\n';
+    result += t.gapExists + '\n';
+    result += t.vacuumEnergy + '\n';
+    result += t.principleProven + '\n';
 
-    result += '\n© Артём Гончаров • BearGram • 2026';
+    result += '\n' + t.copyright;
 
     out.textContent = result;
 }
 </script>
-
-<script src="/static/lang.js"></script>
 </body>
 </html>
