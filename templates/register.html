@@ -221,8 +221,8 @@
             </div>
 
             <div class="form-group">
-                <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)" autocomplete="tel">
-                <small>Необязательно. Оставьте пустым, если не хотите — бонусные кристалайзеры будут заморожены до подтверждения номера.</small>
+                <input type="text" name="phone" placeholder="📱 Номер телефона (для 100 💎 в подарок)" required autocomplete="tel">
+                <small>Обязательно. Укажите номер и получите 100 💎 кристаллайзеров на счёт сразу после регистрации.</small>
             </div>
 
             <button type="submit">🐾 Зарегистрироваться</button>
@@ -238,25 +238,20 @@
     </div>
 
     <script>
-        // Функция выбора языка — сбрасывает куку гугла и сохраняет выбор
         function translatePage(targetLang) {
-            // Сбрасываем куку Google Translate
             document.cookie = 'googtrans=; Path=/; Max-Age=0';
             if (targetLang === 'ru') {
-                // Для русского ставим куку /ru/ru, чтобы перевод отключился
                 document.cookie = 'googtrans=/ru/ru; Path=/; SameSite=Lax';
             }
             localStorage.setItem('selectedLanguage', targetLang);
             location.reload();
         }
 
-        // При загрузке страницы подставляем сохранённый язык в селектор
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('selectedLanguage');
             if (savedLang) {
                 document.getElementById('languageSelect').value = savedLang;
             } else {
-                // Автоопределение языка браузера при первом заходе
                 const browserLang = navigator.language || navigator.userLanguage;
                 const shortLang = browserLang.split('-')[0];
                 const langMap = {
