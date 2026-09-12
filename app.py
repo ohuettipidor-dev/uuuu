@@ -118,88 +118,144 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-# ==================== IZIPOST: СИНХРОНИЗАЦИЯ ====================
+# ==================== СИНХРОНИЗАЦИЯ ФАЙЛОВ ИЗ IZIPOST ====================
+import requests as http_requests
+
 STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
-STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
 STORAGE_FILES_URL = 'https://relaxdev.ru/api/v1/storage/files'
 STORAGE_ROOT = 'users/beargram@gmail.com/uuuu/'
 
-def upload_to_storage(local_path, subfolder='uploads'):
-    """Загружает файл в IziPost. Возвращает имя файла в облаке или None."""
-    if not STORAGE_API_KEY:
-        print("[IZIPOST] STORAGE_API_KEY не задан")
-        return None
-    try:
-        with open(local_path, 'rb') as f:
-            files = {'file': (os.path.basename(local_path), f, 'application/octet-stream')}
-            data = {'path': subfolder}
-            resp = requests.post(
-                STORAGE_UPLOAD_URL,
-                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
-                files=files,
-                data=data,
-                timeout=60
-            )
-        if resp.status_code != 200:
-            print(f"[IZIPOST] upload fail {resp.status_code}: {resp.text[:200]}")
-            return None
-        j = resp.json()
-        if not j.get('success'):
-            print(f"[IZIPOST] upload not success: {j}")
-            return None
-        storage_path = j.get('path', '')
-        remote_name = os.path.basename(storage_path)
-        print(f"[IZIPOST] uploaded {subfolder}/{remote_name}")
-        return remote_name
-    except Exception as e:
-        print(f"[IZIPOST] upload error: {e}")
-        return None
-
 def sync_storage_to_local():
-    """Скачивает все файлы из IziPost в static/ при старте."""
     if not STORAGE_API_KEY:
-        print("[IZIPOST] sync skipped: no key")
+        print("⚠️ STORAGE_API_KEY не задан — синхронизация пропущена")
         return
-    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
-                  'stickers/custom', 'music', 'games']
-    total = 0
+
+    subfolders = [
+        'avatars', 'uploads', 'voices', 'stickers',
+        'stickers/custom', 'music', 'games', 'backups'
+    ]
+    total_downloaded = 0
+
     for sub in subfolders:
         try:
-            resp = requests.get(
+            resp = http_requests.get(
                 STORAGE_FILES_URL,
                 headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
                 params={'path': sub},
                 timeout=30
             )
             if resp.status_code != 200:
+                print(f"⚠️ Storage list fail for {sub}: {resp.status_code}")
                 continue
             data = resp.json()
-            files = data.get('files', []) if data.get('success') else []
+            if not data.get('success'):
+                continue
+            files = data.get('files', [])
             if not files:
                 continue
+
             local_dir = os.path.join('static', sub)
             os.makedirs(local_dir, exist_ok=True)
+
             for f in files:
+                file_path = f.get('path', '')
                 url = f.get('url', '')
-                path = f.get('path', '')
-                if not url or not path:
+                if not url or not file_path:
                     continue
-                filename = os.path.basename(path)
+                if file_path.startswith(STORAGE_ROOT):
+                    relative = file_path[len(STORAGE_ROOT):]
+                else:
+                    relative = file_path
+                filename = os.path.basename(relative)
                 save_path = os.path.join(local_dir, filename)
                 if os.path.exists(save_path):
                     continue
                 try:
-                    r = requests.get(url, timeout=60)
-                    if r.status_code == 200:
+                    file_resp = http_requests.get(url, timeout=60)
+                    if file_resp.status_code == 200:
                         with open(save_path, 'wb') as out:
-                            out.write(r.content)
-                        total += 1
+                            out.write(file_resp.content)
+                        total_downloaded += 1
                 except Exception as e:
-                    print(f"[IZIPOST] download fail {url}: {e}")
+                    print(f"⚠️ Download fail {url}: {e}")
         except Exception as e:
-            print(f"[IZIPOST] sync error {sub}: {e}")
-    print(f"[IZIPOST] sync done: {total} files")
-# =================================================================================================
+            print(f"⚠️ Sync error for {sub}: {e}")
+
+    print(f"✅ Синхронизировано файлов из IziPost: {total_downloaded}")
+
+sync_storage_to_local()
+# ==================== ФОНОВАЯ СИНХРОНИЗАЦИЯ В IZIPOST ====================
+import threading
+import time
+
+STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
+_synced_files = set()
+_sync_lock = threading.Lock()
+
+def upload_new_files_to_storage():
+    if not STORAGE_API_KEY:
+        return 0
+    total = 0
+    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
+                  'stickers/custom', 'music', 'games']
+    for sub in subfolders:
+        local_dir = os.path.join('static', sub)
+        if not os.path.isdir(local_dir):
+            continue
+        for filename in os.listdir(local_dir):
+            filepath = os.path.join(local_dir, filename)
+            if not os.path.isfile(filepath):
+                continue
+            key = f"{sub}/{filename}"
+            with _sync_lock:
+                if key in _synced_files:
+                    continue
+            try:
+                with open(filepath, 'rb') as f:
+                    files = {'file': (filename, f, 'application/octet-stream')}
+                    data = {'path': sub}
+                    resp = http_requests.post(
+                        STORAGE_UPLOAD_URL,
+                        headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                        files=files,
+                        data=data,
+                        timeout=60
+                    )
+                    if resp.status_code == 200 and resp.json().get('success'):
+                        with _sync_lock:
+                            _synced_files.add(key)
+                        total += 1
+            except Exception as e:
+                print(f"⚠️ Upload error {key}: {e}")
+    return total
+
+def background_sync_worker():
+    while True:
+        try:
+            n = upload_new_files_to_storage()
+            if n > 0:
+                print(f"✅ Загружено в IziPost: {n} файлов")
+        except Exception as e:
+            print(f"⚠️ Background sync error: {e}")
+        time.sleep(30)
+
+def _final_sync():
+    try:
+        n = upload_new_files_to_storage()
+        print(f"⏹️ Финальная синхронизация: {n} файлов")
+    except Exception as e:
+        print(f"⚠️ Final sync error: {e}")
+
+import atexit
+import signal
+
+atexit.register(_final_sync)
+signal.signal(signal.SIGTERM, lambda s, f: (_final_sync(), exit(0)))
+signal.signal(signal.SIGINT, lambda s, f: (_final_sync(), exit(0)))
+
+threading.Thread(target=background_sync_worker, daemon=True).start()
+# =====================================================================
+# =====================================================================
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
     'mp3', 'wav', 'ogg', 'flac', 'm4a',
@@ -1378,178 +1434,6 @@ def profile():
             Order.query.filter_by(user_id=current_user.id).delete()
             groups = Group.query.filter_by(created_by=current_user.id).all()
             for group in groups:
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    if request.method == 'POST':
-        if 'avatar' in request.files:
-            f = request.files['avatar']
-            if f and allowed_file(f.filename):
-                ext = f.filename.rsplit('.', 1)[1].lower()
-                name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-                local_path = os.path.join(AVATAR_FOLDER, name)
-                f.save(local_path)
-
-                remote_name = upload_to_storage(local_path, subfolder='avatars')
-                if remote_name:
-                    new_local = os.path.join(AVATAR_FOLDER, remote_name)
-                    try:
-                        if os.path.exists(new_local):
-                            os.remove(local_path)
-                        else:
-                            os.rename(local_path, new_local)
-                    except Exception as e:
-                        print(f"[IZIPOST] rename error: {e}")
-                    name = remote_name
-
-                if current_user.avatar and current_user.avatar != 'default.png':
-                    old = os.path.join(AVATAR_FOLDER, current_user.avatar)
-                    if os.path.exists(old):
-                        try:
-                            os.remove(old)
-                        except Exception:
-                            pass
-                current_user.avatar = name
-                db.session.commit()
-                flash('Аватар обновлён', 'success')
-        if 'username_link' in request.form:
-            ul = request.form['username_link'].strip().lower().replace(' ', '_')
-            if ul:
-                if not ul.startswith('@'):
-                    ul = '@' + ul
-                existing = User.query.filter_by(username_link=ul).first()
-                if existing and existing.id != current_user.id:
-                    flash('Такой @username уже занят', 'danger')
-                elif len(ul) < 2 or len(ul) > 32:
-                    flash('@username должен быть от 2 до 32 символов', 'danger')
-                elif not re.match(r'^@[a-zA-Z0-9_]+$', ul):
-                    flash('@username может содержать только буквы, цифры и _', 'danger')
-                else:
-                    current_user.username_link = ul
-                    db.session.commit()
-                    flash('@username обновлён!', 'success')
-            else:
-                current_user.username_link = None
-                db.session.commit()
-                flash('@username удалён', 'success')
-        if 'notifications_enabled' in request.form:
-            current_user.notifications_enabled = request.form['notifications_enabled'] == 'on'
-            db.session.commit()
-            flash('Настройки уведомлений сохранены', 'success')
-        if 'delete_account' in request.form:
-            Message.query.filter((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)).delete()
-            GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
-            GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
-            Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
-            SecretMessage.query.filter((SecretMessage.sender_id == current_user.id)).delete()
-            SecretChat.query.filter((SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id)).delete()
-            VoiceChannelMember.query.filter_by(user_id=current_user.id).delete()
-            VoiceChannel.query.filter_by(created_by=current_user.id).delete()
-            VideoCall.query.filter((VideoCall.from_user_id == current_user.id) | (VideoCall.to_user_id == current_user.id)).delete()
-            ChannelSubscriber.query.filter_by(user_id=current_user.id).delete()
-            Channel.query.filter_by(created_by=current_user.id).delete()
-            Subscription.query.filter_by(user_id=current_user.id).delete()
-            UserStickerPack.query.filter_by(user_id=current_user.id).delete()
-            UserTheme.query.filter_by(user_id=current_user.id).delete()
-            CloudStorage.query.filter_by(user_id=current_user.id).delete()
-            Gift.query.filter((Gift.from_user_id == current_user.id) | (Gift.to_user_id == current_user.id)).delete()
-            FamilyMember.query.filter_by(user_id=current_user.id).delete()
-            FamilyAccount.query.filter_by(owner_id=current_user.id).delete()
-            CustomSticker.query.filter_by(user_id=current_user.id).delete()
-            UserCoins.query.filter_by(user_id=current_user.id).delete()
-            AIGeneration.query.filter_by(user_id=current_user.id).delete()
-            Order.query.filter_by(user_id=current_user.id).delete()
-            groups = Group.query.filter_by(created_by=current_user.id).all()
-            for group in groups:
-                GroupMember.query.filter_by(group_id=group.id).delete()
-                GroupMessage.query.filter_by(group_id=group.id).delete()
-                db.session.delete(group)
-            db.session.delete(current_user)
-            db.session.commit()
-            logout_user()
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    if request.method == 'POST':
-        if 'avatar' in request.files:
-            f = request.files['avatar']
-            if f and allowed_file(f.filename):
-                ext = f.filename.rsplit('.', 1)[1].lower()
-                name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
-                local_path = os.path.join(AVATAR_FOLDER, name)
-                f.save(local_path)
-
-                remote_name = upload_to_storage(local_path, subfolder='avatars')
-                if remote_name:
-                    new_local = os.path.join(AVATAR_FOLDER, remote_name)
-                    try:
-                        if os.path.exists(new_local):
-                            os.remove(local_path)
-                        else:
-                            os.rename(local_path, new_local)
-                    except Exception as e:
-                        print(f"[IZIPOST] rename error: {e}")
-                    name = remote_name
-
-                if current_user.avatar and current_user.avatar != 'default.png':
-                    old = os.path.join(AVATAR_FOLDER, current_user.avatar)
-                    if os.path.exists(old):
-                        try:
-                            os.remove(old)
-                        except Exception:
-                            pass
-                current_user.avatar = name
-                db.session.commit()
-                flash('Аватар обновлён', 'success')
-        if 'username_link' in request.form:
-            ul = request.form['username_link'].strip().lower().replace(' ', '_')
-            if ul:
-                if not ul.startswith('@'):
-                    ul = '@' + ul
-                existing = User.query.filter_by(username_link=ul).first()
-                if existing and existing.id != current_user.id:
-                    flash('Такой @username уже занят', 'danger')
-                elif len(ul) < 2 or len(ul) > 32:
-                    flash('@username должен быть от 2 до 32 символов', 'danger')
-                elif not re.match(r'^@[a-zA-Z0-9_]+$', ul):
-                    flash('@username может содержать только буквы, цифры и _', 'danger')
-                else:
-                    current_user.username_link = ul
-                    db.session.commit()
-                    flash('@username обновлён!', 'success')
-            else:
-                current_user.username_link = None
-                db.session.commit()
-                flash('@username удалён', 'success')
-        if 'notifications_enabled' in request.form:
-            current_user.notifications_enabled = request.form['notifications_enabled'] == 'on'
-            db.session.commit()
-            flash('Настройки уведомлений сохранены', 'success')
-        if 'delete_account' in request.form:
-            Message.query.filter((Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)).delete()
-            GroupMessage.query.filter(GroupMessage.sender_id == current_user.id).delete()
-            GroupMember.query.filter(GroupMember.user_id == current_user.id).delete()
-            Blacklist.query.filter((Blacklist.user_id == current_user.id) | (Blacklist.blocked_user_id == current_user.id)).delete()
-            SecretMessage.query.filter((SecretMessage.sender_id == current_user.id)).delete()
-            SecretChat.query.filter((SecretChat.user1_id == current_user.id) | (SecretChat.user2_id == current_user.id)).delete()
-            VoiceChannelMember.query.filter_by(user_id=current_user.id).delete()
-            VoiceChannel.query.filter_by(created_by=current_user.id).delete()
-            VideoCall.query.filter((VideoCall.from_user_id == current_user.id) | (VideoCall.to_user_id == current_user.id)).delete()
-            ChannelSubscriber.query.filter_by(user_id=current_user.id).delete()
-            Channel.query.filter_by(created_by=current_user.id).delete()
-            Subscription.query.filter_by(user_id=current_user.id).delete()
-            UserStickerPack.query.filter_by(user_id=current_user.id).delete()
-            UserTheme.query.filter_by(user_id=current_user.id).delete()
-            CloudStorage.query.filter_by(user_id=current_user.id).delete()
-            Gift.query.filter((Gift.from_user_id == current_user.id) | (Gift.to_user_id == current_user.id)).delete()
-            FamilyMember.query.filter_by(user_id=current_user.id).delete()
-            FamilyAccount.query.filter_by(owner_id=current_user.id).delete()
-            CustomSticker.query.filter_by(user_id=current_user.id).delete()
-            UserCoins.query.filter_by(user_id=current_user.id).delete()
-            AIGeneration.query.filter_by(user_id=current_user.id).delete()
-            Order.query.filter_by(user_id=current_user.id).delete()
-            groups = Group.query.filter_by(created_by=current_user.id).all()
-            for group in groups:
                 GroupMember.query.filter_by(group_id=group.id).delete()
                 GroupMessage.query.filter_by(group_id=group.id).delete()
                 db.session.delete(group)
@@ -1559,31 +1443,34 @@ def profile():
             flash('Аккаунт удалён', 'success')
             return redirect(url_for('index'))
         return redirect(url_for('profile'))
-
+    
     coins = get_user_coins(current_user.id)
     is_premium = get_premium_status(current_user.id)
     sub = Subscription.query.filter_by(user_id=current_user.id).first()
     expires_at = sub.expires_at.strftime('%d.%m.%Y') if sub and sub.expires_at else None
 
+    # Ежедневный бонус премиум-пользователям
     if is_premium:
         today = datetime.utcnow().date()
         if current_user.last_daily_bonus != today:
             coins = get_user_coins(current_user.id)
-            coins.balance += 5
+            coins.balance += 5   # бонус каждый день
             current_user.last_daily_bonus = today
             db.session.commit()
             flash('🎁 Вы получили ежедневные 5 Кристаллайзеров за премиум!', 'success')
-
+    
     grrr_balance = get_grrr_balance(current_user.id)
+    
+    # ===== ИСПРАВЛЕНО: заменил profile_user на current_user =====
     tracks = MusicTrack.query.filter_by(user_id=current_user.id).order_by(MusicTrack.created_at.desc()).all()
-
-    return render_template('profile.html',
-                           user=current_user,
-                           coins=coins,
-                           grrr_balance=grrr_balance,
-                           is_premium=is_premium,
-                           expires_at=expires_at,
-                           tracks=tracks)
+    
+    return render_template('profile.html', 
+                           user=current_user, 
+                           coins=coins, 
+                           grrr_balance=grrr_balance, 
+                           is_premium=is_premium, 
+                           expires_at=expires_at, 
+                           tracks=tracks)   # не забудь передать tracks
 @app.route('/profile/<int:uid>')
 @login_required
 def profile_by_id(uid):
@@ -7084,11 +6971,6 @@ def tab_games():
 def inject_now():
     from datetime import datetime
     return {'now': datetime.utcnow}
-    # Синхронизация файлов из IziPost при старте
-try:
-    sync_storage_to_local()
-except Exception as e:
-    print(f"[IZIPOST] startup sync error: {e}")
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
