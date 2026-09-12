@@ -118,14 +118,17 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
- # ==================== IZIPOST: ЗАГРУЗКА ====================
+# ==================== IZIPOST: СИНХРОНИЗАЦИЯ ====================
 STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
 STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
+STORAGE_FILES_URL = 'https://relaxdev.ru/api/v1/storage/files'
+STORAGE_ROOT = 'users/beargram@gmail.com/uuuu/'
 
 def upload_to_storage(local_path, subfolder='uploads'):
+    """Загружает файл в IziPost. Возвращает имя файла в облаке или None."""
     if not STORAGE_API_KEY:
         print("[IZIPOST] STORAGE_API_KEY не задан")
-        return
+        return None
     try:
         with open(local_path, 'rb') as f:
             files = {'file': (os.path.basename(local_path), f, 'application/octet-stream')}
@@ -135,14 +138,68 @@ def upload_to_storage(local_path, subfolder='uploads'):
                 headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
                 files=files,
                 data=data,
+                timeout=60
+            )
+        if resp.status_code != 200:
+            print(f"[IZIPOST] upload fail {resp.status_code}: {resp.text[:200]}")
+            return None
+        j = resp.json()
+        if not j.get('success'):
+            print(f"[IZIPOST] upload not success: {j}")
+            return None
+        storage_path = j.get('path', '')
+        remote_name = os.path.basename(storage_path)
+        print(f"[IZIPOST] uploaded {subfolder}/{remote_name}")
+        return remote_name
+    except Exception as e:
+        print(f"[IZIPOST] upload error: {e}")
+        return None
+
+def sync_storage_to_local():
+    """Скачивает все файлы из IziPost в static/ при старте."""
+    if not STORAGE_API_KEY:
+        print("[IZIPOST] sync skipped: no key")
+        return
+    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
+                  'stickers/custom', 'music', 'games']
+    total = 0
+    for sub in subfolders:
+        try:
+            resp = requests.get(
+                STORAGE_FILES_URL,
+                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                params={'path': sub},
                 timeout=30
             )
-            print(f"[IZIPOST] {subfolder}/{os.path.basename(local_path)} -> {resp.status_code}")
-    except Exception as e:
-        print(f"[IZIPOST] error: {e}")
-# ===========================================================    
-# =====================================================================
-# =====================================================================
+            if resp.status_code != 200:
+                continue
+            data = resp.json()
+            files = data.get('files', []) if data.get('success') else []
+            if not files:
+                continue
+            local_dir = os.path.join('static', sub)
+            os.makedirs(local_dir, exist_ok=True)
+            for f in files:
+                url = f.get('url', '')
+                path = f.get('path', '')
+                if not url or not path:
+                    continue
+                filename = os.path.basename(path)
+                save_path = os.path.join(local_dir, filename)
+                if os.path.exists(save_path):
+                    continue
+                try:
+                    r = requests.get(url, timeout=60)
+                    if r.status_code == 200:
+                        with open(save_path, 'wb') as out:
+                            out.write(r.content)
+                        total += 1
+                except Exception as e:
+                    print(f"[IZIPOST] download fail {url}: {e}")
+        except Exception as e:
+            print(f"[IZIPOST] sync error {sub}: {e}")
+    print(f"[IZIPOST] sync done: {total} files")
+# =================================================================================================
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
     'mp3', 'wav', 'ogg', 'flac', 'm4a',
