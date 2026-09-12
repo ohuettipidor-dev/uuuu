@@ -118,72 +118,7 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-# ==================== СИНХРОНИЗАЦИЯ ФАЙЛОВ ИЗ IZIPOST ====================
-import requests as http_requests
 
-STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
-STORAGE_FILES_URL = 'https://relaxdev.ru/api/v1/storage/files'
-STORAGE_ROOT = 'users/beargram@gmail.com/uuuu/'
-
-def sync_storage_to_local():
-    if not STORAGE_API_KEY:
-        print("⚠️ STORAGE_API_KEY не задан — синхронизация пропущена")
-        return
-
-    subfolders = [
-        'avatars', 'uploads', 'voices', 'stickers',
-        'stickers/custom', 'music', 'games', 'backups'
-    ]
-    total_downloaded = 0
-
-    for sub in subfolders:
-        try:
-            resp = http_requests.get(
-                STORAGE_FILES_URL,
-                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
-                params={'path': sub},
-                timeout=30
-            )
-            if resp.status_code != 200:
-                print(f"⚠️ Storage list fail for {sub}: {resp.status_code}")
-                continue
-            data = resp.json()
-            if not data.get('success'):
-                continue
-            files = data.get('files', [])
-            if not files:
-                continue
-
-            local_dir = os.path.join('static', sub)
-            os.makedirs(local_dir, exist_ok=True)
-
-            for f in files:
-                file_path = f.get('path', '')
-                url = f.get('url', '')
-                if not url or not file_path:
-                    continue
-                if file_path.startswith(STORAGE_ROOT):
-                    relative = file_path[len(STORAGE_ROOT):]
-                else:
-                    relative = file_path
-                filename = os.path.basename(relative)
-                save_path = os.path.join(local_dir, filename)
-                if os.path.exists(save_path):
-                    continue
-                try:
-                    file_resp = http_requests.get(url, timeout=60)
-                    if file_resp.status_code == 200:
-                        with open(save_path, 'wb') as out:
-                            out.write(file_resp.content)
-                        total_downloaded += 1
-                except Exception as e:
-                    print(f"⚠️ Download fail {url}: {e}")
-        except Exception as e:
-            print(f"⚠️ Sync error for {sub}: {e}")
-
-    print(f"✅ Синхронизировано файлов из IziPost: {total_downloaded}")
-
-sync_storage_to_local()
 # ==================== ФОНОВАЯ СИНХРОНИЗАЦИЯ В IZIPOST ====================
 import threading
 import time
@@ -246,14 +181,95 @@ def _final_sync():
     except Exception as e:
         print(f"⚠️ Final sync error: {e}")
 
-import atexit
-import signal
+# ==================== СИНХРОНИЗАЦИЯ ФАЙЛОВ С IZIPOST ====================
+import os
+import requests
+from werkzeug.datastructures import FileStorage
 
-atexit.register(_final_sync)
-signal.signal(signal.SIGTERM, lambda s, f: (_final_sync(), exit(0)))
-signal.signal(signal.SIGINT, lambda s, f: (_final_sync(), exit(0)))
+STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
+STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
+STORAGE_FILES_URL = 'https://relaxdev.ru/api/v1/storage/files'
+STORAGE_ROOT = 'users/beargram@gmail.com/uuuu/'
 
-threading.Thread(target=background_sync_worker, daemon=True).start()
+def sync_storage_to_local():
+    if not STORAGE_API_KEY:
+        print("⚠️ STORAGE_API_KEY не задан — синхронизация пропущена")
+        return
+    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
+                  'stickers/custom', 'music', 'games', 'backups']
+    total = 0
+    for sub in subfolders:
+        try:
+            resp = requests.get(
+                STORAGE_FILES_URL,
+                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                params={'path': sub},
+                timeout=30
+            )
+            if resp.status_code != 200:
+                continue
+            data = resp.json()
+            if not data.get('success'):
+                continue
+            files = data.get('files', [])
+            if not files:
+                continue
+            local_dir = os.path.join('static', sub)
+            os.makedirs(local_dir, exist_ok=True)
+            for f in files:
+                file_path = f.get('path', '')
+                url = f.get('url', '')
+                if not url or not file_path:
+                    continue
+                if file_path.startswith(STORAGE_ROOT):
+                    relative = file_path[len(STORAGE_ROOT):]
+                else:
+                    relative = file_path
+                filename = os.path.basename(relative)
+                save_path = os.path.join(local_dir, filename)
+                if os.path.exists(save_path):
+                    continue
+                try:
+                    file_resp = requests.get(url, timeout=60)
+                    if file_resp.status_code == 200:
+                        with open(save_path, 'wb') as out:
+                            out.write(file_resp.content)
+                        total += 1
+                except Exception as e:
+                    print(f"⚠️ Download fail {url}: {e}")
+        except Exception as e:
+            print(f"⚠️ Sync error for {sub}: {e}")
+    print(f"✅ Скачано из IziPost при старте: {total} файлов")
+
+sync_storage_to_local()
+
+_original_save = FileStorage.save
+
+def _patched_save(self, dst, buffer_size=16384):
+    _original_save(self, dst, buffer_size)
+    if not STORAGE_API_KEY:
+        return
+    try:
+        rel_path = os.path.relpath(dst, 'static')
+        sub = os.path.dirname(rel_path)
+        if not sub:
+            return
+        with open(dst, 'rb') as f:
+            files = {'file': (os.path.basename(dst), f, 'application/octet-stream')}
+            data = {'path': sub}
+            resp = requests.post(
+                STORAGE_UPLOAD_URL,
+                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                files=files,
+                data=data,
+                timeout=60
+            )
+            if resp.status_code != 200:
+                print(f"⚠️ Upload to IziPost failed: {resp.status_code} {resp.text[:200]}")
+    except Exception as e:
+        print(f"⚠️ Upload to IziPost error: {e}")
+
+FileStorage.save = _patched_save
 # =====================================================================
 # =====================================================================
 ALLOWED_EXTENSIONS = {
