@@ -6995,6 +6995,11 @@ def tab_games():
 def inject_now():
     from datetime import datetime
     return {'now': datetime.utcnow}
+    # Синхронизация файлов из IziPost при старте
+try:
+    sync_storage_to_local()
+except Exception as e:
+    print(f"[IZIPOST] startup sync error: {e}")
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
