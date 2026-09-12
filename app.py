@@ -118,7 +118,29 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-     
+ # ==================== IZIPOST: ЗАГРУЗКА ====================
+STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
+STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
+
+def upload_to_storage(local_path, subfolder='uploads'):
+    if not STORAGE_API_KEY:
+        print("[IZIPOST] STORAGE_API_KEY не задан")
+        return
+    try:
+        with open(local_path, 'rb') as f:
+            files = {'file': (os.path.basename(local_path), f, 'application/octet-stream')}
+            data = {'path': subfolder}
+            resp = requests.post(
+                STORAGE_UPLOAD_URL,
+                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                files=files,
+                data=data,
+                timeout=30
+            )
+            print(f"[IZIPOST] {subfolder}/{os.path.basename(local_path)} -> {resp.status_code}")
+    except Exception as e:
+        print(f"[IZIPOST] error: {e}")
+# ===========================================================    
 # =====================================================================
 # =====================================================================
 ALLOWED_EXTENSIONS = {
