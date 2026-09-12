@@ -88,11 +88,7 @@ def allow_iframe(response):
     response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *"
     return response
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
-import os
-_db_url = os.environ.get('DATABASE_URL', 'sqlite:////app/static/messenger.db')
-if _db_url.startswith('postgres://'):
-    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/static/messenger.db' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 import json
 
@@ -118,144 +114,6 @@ app.config['FILE_FOLDER'] = FILE_FOLDER
 app.config['VOICE_FOLDER'] = VOICE_FOLDER
 app.config['STICKER_FOLDER'] = STICKER_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-# ==================== СИНХРОНИЗАЦИЯ ФАЙЛОВ ИЗ IZIPOST ====================
-import requests as http_requests
-
-STORAGE_API_KEY = os.environ.get('STORAGE_API_KEY', '')
-STORAGE_FILES_URL = 'https://relaxdev.ru/api/v1/storage/files'
-STORAGE_ROOT = 'users/beargram@gmail.com/uuuu/'
-
-def sync_storage_to_local():
-    if not STORAGE_API_KEY:
-        print("⚠️ STORAGE_API_KEY не задан — синхронизация пропущена")
-        return
-
-    subfolders = [
-        'avatars', 'uploads', 'voices', 'stickers',
-        'stickers/custom', 'music', 'games', 'backups'
-    ]
-    total_downloaded = 0
-
-    for sub in subfolders:
-        try:
-            resp = http_requests.get(
-                STORAGE_FILES_URL,
-                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
-                params={'path': sub},
-                timeout=30
-            )
-            if resp.status_code != 200:
-                print(f"⚠️ Storage list fail for {sub}: {resp.status_code}")
-                continue
-            data = resp.json()
-            if not data.get('success'):
-                continue
-            files = data.get('files', [])
-            if not files:
-                continue
-
-            local_dir = os.path.join('static', sub)
-            os.makedirs(local_dir, exist_ok=True)
-
-            for f in files:
-                file_path = f.get('path', '')
-                url = f.get('url', '')
-                if not url or not file_path:
-                    continue
-                if file_path.startswith(STORAGE_ROOT):
-                    relative = file_path[len(STORAGE_ROOT):]
-                else:
-                    relative = file_path
-                filename = os.path.basename(relative)
-                save_path = os.path.join(local_dir, filename)
-                if os.path.exists(save_path):
-                    continue
-                try:
-                    file_resp = http_requests.get(url, timeout=60)
-                    if file_resp.status_code == 200:
-                        with open(save_path, 'wb') as out:
-                            out.write(file_resp.content)
-                        total_downloaded += 1
-                except Exception as e:
-                    print(f"⚠️ Download fail {url}: {e}")
-        except Exception as e:
-            print(f"⚠️ Sync error for {sub}: {e}")
-
-    print(f"✅ Синхронизировано файлов из IziPost: {total_downloaded}")
-
-sync_storage_to_local()
-# ==================== ФОНОВАЯ СИНХРОНИЗАЦИЯ В IZIPOST ====================
-import threading
-import time
-
-STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
-_synced_files = set()
-_sync_lock = threading.Lock()
-
-def upload_new_files_to_storage():
-    if not STORAGE_API_KEY:
-        return 0
-    total = 0
-    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
-                  'stickers/custom', 'music', 'games']
-    for sub in subfolders:
-        local_dir = os.path.join('static', sub)
-        if not os.path.isdir(local_dir):
-            continue
-        for filename in os.listdir(local_dir):
-            filepath = os.path.join(local_dir, filename)
-            if not os.path.isfile(filepath):
-                continue
-            key = f"{sub}/{filename}"
-            with _sync_lock:
-                if key in _synced_files:
-                    continue
-            try:
-                with open(filepath, 'rb') as f:
-                    files = {'file': (filename, f, 'application/octet-stream')}
-                    data = {'path': sub}
-                    resp = http_requests.post(
-                        STORAGE_UPLOAD_URL,
-                        headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
-                        files=files,
-                        data=data,
-                        timeout=60
-                    )
-                    if resp.status_code == 200 and resp.json().get('success'):
-                        with _sync_lock:
-                            _synced_files.add(key)
-                        total += 1
-            except Exception as e:
-                print(f"⚠️ Upload error {key}: {e}")
-    return total
-
-def background_sync_worker():
-    while True:
-        try:
-            n = upload_new_files_to_storage()
-            if n > 0:
-                print(f"✅ Загружено в IziPost: {n} файлов")
-        except Exception as e:
-            print(f"⚠️ Background sync error: {e}")
-        time.sleep(30)
-
-def _final_sync():
-    try:
-        n = upload_new_files_to_storage()
-        print(f"⏹️ Финальная синхронизация: {n} файлов")
-    except Exception as e:
-        print(f"⚠️ Final sync error: {e}")
-
-import atexit
-import signal
-
-atexit.register(_final_sync)
-signal.signal(signal.SIGTERM, lambda s, f: (_final_sync(), exit(0)))
-signal.signal(signal.SIGINT, lambda s, f: (_final_sync(), exit(0)))
-
-threading.Thread(target=background_sync_worker, daemon=True).start()
-# =====================================================================
-# =====================================================================
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
     'mp3', 'wav', 'ogg', 'flac', 'm4a',
@@ -1156,27 +1014,7 @@ def load_user(uid):
     return user
 with app.app_context():
     db.create_all()
-
-    if not db.session.get(User, 1):
-        system_user = User(
-            id=1,
-            username='beargram_system',
-            password=generate_password_hash('system_' + uuid.uuid4().hex),
-            avatar='default.png',
-            status='offline',
-            is_active=True
-        )
-        db.session.add(system_user)
-        db.session.commit()
-        try:
-            db.session.execute(db.text(
-                "SELECT setval(pg_get_serial_sequence('\"user\"', 'id'), 1, true)"
-            ))
-            db.session.commit()
-        except Exception:
-            pass
-        print("✅ Системный пользователь id=1 создан")
-
+    # Создаём премиум-темы, если их ещё нет
     if not CustomTheme.query.filter_by(name='Золотой медведь').first():
         gold = CustomTheme(
             name='Золотой медведь',
@@ -1190,7 +1028,6 @@ with app.app_context():
             price=0
         )
         db.session.add(gold)
-
     if not CustomTheme.query.filter_by(name='Неоновая ночь').first():
         neon = CustomTheme(
             name='Неоновая ночь',
@@ -1204,9 +1041,9 @@ with app.app_context():
             price=0
         )
         db.session.add(neon)
-
     db.session.commit()
     print("✅ База данных и премиум-темы готовы")
+
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
 def index():
