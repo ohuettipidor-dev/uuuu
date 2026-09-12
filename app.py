@@ -1265,7 +1265,6 @@ def profile():
                 ext = f.filename.rsplit('.', 1)[1].lower()
                 name = f"avatar_{current_user.id}_{uuid.uuid4().hex}.{ext}"
                 f.save(os.path.join(AVATAR_FOLDER, name))
-                upload_to_storage(os.path.join(AVATAR_FOLDER, name), subfolder='avatars')
                 if current_user.avatar != 'default.png':
                     old = os.path.join(AVATAR_FOLDER, current_user.avatar)
                     if os.path.exists(old):
