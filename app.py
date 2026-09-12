@@ -1018,7 +1018,27 @@ def load_user(uid):
     return user
 with app.app_context():
     db.create_all()
-    # Создаём премиум-темы, если их ещё нет
+
+    if not db.session.get(User, 1):
+        system_user = User(
+            id=1,
+            username='beargram_system',
+            password=generate_password_hash('system_' + uuid.uuid4().hex),
+            avatar='default.png',
+            status='offline',
+            is_active=True
+        )
+        db.session.add(system_user)
+        db.session.commit()
+        try:
+            db.session.execute(db.text(
+                "SELECT setval(pg_get_serial_sequence('\"user\"', 'id'), 1, true)"
+            ))
+            db.session.commit()
+        except Exception:
+            pass
+        print("✅ Системный пользователь id=1 создан")
+
     if not CustomTheme.query.filter_by(name='Золотой медведь').first():
         gold = CustomTheme(
             name='Золотой медведь',
@@ -1032,6 +1052,7 @@ with app.app_context():
             price=0
         )
         db.session.add(gold)
+
     if not CustomTheme.query.filter_by(name='Неоновая ночь').first():
         neon = CustomTheme(
             name='Неоновая ночь',
@@ -1045,9 +1066,9 @@ with app.app_context():
             price=0
         )
         db.session.add(neon)
+
     db.session.commit()
     print("✅ База данных и премиум-темы готовы")
-
 # ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 @app.route('/')
 def index():
