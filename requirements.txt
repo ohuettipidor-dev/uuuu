@@ -10,3 +10,4 @@ python-dotenv==1.0.0
 requests
 ed25519
 gunicorn
+psycopg2-binary
