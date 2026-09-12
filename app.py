@@ -242,34 +242,6 @@ def sync_storage_to_local():
     print(f"✅ Скачано из IziPost при старте: {total} файлов")
 
 sync_storage_to_local()
-
-_original_save = FileStorage.save
-
-def _patched_save(self, dst, buffer_size=16384):
-    _original_save(self, dst, buffer_size)
-    if not STORAGE_API_KEY:
-        return
-    try:
-        rel_path = os.path.relpath(dst, 'static')
-        sub = os.path.dirname(rel_path)
-        if not sub:
-            return
-        with open(dst, 'rb') as f:
-            files = {'file': (os.path.basename(dst), f, 'application/octet-stream')}
-            data = {'path': sub}
-            resp = requests.post(
-                STORAGE_UPLOAD_URL,
-                headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
-                files=files,
-                data=data,
-                timeout=60
-            )
-            if resp.status_code != 200:
-                print(f"⚠️ Upload to IziPost failed: {resp.status_code} {resp.text[:200]}")
-    except Exception as e:
-        print(f"⚠️ Upload to IziPost error: {e}")
-
-FileStorage.save = _patched_save
 # =====================================================================
 # =====================================================================
 ALLOWED_EXTENSIONS = {
