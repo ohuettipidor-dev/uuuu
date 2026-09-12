@@ -184,6 +184,77 @@ def sync_storage_to_local():
     print(f"✅ Синхронизировано файлов из IziPost: {total_downloaded}")
 
 sync_storage_to_local()
+# ==================== ФОНОВАЯ СИНХРОНИЗАЦИЯ В IZIPOST ====================
+import threading
+import time
+
+STORAGE_UPLOAD_URL = 'https://relaxdev.ru/api/v1/storage/upload'
+_synced_files = set()
+_sync_lock = threading.Lock()
+
+def upload_new_files_to_storage():
+    if not STORAGE_API_KEY:
+        return 0
+    total = 0
+    subfolders = ['avatars', 'uploads', 'voices', 'stickers',
+                  'stickers/custom', 'music', 'games']
+    for sub in subfolders:
+        local_dir = os.path.join('static', sub)
+        if not os.path.isdir(local_dir):
+            continue
+        for filename in os.listdir(local_dir):
+            filepath = os.path.join(local_dir, filename)
+            if not os.path.isfile(filepath):
+                continue
+            key = f"{sub}/{filename}"
+            with _sync_lock:
+                if key in _synced_files:
+                    continue
+            try:
+                with open(filepath, 'rb') as f:
+                    files = {'file': (filename, f, 'application/octet-stream')}
+                    data = {'path': sub}
+                    resp = http_requests.post(
+                        STORAGE_UPLOAD_URL,
+                        headers={'Authorization': f'Bearer {STORAGE_API_KEY}'},
+                        files=files,
+                        data=data,
+                        timeout=60
+                    )
+                    if resp.status_code == 200 and resp.json().get('success'):
+                        with _sync_lock:
+                            _synced_files.add(key)
+                        total += 1
+            except Exception as e:
+                print(f"⚠️ Upload error {key}: {e}")
+    return total
+
+def background_sync_worker():
+    while True:
+        try:
+            n = upload_new_files_to_storage()
+            if n > 0:
+                print(f"✅ Загружено в IziPost: {n} файлов")
+        except Exception as e:
+            print(f"⚠️ Background sync error: {e}")
+        time.sleep(30)
+
+def _final_sync():
+    try:
+        n = upload_new_files_to_storage()
+        print(f"⏹️ Финальная синхронизация: {n} файлов")
+    except Exception as e:
+        print(f"⚠️ Final sync error: {e}")
+
+import atexit
+import signal
+
+atexit.register(_final_sync)
+signal.signal(signal.SIGTERM, lambda s, f: (_final_sync(), exit(0)))
+signal.signal(signal.SIGINT, lambda s, f: (_final_sync(), exit(0)))
+
+threading.Thread(target=background_sync_worker, daemon=True).start()
+# =====================================================================
 # =====================================================================
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
