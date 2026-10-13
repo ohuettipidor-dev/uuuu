@@ -87,6 +87,31 @@ def allow_iframe(response):
     response.headers.pop('X-Frame-Options', None)  # убираем запрет
     response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *"
     return response
+# ========== ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ ==========
+from flask import make_response
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/privacy/agree')
+def privacy_agree():
+    resp = make_response(redirect('/'))
+    resp.set_cookie('privacy_agreed', 'true', max_age=365*24*3600)
+    return resp
+
+@app.before_request
+def check_privacy():
+    # Пропускаем статику, API, favicon и сам маршрут политики
+    if request.path.startswith('/static') or \
+       request.path.startswith('/api') or \
+       request.path in ['/privacy', '/privacy/agree', '/favicon.ico']:
+        return None
+    # Если куки нет — редирект на политику
+    if not request.cookies.get('privacy_agreed'):
+        return redirect('/privacy')
+    return None
+# ========== КОНЕЦ ПОЛИТИКИ ==========
 app.config['SECRET_KEY'] = 'beargram-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/static/messenger.db' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
