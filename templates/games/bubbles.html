@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🐻 Пузыри • #GRRR</title>
+  <title>🐻 Пузыри • Монеты</title>
   <style>
     /* идентичные стили как в предыдущем кликере, только лого и название соответствующие */
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -97,12 +97,13 @@
   </div>
   <div class="beargram-section">
     <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank" rel="noopener">🚀 Установить BearGram</a>
-    <a class="btn btn-withdraw" href="https://beargram.up.railway.app/?utm_source=telegram_game&utm_medium=bubbles&utm_campaign=withdraw" target="_blank" rel="noopener">💰 Вывести #GRRR</a>
-    <div class="beargram-text">Фарми <span class="highlight">#GRRR</span> и выводи в рубли</div>
+    <a class="btn btn-withdraw" href="https://beargram.up.railway.app/?utm_source=telegram_game&utm_medium=bubbles&utm_campaign=withdraw" target="_blank" rel="noopener">💰 Вывести Монеты</a>
+    <div class="beargram-text">Фарми <span class="highlight">Монеты</span> и выводи в рубли</div>
   </div>
 </div>
 <script>
   (function() {
+    // ВНИМАНИЕ: Переменные оставлены без изменений для совместимости!
     const STORAGE_KEY = 'grrr_balance';
     const DAILY_KEY = 'grrr_daily';
     const LIMIT = 100;
@@ -203,7 +204,7 @@
       const ref = localStorage.getItem('refId') || Math.random().toString(36).substr(2,8);
       localStorage.setItem('refId', ref);
       const url = location.origin + location.pathname + '?ref=' + ref;
-      if (navigator.share) navigator.share({title:'Пузыри • #GRRR', text:'Лопай и фарми!', url});
+      if (navigator.share) navigator.share({title:'Пузыри • Монеты', text:'Лопай и фарми!', url});
       else prompt('Ссылка:', url);
       addGRRR(5);
       showToast('📨 +5 🪙');
@@ -219,4 +220,4 @@
 </script>
 <a href="/games" style="position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold;">← Игры</a>
 </body>
-</html>
+  </html>
