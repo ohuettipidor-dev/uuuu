@@ -118,9 +118,12 @@ function googleTranslateElementInit() {
             <a href="/shop/coins" class="btn-coins">💎 Зарядить</a>
             <button onclick="document.getElementById('withdrawRubForm').style.display='block'" class="btn-withdraw">💰 Вывести</button>
         </div>
+
+        <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
         <div style="margin-top:10px;">
             <button onclick="toggleTonForm()" style="background:#ffd700; color:#000; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🌍 Пополнить через TON</button>
         </div>
+        -->
 
         <!-- Форма вывода рублей (мгновенная отправка) -->
         <div id="withdrawRubForm" style="display:none; text-align:center; margin-top:15px;">
@@ -132,7 +135,7 @@ function googleTranslateElementInit() {
             <small style="color:#888;">Курс: 1 💎 = 1 ₽. Комиссия 25% + налог 13%.</small>
         </div>
 
-        <!-- Форма пополнения через TON -->
+        <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
         <div id="tonTopUpForm" style="display:none; text-align:center; margin-top:15px;">
             <p style="color:#888; font-size:13px;">Курс: 1 TON ≈ 100 💎 (комиссия 10%)</p>
             <p style="color:#aaa; font-size:11px;">Введите желаемую сумму в 💎, и мы покажем, сколько TON нужно отправить (минимум 3 💎).</p>
@@ -149,8 +152,10 @@ function googleTranslateElementInit() {
             
             <button onclick="checkTonTopUp()" style="background:#4cd964; color:white; border:none; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer;">🔄 Проверить платёж</button>
         </div>
+        -->
     </div>
 
+    <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
     <div class="section" style="text-align:center;">
         <div class="section-title">🐻 Баланс $GRRR</div>
         <p style="font-size:28px; font-weight:bold; color:#333;">{{ "%.2f"|format(grrr_balance) }} $GRRR</p>
@@ -160,7 +165,6 @@ function googleTranslateElementInit() {
         </div>
     </div>
 
-    <!-- ВЫВОД $GRRR -->
     <div class="section" style="text-align:center;">
         <div class="section-title">💸 Вывести $GRRR</div>
         <form method="POST" action="/withdraw" onsubmit="return validateWithdraw()">
@@ -187,6 +191,7 @@ function googleTranslateElementInit() {
             </div>
         </div>
     </div>
+    -->
 
     <div class="section" style="text-align:center;">
         <div class="section-title">👥 Пригласить друзей</div>
@@ -243,6 +248,7 @@ function googleTranslateElementInit() {
 </div>
 
 <script>
+/* ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
 function toggleTonForm() {
     var form = document.getElementById('tonTopUpForm');
     form.style.display = (form.style.display === 'none') ? 'block' : 'none';
@@ -280,6 +286,7 @@ function checkTonTopUp() {
         })
         .catch(error => alert('❌ Ошибка проверки: ' + error));
 }
+*/
 
 // Поиск треков
 let searchTimeout;
