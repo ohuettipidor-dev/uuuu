@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🧠 Wordle Bear | #GRRR</title>
+    <title>🧠 Wordle Bear | Монеты</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(145deg,#1a1e2b 0%,#2a3142 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;color:#fff;touch-action:manipulation}
@@ -56,7 +56,7 @@
     <div class="rules-box">
         <span>🎯 Как играть:</span> Угадай слово из 7 букв за 6 попыток!<br>
         <span class="green">Зелёный</span> = буква на месте · <span class="yellow">Жёлтый</span> = есть в слове · <span class="gray">Серый</span> = нет буквы<br>
-        <span>💰 Угадал = +20 $GRRR!</span>
+        <span>💰 Угадал = +20 Монет!</span>
     </div>
 
     <div class="score-panel"><span>🎯 Игр: <b id="gamesPlayed">0</b></span><span>🏆 Побед: <b id="winsDisplay">0</b></span></div>
@@ -68,15 +68,16 @@
         <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
     </div>
     <div class="beargram-section">
-        <div class="beargram-text">🎯 <span class="highlight">Угадал слово = +20 $GRRR!</span></div>
-        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать $GRRR</a>
+        <div class="beargram-text">🎯 <span class="highlight">Угадал слово = +20 Монет!</span></div>
+        <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать Монеты</a>
         <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
-        <a class="btn btn-withdraw" href="#" id="withdrawBtn">💰 Вывести $GRRR</a>
-        <div class="beargram-text">Фарми <span class="highlight">$GRRR</span> и выводи! 1 $GRRR ≈ 0.95 ₽</div>
+        <a class="btn btn-withdraw" href="#" id="withdrawBtn">💰 Вывести Монеты</a>
+        <div class="beargram-text">Фарми <span class="highlight">Монеты</span> и выводи!</div>
     </div>
 </div>
 <script>
 (function(){
+    // ВНИМАНИЕ: Переменные grrr_balance, addGRRR оставлены без изменений!
     const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
     let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0'),daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
     const today=new Date().toDateString();
@@ -121,7 +122,7 @@
         for(let i=0;i<7;i++){if(guess[i]===wordArr[i]){result[i]='correct';used[i]=true;correct++}}
         for(let i=0;i<7;i++){if(result[i]==='correct')continue;for(let j=0;j<7;j++){if(!used[j]&&guess[i]===wordArr[j]){result[i]='present';used[j]=true;break}}}
         for(let c=0;c<7;c++){const cell=document.getElementById('cell'+currentRow+c);setTimeout(()=>{cell.classList.add(result[c]);updateKeyboard(guess[c],result[c])},c*120)}
-        if(correct===7){won=true;gameOver=true;wins++;gamesPlayed++;localStorage.setItem('wordle_wins',wins);localStorage.setItem('wordle_games',gamesPlayed);addGRRR(20);updateStats();setTimeout(()=>showToast('🎉 Угадал! +20 $GRRR'),800);return}
+        if(correct===7){won=true;gameOver=true;wins++;gamesPlayed++;localStorage.setItem('wordle_wins',wins);localStorage.setItem('wordle_games',gamesPlayed);addGRRR(20);updateStats();setTimeout(()=>showToast('🎉 Угадал! +20 Монет'),800);return}
         currentRow++;currentCol=0;if(currentRow>=6){gameOver=true;gamesPlayed++;localStorage.setItem('wordle_games',gamesPlayed);updateStats();setTimeout(()=>showToast('💀 Слово: '+WORD),500)}
     }
 
@@ -130,10 +131,10 @@
 
     document.addEventListener('keydown',e=>{if(e.key==='Backspace')handleKey('←');else if(e.key==='Enter')handleKey('⏎');else if(/^[А-ЯЁа-яё]$/i.test(e.key))handleKey(e.key.toUpperCase())});
     document.getElementById('newGameBtn').addEventListener('click',()=>location.reload());
-    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 $GRRR')});
-    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Wordle Bear • #GRRR',text:'Угадай слово и фарми!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 $GRRR')});
+    document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 Монет')});
+    document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Wordle Bear • Монеты',text:'Угадай слово и фарми!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 Монет')});
     document.getElementById('withdrawBtn').addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
-    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 $GRRR')}
+    const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 Монет')}
 
     init();updateUI();
 })();
