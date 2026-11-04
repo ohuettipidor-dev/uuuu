@@ -91,6 +91,7 @@ function googleTranslateElementInit() {
 <div class="container">
     <div class="header"><a href="/chat" class="back-btn">← Чат</a><h1>🎮 Игры</h1></div>
 
+    <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
     <div class="boost-panel">
         <h3>⚡ Буст для всех игр</h3>
         <div class="boost-options">
@@ -100,15 +101,18 @@ function googleTranslateElementInit() {
         </div>
         <div class="boost-info" id="boostStatus">Буст не активен</div>
     </div>
+    -->
 
     <div class="section-title"><span>🕹️ Встроенные игры</span></div>
+    <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
     <p style="font-size:12px;color:#aaa;margin-bottom:12px;">⚠️ Только <b style="color:#f9ca24;">Медовый Ниндзя</b> зачисляет $GRRR на профиль. Остальные — демо-версии (начисления не сохраняются).</p>
+    -->
     <div class="games-grid">
         <a href="/games/water-sort" class="game-card"><div class="game-icon">💧</div><div class="game-title">Water Sort</div><div class="game-desc">Сортируй цвета</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/bubbles" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Пузыри</div><div class="game-desc">Лопай с друзьями</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/block-blast" class="game-card"><div class="game-icon">🧩</div><div class="game-title">Block Blast</div><div class="game-desc">Собирай ряды</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/clicker" class="game-card"><div class="game-icon">⛏️</div><div class="game-title">Кликер</div><div class="game-desc">Улучшай ферму</div><div class="game-reward demo">🎮 Демо</div></a>
-        <a href="/games/honey-ninja" class="game-card"><div class="game-icon">🍯</div><div class="game-title">Медовый Ниндзя</div><div class="game-desc">Режь предметы!</div><div class="game-reward">+5 $GRRR (реально)</div></a>
+        <a href="/games/honey-ninja" class="game-card"><div class="game-icon">🍯</div><div class="game-title">Медовый Ниндзя</div><div class="game-desc">Режь предметы!</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/flappy-bear" class="game-card"><div class="game-icon">🐻</div><div class="game-title">Flappy Bear</div><div class="game-desc">Лети и уворачивайся</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/2048" class="game-card"><div class="game-icon">🧩</div><div class="game-title">2048 Bear</div><div class="game-desc">Собери 2048!</div><div class="game-reward demo">🎮 Демо</div></a>
         <a href="/games/wordle" class="game-card"><div class="game-icon">🧠</div><div class="game-title">Wordle Bear</div><div class="game-desc">Угадай слово!</div><div class="game-reward demo">🎮 Демо</div></a>
@@ -134,6 +138,7 @@ function googleTranslateElementInit() {
 
     <a href="/games/skins" class="skin-link">🎨 Мастерская скинов</a>
 
+    <!-- ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
     <div class="fund-card">
         <div class="trophy">🏆</div><h3>Фонд "Золотой медведь"</h3>
         <p style="font-size:13px;color:#ccc;">Автор лучшей игры месяца:</p>
@@ -144,9 +149,11 @@ function googleTranslateElementInit() {
         </div>
         <p class="note">📊 Популярность = запуски + время + бустеры + оценки</p>
     </div>
+    -->
 </div>
 
 <script>
+/* ВРЕМЕННО СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY
 // ================= СИНХРОНИЗАЦИЯ GRRR (ТИХАЯ) =================
 (async function syncGameGRRR() {
     const localBalance = parseFloat(localStorage.getItem('grrr_balance') || '0');
@@ -196,6 +203,7 @@ function activateBoost(t,c){
     updateBoostUI()
 }
 updateBoostUI();setInterval(updateBoostUI,30000);
+*/
 </script>
 <script src="/static/lang.js"></script>
 </body>
