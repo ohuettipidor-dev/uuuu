@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🍯 Медовый Ниндзя | #GRRR</title>
+    <title>🍯 Медовый Ниндзя | Монеты</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{
@@ -87,7 +87,7 @@ updateDisplayBalance();
 setInterval(updateDisplayBalance, 5000);
 
 async function addGRRR(amount) {
-    syncDebugEl.textContent = '⏳ +' + amount + ' GRRR...';
+    syncDebugEl.textContent = '⏳ +' + amount + ' Монет...';
     try {
         const resp = await fetch('/api/sync_grrr', {
             method: 'POST',
@@ -99,7 +99,7 @@ async function addGRRR(amount) {
         const data = await resp.json();
         if (data.success) {
             grrrBalanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
-            syncDebugEl.textContent = '✅ +' + amount + ' GRRR';
+            syncDebugEl.textContent = '✅ +' + amount + ' Монет';
             return true;
         } else {
             syncDebugEl.textContent = '❌ сервер отказал';
@@ -441,7 +441,7 @@ document.getElementById('dailyBonusBtn').addEventListener('click', () => {
     }
     localStorage.setItem('grrr_bonus_date', today);
     addGRRR(10);
-    syncDebugEl.textContent = '🎁 +10 GRRR';
+    syncDebugEl.textContent = '🎁 +10 Монет';
 });
 
 updateScore();
