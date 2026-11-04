@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🐻 Медовая ферма | #GRRR</title>
+    <title>🐻 Медовая ферма | Монеты</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{
@@ -44,7 +44,7 @@
         </div>
     </div>
     <div class="stats">
-        <span class="label">⚡ +0.1 GRRR за клик</span>
+        <span class="label">⚡ +0.1 Монета за клик</span>
     </div>
     <div class="hive-area" id="hiveArea">
         <div class="clickable" id="clickBtn">🍯</div>
@@ -90,7 +90,7 @@ async function addGRRR(amount) {
     daily += add;
     saveDaily();
 
-    syncDebugEl.textContent = '⏳ +' + add.toFixed(2) + ' GRRR...';
+    syncDebugEl.textContent = '⏳ +' + add.toFixed(2) + ' Монет...';
     try {
         const resp = await fetch('/api/sync_grrr', {
             method: 'POST',
@@ -102,7 +102,7 @@ async function addGRRR(amount) {
         const data = await resp.json();
         if (data.success) {
             grrrBalanceEl.textContent = parseFloat(data.new_balance).toFixed(2);
-            syncDebugEl.textContent = '✅ +' + add.toFixed(2) + ' GRRR';
+            syncDebugEl.textContent = '✅ +' + add.toFixed(2) + ' Монет';
             return true;
         } else {
             syncDebugEl.textContent = '❌ сервер отказал';
@@ -125,7 +125,7 @@ async function handleClick(e) {
     // Всплывающий текст
     const floatEl = document.createElement('div');
     floatEl.className = 'float-text';
-    floatEl.textContent = '+0.1 GRRR';
+    floatEl.textContent = '+0.1 Монета'; // Изменено
     const rect = hiveArea.getBoundingClientRect();
     floatEl.style.left = (e.clientX - rect.left) + 'px';
     floatEl.style.top = (e.clientY - rect.top) + 'px';
