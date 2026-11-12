@@ -44,7 +44,8 @@
         <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
         <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
     </div>
-    <div class="beargram-section">
+    <!-- СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY -->
+    <div class="beargram-section" style="display: none;">
         <div class="beargram-text" style="font-size:12px;color:#f9ca24;">🎯 <span class="highlight">Очки = Монеты!</span> Лети — зарабатывай!</div>
         <a class="btn btn-grrr" href="https://beargram.up.railway.app/grrr" target="_blank">🐻 Зарабатывать Монеты</a>
         <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank">🚀 Установить BearGram</a>
@@ -54,7 +55,6 @@
 </div>
 <script>
 (function(){
-    // ВНИМАНИЕ: Переменные grrr_balance, addGRRR оставлены без изменений для совместимости!
     const STORAGE_KEY='grrr_balance';const DAILY_KEY='grrr_daily';const LIMIT=100;
     let balance=parseInt(localStorage.getItem(STORAGE_KEY)||'0');
     let daily=parseInt(localStorage.getItem(DAILY_KEY)||'0');
@@ -100,7 +100,12 @@
     canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(gameOver){reset();draw();return}if(!gameRunning){gameRunning=true;bear.vy=-6.5;if(!pipes.length)spawnPipe()}else{bear.vy=-6.5}});
     document.getElementById('dailyBonusBtn').addEventListener('click',()=>{const last=localStorage.getItem('grrr_bonus_date');if(last===today){showToast('🎁 Уже получен');return}localStorage.setItem('grrr_bonus_date',today);addGRRR(10);showToast('🎁 +10 Монет')});
     document.getElementById('referralBtn').addEventListener('click',()=>{const ref=localStorage.getItem('refId')||Math.random().toString(36).substr(2,8);localStorage.setItem('refId',ref);const url=location.origin+location.pathname+'?ref='+ref;if(navigator.share)navigator.share({title:'Flappy Bear • Монеты',text:'Летай и фарми Монеты!',url});else prompt('Ссылка:',url);addGRRR(5);showToast('📨 +5 Монет')});
-    document.getElementById('withdrawBtn').addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
+    
+    const wBtn = document.getElementById('withdrawBtn');
+    if(wBtn) {
+        wBtn.addEventListener('click',e=>{e.preventDefault();window.open('https://beargram.up.railway.app/register?ref='+(localStorage.getItem('refId')||'')+'&earned='+balance,'_blank')});
+    }
+    
     const refParam=new URLSearchParams(location.search).get('ref');if(refParam&&!localStorage.getItem('refUsed')){localStorage.setItem('refUsed','1');addGRRR(10);showToast('🎁 +10 Монет')}
 
     reset();updateUI();setInterval(()=>{update();draw()},16);
