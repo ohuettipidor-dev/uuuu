@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>🐻 Пузыри • Монеты</title>
   <style>
-    /* идентичные стили как в предыдущем кликере, только лого и название соответствующие */
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
     body {
       font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
@@ -95,7 +94,8 @@
     <button class="btn-yellow" id="dailyBonusBtn">🎁 Бонус</button>
     <button class="btn-yellow" id="referralBtn">👥 Друзья</button>
   </div>
-  <div class="beargram-section">
+  <!-- СКРЫТО ДЛЯ МОДЕРАЦИИ APP GALLERY -->
+  <div class="beargram-section" style="display: none;">
     <a class="btn btn-install" href="https://beargram.up.railway.app/" target="_blank" rel="noopener">🚀 Установить BearGram</a>
     <a class="btn btn-withdraw" href="https://beargram.up.railway.app/?utm_source=telegram_game&utm_medium=bubbles&utm_campaign=withdraw" target="_blank" rel="noopener">💰 Вывести Монеты</a>
     <div class="beargram-text">Фарми <span class="highlight">Монеты</span> и выводи в рубли</div>
@@ -103,7 +103,6 @@
 </div>
 <script>
   (function() {
-    // ВНИМАНИЕ: Переменные оставлены без изменений для совместимости!
     const STORAGE_KEY = 'grrr_balance';
     const DAILY_KEY = 'grrr_daily';
     const LIMIT = 100;
@@ -130,7 +129,6 @@
       document.body.appendChild(toast); setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
     }
 
-    // Звуки природы (предзагружены)
     let audioCtx = null;
     let natureBuffers = [];
     async function initNatureSounds() {
@@ -220,4 +218,4 @@
 </script>
 <a href="/games" style="position:fixed;top:10px;left:10px;z-index:1000;background:rgba(0,0,0,0.5);color:#f9ca24;padding:8px 14px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:bold;">← Игры</a>
 </body>
-  </html>
+</html>
